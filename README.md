@@ -1,6 +1,6 @@
 # Hi, I'm Grant 👋
 
-**Entrepreneur → Strategic Ops & Product | MBA (University of Suffolk, 2026) | Fullstack Bootcamp (Metana.io, 2025)**  
+**Entrepreneur → Strategic Ops & Product | MBA Candidate (University of Suffolk, 2026) | Fullstack Bootcamp (Metana.io, 2025)**  
 
 I build solutions that sit between **business and technology** — from microfinance platforms to hospitality automation and SaaS tools.  
 With 20+ years of experience in operations, finance, and scaling businesses, I’m now transitioning into global remote roles across **Operations, Product, Strategy, and Finance**.  
