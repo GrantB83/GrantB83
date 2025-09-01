@@ -15,7 +15,7 @@ Here are some highlights of what I’ve built or am building:
 - **[Rivendell Trout Estate](#)** – Agritourism & fly-fishing property site with direct booking flows.  
 - **[Perfect Water Web App](#)** – WIP: Client re-ordering portal for Perfect Water franchise (automation + Supabase backend).  
 - **[AutoPost AI](#)** – WIP: AI-driven tool to generate, review, and publish social media posts (currently only facebook).
-- **[CrediMed](#)** - WIP: AI-driven tool allowing South African users to effectively compare medical aid options. 
+- **[CrediMed](#)** - WIP: AI-driven tool allowing South African users to effectively compare medical aid options, and then be served by an authorised broker. 
 
 ---
 
