@@ -11,7 +11,7 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 - **RUNTIME received** (2026-08-22): `grok-bot=yes`, `cursor-plan=ultra`, `on-demand=yes`. Grok Bot routines are the daily ops surface; Cursor Cloud Agents are on-demand for phases/packages.
 - **G8 BOT ROSTER locked** (2026-08-22). Live: Ops Chief, Family, Stay (was Old - The Browns), Aqua (was Old - Perfect Water), Yard (was Old - Heavy Metal), Vault (was Old - Files). Unused parked: Old - WhatsApp, Old - Inbox, Old - Calendar, Old - Memory, Old - Revenue, New Bot. Do **not** create duplicate Bots. Do **not** reopen merged [PR #4](https://github.com/GrantB83/GrantB83/pull/4).
 - **G1 Layer B browser live** (2026-08-22) for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, `grant@bvrgroup.co.za` (gmail,drive,calendar). Keep hub on Grok Bot Plugins. Bots switch the Google avatar before acting. This Cloud Agent MCP is still **hub only** `grant830318@gmail.com` (still zero `from:austinisd.org`).
-- Still unlinked on Layer B: `grant@thebrowns.co.za`, `accounts@bvrgroup.co.za`, `grant@hmsand.co.za`.
+- `grant@thebrowns.co.za` is **not** a Google login (2026-08-22). All mail forwards to the hub. Do not Add account. Still unlinked on Layer B: `accounts@bvrgroup.co.za`, `grant@hmsand.co.za`.
 - Drive MCP still sees `The Browns USA` (owner `grant@hospitality.partners`) via share. Calendar MCP still the hub list (primary `Africa/Johannesburg`).
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.

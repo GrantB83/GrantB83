@@ -15,7 +15,7 @@
 | `grant830318@gmail.com` | Connected today (Gmail + Calendar MCP). Personal + forwarded mix. **Not** where AISD mail lives. |
 | `thebrownsusa@gmail.com` | US household Drive (Receipts, School files, Tax Emigration folder owner). Liana uses this address on school/PTA shares. **Must** be a first-class Gmail + Drive + Calendar link. |
 | `grant@hospitality.partners` | Owns Drive root **The Browns USA**. Calendar/Drive actions on that tree need this login or an explicit share. |
-| `grant@thebrowns.co.za` | Workspace + Hiver (~1644 threads). Send-as already appears on the hub. Native mailbox still needed for filters, send-as reliability, and Workspace Shared Drives. |
+| `grant@thebrowns.co.za` | **Not a Google login.** Forwards all mail to `grant830318@gmail.com`. Hiver + send-as already on the hub. Do not Add account. |
 | `stay@hospitality.partners` | Reservations. Forwarding is visible on the hub; native link needed if Stay must send as stay@. |
 | `accounts@bvrgroup.co.za` | Perfect Water / BVR. Not connected as native mail or Drive. |
 | `grant@hmsand.co.za` | Heavy Metal. Label exists on hub (1 thread). Native mailbox not connected. |
