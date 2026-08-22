@@ -73,11 +73,11 @@ accounts:
     calendar:
       native: expected
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
+      grok_bot_plugin: approved_grant_action_required
+      grok_bot_browser: approved_grant_action_required
       cursor_mcp: missing
       forward_to_hub: unknown
-    approval: required
+    approval: granted_2026-08-22
     required_for: [drive-vault, stay]
 
   - email: grant@thebrowns.co.za
@@ -103,10 +103,10 @@ accounts:
     required_for: [stay, ops-chief, hiver]
 
   - email: stay@hospitality.partners
-    kind: mailbox   # confirm google_login
+    kind: google_login
     owner: hospitality-shared
     lanes: [hospitality]
-    services: [gmail, calendar]
+    services: [gmail, drive, calendar]
     gmail:
       native: expected
       hub: false
@@ -116,12 +116,33 @@ accounts:
     calendar:
       native: unknown
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
+      grok_bot_plugin: approved_grant_action_required
+      grok_bot_browser: approved_grant_action_required
       cursor_mcp: missing
       forward_to_hub: partial
-    approval: required
+    approval: granted_2026-08-22
     required_for: [stay]
+
+  - email: grant@bvrgroup.co.za
+    kind: google_login
+    owner: grant
+    lanes: [perfect-water]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: expected
+      hub: false
+    drive:
+      native: unknown
+    calendar:
+      native: unknown
+    link:
+      grok_bot_plugin: approved_grant_action_required
+      grok_bot_browser: approved_grant_action_required
+      cursor_mcp: missing
+      forward_to_hub: missing
+    approval: granted_2026-08-22
+    required_for: [aqua]
+    note: Grant named grant@bvrgroup.co.za (not accounts@bvrgroup.co.za); do not invent passwords
 
   - email: accounts@bvrgroup.co.za
     kind: mailbox   # confirm google_login

@@ -2,7 +2,7 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (BOT ROSTER + RUNTIME + G1 thebrownsusa received; Cloud MCP still hub-only).
+Last orchestrator review: 2026-08-22 (BOT ROSTER + RUNTIME + G1 approvals received; Cloud MCP still hub-only).
 
 ## Now
 
@@ -10,7 +10,7 @@ Last orchestrator review: 2026-08-22 (BOT ROSTER + RUNTIME + G1 thebrownsusa rec
 - WhatsApp Cloud API agent exists as draft [PR #2](https://github.com/GrantB83/GrantB83/pull/2). It is **not** live (Coexistence + HTTPS host still Grant).
 - **RUNTIME received** (2026-08-22): `grok-bot=yes`, `cursor-plan=ultra`, `on-demand=yes`. Grok Bot routines are the daily ops surface; Cursor Cloud Agents are on-demand for phases/packages.
 - **G8 BOT ROSTER received** (2026-08-22). `bot-roster.yaml` now records: Ops Chief (was Old - Finance, already amended), Family, Old - The Browns (being amended to Stay), Old - Perfect Water (being amended to Aqua), Old - Heavy Metal (being amended to Yard), Old - Files (being amended to Vault). Six unused Bots parked: Old - WhatsApp, Old - Inbox, Old - Calendar, Old - Memory, Old - Revenue, New Bot. Do **not** create duplicate Bots.
-- **G1 thebrownsusa@gmail.com approved** (2026-08-22) for gmail,drive,calendar. Grok Bot plugin/browser linking is Grant's action on the Bot computer. This Cloud Agent Gmail/Drive/Calendar MCP is still **hub only** `grant830318@gmail.com` (still zero `from:austinisd.org`). School filters belong on `thebrownsusa@gmail.com` native mailbox (Layer B or later MCP addition).
+- **G1 approvals granted** (2026-08-22) for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, and `grant@bvrgroup.co.za` (all gmail,drive,calendar). Grok Bot plugin/browser linking is Grant's action on the Bot computer. This Cloud Agent Gmail/Drive/Calendar MCP is still **hub only** `grant830318@gmail.com` (still zero `from:austinisd.org`). School filters belong on `thebrownsusa@gmail.com` native mailbox (Layer B or later MCP addition).
 - Drive MCP still sees `The Browns USA` (owner `grant@hospitality.partners`). Calendar MCP still the hub list (primary `Africa/Johannesburg`).
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
@@ -75,4 +75,4 @@ Last orchestrator review: 2026-08-22 (BOT ROSTER + RUNTIME + G1 thebrownsusa rec
 | 2026-08-22 | Every Google login is first-class (Gmail + Drive + Calendar). Hub-only MCP is insufficient. School filters belong on `thebrownsusa@gmail.com`. |
 | 2026-08-22 | Grant completed G8 Bot-map and G1 all-Google-accounts setup actions. Cloud MCP remains hub-only; Grok Bot linking is outside this VM. |
 | 2026-08-22 | BOT ROSTER received: Ops Chief amended, Family live, four sibling Bots (Stay/Aqua/Yard/Vault) being amended. Six unused Bots parked. |
-| 2026-08-22 | RUNTIME received: `grok-bot=yes cursor-plan=ultra on-demand=yes`. G1 approval received for `thebrownsusa@gmail.com` gmail,drive,calendar (Grok Bot Layer A/B linking is Grant's action; Cursor MCP still hub-only). |
+| 2026-08-22 | RUNTIME received: `grok-bot=yes cursor-plan=ultra on-demand=yes`. G1 approvals granted for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, and `grant@bvrgroup.co.za` gmail,drive,calendar (Grok Bot Layer A/B linking is Grant's action; Cursor MCP still hub-only). |
