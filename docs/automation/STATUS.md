@@ -17,7 +17,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
 - **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
-- **USA Budget close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds: Monarch CSV (Bell only) + Bell statement PDF upload + freeze Budget vs Actual. Locks in `usa-budget.yaml`. Liana **edits** the sheet (`LIANA SHEET: yes`). 3-month forecast income = **average of last 3 paystubs** (or whatever exists if fewer). Forecast spend = **intended** Essential + Controlled + Savings/Sinking. Family Bot amend waits until remaining Budget scope is locked.
+- **USA Budget close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds: Monarch CSV (Bell only) + Bell statement PDF upload + freeze Budget vs Actual. Locks in `usa-budget.yaml`. Liana **edits** the sheet (`LIANA SHEET: yes`). 3-month forecast income = **average of last 3 paystubs** (or whatever exists if fewer). Forecast spend = **intended** Essential + Controlled + Discretionary + Savings/Sinking. Family Bot amend waits until remaining Budget scope is locked.
 - **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Grant created hub filters 4–5 (2026-08-22): From `businessprofile-noreply@google.com` → `GBP`; From `mail@hmsand.co.za` → `Entity/HeavyMetal`. No Skip Inbox. Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
@@ -91,4 +91,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | USA Budget close time locked: 7th of each month at 07:00 America/Chicago. |
 | 2026-08-22 | Liana edits the USA Budget sheet (`LIANA SHEET: yes`). Family Bot amend waits until remaining Budget scope is locked. |
 | 2026-08-22 | USA Budget 3-month forecast income = average of last 3 NatPay stubs (`FORECAST: average-3`). If fewer than 3, average whatever exists (`FORECAST SHORT: use-what-we-have`). Numbers only; no stub bodies. |
-| 2026-08-22 | USA Budget forecast spend = this month’s intended Essential + Controlled + Savings/Sinking (`FORECAST SPEND: intended`). Discretionary pending. |
+| 2026-08-22 | USA Budget forecast spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking (`FORECAST SPEND: intended` + `FORECAST DISCRETIONARY: include`). |
