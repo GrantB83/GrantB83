@@ -127,6 +127,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - Phase 3 household categories feed **monthly totals only** into the sheet (no family narrative).
 - Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
 - **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
+- **Close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds Grant to export Monarch (Bell only), upload the Bell statement PDF, and freeze Budget vs Actual. Locks: `usa-budget.yaml`.
 
 ---
 

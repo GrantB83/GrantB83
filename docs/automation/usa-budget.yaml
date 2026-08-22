@@ -1,0 +1,69 @@
+# USA household Budget automation locks.
+# No account numbers, balances, medical notes, or NatPay stub bodies.
+schema_version: 1
+updated: 2026-08-22
+lane: family
+owner_bot: Family
+approval: Grant locks in chat; this file records them
+
+sheet:
+  title: Budget
+  drive_path: The Browns USA / Finance
+  id: 1XefM6adRfjRIJtYOpCvNcrNqf-R6_jOox68Q4i_32NA
+  owner: thebrownsusa@gmail.com
+  write_as: thebrownsusa@gmail.com
+  currency: USD
+  zar_snapshot: out_of_scope_until_grant_says
+
+books:
+  source: monarch_official_csv
+  monarch_path: Settings → Data → Download Transactions
+  monarch_accounts: BELL ONLY
+  unofficial_api: never
+  stored_passwords: never
+  monarch_session: family_bot_computer   # Grant types password; session stays
+  natpay_session: family_bot_computer    # numbers only on a Paystubs tab
+  recon: Bell statement PDF into The Browns USA / Finance / Bell Bank
+
+close:
+  day: 7
+  time: "07:00"
+  timezone: America/Chicago
+  grant_phrase: "CLOSE TIME: 07:00 CT"
+  family_does:
+    - remind Grant to export Monarch CSV (Bell only)
+    - remind Grant to upload Bell statement PDF
+    - freeze Budget vs Actual for prior month
+    - check sinking target vs MONTH LEFT
+  books_are: monarch_csv_plus_statement
+  daily_flash_is_not_books: true
+
+daily_flash:
+  mailbox: thebrownsusa@gmail.com
+  from: donotreply@customercenter.net
+  label: Family/Finance
+  skip_inbox: false
+  subject_constraint: none
+  grant_phrase: "BELL FILTER: from-only"
+  create_on_hub: never
+
+funds:
+  sinking_official: none_yet
+  sinking_target_tab: what the pot should be by objective
+  bell_should_hold: sinking_target_plus_month_left
+  month_left: unspent intended Essential + Controlled this month
+
+archive:
+  dated_budget_vs_actual_on_sheet: true
+  file_copy_under: The Browns USA / Finance
+
+build_vs_run:
+  tabs_formulas_mapping: cursor_cloud_agent_once
+  monthly_and_daily_run: family_bot
+  cloud_mcp_thebrownsusa: skipped_2026-08-22
+
+never:
+  - N1 payments
+  - N3 medical/will/tax-emigration bodies
+  - quote amounts or last-four in chat or git
+  - unofficial Monarch APIs

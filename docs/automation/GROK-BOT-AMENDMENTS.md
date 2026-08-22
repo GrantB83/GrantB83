@@ -98,7 +98,15 @@ Grant has linked (school mail may not live on grant830318@gmail.com).
 5. Draft the Family digest. Do not send school/clinic mail (H12).
 6. Business-looking thread → leave it and tell Ops Chief.
 
+7th of each month 07:00 America/Chicago (USA Budget close):
+Remind Grant only — do not log into Monarch or NatPay yourself unless the session is already on this computer:
+1. Download Monarch transactions (Bell accounts only).
+2. Upload the Bell statement PDF to The Browns USA / Finance / Bell Bank.
+3. Freeze Budget vs Actual. Check sinking target vs MONTH LEFT.
+Daily Bell flash mail is not the books.
+
 Never: pay, medical advice, quote lab/will/tax-emigration text, job-search, X.
+Never quote amounts, last-four, or stub bodies in chat.
 ```
 
 ### 3.3 Stay (Hospitality)
