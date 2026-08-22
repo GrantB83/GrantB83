@@ -11,7 +11,7 @@ cursor_mcp_connected:
   drive: grant830318@gmail.com   # sees files shared by other owners
   calendar: grant830318@gmail.com
 grant_external_action_completed: 2026-08-22
-note: Grok Bot plugin/browser linking is a different product from this Cloud MCP. Hub still has zero austinisd.org after the G1 action.
+note: Grok Bot Layer B browser avatars are signed in for thebrownsusa, grant@hospitality.partners, stay@, and grant@bvrgroup.co.za. This Cloud MCP is still hub-only. Hub still has zero austinisd.org.
 
 accounts:
   - email: grant830318@gmail.com
@@ -52,8 +52,8 @@ accounts:
     calendar:
       native: expected
     link:
-      grok_bot_plugin: approved_grant_action_required
-      grok_bot_browser: approved_grant_action_required
+      grok_bot_plugin: hub_only_do_not_replace
+      grok_bot_browser: live
       cursor_mcp: missing
       forward_to_hub: missing
     approval: granted_2026-08-22
@@ -73,11 +73,11 @@ accounts:
     calendar:
       native: expected
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
+      grok_bot_plugin: hub_only_do_not_replace
+      grok_bot_browser: live
       cursor_mcp: missing
       forward_to_hub: unknown
-    approval: required
+    approval: granted_2026-08-22
     required_for: [drive-vault, stay]
 
   - email: grant@thebrowns.co.za
@@ -103,25 +103,46 @@ accounts:
     required_for: [stay, ops-chief, hiver]
 
   - email: stay@hospitality.partners
-    kind: mailbox   # confirm google_login
+    kind: google_login   # Workspace; Grant signed in 2026-08-22
     owner: hospitality-shared
     lanes: [hospitality]
-    services: [gmail, calendar]
+    services: [gmail, drive, calendar]
     gmail:
-      native: expected
+      native: true
       hub: false
-      observed: inbound visible on hub
+      observed: inbound also visible on hub
     drive:
-      native: unknown
+      native: expected
     calendar:
-      native: unknown
+      native: expected
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
+      grok_bot_plugin: hub_only_do_not_replace
+      grok_bot_browser: live
       cursor_mcp: missing
       forward_to_hub: partial
-    approval: required
+    approval: granted_2026-08-22
     required_for: [stay]
+
+  - email: grant@bvrgroup.co.za
+    kind: google_login   # Workspace; Grant named this login 2026-08-22
+    owner: grant
+    lanes: [perfect-water]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: true
+      hub: false
+      observed: Grant signed in on Grok Bot browser
+    drive:
+      native: expected
+    calendar:
+      native: expected
+    link:
+      grok_bot_plugin: hub_only_do_not_replace
+      grok_bot_browser: live
+      cursor_mcp: missing
+      forward_to_hub: missing
+    approval: granted_2026-08-22
+    required_for: [aqua]
 
   - email: accounts@bvrgroup.co.za
     kind: mailbox   # confirm google_login
