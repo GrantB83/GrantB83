@@ -12,6 +12,8 @@ sheet:
   id: 1XefM6adRfjRIJtYOpCvNcrNqf-R6_jOox68Q4i_32NA
   owner: thebrownsusa@gmail.com
   write_as: thebrownsusa@gmail.com
+  editors: [grant, liana]
+  grant_phrase_editors: "LIANA SHEET: yes"
   currency: USD
   zar_snapshot: out_of_scope_until_grant_says
 
@@ -61,6 +63,7 @@ build_vs_run:
   tabs_formulas_mapping: cursor_cloud_agent_once
   monthly_and_daily_run: family_bot
   cloud_mcp_thebrownsusa: skipped_2026-08-22
+  family_amend_prompt: wait_until_remaining_scope_locked   # Grant 2026-08-22
 
 never:
   - N1 payments

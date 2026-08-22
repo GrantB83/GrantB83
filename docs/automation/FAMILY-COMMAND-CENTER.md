@@ -128,6 +128,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
 - **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
 - **Close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds Grant to export Monarch (Bell only), upload the Bell statement PDF, and freeze Budget vs Actual. Locks: `usa-budget.yaml`.
+- **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family Bot amend waits until remaining Budget scope is locked.
 
 ---
 
@@ -148,6 +149,9 @@ Family/Finance, Family/Budget, Family/Action.
 4. Propose or create Family calendar events only if standing approval S11 is on.
 5. Draft the Family digest to Grant and Liana. Do not send medical body text.
 6. If something looks like a business thread, leave it and tell Ops Chief.
+
+7th of each month 07:00 CT: remind Grant — Monarch CSV (Bell only),
+Bell statement PDF upload, freeze Budget vs Actual. Flash mail is not books.
 
 Never: pay, give medical advice, email a school, quote a lab result, use X.
 ```

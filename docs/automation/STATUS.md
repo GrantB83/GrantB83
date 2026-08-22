@@ -17,7 +17,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
 - **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
-- **USA Budget close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds: Monarch CSV (Bell only) + Bell statement PDF upload + freeze Budget vs Actual. Locks in `usa-budget.yaml`.
+- **USA Budget close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds: Monarch CSV (Bell only) + Bell statement PDF upload + freeze Budget vs Actual. Locks in `usa-budget.yaml`. Liana **edits** the sheet (`LIANA SHEET: yes`). Family Bot amend waits until remaining Budget scope is locked.
 - **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Grant created hub filters 4–5 (2026-08-22): From `businessprofile-noreply@google.com` → `GBP`; From `mail@hmsand.co.za` → `Entity/HeavyMetal`. No Skip Inbox. Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
@@ -89,3 +89,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | Grant skipped Cloud MCP for `thebrownsusa@gmail.com` on this VM. Hub Gmail stays the only Cloud MCP. Family/Bell work stays on the Grok Bot thebrownsusa avatar. |
 | 2026-08-22 | Bell daily-flash filter locked from-only: `from:donotreply@customercenter.net` → `Family/Finance` on thebrownsusa. No Skip Inbox. Do not create on hub. |
 | 2026-08-22 | USA Budget close time locked: 7th of each month at 07:00 America/Chicago. |
+| 2026-08-22 | Liana edits the USA Budget sheet (`LIANA SHEET: yes`). Family Bot amend waits until remaining Budget scope is locked. |
