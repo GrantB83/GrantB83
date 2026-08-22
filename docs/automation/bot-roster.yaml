@@ -6,13 +6,13 @@ updated: 2026-08-22
 source: docs/automation/GROK-BOT-AMENDMENTS.md
 grant_reply_phrase: "BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…"
 grant_external_action_completed: 2026-08-22
-existing_names_received_in_chat: false
+existing_names_received_in_chat: true
 
 roles:
   ops-chief:
     plan_name: Ops Chief
     section: Ops
-    existing_name: null
+    existing_name: Ops Chief
     aliases_to_absorb:
       - Inbox
       - Mail
@@ -36,7 +36,7 @@ roles:
   family:
     plan_name: Family
     section: Family
-    existing_name: null
+    existing_name: Family
     aliases_to_absorb:
       - Family
       - Home
@@ -55,7 +55,7 @@ roles:
   stay:
     plan_name: Stay
     section: Hospitality
-    existing_name: null
+    existing_name: Old - The Browns
     aliases_to_absorb:
       - Hospitality
       - Stay
@@ -77,7 +77,7 @@ roles:
   aqua:
     plan_name: Aqua
     section: PW
-    existing_name: null
+    existing_name: Old - Perfect Water
     aliases_to_absorb:
       - Perfect Water
       - Aqua
@@ -94,7 +94,7 @@ roles:
   yard:
     plan_name: Yard
     section: HM
-    existing_name: null
+    existing_name: Old - Heavy Metal
     aliases_to_absorb:
       - Heavy Metal
       - Yard
@@ -111,7 +111,7 @@ roles:
   vault:
     plan_name: Vault
     section: Trust
-    existing_name: null
+    existing_name: Old - Files
     aliases_to_absorb:
       - Trust
       - Legal
@@ -132,6 +132,12 @@ roles:
 
 unused_aliases:
   names:
+    - Old - WhatsApp
+    - Old - Inbox
+    - Old - Calendar
+    - Old - Memory
+    - Old - Revenue
+    - New Bot
     - CrediMed
     - AutoPost
     - MBA
