@@ -98,3 +98,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | Natural gas = Texas Gas Service (merchant override → Housing / Natural gas). City of Austin is not the gas vendor. |
 | 2026-08-22 | City of Austin (Monarch Taxes) = utilities bundle to split later across Housing utility lines (`MAP AUSTIN: utilities-bundle`). |
 | 2026-08-22 | City of Austin dry-run hold = new sheet line `Austin utilities (bundle)` (`AUSTIN HOLD: new-line`). Split from a COA website bill PDF in Drive; Family does not scrape COA. |
+| 2026-08-22 | Monarch Shopping parks on new sheet line `Shopping (bundle)` (`MAP SHOPPING: new-line Shopping`). Split later from merchant names on the existing export; no amounts in chat. |
