@@ -1,0 +1,211 @@
+# Every Google identity this programme may link.
+# No passwords, tokens, street addresses, or medical data.
+schema_version: 1
+updated: 2026-08-22
+source: docs/automation/GOOGLE-ACCOUNTS.md
+approval_phrase: "APPROVE GOOGLE ACCOUNT <email> gmail,drive,calendar"
+
+# Cursor Cloud MCP on this run (2026-08-22)
+cursor_mcp_connected:
+  gmail: grant830318@gmail.com
+  drive: grant830318@gmail.com   # sees files shared by other owners
+  calendar: grant830318@gmail.com
+
+accounts:
+  - email: grant830318@gmail.com
+    kind: google_login
+    owner: grant
+    lanes: [family, shared-finance, hospitality]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: true
+      hub: true
+      observed: send-as also includes grant@thebrowns.co.za; ~7720 inbox threads
+    drive:
+      native: true
+      notes: Owns some household files; not the The Browns USA root
+    calendar:
+      native: true
+      primary_tz_observed: Africa/Johannesburg
+      calendars_on_list: [primary, Private, Family, PW Technical Schedule, School Holidays, Holidays in South Africa]
+    link:
+      grok_bot_plugin: unknown
+      grok_bot_browser: unknown
+      cursor_mcp: live
+      forward_to_hub: n/a
+    approval: pending
+
+  - email: thebrownsusa@gmail.com
+    kind: google_login
+    owner: household   # Liana uses this on school/PTA shares; Grant also uses it
+    lanes: [family]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: true
+      hub: false
+      observed: likely AISD / school mailbox (not present on hub in 90d)
+    drive:
+      native: true
+      notes: Co-owns household tree (Receipts, School, Tax Emigration folder owner)
+    calendar:
+      native: expected
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: missing
+    approval: required
+    required_for: [family-command-center, school-filters]
+
+  - email: grant@hospitality.partners
+    kind: google_login
+    owner: grant
+    lanes: [hospitality, family]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: expected
+      hub: false
+    drive:
+      native: true
+      notes: Owns Drive root The Browns USA
+    calendar:
+      native: expected
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: unknown
+    approval: required
+    required_for: [drive-vault, stay]
+
+  - email: grant@thebrowns.co.za
+    kind: google_login   # Workspace
+    owner: grant
+    lanes: [hospitality, shared-finance]
+    services: [gmail, drive, calendar]
+    gmail:
+      native: true
+      hub: false
+      observed: Hiver desk; send-as from hub
+    drive:
+      native: expected
+      notes: Preferred Shared Drive hub if Workspace confirmed
+    calendar:
+      native: expected
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: partial   # traffic already visible on hub
+    approval: required
+    required_for: [stay, ops-chief, hiver]
+
+  - email: stay@hospitality.partners
+    kind: mailbox   # confirm google_login
+    owner: hospitality-shared
+    lanes: [hospitality]
+    services: [gmail, calendar]
+    gmail:
+      native: expected
+      hub: false
+      observed: inbound visible on hub
+    drive:
+      native: unknown
+    calendar:
+      native: unknown
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: partial
+    approval: required
+    required_for: [stay]
+
+  - email: accounts@bvrgroup.co.za
+    kind: mailbox   # confirm google_login
+    owner: grant
+    lanes: [perfect-water]
+    services: [gmail, drive]
+    gmail:
+      native: expected
+      hub: false
+    drive:
+      native: unknown
+    calendar:
+      native: unknown
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: missing
+    approval: required
+    required_for: [aqua]
+
+  - email: grant@hmsand.co.za
+    kind: mailbox   # confirm google_login
+    owner: grant
+    lanes: [heavy-metal]
+    services: [gmail, drive]
+    gmail:
+      native: expected
+      hub: false
+      observed: hub label grant@hmsand.co.za exists (thin)
+    drive:
+      native: unknown
+    calendar:
+      native: unknown
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: missing
+    approval: required
+    required_for: [yard]
+
+  - email: mail@hmsand.co.za
+    kind: sender   # confirm whether this is a Google login
+    owner: heavy-metal-shared
+    lanes: [heavy-metal]
+    services: [gmail]
+    gmail:
+      native: unknown
+      hub: false
+      observed: live sender into hub
+    drive:
+      native: unknown
+    calendar:
+      native: unknown
+    link:
+      grok_bot_plugin: missing
+      grok_bot_browser: missing
+      cursor_mcp: missing
+      forward_to_hub: partial
+    approval: required-if-google-login
+    required_for: [yard]
+
+placeholders:
+  - email: liana-personal-if-not-thebrownsusa
+    kind: unknown
+    owner: liana
+    lanes: [family]
+    services: [gmail, drive, calendar]
+    note: Ask Grant. Do not invent. School may already be thebrownsusa.
+    approval: required-if-exists
+
+calendars_to_share_with_hub:
+  - Family
+  - School Holidays
+  - PW Technical Schedule
+  - any hospitality/property calendars Grant names
+
+drive_roots_to_share_with_hub:
+  - The Browns USA
+  - future 20_Hospitality
+  - future 30_PerfectWater
+  - future 40_HeavyMetal
+  - future 50_GABTrust
+
+never_open_bodies:
+  - Tax Emigration
+  - Last Will & Testament
+  - school medical PDFs

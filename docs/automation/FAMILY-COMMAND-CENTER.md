@@ -131,7 +131,9 @@ Existing Drive `Budget` sheet stays the SoR.
 
 ## 9. Grok Bot “Family” standing instructions
 
-Grant creates the Bot once, sidebar section **Family**, Gmail plugin on.
+Amend the **existing** household / school / calendar Bot (`GROK-BOT-AMENDMENTS.md` §3.2). Do not create a second Family Bot.
+
+Gmail plugin on the hub is **not** enough. Also sign in `thebrownsusa@gmail.com` (and any Liana login) on the Bot computer — AISD is not on `grant830318@gmail.com`. Create `family-filters.yaml` filters on **that** mailbox too.
 
 ```text
 You are Family. You only read Gmail labels Family/School, Family/Medical,

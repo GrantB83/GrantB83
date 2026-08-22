@@ -7,6 +7,10 @@ Grok Bot directs Cursor Cloud agents from this folder. This is the map, not the 
 | File | Purpose |
 | --- | --- |
 | [RUNTIME.md](RUNTIME.md) | Grok Bot vs Cloud Agents vs filters — cost and who does what |
+| [GROK-BOT-AMENDMENTS.md](GROK-BOT-AMENDMENTS.md) | Amend existing Grok Bots — do not create a second team |
+| [bot-roster.yaml](bot-roster.yaml) | Live Bot name → plan role (Grant fills `existing_name`) |
+| [GOOGLE-ACCOUNTS.md](GOOGLE-ACCOUNTS.md) | Link **all** Gmail / Drive / Calendar logins |
+| [google-accounts.yaml](google-accounts.yaml) | Identity registry + link status |
 | [FAMILY-COMMAND-CENTER.md](FAMILY-COMMAND-CENTER.md) | School, medical, household finance, budget |
 | [family-filters.yaml](family-filters.yaml) | Zero-token Gmail routing |
 | [BUSINESS-REQUIREMENTS.md](BUSINESS-REQUIREMENTS.md) | Per-entity admin evaluation, gaps, RACI, labour tests |
@@ -20,9 +24,10 @@ Grok Bot directs Cursor Cloud agents from this folder. This is the map, not the 
 ## Operating model
 
 ```text
-Grant / Liana  →  Grok Bot (orchestrator)
+Grant / Liana  →  existing Grok Bots (amended, not duplicated)
                       │
                       ├─ reads SPEC + STATUS
+                      ├─ uses every linked Google login (not hub-only)
                       ├─ picks next work package
                       ├─ launches 1 Cursor Cloud agent
                       └─ reviews PR / exception queue

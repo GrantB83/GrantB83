@@ -2,25 +2,27 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (runtime-tuned for Grok Bot / Cloud Agent cost; Family Command Center labels live).
+Last orchestrator review: 2026-08-22 (existing Grok Bots to be amended; all Google accounts must be linkable).
 
 ## Now
 
 - Control-plane spec + business evaluation live in this folder.
 - WhatsApp Cloud API agent exists as draft [PR #2](https://github.com/GrantB83/GrantB83/pull/2). It is **not** live (Coexistence + HTTPS host still Grant).
-- Gmail MCP is connected to `grant830318@gmail.com` (also sees `grant@thebrowns.co.za` traffic).
-- Drive MCP sees `The Browns USA` household vault; business entity roots are missing.
+- **Grok Bots already exist** in Grant’s Grok Bot app. This environment has **no Grok Bot API** — names are unset in `bot-roster.yaml`. Grant pastes amend prompts from `GROK-BOT-AMENDMENTS.md` and replies `BOT ROSTER:` (`G8`). Do **not** create a duplicate Family / Ops Chief / Stay team.
+- Gmail MCP is connected to **hub only** `grant830318@gmail.com` (also sees some `grant@thebrowns.co.za` / stay@ traffic). That is **not** all accounts.
+- Drive MCP sees `The Browns USA` (owners `grant@hospitality.partners` / `thebrownsusa@gmail.com`); business entity roots are missing.
+- Calendar MCP is the hub list (primary still `Africa/Johannesburg`).
+- **Must still link** (Gmail + Drive + Calendar as applicable): `thebrownsusa@gmail.com` (school), `grant@hospitality.partners`, `grant@thebrowns.co.za`, `stay@hospitality.partners`, `accounts@bvrgroup.co.za`, `grant@hmsand.co.za`, `mail@hmsand.co.za` if it is a login, plus any extra Grant names with `GOOGLE ACCOUNTS:`.
 - Cloud environment is scoped to `GrantB83/GrantB83` only.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once.
 - Grok Bot entitlement (`RUNTIME:`) — **unset**. Ask Grant once.
-- Family Gmail labels **created** (School/Medical/Finance/Budget/Calendar/FileOnly/Action). Filter API returned 403 — Grant must add filters from `family-filters.yaml` or grant settings scope.
-- School mail may not live on `grant830318@gmail.com` (zero `from:austinisd.org` in 90d). Possible `G1`.
+- Family Gmail labels **created on the hub**. Filter API returned 403. Filters must also be created on **`thebrownsusa@gmail.com`** — hub has zero `from:austinisd.org` in 90d (`G1`).
 
 ## Phase board
 
 | Phase | Name | State | Next agent | Labour cut (est.) | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Control plane & safety | **in progress** | merge expanded spec | stop re-briefing agents | `G2` private repos |
+| 0 | Control plane & safety | **in progress** | Grant `BOT ROSTER:` + Google `G1` | stop re-briefing agents | `G2` private repos; `G8`; `G1` all logins |
 | 1a | Email classifier + SLA | not started | `phase-01a-email-classifier` | 5–8h → 1h | `G1`; `G6` after sample |
 | 1b | WhatsApp slots | not started | `phase-01b-wa-slots` | 6–10h → 2h once live | `G4`/`G5`; `SOR: whatsapp=` |
 | 1c | Channel stitch | not started | after 1a/1b | dual-reply errors | — |
@@ -40,7 +42,7 @@ Last orchestrator review: 2026-08-22 (runtime-tuned for Grok Bot / Cloud Agent c
 | 7b | Forex checklist + family one-pager | not started | `phase-07b-forex` | 2h/event → 0.5h | Grant doc list |
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
-| 10a | Family filters | **labels live** | Grant: add Gmail filters (403) | 2–4h → 0 on FYI | filter scope; `G1` if AISD is elsewhere |
+| 10a | Family filters | **labels live on hub only** | Grant: add filters on **thebrownsusa** + hub (403) | 2–4h → 0 on FYI | filter scope; `G1` thebrownsusa |
 | 10b | Family digest | not started | `phase-10b-family-digest` + Family Bot | 10 min/day | `RUNTIME: grok-bot=` |
 | 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
 | 10d | Budget / bills | not started | after 10a | hunt → due list | Budget sheet |
@@ -71,3 +73,5 @@ Last orchestrator review: 2026-08-22 (runtime-tuned for Grok Bot / Cloud Agent c
 | 2026-08-22 | Owned-business staff ops are in scope. Job-search remains out. |
 | 2026-08-22 | Daily ops = Gmail filters + Grok Bot routines. Cloud Automations at most weekly (max context). Standing `S*` approvals replace per-item where sampled. |
 | 2026-08-22 | Family Command Center is first-class. Labels live. Do not put medical bodies in digests. |
+| 2026-08-22 | Amend existing Grok Bots; do not create a parallel team. Map with `BOT ROSTER:`. |
+| 2026-08-22 | Every Google login is first-class (Gmail + Drive + Calendar). Hub-only MCP is insufficient. School filters belong on `thebrownsusa@gmail.com`. |

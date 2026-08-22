@@ -55,7 +55,7 @@ If Grok Bot is **not** entitled on this Cursor account: daily work falls back to
 ### Grok Bot can
 
 - Stay up 24/7 on its own computer; jobs do not die when Grant closes the laptop.
-- Use **Gmail, Notion, Slack** plugins; browser-sign-in for tools without APIs (NightsBridge, Loyverse, FNB) — Grant types the password on the Bot computer; the Bot does not see it.
+- Use **Gmail, Drive, Calendar, Notion, Slack** plugins; **browser-sign-in every Google login** plus tools without APIs (NightsBridge, Loyverse, FNB) — Grant types the password on the Bot computer; the Bot does not see it.
 - Learn a workflow **by watching once**, save it as a **routine**, run it on a schedule.
 - Run **many Bots** (Ops Chief, Family, PW, Hospitality, HM, Trust) in sidebar sections; they can pass work and only ping Grant for judgment ([announcement](https://x.ai/news/introducing-grok-bot)).
 - Launch or instruct Cursor Cloud Agents for repo work (this programme’s original intent).
@@ -128,18 +128,28 @@ Replace per-item gates after a measured sample. See `approval-gates.md` `S*`.
 
 **Still always human:** payments (`N1`), statutory submit (`N2`), medical *decisions*, guest-tone exceptions, new credit, first send of a new template.
 
-### Bot roster Grant creates once (sidebar sections)
+### Bot roster — amend what exists (do not create a second team)
 
-| Section | Bot | Routine | Reads | Pings human when |
+Grant already has Grok Bots. Map them with `BOT ROSTER:` (`G8`). Standing prompts and alias table: `GROK-BOT-AMENDMENTS.md` + `bot-roster.yaml`.
+
+| Section | Plan role | Routine | Reads | Pings human when |
 | --- | --- | --- | --- | --- |
-| Family | **Family** | 06:20 CT | `Family/*` labels only | `Family/Action` cards (sign, pay, attend) |
-| Ops | **Ops Chief** | 06:30 CT | `Queue/NeedsGrant`, Hiver open, bank/CIPC/GBP | RED SLA, money, legal |
-| Hospitality | **Stay** | on new `Entity/Hospitality` | Hiver + stay@ | Liana if tone/confidence low |
-| PW | **Aqua** | on `Entity/PerfectWater` | orders / till flag | stockout, till≠bank |
-| HM | **Yard** | on `Entity/HeavyMetal` | quotes / deliveries | no price card, POD missing |
-| Trust | **Vault** | on `Entity/Trust` | CIPC/SARS/forex | due ≤14 days |
+| Family | **Family** (absorb Home / School / Calendar) | 06:20 CT | `Family/*` + `thebrownsusa@gmail.com` | `Family/Action` cards (sign, pay, attend) |
+| Ops | **Ops Chief** (absorb Inbox / Mail / Chief) | 06:30 CT | `Queue/NeedsGrant`, Hiver open, bank/CIPC/GBP | RED SLA, money, legal |
+| Hospitality | **Stay** (absorb WhatsApp / Concierge) | on new `Entity/Hospitality` | Hiver + stay@ + hospitality Google logins | Liana if tone/confidence low |
+| PW | **Aqua** | on `Entity/PerfectWater` | `accounts@bvrgroup.co.za` + PW calendar | stockout, till≠bank |
+| HM | **Yard** | on `Entity/HeavyMetal` | `grant@hmsand.co.za` / `mail@hmsand.co.za` | no price card, POD missing |
+| Trust | **Vault** (absorb Drive/Legal if that is its job) | on `Entity/Trust` | CIPC/SARS/forex; filenames only on will/emigration | due ≤14 days |
 
-Ops Chief may message the others. Grant is not the router.
+Ops Chief may message the others. Grant is not the router. **Unused** Bots (MBA, job-search, CrediMed deep-dive) stay parked.
+
+### Google accounts — every login, not the hub only
+
+Plugins are shared across Bots and are typically **one OAuth identity per plugin** unless the UI offers Add account. That is not enough for this household.
+
+Required path: `GOOGLE-ACCOUNTS.md` Layers A (plugin) + B (Bot-computer browser, all Google avatars) + C (forward / share so Cloud MCP and $0 filters still work). Registry: `google-accounts.yaml`.
+
+School filters must be created on the mailbox that actually receives AISD (likely `thebrownsusa@gmail.com`), not only on `grant830318@gmail.com`.
 
 ### How Grok Bot launches Cloud Agents
 

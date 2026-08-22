@@ -6,7 +6,8 @@ Employment-related workflows are out of scope. Do not add them.
 
 ## Who may act
 
-- **Grok Bot** is the only orchestrator. It reads `docs/automation/BUSINESS-REQUIREMENTS.md` and `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md`, and launches one specialised Cursor Cloud agent per phase or work package.
+- **Grok Bot** is the only orchestrator. Amend Bots that already exist (`docs/automation/GROK-BOT-AMENDMENTS.md`); do not spawn a parallel team. It reads `docs/automation/BUSINESS-REQUIREMENTS.md` and `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md`, and launches one specialised Cursor Cloud agent per phase or work package.
+- **Google identities** are many. Agents must use every approved login in `docs/automation/google-accounts.yaml` (Gmail, Drive, Calendar). Hub-only (`grant830318@gmail.com`) is not sufficient — school and several Drive roots live elsewhere.
 - **Cursor Cloud agents** implement a single assigned work package, then stop.
 - **Humans** (Grant, Liana) approve anything in `docs/automation/approval-gates.md`. Agents never bypass a gate.
 
@@ -30,10 +31,12 @@ Employment-related workflows are out of scope. Do not add them.
 3. `docs/automation/SPEC.md`
 4. `docs/automation/FAMILY-COMMAND-CENTER.md` if the package touches school/medical/household money
 5. `docs/automation/entity-map.yaml`
-6. `docs/automation/approval-gates.md`
-7. `docs/automation/STATUS.md`
-8. `docs/automation/labor-ledger.md`
-9. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
+6. `docs/automation/GROK-BOT-AMENDMENTS.md` and `docs/automation/bot-roster.yaml` if the package touches Grok Bots
+7. `docs/automation/GOOGLE-ACCOUNTS.md` and `docs/automation/google-accounts.yaml` if the package touches mail, Drive, or calendar
+8. `docs/automation/approval-gates.md`
+9. `docs/automation/STATUS.md`
+10. `docs/automation/labor-ledger.md`
+11. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
 
 Prefer Gmail filters and Grok Bot routines over daily Cloud Automations. Prefer standing `S*` approvals over per-item `H*` once a sample is green. Never scan the full inbox.
 

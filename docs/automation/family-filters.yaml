@@ -20,7 +20,7 @@ filters:
       from: austinisd.org
     action:
       add_labels: [Family/School]
-    notes: Mills and other AISD campuses observed in Drive shares.
+    notes: Mills and other AISD campuses observed in Drive shares. Create this filter on thebrownsusa@gmail.com (and Liana if separate) — not only on grant830318@gmail.com. Hub has zero austinisd.org in 90d.
 
   - id: school-action-words
     criteria:

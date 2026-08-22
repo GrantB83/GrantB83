@@ -22,7 +22,8 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 | 7b | Rebuild forex/attorney packs | 2 per event | 0.5 checklist | | | | forex checklist |
 | 8 | Ignore or late-reply to GBP | 0.5 | 0.1 approve drafts | | | | `samples/gbp-drafts.md` |
 | 9 | Rebuild a month from chats | 2–3 (monthly) | 0.4 pack approve | | | | monthly template |
-| 10a | School/medical/bills in the business inbox | 2–4 | 0 (filters) | | | | `family-filters.yaml` |
+| 0-bots | Duplicate / misaligned Grok Bots + “which Google account?” | 1–2 | 0 after amend + all-account link | | | | `GROK-BOT-AMENDMENTS.md` |
+| 10a | School/medical/bills in the business inbox | 2–4 | 0 (filters on the mailbox that receives AISD) | | | | `family-filters.yaml` |
 | 10b | Read every AISD / portal email | (inside 2–4) | 0.15 family digest | | | | `samples/family-digest.md` |
 | 10c | Copy school dates to calendar | 0.5 | 0 after `S11` | | | | Family calendar |
 | 10d | Hunt bills / update Budget | 0.5–1 | 0.1 due list | | | | Budget totals |

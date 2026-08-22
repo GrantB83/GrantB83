@@ -4,6 +4,35 @@ Grok copies one block into a **new** Cursor Cloud agent. Fill the repo/branch. D
 
 Every prompt already includes the safety contract. Do not soften it.
 
+**Grok Bots already exist.** Do not launch a Cloud Agent to “create Family / Ops Chief”. Grant amends live Bots with `GROK-BOT-AMENDMENTS.md` and replies `BOT ROSTER:`. Cloud Agents only update `bot-roster.yaml` / STATUS after that reply.
+
+**Google:** every phase that touches mail, Drive, or calendar must use `google-accounts.yaml`. Stop with `BLOCKED: G1` if a required login is unlinked. Hub-only is not “all accounts”.
+
+---
+
+## amend-existing-grok-bots
+
+**Repo:** `GrantB83/GrantB83` (docs only)  
+**Role:** `docs-steward`  
+**Use when:** Grant pasted `BOT ROSTER:` and/or `APPROVE GOOGLE ACCOUNT` lines.
+
+```text
+You are docs-steward. Do not create Grok Bots (no API). Do not open the Grok Bot UI.
+
+Required reading: GROK-BOT-AMENDMENTS.md, bot-roster.yaml, GOOGLE-ACCOUNTS.md,
+google-accounts.yaml, approval-gates G1/G8, STATUS.md.
+
+Work package:
+1. Parse Grant's BOT ROSTER: and APPROVE GOOGLE ACCOUNT / GOOGLE ACCOUNTS: lines.
+2. Fill bot-roster.yaml existing_name fields. Do not invent names.
+3. Set google-accounts.yaml link.* to live|missing|partial from what Grant stated.
+4. Update STATUS Now + decision log.
+5. If a required family/school login is still missing, leave BLOCKED: G1.
+
+Commit: docs(ops): record live Grok Bot roster and Google account links.
+Draft PR or update PR #3. Stop.
+```
+
 ---
 
 ## phase-00-control-plane
@@ -44,7 +73,7 @@ Work package:
 5. Define SLA clocks (hospitality 2h SAST, HM 4h, PW same morning) on the Conversation schema.
 6. Update STATUS.md and the 1a row note in labor-ledger.md.
 
-If you need another Google mailbox, stop with BLOCKED: G1.
+If you need another Google mailbox, stop with BLOCKED: G1 — name the email and service (gmail|drive|calendar). Hub-only is not enough; school is likely thebrownsusa@gmail.com.
 Conventional commit: feat(ops): add email classifier dry-run.
 Open a draft PR. Stop.
 ```

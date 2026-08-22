@@ -2,6 +2,8 @@
 # Do not put secrets, account numbers, street addresses, or family medical data here.
 schema_version: 1
 updated: 2026-08-22
+required_google_accounts: docs/automation/google-accounts.yaml
+required_bot_roster: docs/automation/bot-roster.yaml
 required_reading:
   - docs/automation/BUSINESS-REQUIREMENTS.md
   - docs/automation/labor-ledger.md
@@ -159,9 +161,10 @@ entities:
       - Family/Action
 
 inboxes:
+  linking_rule: Every google_login in google-accounts.yaml must be linkable (Grok Bot plugin and/or Bot-computer browser and/or Cursor MCP). Forwarding to the hub is Layer C, not a substitute for native send/read on school and reservations mailboxes.
   connected_now:
     account: grant830318@gmail.com
-    note: Cloud Gmail MCP currently sees this mailbox, which also receives forwarded / multi-account traffic (grant@thebrowns.co.za, stay@, etc.)
+    note: Cloud Gmail MCP currently sees this mailbox, which also receives forwarded / multi-account traffic (grant@thebrowns.co.za, stay@, etc.). This is the hub, not the only identity.
     inbox_threads_observed: 7720
     unread_threads_observed: 43
     useful_labels:
@@ -204,9 +207,14 @@ inboxes:
       - noreply@mail.wesbank.co.za
       - quickbooks@notification.intuit.com
   not_yet_connected:
-    - accounts@bvrgroup.co.za native mailbox
+    - thebrownsusa@gmail.com native mailbox (school / household — required)
+    - grant@hospitality.partners native mailbox (owns The Browns USA Drive root)
+    - grant@thebrowns.co.za native Workspace mailbox (Hiver)
     - stay@hospitality.partners native mailbox
+    - accounts@bvrgroup.co.za native mailbox
     - grant@hmsand.co.za native mailbox
+    - mail@hmsand.co.za if it is a Google login
+    - Liana personal if distinct from thebrownsusa
 
 calendars:
   - id_alias: primary
@@ -280,11 +288,20 @@ mcp:
     - X
     - cursor-cloud
   cost_note: X calls are credit-priced. Do not use X for this ops programme unless Grant asks.
+  google_oauth_limit: One identity per MCP connection on this Cloud run (hub). Extra logins need G1 + a new MCP connection, Grok Bot browser multi-login, or Layer C share/forward.
   missing_for_end_state:
+    - Additional Google MCP connections for every google_login in google-accounts.yaml
     - WhatsApp Cloud API (code in PR #2; live host + Coexistence still Grant)
     - Banking APIs / CSV drop-box
     - Google Business Profile API
     - Loyverse / NightsBridge / QuickBooks APIs
+
+grok_bots:
+  policy: amend_existing
+  roster_file: docs/automation/bot-roster.yaml
+  amendments_file: docs/automation/GROK-BOT-AMENDMENTS.md
+  names_observed_in_this_environment: []
+  note: No Grok Bot API on this Cloud Agent. Grant replies BOT ROSTER:.
 
 existing_stack_from_profile:
   - HubSpot

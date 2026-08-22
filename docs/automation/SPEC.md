@@ -3,7 +3,7 @@
 **Audience:** Grok Bot + Cursor Cloud agents  
 **Owner:** Grant Brown (human approver) · Liana Brown (hospitality approver)  
 **Control plane:** `GrantB83/GrantB83`  
-**Date:** 22 August 2026 (runtime-tuned for Grok Bot / Cloud Agent cost; Family Command Center added)  
+**Date:** 22 August 2026 (existing Grok Bots amended; all Google accounts linkable)  
 **Scope:** Personal life, family administration, and owned businesses only. Job-search / employment-hunting is out of scope. **Staff of owned businesses is in scope.**
 
 This spec is written so Grok can run the programme without re-deriving context.
@@ -13,6 +13,8 @@ This spec is written so Grok can run the programme without re-deriving context.
 - This file wins for “how an agent implements a package”.
 - `labor-ledger.md` wins for “did this remove human hours”.
 - `RUNTIME.md` wins for “which product does this job and what it costs”.
+- `GROK-BOT-AMENDMENTS.md` + `bot-roster.yaml` win for “which live Bot is this role”.
+- `GOOGLE-ACCOUNTS.md` + `google-accounts.yaml` win for “which Google login to use”.
 - `FAMILY-COMMAND-CENTER.md` wins for school / medical / household-money mail.
 
 ---
@@ -93,7 +95,7 @@ Full product/cost contract: `RUNTIME.md`. Do not collapse **Grok 4.6 (model)**, 
 Zero-token Gmail filters ──► labelled queues only
         │
         ▼
-Grok Bot team (weekly meter)     Family · Ops Chief · optional specialists
+Grok Bot team (weekly meter)     existing Bots amended to Family · Ops Chief · specialists
   routines: 06:20 CT family digest, 06:30 CT ops digest, 16:00 SAST run-sheet
         │ exceptions / new code
         ▼
@@ -106,7 +108,7 @@ Grant / Liana  15–30 min/day  (RED + Family/Action + money)
 ### 3.1 Layers
 
 1. **Zero-token intake** — Gmail filters (`family-filters.yaml` + entity sender table). WhatsApp Cloud API (PR #2). Web forms.
-2. **Persistent judgment** — Grok Bot routines on **labelled** mail only (Gmail plugin). Not a full-inbox scan.
+2. **Persistent judgment** — Grok Bot routines on **labelled** mail only, across **every** linked Google login (`GOOGLE-ACCOUNTS.md`). Not a full-inbox scan. Amend existing Bots (`GROK-BOT-AMENDMENTS.md`); do not create duplicates.
 3. **Build** — Cloud Agents, one package, Composer 2.5 default, draft PR. Automations at most **weekly** (they always use max context).
 4. **System of record** — Conversation object + FamilyAction cards + Drive vaults. No new CRM product.
 5. **Actuators** — drafts, file, calendar, digest. Send only after standing `S*` or per-item `H*`.
@@ -680,7 +682,8 @@ Store in Cursor Cloud environment secrets. Never in git.
 Grok asks for these with the exact approval phrases. Do not nag more than once per item.
 
 1. `APPROVE REPO ACCESS` for any private PW / Browns / booking repo that should be extended.
-2. `APPROVE GOOGLE ACCOUNT` for native business mailboxes if the connected Gmail is incomplete.
+2. `BOT ROSTER:` mapping of live Grok Bots (`G8`). Amend; do not duplicate.
+3. `APPROVE GOOGLE ACCOUNT <email> gmail,drive,calendar` for **every** login in `google-accounts.yaml` (not hub-only). Extra names via `GOOGLE ACCOUNTS:`.
 3. `APPROVE WA COEXISTENCE` + `APPROVE WA HOST <url>` before any live WhatsApp.
 4. Rate cards: hospitality, Perfect Water, Heavy Metal (files Grant drops in Drive `_Inbox`).
 5. Confirm systems of record: Loyverse vs Sheets; NightsBridge vs site calendar; QuickBooks vs spreadsheets.
@@ -742,4 +745,4 @@ Ship labour cuts first, not architecture.
 4. `phase-02-drive-taxonomy` (parallel).
 5. `phase-01b-wa-slots` on PR #2.
 
-If Grant says “continue”: **10a then 1a then 1d/10b**. Do not rebuild Aquabuddy first. Create Grok Bot **Family** and **Ops Chief** once entitlement is `RUNTIME: grok-bot=yes`.
+If Grant says “continue”: **amend existing Grok Bots** (`GROK-BOT-AMENDMENTS.md`) and **link every Google account** (`GOOGLE-ACCOUNTS.md`), then **10a then 1a then 1d/10b**. Do not rebuild Aquabuddy first. Do not create Family / Ops Chief if those Bots already exist — map with `BOT ROSTER:` (`G8`).

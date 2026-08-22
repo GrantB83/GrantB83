@@ -23,13 +23,15 @@ Use this phrase in STATUS.md when a human must act:
 
 | ID | Action | Approval text |
 | --- | --- | --- |
-| `G1` | Connect additional Google accounts (business Gmail / Drive) | `APPROVE GOOGLE ACCOUNT <email>` |
+| `G1` | Connect a Google login for Gmail and/or Drive and/or Calendar (Grok Bot plugin, Bot-computer browser, or Cursor MCP). Repeat per address. | `APPROVE GOOGLE ACCOUNT <email> gmail,drive,calendar` (subset of services allowed) |
+| `G1b` | Grant names extra Google logins not in `google-accounts.yaml` | `GOOGLE ACCOUNTS: <email>, <email>, …` |
 | `G2` | Grant Cloud Agent access to a private GitHub repo | `APPROVE REPO ACCESS <repo>` |
 | `G3` | Store a named secret in the Cloud environment | `APPROVE SECRET <NAME>` |
 | `G4` | Enable WhatsApp Cloud API Coexistence on the live number | `APPROVE WA COEXISTENCE` |
 | `G5` | Host the WhatsApp webhook on a public HTTPS URL | `APPROVE WA HOST <url>` |
 | `G6` | Allow auto-label of a whole sender class after 95% sample accuracy | `APPROVE AUTO LABEL <class>` |
 | `G7` | Confirm Grok Bot entitlement / Cursor plan | `RUNTIME: grok-bot=yes|no cursor-plan=… on-demand=yes|no` |
+| `G8` | Map live Grok Bot names to plan roles (amend, do not duplicate) | `BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…` |
 
 ## Needs per-item or per-batch human approval
 
