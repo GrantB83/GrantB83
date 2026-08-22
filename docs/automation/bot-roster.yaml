@@ -85,9 +85,10 @@ roles:
       - Orders
     amend_prompt: GROK-BOT-AMENDMENTS.md §3.4
     google_accounts:
-      gmail: [accounts@bvrgroup.co.za]
-      drive: [accounts@bvrgroup.co.za]
+      gmail: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
+      drive: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
       calendar: [grant830318@gmail.com]
+    note: Layer B avatar grant@bvrgroup.co.za is live. accounts@ is still a separate mailbox if it exists.
     routine: on new PW labelled mail
     create_if_missing: false
 
