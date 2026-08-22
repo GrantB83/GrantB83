@@ -39,6 +39,10 @@ close:
     - check sinking target vs MONTH LEFT
   books_are: monarch_csv_plus_statement
   daily_flash_is_not_books: true
+  first_close: dry_run_now
+  grant_phrase_first_close: "FIRST CLOSE: dry-run now"
+  first_close_date_scheduled: 2026-09-07
+  teach_by_doing: now_then_repeat_on_7th
 
 daily_flash:
   mailbox: thebrownsusa@gmail.com
