@@ -2,7 +2,7 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four non-hub logins; Cloud MCP still hub-only).
+Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP labels created; filter API 403).
 
 ## Now
 
@@ -16,6 +16,7 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
+- **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Standing $0 auto-file needs two Gmail Settings filters (no Skip Inbox). Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
 
@@ -81,3 +82,4 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 | 2026-08-22 | Layer B browser signed in + G1 granted for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, `grant@bvrgroup.co.za`. Do not replace hub Grok Bot plugin token. Cloud MCP remains hub-only. |
 | 2026-08-22 | `grant@thebrowns.co.za` is not a Google login. All mail forwards to `grant830318@gmail.com`. Do not Add account. Read it on the hub. |
 | 2026-08-22 | `accounts@bvrgroup.co.za` forwards to `grant@bvrgroup.co.za`. `grant@hmsand.co.za` forwards to the hub. Neither is a Google login. |
+| 2026-08-22 | Hub labels `Queue/NeedsGrant`, `Entity/Hospitality`, `Entity/PerfectWater`, `Entity/HeavyMetal`, `GBP` created via MCP. Sample stamped: GBP 20, HeavyMetal 10. Gmail filter create still 403. |
