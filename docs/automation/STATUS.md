@@ -11,7 +11,7 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 - **RUNTIME received** (2026-08-22): `grok-bot=yes`, `cursor-plan=ultra`, `on-demand=yes`. Grok Bot routines are the daily ops surface; Cursor Cloud Agents are on-demand for phases/packages.
 - **G8 BOT ROSTER locked** (2026-08-22). Live: Ops Chief, Family, Stay (was Old - The Browns), Aqua (was Old - Perfect Water), Yard (was Old - Heavy Metal), Vault (was Old - Files). Unused parked: Old - WhatsApp, Old - Inbox, Old - Calendar, Old - Memory, Old - Revenue, New Bot. Do **not** create duplicate Bots. Do **not** reopen merged [PR #4](https://github.com/GrantB83/GrantB83/pull/4).
 - **G1 Layer B browser live** (2026-08-22) for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, `grant@bvrgroup.co.za` (gmail,drive,calendar). Keep hub on Grok Bot Plugins. Bots switch the Google avatar before acting. This Cloud Agent MCP is still **hub only** `grant830318@gmail.com` (still zero `from:austinisd.org`).
-- `grant@thebrowns.co.za` is **not** a Google login (2026-08-22). All mail forwards to the hub. Do not Add account. Still unlinked on Layer B: `accounts@bvrgroup.co.za`, `grant@hmsand.co.za`.
+- Forwards, not Google logins (2026-08-22): `grant@thebrowns.co.za` → hub; `accounts@bvrgroup.co.za` → `grant@bvrgroup.co.za`; `grant@hmsand.co.za` → hub. Do not Add account. `mail@hmsand.co.za` stays a **sender** into the hub unless Grant later says it is a login.
 - Drive MCP still sees `The Browns USA` (owner `grant@hospitality.partners`) via share. Calendar MCP still the hub list (primary `Africa/Johannesburg`).
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
@@ -21,7 +21,7 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 
 | Phase | Name | State | Next agent | Labour cut (est.) | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Control plane & safety | **in progress** | optional remaining Layer B logins | stop re-briefing agents | `G2` private repos |
+| 0 | Control plane & safety | **in progress** | idle until Monday routines | stop re-briefing agents | `G2` private repos |
 | 1a | Email classifier + SLA | not started | `phase-01a-email-classifier` | 5–8h → 1h | `G1`; `G6` after sample |
 | 1b | WhatsApp slots | not started | `phase-01b-wa-slots` | 6–10h → 2h once live | `G4`/`G5`; `SOR: whatsapp=` |
 | 1c | Channel stitch | not started | after 1a/1b | dual-reply errors | — |
@@ -79,3 +79,5 @@ Last orchestrator review: 2026-08-22 (team locked; Layer B browser G1 for four n
 | 2026-08-22 | RUNTIME received: `grok-bot=yes cursor-plan=ultra on-demand=yes`. G1 approval received for `thebrownsusa@gmail.com` gmail,drive,calendar (Grok Bot Layer A/B linking is Grant's action; Cursor MCP still hub-only). |
 | 2026-08-22 | Stay / Aqua / Yard / Vault amended. Unused Bots parked. Ops Chief team locked. No full-inbox scan. Next digest Monday 06:30 CT. S10/S11 off. |
 | 2026-08-22 | Layer B browser signed in + G1 granted for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, `grant@bvrgroup.co.za`. Do not replace hub Grok Bot plugin token. Cloud MCP remains hub-only. |
+| 2026-08-22 | `grant@thebrowns.co.za` is not a Google login. All mail forwards to `grant830318@gmail.com`. Do not Add account. Read it on the hub. |
+| 2026-08-22 | `accounts@bvrgroup.co.za` forwards to `grant@bvrgroup.co.za`. `grant@hmsand.co.za` forwards to the hub. Neither is a Google login. |

@@ -17,8 +17,8 @@
 | `grant@hospitality.partners` | Owns Drive root **The Browns USA**. Calendar/Drive actions on that tree need this login or an explicit share. |
 | `grant@thebrowns.co.za` | **Not a Google login.** Forwards all mail to `grant830318@gmail.com`. Hiver + send-as already on the hub. Do not Add account. |
 | `stay@hospitality.partners` | Reservations. Forwarding is visible on the hub; native link needed if Stay must send as stay@. |
-| `accounts@bvrgroup.co.za` | Perfect Water / BVR. Not connected as native mail or Drive. |
-| `grant@hmsand.co.za` | Heavy Metal. Label exists on hub (1 thread). Native mailbox not connected. |
+| `accounts@bvrgroup.co.za` | **Not a Google login.** Forwards to `grant@bvrgroup.co.za` (already signed in). Do not Add account. |
+| `grant@hmsand.co.za` | **Not a Google login.** Forwards to `grant830318@gmail.com`. Do not Add account. |
 | `mail@hmsand.co.za` | Live **sender**. Confirm whether it is a Google login or a catch-all. If it is a login, link it. |
 | Liana personal (if not `thebrownsusa`) | School / medical / PTA. Ask once; do not guess. |
 
@@ -100,10 +100,10 @@ Do not skip inbox on family FYI until `APPROVE FAMILY FILE`.
 | Plan role | Gmail logins | Drive logins / roots | Calendars |
 | --- | --- | --- | --- |
 | family | `thebrownsusa@gmail.com` (primary), hub only for `Family/*` labels | The Browns USA (owners: `grant@hospitality.partners`, `thebrownsusa@gmail.com`) | `Family`, `School Holidays`; write in `America/Chicago` |
-| ops-chief | hub + `grant@thebrowns.co.za` | sees all shared roots; does not bulk-move | primary + Private (read); does not write Private daily routine |
-| stay | `stay@`, `grant@thebrowns.co.za`, `grant@hospitality.partners` | hospitality roots when they exist | hospitality / property calendars once named |
-| aqua | `accounts@bvrgroup.co.za` | PW root when created | `PW Technical Schedule` |
-| yard | `grant@hmsand.co.za`, `mail@hmsand.co.za` if a login | HM root when created | none yet |
+| ops-chief | hub (includes forwarded `grant@thebrowns.co.za`) | sees all shared roots; does not bulk-move | primary + Private (read); does not write Private daily routine |
+| stay | `stay@`, `grant@hospitality.partners`; thebrowns.co.za mail on hub | hospitality roots when they exist | hospitality / property calendars once named |
+| aqua | `grant@bvrgroup.co.za` (includes forwarded `accounts@`) | PW root when created | `PW Technical Schedule` |
+| yard | hub (includes forwarded `grant@hmsand.co.za`); `mail@hmsand.co.za` is a sender | HM root when created | none yet |
 | vault | hub Finance/Tax + CIPC | Properties, Legal; **filenames only** on Tax Emigration / Last Will | proposed reminders only until `H5` |
 
 ---
