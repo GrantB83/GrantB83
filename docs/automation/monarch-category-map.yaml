@@ -1,0 +1,58 @@
+# Monarch Category → Budget sheet line.
+# Names only. No amounts, merchants, last-four, or medical notes.
+# status: proposed until Grant replies MAP: …
+schema_version: 1
+updated: 2026-08-22
+source_file_title: 2026-08-22__monarch__bell__transactions
+source_file_id: 1C7YZ8Qaj5wazgm_EEr8ITZVkEJr9YLrO7sUYGW48H30
+source_folder: The Browns USA / Finance / Bell Bank
+row_count: 455
+date_min: 2026-03-30
+date_max: 2026-08-21
+accounts_observed_sanitized: [Americas Best Checking]
+exclude_from_actuals:
+  - Transfer
+  - Credit Card Payment
+needs_review_row_count: 4
+uncategorized: ask_grant
+
+proposed:
+  Groceries: { group: Food, line: Groceries, type: Essential }
+  Restaurants & Bars: { group: Food, line: Eating out / takeaway, type: Controlled }
+  Coffee Shops: { group: Food, line: Eating out / takeaway, type: Controlled }
+  Rent: { group: Housing, line: Rent, type: Essential }
+  Water: { group: Housing, line: Water, type: Essential }
+  "Internet & Cable": { group: Communications, line: Home fibre internet, type: Essential }
+  Phone: { group: Communications, line: Mobile phones, type: Essential }
+  Paychecks: { group: Income, line: Grant net salary, type: Income }
+  Other Income: { group: Income, line: Other income, type: Income }
+  Business Income: { group: Income, line: Other income, type: Income }
+  "Home Improvement": { group: Housing, line: Home repairs / small replacements, type: Controlled }
+  "Auto Maintenance": { group: Transport, line: Vehicle maintenance, type: Essential }
+  "Loan Repayment": { group: LendBuzz, line: Car Payment, type: Essential }
+  Auto Payment: { group: LendBuzz, line: Car Payment, type: Essential }
+  "Child Activities": { group: Children, line: Kids activities / sports / clubs, type: Controlled }
+  Gifts: { group: Lifestyle, line: Gifts / birthdays / holidays, type: Controlled }
+  "Entertainment & Recreation": { group: Lifestyle, line: Family entertainment / outings, type: Discretionary }
+  Personal: { group: Lifestyle, line: Adult personal spending, type: Discretionary }
+  Pets: { group: Pets, line: Dog food, type: Essential, note: split vet later if needed }
+  "Travel & Vacation": { group: Sinking Funds, line: Travel / vacation reserve, type: Sinking Fund }
+  "Furniture & Housewares": { group: Sinking Funds, line: Furniture / home setup reserve, type: Sinking Fund }
+  Medical: { group: Health, line: Medical copays / prescriptions, type: Essential, note: category name only; N3 no bodies }
+  "Postage & Shipping": { group: Food, line: Household consumables, type: Essential }
+  "Office Supplies & Expenses": { group: Children, line: School supplies, type: Essential }
+  "Parking & Tolls": { group: Transport, line: Vehicle maintenance, type: Essential, note: no toll line yet }
+
+ask_grant:
+  - Shopping          # 107 rows; no single sheet line
+  - Gas               # 104 rows; sheet has no Fuel line (household is EV)
+  - Gas & Electric    # Electricity vs Natural gas
+  - Insurance         # Renters vs Model Y vs other
+  - Clothing          # Children vs adult
+  - Electronics
+  - Taxes
+  - Financial Fees
+  - Financial & Legal Services
+  - Miscellaneous
+  - Uncategorized
+  - Student Loans
