@@ -2,7 +2,7 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (spec expanded with business-requirements gap fill and labour outcomes).
+Last orchestrator review: 2026-08-22 (runtime-tuned for Grok Bot / Cloud Agent cost; Family Command Center labels live).
 
 ## Now
 
@@ -12,6 +12,9 @@ Last orchestrator review: 2026-08-22 (spec expanded with business-requirements g
 - Drive MCP sees `The Browns USA` household vault; business entity roots are missing.
 - Cloud environment is scoped to `GrantB83/GrantB83` only.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once.
+- Grok Bot entitlement (`RUNTIME:`) — **unset**. Ask Grant once.
+- Family Gmail labels **created** (School/Medical/Finance/Budget/Calendar/FileOnly/Action). Filter API returned 403 — Grant must add filters from `family-filters.yaml` or grant settings scope.
+- School mail may not live on `grant830318@gmail.com` (zero `from:austinisd.org` in 90d). Possible `G1`.
 
 ## Phase board
 
@@ -37,7 +40,10 @@ Last orchestrator review: 2026-08-22 (spec expanded with business-requirements g
 | 7b | Forex checklist + family one-pager | not started | `phase-07b-forex` | 2h/event → 0.5h | Grant doc list |
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
-| 10 | Household on digest | not started | `phase-10-family` | 2–4h → 0.2h | `N3` |
+| 10a | Family filters | **labels live** | Grant: add Gmail filters (403) | 2–4h → 0 on FYI | filter scope; `G1` if AISD is elsewhere |
+| 10b | Family digest | not started | `phase-10b-family-digest` + Family Bot | 10 min/day | `RUNTIME: grok-bot=` |
+| 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
+| 10d | Budget / bills | not started | after 10a | hunt → due list | Budget sheet |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
 | 12 | Stale pipeline | not started | `phase-12-stale` | 1–2h → 0.2h | `H2` |
 
@@ -63,3 +69,5 @@ Last orchestrator review: 2026-08-22 (spec expanded with business-requirements g
 | 2026-08-22 | Do not use X MCP for this programme unless Grant asks (credit cost). |
 | 2026-08-22 | Expand plan for digest, AR/AP, bookkeeper pack, stay-day, POD, staff run-sheet, stale follow-up, forex checklist. Every phase must cut a named ritual. |
 | 2026-08-22 | Owned-business staff ops are in scope. Job-search remains out. |
+| 2026-08-22 | Daily ops = Gmail filters + Grok Bot routines. Cloud Automations at most weekly (max context). Standing `S*` approvals replace per-item where sampled. |
+| 2026-08-22 | Family Command Center is first-class. Labels live. Do not put medical bodies in digests. |

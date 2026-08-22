@@ -29,6 +29,7 @@ Use this phrase in STATUS.md when a human must act:
 | `G4` | Enable WhatsApp Cloud API Coexistence on the live number | `APPROVE WA COEXISTENCE` |
 | `G5` | Host the WhatsApp webhook on a public HTTPS URL | `APPROVE WA HOST <url>` |
 | `G6` | Allow auto-label of a whole sender class after 95% sample accuracy | `APPROVE AUTO LABEL <class>` |
+| `G7` | Confirm Grok Bot entitlement / Cursor plan | `RUNTIME: grok-bot=yes|no cursor-plan=… on-demand=yes|no` |
 
 ## Needs per-item or per-batch human approval
 
@@ -45,6 +46,20 @@ Use this phrase in STATUS.md when a human must act:
 | `H9` | Apply a schema migration or production deploy | `APPROVE APPLY MIGRATION` / `APPROVE DEPLOY <app>` |
 | `H10` | Send a debtor/creditor reminder batch | `APPROVE COLLECT <list-id>` |
 | `H11` | Publish a staff / HK / driver run-sheet | `APPROVE RUN SHEET <date>` |
+| `H12` | Email a school, clinic, or household biller | `APPROVE FAMILY SEND <thread>` |
+
+## Standing approvals (human once → machine forever)
+
+These exist so daily ops do **not** wait on Grant. Use only after the sample in STATUS is green.
+
+| ID | Action | Approval text |
+| --- | --- | --- |
+| `S1` | Same as `G6` — kept for digest copy | `APPROVE AUTO LABEL <class>` |
+| `S8` | Send an already-signed-off sequence without per-thread `H1` | `APPROVE SEQUENCE <name> <entity>` |
+| `S9` | Morning business digest draft without asking | `APPROVE DIGEST AUTO` |
+| `S10` | Skip-inbox + Drive file for listed family FYI senders | `APPROVE FAMILY FILE school` / `bills` / `medical-filenames` |
+| `S11` | Create Family-calendar events from subjects/snippets | `APPROVE FAMILY CAL` |
+| `S12` | Daily run-sheet **draft** without asking (`H11` still needed to WhatsApp staff) | `APPROVE RUN SHEET AUTO` |
 
 ## Never allowed for agents
 
@@ -62,7 +77,7 @@ Use this phrase in STATUS.md when a human must act:
 
 | Lane | Examples | Extra rule |
 | --- | --- | --- |
-| `family` | School, household, vehicles, pets, wills, tax emigration | Agents may organise filenames and folders only. Do not quote file contents in PRs or chat. |
+| `family` | School, household, vehicles, pets, wills, tax emigration | Filename + due date + Action cards only. Never quote medical/will/tax-emigration bodies. School/clinic **sends** are `H12`. |
 | `hospitality` | The Browns, Rivendell, stay@ | Liana is a first-class operator. Draft to her queue when guest-facing. |
 | `perfect-water` | Franchise orders, inventory, Loyverse | Store-scoped. Never mix Thohoyandou and Louis Trichardt stock. |
 | `heavy-metal` | Quotes, deliveries, yard | WhatsApp-first. Confirm volume + delivery location before any quote. |

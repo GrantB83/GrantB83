@@ -173,7 +173,7 @@ Hours below are **conservative remote-owner targets**, not time-and-motion studi
 | Budget vs actual | Totals from Phase 3 vs existing Budget sheet | **Missing** |
 | Dual-tax / emigration paperwork | Vault organise; never summarise bodies | Noted `N3` |
 
-**Labour outcome:** 2–4 h/week of “family mail in the business inbox” toward **a Household section on the morning digest**.
+**Labour outcome:** 2–4 h/week of “family mail in the business inbox” toward **Family Command Center** (`FAMILY-COMMAND-CENTER.md`): zero-token filters, `Family/Action` cards, a **separate** family digest, calendar, and budget due-list. Not a slice on the business digest. Medical bodies never enter chat (`N3`).
 
 ---
 

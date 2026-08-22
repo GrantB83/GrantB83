@@ -140,11 +140,23 @@ entities:
       - Household budget spreadsheet
       - Tesla vehicles (insurance / charging / maintenance / tolls)
     automation_targets:
+      - family-command-center
+      - zero-token-school-filters
+      - family-action-cards
+      - family-digest-separate-from-business
       - bill-due-dates-on-digest
       - vehicle-admin
       - school-admin-without-content-leak
       - pet-admin
       - household-budget-totals-only
+    gmail_labels_live:
+      - Family/School
+      - Family/Medical
+      - Family/Finance
+      - Family/Budget
+      - Family/Calendar
+      - Family/FileOnly
+      - Family/Action
 
 inboxes:
   connected_now:

@@ -3,7 +3,7 @@
 **Audience:** Grok Bot + Cursor Cloud agents  
 **Owner:** Grant Brown (human approver) · Liana Brown (hospitality approver)  
 **Control plane:** `GrantB83/GrantB83`  
-**Date:** 22 August 2026 (expanded same day with business-requirements gap fill)  
+**Date:** 22 August 2026 (runtime-tuned for Grok Bot / Cloud Agent cost; Family Command Center added)  
 **Scope:** Personal life, family administration, and owned businesses only. Job-search / employment-hunting is out of scope. **Staff of owned businesses is in scope.**
 
 This spec is written so Grok can run the programme without re-deriving context.
@@ -12,6 +12,8 @@ This spec is written so Grok can run the programme without re-deriving context.
 - `BUSINESS-REQUIREMENTS.md` wins for “what admin work exists”.
 - This file wins for “how an agent implements a package”.
 - `labor-ledger.md` wins for “did this remove human hours”.
+- `RUNTIME.md` wins for “which product does this job and what it costs”.
+- `FAMILY-COMMAND-CENTER.md` wins for school / medical / household-money mail.
 
 ---
 
@@ -79,41 +81,44 @@ Public GitHub for `GrantB83` currently has six repos only.
 
 ### 2.4 Gaps closed by the expansion
 
-The first 10-phase draft was strong on **intake and filing** and weak on **running a remote group**. The missing loops — digest, SLA, AR/AP, bookkeeper pack, OTA/stay-day, POD, stock-take/returns/royalty, staff run-sheet, stale follow-up, forex checklist — are listed in `BUSINESS-REQUIREMENTS.md` §4 and implemented as Phases **1d, 1e, 3b, 3c, 4b, 5b, 6b, 7b, 11, 12**.
+The first 10-phase draft was strong on **intake and filing** and weak on **running a remote group**. The missing loops — digest, SLA, AR/AP, bookkeeper pack, OTA/stay-day, POD, stock-take/returns/royalty, staff run-sheet, stale follow-up, forex checklist, **and a real Family Command Center** — are listed in `BUSINESS-REQUIREMENTS.md` §4 and implemented as Phases **1d, 1e, 3b, 3c, 4b, 5b, 6b, 7b, 10a–10d, 11, 12**. Daily ops run on **filters + Grok Bot**, not on daily Cloud Automations (`RUNTIME.md`).
 
 ---
 
 ## 3. Architecture
 
+Full product/cost contract: `RUNTIME.md`. Do not collapse **Grok 4.6 (model)**, **Grok Bot (persistent teammate)**, and **Cloud Agents (ephemeral PR VMs)**.
+
 ```text
-Grant / Liana
-      │
-      ▼
-Grok Bot (orchestrator) -- launches 1 Cloud agent per package
-      │
-      ▼
-GrantB83 control plane (SPEC, STATUS, prompts, WhatsApp PR #2)
-      │
-      ├── Gmail / Drive / Calendar MCP
-      ├── Entity apps (Perfect Water, Browns, Heavy Metal, Trust)
-      ├── Exception queues (drafts only until gated)
-      └── Humans (Grant, Liana)
+Zero-token Gmail filters ──► labelled queues only
+        │
+        ▼
+Grok Bot team (weekly meter)     Family · Ops Chief · optional specialists
+  routines: 06:20 CT family digest, 06:30 CT ops digest, 16:00 SAST run-sheet
+        │ exceptions / new code
+        ▼
+Cursor Cloud Agent (Composer 2.5 or Grok 4.6) ──► draft PR ──► dies
+        │
+        ▼
+Grant / Liana  15–30 min/day  (RED + Family/Action + money)
 ```
 
 ### 3.1 Layers
 
-1. **Intake** — WhatsApp Cloud API (PR #2), Gmail, web forms, later OTA/POS webhooks.
-2. **Classify** — entity, intent, urgency, data lane, confidence.
-3. **System of record** — one object per conversation / order / booking / document / transaction. Start as Git-tracked JSON/SQLite or Supabase if PW-Web-App is unlocked. Do not start a new CRM product.
-4. **Actuators** — draft email, draft WA reply, Drive file proposal, calendar proposal, invoice draft, monthly pack.
-5. **Audit** — every outbound candidate stored with model, prompt hash, source docs, and gate id.
+1. **Zero-token intake** — Gmail filters (`family-filters.yaml` + entity sender table). WhatsApp Cloud API (PR #2). Web forms.
+2. **Persistent judgment** — Grok Bot routines on **labelled** mail only (Gmail plugin). Not a full-inbox scan.
+3. **Build** — Cloud Agents, one package, Composer 2.5 default, draft PR. Automations at most **weekly** (they always use max context).
+4. **System of record** — Conversation object + FamilyAction cards + Drive vaults. No new CRM product.
+5. **Actuators** — drafts, file, calendar, digest. Send only after standing `S*` or per-item `H*`.
+6. **Audit** — outbound candidate + gate id. Family medical bodies never stored in git.
 
 ### 3.2 Why this shape (cost)
 
-- Grok stays cheap: it only chooses the next package and reviews exceptions.
-- Cloud agents do the repo work and die.
-- Classification uses rules + small models; expensive models only on low-confidence or guest-tone drafts.
-- No always-on agent polling Gmail every minute in chat. Use scheduled Cloud agents or a tiny webhook worker.
+- Grok Bot weekly usage is **steps + tokens**. A 7,720-thread walk can empty the week. Filters are $0.
+- Cloud Automations **always max context** — wrong for daily classify. Prefer Bot routines; Automation = Sunday pack.
+- Cursor Models pool (Grok 4.6 / Composer 2.5) is “generous included”. Do not spend Other Models (Opus, Fast) on filing.
+- Cloud Agents auto-run every terminal command and then die — good for code, bad as a 24/7 inbox watcher (VMs hibernate).
+- Standing approvals (`S*`) remove Grant from the loop after one sample. Per-item approve is the expensive path.
 
 ### 3.3 Shared conversation object (Phase 1 deliverable)
 
@@ -560,23 +565,51 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 
 ---
 
-### Phase 10 — Personal / family admin
+### Phase 10 — Family Command Center (school, medical, household money)
+
+**Spec:** `FAMILY-COMMAND-CENTER.md` + `family-filters.yaml`. This is **not** a leftover. It is a first-class daily system so kids’ school, medical, bills, and budget stop landing in the business inbox.
+
+**Labour:** 2–4 h/week of interrupt-driven family mail → **10 min morning + 5 min evening** on `Family/Action` only.  
+**Runtime:** Zero-token filters do the volume. Grok Bot **Family** reads labelled mail only. Cloud Agents **build** filters/templates; they do not run every morning (`RUNTIME.md`).
+
+#### 10a. Filters and labels (do first — $0, no Bot)
 
 **Role:** `family-sorter`  
-**Labour:** 2–4 h/week of family mail breaking business focus → household slice on the digest.  
-**Goal:** Bills, vehicles, school *logistics* no longer interrupt PW/HM/Browns.
-
 **Approach**
 
-1. Label ≤50 household-looking mail `Entity/Household`.
-2. Due-date extract from snippets (insurance, utilities, WesBank) → digest “due ≤7d”.
-3. Tesla / WesBank / tolls as finance categories in Phase 3.
-4. Propose Drive names into existing The Browns USA tree. Filename only for medical/will/tax-emigration.
-5. Budget sheet: compare **totals** to tagged household spend; no line-item family narrative.
+1. Create Gmail labels in `family-filters.yaml`.
+2. Enable filters: `from:austinisd.org` → `Family/School`; action-words → also `Family/Action`; WesBank → `Family/Finance`. Do **not** Trash. Do **not** skip inbox until `S10`.
+3. Leave `household-budget-sheet` disabled (too broad).
+4. Dry-run: 20 recent AISD threads correctly labelled. Log counts only in `samples/family-filter-dry-run.md` — no bodies.
+5. Keep `Personal/Family` and `Entity/Household` as aliases if already used.
 
-**Forbidden (`N3`):** quote or summarise medical, will, tax-emigration, safeguarding; message a school or government office.  
-**Human remaining:** pay bills; school conversations.  
-**Done when:** household labels + due-date list in a sample digest; no sensitive bodies in git.
+**Human remaining:** none after labels exist.  
+**Done when:** labels + AISD filter live; dry-run attached.
+
+#### 10b. Family digest (Grok Bot routine)
+
+**Role:** `digest-builder` then Grok Bot Family  
+**Approach**
+
+1. Template `samples/family-digest.md`: Action cards, school FYI count, medical *file* count (no titles that leak), bills due ≤7d, budget total vs cap.
+2. 06:20 CT weekday + 18:00 CT optional. Weekly Sunday 17:00 CT.
+3. Separate from the business digest so AISD never buries a guest inquiry.
+4. Bot instructions: copy the standing prompt in `FAMILY-COMMAND-CENTER.md` §9.
+
+**Human remaining:** process Action cards.  
+**Done when:** one real family digest Grant used instead of opening the inbox.
+
+#### 10c. Family calendar
+
+**Role:** `family-sorter`  
+**Approach:** Extract dates from **subjects/snippets** of `Family/School` and Action medical mail → events on calendar `Family`, timezone `America/Chicago`. Titles only. After `S11`, auto-create; before that, list proposals in the digest.  
+**Done when:** next 14 days of school dates visible without copy-paste.
+
+#### 10d. Household budget and bills
+
+**Role:** `family-sorter` + `finance-ingester`  
+**Approach:** Due-date table (payee, amount, due, thread id) from `Family/Finance`. Month **totals** vs existing Drive `Budget` sheet. Tesla / WesBank / utilities as household categories in Phase 3. No advice.  
+**Done when:** bills ≤7d appear on the family digest and a totals line exists for the current month.
 
 ### Phase 11 — Local staff run-sheet (owned-business staff only)
 
@@ -695,7 +728,7 @@ Grok asks for these with the exact approval phrases. Do not nag more than once p
 5. Ask Grant only for gated phrases and SoR lines.
 6. After merge, pick the next **parallel-allowed** package that still removes a named ritual.
 
-If Grant says “continue”, run `phase-01a-email-classifier` then `phase-01d-daily-digest`.
+If Grant says “continue”, run `phase-10a-family-filters`, then `phase-01a-email-classifier`, then `phase-01d-daily-digest` + `phase-10b-family-digest`.
 
 ---
 
@@ -703,9 +736,10 @@ If Grant says “continue”, run `phase-01a-email-classifier` then `phase-01d-d
 
 Ship labour cuts first, not architecture.
 
-1. `phase-01a-email-classifier` — stop scanning a mixed inbox.
-2. `phase-01d-daily-digest` — replace the Texas-morning reconstruct (largest single cut).
-3. `phase-02-drive-taxonomy` — parallel; include attachment *proposals*, not names only.
-4. `phase-01b-wa-slots` on PR #2 — extend, do not fork a third WhatsApp design.
+1. `phase-10a-family-filters` — $0 AISD/school routing so family mail leaves the business pile.
+2. `phase-01a-email-classifier` — business queues.
+3. `phase-01d-daily-digest` **and** `phase-10b-family-digest` — two digests, not one mixed blob.
+4. `phase-02-drive-taxonomy` (parallel).
+5. `phase-01b-wa-slots` on PR #2.
 
-Do not rebuild Aquabuddy or The Browns until `G2` and a real digest sample exist. If Grant says “continue”, run 1a then 1d in that order.
+If Grant says “continue”: **10a then 1a then 1d/10b**. Do not rebuild Aquabuddy first. Create Grok Bot **Family** and **Ops Chief** once entitlement is `RUNTIME: grok-bot=yes`.

@@ -260,21 +260,64 @@ Draft PR. Stop.
 
 ---
 
+## phase-10a-family-filters
+
+**Repo:** `GrantB83/GrantB83`  
+**Role:** `family-sorter`
+
+```text
+You are family-sorter for Family Command Center 10a.
+
+Required reading: FAMILY-COMMAND-CENTER.md, family-filters.yaml, RUNTIME.md, N3.
+
+Work package:
+1. Ensure Gmail labels Family/School, Medical, Finance, Budget, Calendar, FileOnly, Action exist.
+2. Create filters from family-filters.yaml. If create_filter 403s, update samples/family-filter-dry-run.md with the exact Gmail UI steps. Do not Trash. Do not skip inbox.
+3. Label ≤20 obvious household-finance threads (WesBank, utilities) Family/Finance. Do not open medical PDFs.
+4. Update STATUS 10a and labor-ledger.
+
+Commit: feat(ops): family Gmail labels and filter spec.
+Draft PR. Stop.
+```
+
+---
+
+## phase-10b-family-digest
+
+**Repo:** `GrantB83/GrantB83`  
+**Role:** `digest-builder`
+
+```text
+You are digest-builder for the Family digest (separate from the business digest).
+
+Required reading: FAMILY-COMMAND-CENTER.md §2 and §5, RUNTIME.md (Grok Bot routine, not daily Automation).
+
+Work package:
+1. Fill docs/automation/samples/family-digest.md from Family/* labelled threads (headers only). Medical = counts, not titles that leak.
+2. Gmail draft to Grant allowed (A8). Do not send. Do not email a school (H12).
+3. Write the Grok Bot Family standing prompt pointer into STATUS.
+
+Commit: feat(ops): family digest sample.
+Draft PR. Stop.
+```
+
+---
+
 ## phase-10-family
 
 **Repo:** `GrantB83/GrantB83`  
 **Role:** `family-sorter`
 
 ```text
-You are family-sorter.
+You are family-sorter. Prefer 10a/10b packages if those are not done.
 
-Required reading: SPEC Phase 10, approval-gates N3.
+Required reading: FAMILY-COMMAND-CENTER.md, SPEC Phase 10, N3.
 
 Work package:
-1. Label a ≤50 sample of household-looking mail as Entity/Household (bills, vehicles, school logistics headers only).
+1. Label a ≤50 sample of household-looking mail into Family/* (not a generic Entity/Household dump).
 2. Propose Drive filename mappings without reading medical/will/tax-emigration files.
-3. List reminder types (insurance, vehicle, school holidays) from calendar metadata.
-4. If a file looks medical or legal-sensitive, record only its title in STATUS as "present — not opened".
+3. List school/bill dates from subjects for the Family calendar (do not create events unless S11).
+4. If a file looks medical or legal-sensitive, record only "present — not opened" in STATUS.
 
 Commit: feat(ops): household triage without sensitive content.
 Draft PR. Stop.

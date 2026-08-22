@@ -25,13 +25,17 @@ Employment-related workflows are out of scope. Do not add them.
 
 ## Required reading before any implementation agent starts
 
-1. `docs/automation/BUSINESS-REQUIREMENTS.md`
-2. `docs/automation/SPEC.md`
-3. `docs/automation/entity-map.yaml`
-4. `docs/automation/approval-gates.md`
-5. `docs/automation/STATUS.md`
-6. `docs/automation/labor-ledger.md`
-7. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
+1. `docs/automation/RUNTIME.md` (which product, cost, standing approvals)
+2. `docs/automation/BUSINESS-REQUIREMENTS.md`
+3. `docs/automation/SPEC.md`
+4. `docs/automation/FAMILY-COMMAND-CENTER.md` if the package touches school/medical/household money
+5. `docs/automation/entity-map.yaml`
+6. `docs/automation/approval-gates.md`
+7. `docs/automation/STATUS.md`
+8. `docs/automation/labor-ledger.md`
+9. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
+
+Prefer Gmail filters and Grok Bot routines over daily Cloud Automations. Prefer standing `S*` approvals over per-item `H*` once a sample is green. Never scan the full inbox.
 
 A phase is incomplete until it names a ritual it removes and writes an artefact Grant can use that week.
 

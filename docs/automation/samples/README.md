@@ -15,5 +15,6 @@ Phase agents write dry-run logs here. Each file is the **labour artefact** for t
 - `gbp-drafts.md` — Phase 8
 - `run-sheet.md` — Phase 11
 - `stale-pipeline.md` — Phase 12
+- `family-digest.md` / `family-filter-dry-run.md` — Phase 10
 
 No real account numbers, no family medical/will/tax-emigration excerpts, no live customer PII.
