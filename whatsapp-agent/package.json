@@ -1,0 +1,26 @@
+{
+  "name": "whatsapp-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Official WhatsApp Cloud API agent for +27836458313 (Hospitality Partners and related brands).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "simulate": "tsx src/simulate.ts",
+    "test": "tsx --test test/*.test.ts",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
