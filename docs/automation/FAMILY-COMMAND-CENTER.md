@@ -130,6 +130,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - **Close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds Grant to export Monarch (Bell only), upload the Bell statement PDF, and freeze Budget vs Actual. Locks: `usa-budget.yaml`.
 - **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family Bot amend waits until remaining Budget scope is locked.
 - **Forecast** (2026-08-22): income = average of last 3 Paystubs-tab numbers (or whatever exists if fewer). Spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking. No stub bodies in chat.
+- **First close** (2026-08-22): dry-run now, then repeat 7 Sep 2026 at 07:00 CT. Books = official Monarch CSV (Bell only), not a Bell portal CSV.
 
 ---
 
