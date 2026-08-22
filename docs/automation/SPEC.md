@@ -3,10 +3,15 @@
 **Audience:** Grok Bot + Cursor Cloud agents  
 **Owner:** Grant Brown (human approver) · Liana Brown (hospitality approver)  
 **Control plane:** `GrantB83/GrantB83`  
-**Date:** 22 August 2026  
-**Scope:** Personal life, family administration, and owned businesses only. No employment workflows.
+**Date:** 22 August 2026 (expanded same day with business-requirements gap fill)  
+**Scope:** Personal life, family administration, and owned businesses only. Job-search / employment-hunting is out of scope. **Staff of owned businesses is in scope.**
 
-This spec is written so Grok can run the programme without re-deriving context. If STATUS and this file disagree, STATUS wins for “what is done”; this file wins for “what good looks like”.
+This spec is written so Grok can run the programme without re-deriving context.
+
+- STATUS wins for “what is done”.
+- `BUSINESS-REQUIREMENTS.md` wins for “what admin work exists”.
+- This file wins for “how an agent implements a package”.
+- `labor-ledger.md` wins for “did this remove human hours”.
 
 ---
 
@@ -18,7 +23,9 @@ Human time is limited to:
 - guest-care judgement Liana wants to keep
 - payments, legal submissions, and family-sensitive documents
 
-Everything else (triage, filing, drafting, scheduling, reconciling, reminding, packing monthly reports) is done by specialised Cloud agents under Grok.
+Everything else (triage, filing, drafting, scheduling, reconciling, chasing debtors, briefing local staff, stay-day and delivery-day execution, reminding, packing weekly/monthly reports) is done by specialised Cloud agents under Grok.
+
+A phase that does not remove a named ritual in `labor-ledger.md` is incomplete, even if the code is elegant. See `BUSINESS-REQUIREMENTS.md` §6.
 
 ### Non-goals
 
@@ -70,6 +77,10 @@ Public GitHub for `GrantB83` currently has six repos only.
 - CIPC mail is unlabelled. SARS mail is labelled `Finance/Tax`.
 - Google Business Profile notifications already arrive on Gmail — Phase 8 can start as email-drafting before a GBP API.
 
+### 2.4 Gaps closed by the expansion
+
+The first 10-phase draft was strong on **intake and filing** and weak on **running a remote group**. The missing loops — digest, SLA, AR/AP, bookkeeper pack, OTA/stay-day, POD, stock-take/returns/royalty, staff run-sheet, stale follow-up, forex checklist — are listed in `BUSINESS-REQUIREMENTS.md` §4 and implemented as Phases **1d, 1e, 3b, 3c, 4b, 5b, 6b, 7b, 11, 12**.
+
 ---
 
 ## 3. Architecture
@@ -114,11 +125,13 @@ Conversation:
   entity: hospitality-partners | perfect-water | heavy-metal | gab-trust | household
   channel: whatsapp | email | web | ota | pos
   external_ids: { gmail_thread, wa_message, hiver_label }
-  intent: inquiry | order | quote | booking | complaint | invoice | compliance | other
+  intent: inquiry | order | quote | booking | complaint | invoice | compliance | collection | staff | other
   confidence: 0-1
-  status: new | needs-human | draft-ready | waiting-customer | closed
+  sla_due_at: iso8601
+  status: new | needs-human | draft-ready | waiting-customer | waiting-staff | closed | dead
   assignee: grant | liana | staff | agent
   payload: {}          # structured extract only
+  money: { invoice_ref, amount, terms, applied }
   artifacts: []        # drive ids, invoice refs
   audit: []
 ```
@@ -143,6 +156,11 @@ Grok may only launch these roles. One role per Cloud agent run.
 | `finance-ingester` | GrantB83 | statement fixtures, parsers | payments (`N1`) |
 | `gbp-drafter` | GrantB83 | Gmail read, draft replies | publish reviews (`H6`) |
 | `pack-builder` | GrantB83 | generate markdown/PDF drafts | email the pack (`H1`) |
+| `digest-builder` | GrantB83 | Gmail/Calendar/Drive metadata → one digest | send (`H1`); open `N3` bodies |
+| `collections-clerk` | GrantB83 | aged lists + draft reminders | send (`H10`); change credit limits |
+| `bookkeeper-packer` | GrantB83 | month pack from labelled mail + fixtures | submit VAT/EMP (`N2`); pay |
+| `ops-dispatcher` | GrantB83 | run-sheet / stay-day / delivery-day drafts | WhatsApp staff unless `H11` |
+| `pipeline-chaser` | GrantB83 | stale inquiry/quote list + drafts | send (`H2`/`H10`) |
 | `family-sorter` | GrantB83 | Drive/Gmail metadata only | open medical/will/tax-emigration bodies |
 
 ---
@@ -151,26 +169,26 @@ Grok may only launch these roles. One role per Cloud agent run.
 
 Each phase is a **work package Grok can assign**. Do not start N+1 until the done criteria in STATUS are checked, unless the phase is explicitly parallel (noted).
 
+Every phase below uses the same four blocks: **Labour** (ritual removed), **Approach** (workable steps), **Human remaining**, **Done when**.
+
 ### Phase 0 — Control plane & safety
 
+**Labour:** stop re-explaining the group to every new agent (~1–2 h per run, forever).  
 **Goal:** Grok can direct the rest of the programme from this repo.
 
 **Leverage:** this folder; Cloud environment `GrantB83/GrantB83`; existing draft PRs #1 and #2.
 
-**Work**
+**Approach**
 
-0. Merge or keep this spec as the source of truth.
-1. Ask Grant for `G2` on private repos (list in STATUS).
-2. Ask Grant for `G1` if `accounts@bvrgroup.co.za` / `stay@` native mailboxes are not fully visible.
-3. Do not expand the Cloud environment with secrets until a phase needs them.
-4. Keep sibling brands in the WhatsApp router (CrediMed, AutoPost) **read-only**. Do not build those products here.
+0. Keep `BUSINESS-REQUIREMENTS.md`, this spec, gates, prompts, STATUS, and `labor-ledger.md` as the source of truth.
+1. Ask Grant once for SoR lines (`SOR: …`) and `G2` / `G1`.
+2. Do not add secrets until a phase needs them.
+3. Keep CrediMed / AutoPost in the WhatsApp router **read-only**.
 
-**Done when**
+**Human remaining:** Grant answers SoR and approval phrases.  
+**Done when:** Grok can assign 1a + 1d without rereading the original profile; ledger exists.
 
-- `SPEC.md`, `entity-map.yaml`, `approval-gates.md`, `launch-prompts.md`, `STATUS.md`, `AGENTS.md` exist.
-- Grok can assign Phase 1 without rereading the original profile.
-
-**Parallel after this merges:** 1a (email), 2 (Drive taxonomy design), 8 (GBP email drafts). WhatsApp live path stays serial on `G4`/`G5`.
+**Parallel after this:** 1a, 1d, 2, 8. WhatsApp live path stays on `G4`/`G5`.
 
 ---
 
@@ -181,75 +199,110 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 #### 1a. Email classifier (start immediately)
 
 **Role:** `inbox-classifier`  
-**Goal:** Every new thread gets `entity + intent + lane` with confidence.
+**Labour:** 5–8 h/week of “what is this and which company?” → ~1 h on `Queue/NeedsGrant`.  
+**Goal:** Every new thread gets `entity + intent + lane + SLA clock` with confidence.
 
-**Work**
+**Approach**
 
-1. Add Gmail labels (do not rename Hiver):
+1. Add labels (do not rename Hiver): `Entity/{Hospitality,PerfectWater,HeavyMetal,Trust,Household}`, `Intent/{Inquiry,Order,Invoice,Bank,Compliance,Review,Staff,Collection}`, `Queue/{NeedsGrant,NeedsLiana,DraftReady,Digest}`.
+2. Rule table first from `entity-map.yaml` `observed_senders_to_route`. Model only on miss.
+3. Attach an SLA: hospitality inquiry = 2 working hours SAST; HM quote = 4 working hours SAST; PW order = same SA morning; bank/compliance = same Texas morning. Store `received_at` + `due_at` on the Conversation.
+4. Dry-run 50 threads → `docs/automation/samples/email-dry-run.md`. No `family` bodies.
+5. After ≥95% on bank/CIPC/GBP/Hiver-obvious classes, request `G6`.
+6. Hospitality inquiries: in-thread **Gmail draft** (`A3`) using the rate-card rule (no invented rates). Do not send.
+7. Same-day tangible: Grant works only `Queue/NeedsGrant` + `Queue/NeedsLiana` for the sample window.
 
-   - `Entity/Hospitality`
-   - `Entity/PerfectWater`
-   - `Entity/HeavyMetal`
-   - `Entity/Trust`
-   - `Entity/Household`
-   - `Intent/Inquiry`
-   - `Intent/Order`
-   - `Intent/Invoice`
-   - `Intent/Bank`
-   - `Intent/Compliance`
-   - `Intent/Review`
-   - `Queue/NeedsGrant`
-   - `Queue/NeedsLiana`
-   - `Queue/DraftReady`
-
-2. Rule table first (sender/domain), then model fallback. Seed rules from `entity-map.yaml` `observed_senders_to_route`.
-3. Dry-run 50 recent inbox threads. Write a confusion matrix in the PR (`docs/automation/samples/email-dry-run.md`). No body quotes from `family` lane.
-4. After ≥95% on the bank/CIPC/GBP/Hiver-obvious classes, request `G6` for those classes only.
-5. For hospitality inquiries: create a **Gmail draft** in-thread (`A3`). Do not send.
-
-**Done when:** dry-run attached; labels created; 50-thread log exists; auto-label not enabled except where `G6` was given.
+**Human remaining:** open two queues, not the raw inbox.  
+**Done when:** dry-run attached; labels exist; SLA fields defined; auto-label only where `G6` given.
 
 #### 1b. WhatsApp structured intake (extend PR #2)
 
 **Role:** `wa-extender`  
+**Labour:** 6–10 h/week of scrollback → ~2 h exception handoffs once live.  
 **Goal:** Inbound WA becomes a `Conversation` with required slots, not a free-text blob.
 
-**Work**
+**Approach**
 
-1. Keep Coexistence warning from PR #2.
-2. Add slot-filling per entity (refuse to quote without slots):
+1. Keep Coexistence warning from PR #2. Do not register a new Cloud API number.
+2. Resolve Respond.io vs PR #2 **before** go-live (`SOR: whatsapp=…`). One sender.
+3. Slot-fill and **refuse to quote** without slots:
 
    | Entity | Required slots before any price |
    | --- | --- |
    | Hospitality | property, dates, guests, occasion |
-   | Perfect Water | store, product (water / filter / equipment), qty, pickup vs delivery |
-   | Heavy Metal | product (building sand / plaster sand / aggregate), m³ or tons, delivery suburb |
+   | Perfect Water | store, product (water / filter / equipment), qty, pickup vs delivery, account vs COD |
+   | Heavy Metal | product, m³ or tons, delivery suburb, truck/access, account vs COD |
 
-3. Persist conversations to `data/conversations/` (gitignored contents, schema committed) or Supabase if PW unlocks.
-4. Handoff to Liana for hospitality when the guest asks for a human or confidence < 0.7.
-5. Simulation fixtures for the three entities; `npm test` must stay green.
+4. Persist to `data/conversations/` (gitignored) or Supabase if PW unlocks.
+5. Handoff to Liana when guest asks or hospitality confidence < 0.7.
+6. Auto-ack templates (simulate only until `H2`): “got dates, checking calendar”; “need store + product”; “need volume + suburb”.
+7. `npm test` / simulate stay green for all three entities.
 
-**Grant blockers:** `G4`, `G5`, `G3` for Meta secrets. Until then, local simulate only.
-
-**Done when:** PR #2 updated or a follow-on PR; tests cover the three slot schemas; no live send.
+**Human remaining:** approve first live templates (`H2`); take low-confidence chats.  
+**Grant blockers:** `G4`, `G5`, `G3`. Until then, local simulate is still a labour win for *designing* replies once.  
+**Done when:** PR #2 extended; three slot schemas tested; no live send.
 
 #### 1c. Cross-channel thread stitch
 
 **Role:** `docs-steward` + later `inbox-classifier`  
-**Goal:** Same guest in email + WhatsApp is one `Conversation`.
+**Labour:** stop answering the same guest twice in two channels (~0.5–1 h/week plus error).  
+**Approach:** match on normalised phone / email only. Store Hiver id, WA id, Gmail thread on one Conversation.  
+**Done when:** fixture guest with email+WA collapses to one id.
 
-**Work:** match on normalised phone / email; never on name alone. Hospitality Hiver ticket id stored on the object.
+#### 1d. Texas-morning SA digest (start immediately — highest labour cut)
+
+**Role:** `digest-builder`  
+**Labour:** 60–120 min every Chicago morning reconstructing four businesses → **15–30 min review**. This is the single largest cut in the programme.  
+**Goal:** One artefact Grant opens with coffee. Nothing else until the queues it names are empty.
+
+**Approach**
+
+1. Window: previous 24 h in `Africa/Johannesburg`, rendered with both SAST and CT timestamps.
+2. Query only: unread / `Queue/*` / Hiver open+pending / bank+CIPC+SARS+GBP senders / `mail@hmsand.co.za` / `stay@`. Cap 80 threads. Do not walk 7720.
+3. Output `docs/automation/samples/daily-digest.md` (and later a Gmail draft to Grant, `A3`):
+
+   ```text
+   Digest for CT {date}  (covers SAST {date-1 17:00} → {date 17:00})
+   RED: SLA broken or money/compliance due
+   AMBER: needs Grant/Liana today
+   GREEN: filed / waiting on customer / waiting on staff
+   Hospitality: {n} inquiries, {n} unconfirmed, {n} arrivals next 72h
+   Perfect Water: {n} orders, {n} stock flags
+   Heavy Metal: {n} quotes, {n} deliveries today
+   Trust: {n} statutory, {n} attorney/bank
+   Household: {n} bills due ≤7d (titles only)
+   Queues: NeedsGrant {n} · NeedsLiana {n}
+   ```
+
+4. Each line is a thread id + one-line fact extract (no `N3` bodies).
+5. Same package writes a **Sunday** variant (week exceptions + labour-ledger reminder).
+6. After 7 live mornings, Grant fills `labor-ledger.md` actuals.
+
+**Human remaining:** read the digest; click only RED/AMBER.  
+**Done when:** one real 24 h sample digest exists in the PR from live metadata; template is stable.
+
+#### 1e. Coverage SLA and after-hours
+
+**Role:** `docs-steward`  
+**Labour:** ad-hoc “who is watching SA morning?” (~1 h/week of dropped balls).  
+**Approach:** write the SLA table into STATUS (`hospitality 2h SAST`, `HM 4h`, `PW same morning`). Auto-ack copy for outside those windows (drafts only). Escalation: Liana for guests, Grant for money/legal, digest for everything else.  
+**Human remaining:** Grant sets holiday coverage in one STATUS line.  
+**Done when:** SLA table merged; auto-ack fixtures exist.
 
 ---
 
 ### Phase 2 — Intelligent Drive consolidation
 
 **Role:** `drive-librarian`  
-**Goal:** One taxonomy, automated filing **proposals**, family data never leaked into chat.
+**Labour:** 1–2 h/week hunting PDFs + month-end re-hunt → 15 min `_Inbox` sweep.  
+**Goal:** One taxonomy; filing **job** after `H3`, not a poster of folder names.
 
 **Leverage:** `The Browns USA` already has Family, Finance, Legal, Properties, School. Do not flatten it.
 
-**Proposed roots** (create as empty folders only after `H3` for that root):
+**Approach**
+
+1. Inventory roots (metadata) → `docs/automation/samples/drive-inventory.md`.
+2. Proposed roots (create empty only after `H3` for that root):
 
 ```text
 00_Inbox/
@@ -262,185 +315,311 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 90_Audit/
 ```
 
-**Naming**
+3. Naming: `YYYY-MM-DD__entity__doc-type__counterparty__ref.ext`.
+4. Map last 30 days of **attachments** (bank, municipal, invoices) to proposed paths in `samples/drive-file-proposals.md`. That list is the labour product Grant can execute or approve as a batch `H3`.
+5. Family / Tax Emigration / Will / school medical: filename + folder only (`N3`).
+6. After `APPROVE DRIVE MOVE 00_Inbox`, agent may file **from `_Inbox` only**.
+7. Retention note (policy, not a delete job): guest IDs short; contracts long. Write one paragraph in STATUS; do not purge.
 
-```text
-YYYY-MM-DD__entity__doc-type__vendor-or-counterparty__ref.ext
-```
-
-**Work**
-
-1. Inventory current Drive roots (metadata only). Write `docs/automation/samples/drive-inventory.md`.
-2. Map email attachments (bank PDF, municipal, invoices) → proposed path. Do not move.
-3. Family / Tax Emigration / Will / school medical: classify by **filename and folder** only. `N3`.
-4. After Grant replies `APPROVE DRIVE MOVE 00_Inbox` (etc.), move only from `00_Inbox`.
-
-**Parallel with Phase 1a.**
-
-**Done when:** inventory + naming spec + empty business roots proposed; no silent moves.
+**Human remaining:** approve batch moves; never let the agent open sensitive family files.  
+**Done when:** inventory + ≥20 real attachment proposals + naming table. Parallel with 1a.
 
 ---
 
 ### Phase 3 — Banking, categorisation, reconciliation
 
 **Role:** `finance-ingester`  
-**Goal:** Statements become categorised transactions; only exceptions reach Grant.
+**Labour:** 2–4 h/week eye-balling bank mail → 30 min exception list.  
+**Goal:** Statements become categorised transactions **and** unapplied cash is visible.
 
 **Feeds (observed)**
 
 | Feed | How it arrives today | Parser |
 | --- | --- | --- |
 | Standard Bank transact | email to `grant@thebrowns.co.za` | email → CSV/PDF |
-| FNB forex / RMB | email | treat as **exception class**, not auto-match |
-| WesBank | email | vehicle-finance liability schedule |
-| US bank (Bell) | Drive `Receipts 2026` + CSV already present | CSV first |
-| QuickBooks | email notifications | confirm whether QBO is system of record |
+| FNB forex / RMB | email | **exception class**, never auto-match |
+| WesBank | email | vehicle-finance liability |
+| US bank (Bell) | Drive `Receipts 2026` + CSV | CSV first |
+| QuickBooks | email notifications | confirm `SOR: books=quickbooks` |
 
-**Work**
+**Approach**
 
-1. Build parsers against **fixtures** (redact account numbers). Never commit raw statements.
-2. Category chart: `entity + tax-lane + household-vs-business`.
-3. Match rule: date ±2 days **and** amount **and** counterparty token. Amount-only is an exception.
-4. Output: `docs/automation/samples/recon-exceptions.md` + later a simple dashboard in aquabuddy if `G2`.
-5. Amortisation / VAF: track schedule vs mail; do not pay (`N1`).
+1. Redacted fixtures only in git. Real files stay in Drive.
+2. Chart: `entity + tax-lane + household-vs-business + intercompany-flag`.
+3. Recon match: date ±2 days **and** amount **and** counterparty token. Amount-only → exception.
+4. **Payment-to-invoice match** (added): if an open invoice exists with same entity+amount+counterparty, mark `applied`; else `unapplied-cash` on the digest.
+5. Till vs bank (PW): if Loyverse/Sheets daily total ≠ deposit, RED line. No Loyverse token until `G3`.
+6. VAF / amortisation: schedule vs mail; do not pay (`N1`).
+7. Tangible this package: `samples/recon-exceptions.md` filled from fixtures **plus** a worked example of one unapplied-cash row.
 
-**Done when:** one SA feed and one US CSV parse in CI with redacted fixtures; exception queue format agreed.
+**Human remaining:** decide mismatches; every payment (`N1`).  
+**Done when:** SA + US parsers in CI; exception + unapplied-cash format agreed.
+
+#### 3b. Debtors and creditors
+
+**Role:** `collections-clerk`  
+**Labour:** 2–3 h/week “who hasn’t paid / who must we pay?” → 20 min approve a reminder batch.  
+**Approach**
+
+1. Aged lists: 0–7 / 8–14 / 15–30 / 30+ for hospitality deposits, PW accounts, HM invoices, and supplier bills.
+2. Source: labelled `Intent/Invoice` mail + any order/booking objects from 4–6. Until those exist, build the list from the last 30 invoice-looking threads (metadata + amounts in snippets only).
+3. Templates: polite 7-day, firm 14-day, Grant-only 30-day. Drafts (`A3`). Send is `H10`.
+4. Never threaten legal action. Never change credit limits.
+5. Creditor side: list due ≤7 days on the digest (Eskom, municipal, WesBank, suppliers) so Grant pays on purpose.
+
+**Human remaining:** `H10` per batch; credit decisions.  
+**Done when:** `samples/aged-ar.md` exists from a real mail sample (redact names if needed to initials).
+
+#### 3c. Bookkeeper and statutory pack
+
+**Role:** `bookkeeper-packer`  
+**Labour:** 3–6 h every month-end scramble → 30 min pack review.  
+**Approach**
+
+1. Confirm `SOR: books=`. Default: zip of tagged PDFs + CSV, emailed as **draft** to Grant (and bookkeeper only after `H1`).
+2. Monthly folder `90_Audit/YYYY-MM/{entity}/` with invoices, receipts, statements, till-vs-bank note.
+3. VAT / EMP / CIPC rows from `compliance-register.yaml` — **checklist only**, no eFiling (`N2`).
+4. QuickBooks: if SoR, export/attach the QBO notification list; do not create a second ledger.
+5. Tangible: `samples/bookkeeper-pack.md` describing the zip contents from last month’s labelled mail.
+
+**Human remaining:** submit returns; pay SARS.  
+**Done when:** one fictional-month pack template + one real-mail contents list.
 
 ---
 
 ### Phase 4 — Perfect Water order-to-fulfilment
 
 **Role:** `pw-builder`  
-**Goal:** QR + WhatsApp orders update stock and only ping humans for exceptions.
+**Labour:** 3–5 h/week re-typing orders and chasing “is it ready?” → ~1 h exceptions + cash-up flags.  
+**Goal:** QR + WhatsApp orders update **one** store-scoped book; customers get status drafts; till ≠ bank is visible.
 
-**Leverage, in order**
+**Leverage, in order:** private `PW-Web-App` if `G2`; else `aquabuddy-demo`; GAS/Sheets as adapter only.
 
-1. Private `PW-Web-App` if `G2` granted.
-2. Else `aquabuddy-demo` as the internal console (Nest/Next/Prisma already has inventory, invoicing, recon, compliance, AI message audit).
-3. Keep GAS/Sheets as an adapter until Prisma is the source of truth.
+**Approach**
 
-**Work**
+1. Confirm `SOR: pw-stock=loyverse|sheets`.
+2. Conversation `intent: order` → order row (store, SKU, qty, pickup/delivery, COD/account).
+3. Status machine: `received → confirmed → ready → collected/delivered → paid`. Each step may draft a WA/SMS (`H1`/`H2`).
+4. Low-stock → draft PO (`H8`), not an email to the supplier.
+5. Daily till-vs-bank line on the digest (Phase 3).
+6. Technical jobs from `PW Technical Schedule` appear as jobs, not as shop orders.
+7. Fixture path must run without production deploy (`H9`).
 
-1. Confirm Loyverse vs custom stock as source of truth.
-2. Wire Phase 1 conversation `intent: order` → order row (store-scoped).
-3. Low-stock alerts (draft email / WA to Grant, not auto PO).
-4. Supplier PO drafts (`H8`).
-5. Daily compliance checklist already in aquabuddy: turn on for Louis Trichardt / Thohoyandou separately.
-6. Monthly pack inputs (Phase 9) = sales, margin flag, stockouts, unreconciled receipts.
+**Human remaining:** price changes, credit, quality incidents, `H8` POs.  
+**Done when:** simulated WA/QR order decrements fixture stock **and** emits a “ready for pickup” draft object.
 
-**Done when:** a simulated WA/QR order creates a store-scoped order and decrements fixture stock; no production cutover without `H9`.
+#### 4b. Plant ops: stock-take, returns, royalty, quality
+
+**Role:** `pw-builder`  
+**Labour:** monthly 2+ h of “what did we actually have / what do we owe the franchisor / what came back”.  
+**Approach**
+
+1. Stock-take checklist per store (aquabuddy compliance module if present). Variance file, not a silent rewrite of stock.
+2. Returns / warranties / bottle deposits: credit-note draft + stock-in. Personalised water = a **job card** (artwork, due date, qty) separate from bulk water.
+3. Franchisor pack: month sales by store from SoR extract → `samples/pw-royalty-draft.md`. Grant sends.
+4. Quality: filter-change / sanitation log is the only log; missing day = AMBER on digest.
+5. Wholesale accounts inherit Phase 3b terms.
+
+**Human remaining:** accept variances; send franchisor pack.  
+**Done when:** one stock-take fixture + one royalty draft from sample numbers.
 
 ---
 
 ### Phase 5 — Accommodation booking pipeline
 
 **Role:** `hospitality-builder`  
+**Labour:** 4–6 h/week writing quotes and chasing deposits → ~1 h Liana/Grant review.  
 **Goal:** Inquiry → structured booking → payment request → stay messages, with Liana in the loop.
 
-**Leverage:** TheBrowns-Showcase forms, Hiver, PR #2 WA router, NightsBridge if live.
+**Leverage:** TheBrowns-Showcase forms, Hiver, PR #2, NightsBridge if live.
 
-**Work**
+**Approach**
 
-1. Confirm whether NightsBridge or the custom site calendar is canonical. Do not dual-book.
+1. `SOR: hospitality-calendar=nightsbridge|site`. Never dual-write.
 2. Map Hiver states onto `Conversation.status`.
-3. Quote engine reads an approved **rate card file** (Grant/Liana supplied). No invented rates (already in PR #2).
-4. Payment link is `H7` (PayFast / SnapScan / EFT instructions — confirm current method).
-5. Sequences (after `H2`): inquiry ack, quote, confirmation, pre-arrival, checkout, review ask.
-6. Housekeeping task = calendar event on a **new** `Hospitality Ops` calendar (`H5`), not the family calendar.
+3. Quote engine reads an approved rate card. Missing card → fail closed (PR #2 rule).
+4. Payment method confirmed (`SOR: hospitality-pay=`). Link/EFT draft is `H7`.
+5. Sequences after `H2`: ack, quote, confirmation, pre-arrival, checkout, review ask.
+6. Deposit not paid by T-7 days → 3b aged list.
 
-**Done when:** one fixture inquiry produces a draft quote with dates/guests and a Hiver-compatible status; no send.
+**Human remaining:** Liana tone, rate strategy, compassionate exceptions.  
+**Done when:** fixture inquiry → draft quote + Hiver-compatible status; no send.
+
+#### 5b. Stay-day ops: OTA, housekeeping, extras, changes
+
+**Role:** `hospitality-builder` + `ops-dispatcher`  
+**Labour:** 2–4 h/week of OTA copy-paste, HK WhatsApps, extras, and date-changes.  
+**Approach**
+
+1. OTA: ingest reservation email/iCal if NightsBridge does not already. Same Conversation. Commission field required.
+2. Cancel / date-change / no-show: a **policy table** Grant supplies. Bot applies table; never invents refunds.
+3. Housekeeping run-sheet for next 72 h: property, checkout/check-in times, linen, maintenance flags. New `Hospitality Ops` calendar only (`H5`). Not the family calendar.
+4. Extras / damage / deposit: charge-list draft on the stay object.
+5. Tourism levy / guest register: fields exist; Grant confirms legal duty before any guest-ID storage. Default: do not store ID images.
+6. Keys / wifi / access facts live in a knowledge file the WA bot already uses — update the file, do not invent.
+
+**Human remaining:** approve HK sheet (`H11`); overbook recovery.  
+**Done when:** `samples/stay-day-sheet.md` for a fictional 72 h plus one OTA-shaped fixture.
 
 ---
 
 ### Phase 6 — Heavy Metal quote-to-delivery
 
 **Role:** `hm-builder`  
-**Goal:** WhatsApp-first quotes with volume + location, then delivery notifications.
+**Labour:** 2–3 h/week repeating the same quote questions → 30 min price-card exceptions.  
+**Goal:** WhatsApp-first quotes with volume, location, access, and terms.
 
-**Leverage:** `hmsand.co.za`, `mail@hmsand.co.za`, PR #2 brand router. No dedicated repo yet — keep code under `apps/heavy-metal/` in this repo or a new repo Grant creates.
+**Leverage:** `hmsand.co.za`, `mail@hmsand.co.za`, PR #2. Code under `apps/heavy-metal/` until a dedicated repo exists.
 
-**Work**
+**Approach**
 
-1. Grant supplies a price card (product × zone). Until then, bot only collects slots.
-2. Delivery calendar + driver notify templates (`H2`).
-3. Invoice draft + reminder sequence (`H7`, `H2`).
-4. Simple stock decrement + low-stock flag.
-5. Municipal / Eskom mail related to the yard files to `40_HeavyMetal/compliance` (Phase 2).
+1. Grant supplies product × zone **and** truck-type notes. Until then, collect slots only.
+2. Extra slots: gate/access, tipper vs bags, COD vs account (default COD).
+3. Invoice draft (`H7`) + 3b chase. Do not scrape the website for prices.
+4. Stock decrement + weekly “photo the pile” prompt on the run-sheet (Phase 11).
+5. Eskom/municipal → `40_HeavyMetal/compliance`.
+6. `hmplant.co.za` stays out until Grant says `SOR: hmplant=in-scope`.
 
-**Done when:** simulate “20 cubes plaster sand to Belfast” collects slots and refuses to invent a price.
+**Human remaining:** price wars, credit limits, “load it anyway”.  
+**Done when:** “20 cubes plaster sand to Belfast” collects slots (including access/terms) and refuses a price without a card.
+
+#### 6b. Delivery execution and POD
+
+**Role:** `ops-dispatcher`  
+**Labour:** 1–2 h/week phoning drivers and arguing volume.  
+**Approach**
+
+1. Delivery-day list: customer, product, m³, suburb, truck, window.
+2. Driver template: load, ETA, on-site, done. Drafts only until `H11`/`H2`.
+3. POD: photo + signed note filed as `YYYY-MM-DD__heavy-metal__pod__{customer}__{ref}`. Missing POD = AMBER.
+4. Volume dispute → Grant only; bot never “corrects” m³ after the fact.
+
+**Human remaining:** disputes, safety.  
+**Done when:** `samples/delivery-day.md` + POD naming examples.
 
 ---
 
 ### Phase 7 — GAB Trust / BVR compliance + vault
 
 **Role:** `drive-librarian` + `docs-steward`  
-**Goal:** Deadlines visible; documents findable; no agent files with CIPC/SARS.
+**Labour:** 1–3 h/week of search + background anxiety → 20 min digest lines.  
+**Goal:** Deadlines visible; next action obvious; no agent files with CIPC/SARS.
 
-**Work**
+**Approach**
 
-1. Compliance register in `docs/automation/compliance-register.yaml`: CIPC annual returns, municipal, insurance, forex packs.
-2. Calendar proposals only (`A5` → `H5`). Use SA timezone.
-3. Vault path `50_GABTrust/` with attorney share as `H4`.
-4. Liquidation status board is a markdown table Grant updates; agent only reminds and files incoming mail.
-5. Bank ingest from Phase 3 tagged `trust`.
+1. `docs/automation/compliance-register.yaml`: CIPC, municipal, insurance, forex packs, each with `next_action`, `owner`, `due`.
+2. Calendar proposals only (`A5` → `H5`), SAST.
+3. Vault `50_GABTrust/{asset}/`. One asset per folder.
+4. Liquidation **next-action board** (not a static wiki): `status | blocker | owner | due | last evidence (mail date)`. Agent updates dates from incoming mail; Grant updates legal status.
+5. Bank ingest tagged `trust`. Let properties: do not build until `SOR: trust-lets=yes`.
 
-**Done when:** register exists; next 12 months of CIPC/insurance/municipal reminders proposed; no submissions sent.
+**Human remaining:** every filing and attorney instruction.  
+**Done when:** register + 12-month reminder proposals + board template with at least one real mail-dated evidence line (no letter body).
+
+#### 7b. Forex packs and family-safe status
+
+**Role:** `docs-steward`  
+**Labour:** 2 h per transfer rebuilding “what RMB asked for last time”.  
+**Approach**
+
+1. Forex checklist (names of docs only): source of funds, resolution, FIA/SDA-style forms as Grant lists them. Agent ticks “present in vault / missing”. Never fills values from statements.
+2. Attorney share is `H4` of the **index**, not a dump of the family lane.
+3. One-page `samples/trust-status-onepager.md` Grant can forward to family: asset nickname, status, next date. No valuations unless Grant typed them.
+
+**Human remaining:** `N1`/`N2` submissions.  
+**Done when:** checklist + one-pager template exist.
 
 ---
 
 ### Phase 8 — Google Business Profile
 
 **Role:** `gbp-drafter`  
+**Labour:** 0.5 h/week of ignored or late reviews → 5 min `H6` on drafts.  
 **Parallel after Phase 0.**
 
-**Work**
-
-1. Start from `businessprofile-noreply@google.com` threads (already in Gmail).
-2. Draft replies in Gmail; never publish until `H6`.
-3. Tone cards per location (PW stores vs The Browns vs Heavy Metal).
-4. Later: official GBP API if Grant enables it (`G3`).
-
-**Done when:** 10 historical reviews have draft replies in a PR sample file (no personal guest data).
+**Approach:** Gmail from `businessprofile-noreply@google.com` → tone cards per location → 10 anonymised drafts in `samples/gbp-drafts.md`. Never publish until `H6`. GBP API later (`G3`). Unanswered review older than 72 h = AMBER on digest.  
+**Human remaining:** publish.  
+**Done when:** 10 drafts + tone cards.
 
 ---
 
-### Phase 9 — Cross-entity monthly packs
+### Phase 9 — Weekly exception pack and monthly board
 
 **Role:** `pack-builder`  
-**Depends on:** 1–3 minimum; 4–8 as they come online.
+**Labour:** 2–3 h/month rebuilding a month from chats → 20 min approve.  
+**Depends on:** 1d + 3 minimum.
 
-**Pack sections (one PDF/markdown, entity tabs)**
+**Approach**
 
-- Exceptions still open (comms, recon, compliance)
-- Cash in/out by entity (from Phase 3)
-- Hospitality occupancy / inquiry conversion
-- PW sales vs stockouts
-- HM quotes vs delivered
-- Trust deadline heatmap
-- Household burn vs budget sheet (totals only)
+1. **Weekly (Sunday):** roll-up of the seven digests — SLA misses, unapplied cash, stale pipeline, missing PODs, missing quality logs. This is the labour product. Monthly is optional once weekly exists.
+2. **Monthly:** cash in/out by entity; occupancy/conversion; PW sales vs stockouts vs royalty draft; HM quote→delivered; trust heatmap; household vs Budget sheet **totals only**.
+3. Draft email to Grant (`A3`). Send is `H1`.
 
-**Send:** draft email to Grant (`A3`). Monthly send is `H1`.
+**Human remaining:** 20 min decisions, not assembly.  
+**Done when:** weekly template filled from sample digests; monthly template exists.
 
 ---
 
 ### Phase 10 — Personal / family admin
 
 **Role:** `family-sorter`  
-**Goal:** School, vehicles, bills, pets stop interrupting business focus.
+**Labour:** 2–4 h/week of family mail breaking business focus → household slice on the digest.  
+**Goal:** Bills, vehicles, school *logistics* no longer interrupt PW/HM/Browns.
 
-**Allowed**
+**Approach**
 
-- Label household mail (`Entity/Household`)
-- Propose files into `10_Household/` by **filename**
-- Remind from calendar metadata (school holidays, insurance renewals)
-- Tesla / WesBank / tolls as finance categories
+1. Label ≤50 household-looking mail `Entity/Household`.
+2. Due-date extract from snippets (insurance, utilities, WesBank) → digest “due ≤7d”.
+3. Tesla / WesBank / tolls as finance categories in Phase 3.
+4. Propose Drive names into existing The Browns USA tree. Filename only for medical/will/tax-emigration.
+5. Budget sheet: compare **totals** to tagged household spend; no line-item family narrative.
 
-**Forbidden (`N3`)**
+**Forbidden (`N3`):** quote or summarise medical, will, tax-emigration, safeguarding; message a school or government office.  
+**Human remaining:** pay bills; school conversations.  
+**Done when:** household labels + due-date list in a sample digest; no sensitive bodies in git.
 
-- Quoting or summarising medical, will, tax-emigration, or safeguarding documents in chat or PRs
-- Messaging a school or government office
+### Phase 11 — Local staff run-sheet (owned-business staff only)
 
-**Done when:** household mail is labelled; bill/vehicle reminders sit on the exception list; no family file bodies appear in git.
+**Role:** `ops-dispatcher`  
+**Labour:** 2–4 h/week of voice notes “please do X today” → 15 min approve one sheet.  
+**Goal:** Store, yard, and housekeeping know the day’s work without Grant reconstructing it on WhatsApp.
+
+**Approach**
+
+1. 16:00 SAST (or Grant’s Chicago morning): draft `samples/run-sheet.md` from digest + calendars.
+
+   ```text
+   Date (SAST)
+   PW Louis Trichardt: {orders to make, cash-up, quality log}
+   PW Thohoyandou: {…}
+   HM yard: {loads, inbound, stock photo}
+   Hospitality: {HK from stay-day sheet}
+   Blockers needing Grant
+   ```
+
+2. Publish path: Drive doc + Gmail draft to Grant. Staff WhatsApp send is `H11` (Grant may forward by hand forever — still a labour win).
+3. Do not build HR/payroll/hiring. Cash float and “who is on shift” are operational, not job-search (`N6` still holds).
+4. If there is no remaining local staff, STATUS says so and this phase only emits the hospitality HK slice.
+
+**Human remaining:** `H11` or manual forward; people issues.  
+**Done when:** one real-date run-sheet drafted from live calendar + mail metadata.
+
+### Phase 12 — Stale pipeline follow-up
+
+**Role:** `pipeline-chaser`  
+**Labour:** 1–2 h/week of “I should follow up that quote” → 10 min approve the stale list.  
+**Goal:** No silent death of hospitality inquiries or HM/PW quotes.
+
+**Approach**
+
+1. Rules: hospitality no reply 24 h; HM quote no decision 48 h; PW wholesale quote 72 h; unpaid deposit T-7 (handoff to 3b).
+2. Output `samples/stale-pipeline.md` + draft messages. Send `H2`.
+3. After two nudges, mark `dead` and stop. Humans may resurrect.
+
+**Human remaining:** approve sends; decide when to kill a deal.  
+**Done when:** stale list + two fixture drafts (hospitality + HM).
+
+---
 
 ---
 
@@ -473,6 +652,9 @@ Grok asks for these with the exact approval phrases. Do not nag more than once p
 4. Rate cards: hospitality, Perfect Water, Heavy Metal (files Grant drops in Drive `_Inbox`).
 5. Confirm systems of record: Loyverse vs Sheets; NightsBridge vs site calendar; QuickBooks vs spreadsheets.
 6. Confirm whether Respond.io is still in front of WhatsApp. If yes, PR #2 must sit behind it or replace it — pick one.
+7. SoR one-liners: `SOR: hospitality-calendar=`, `SOR: pw-stock=`, `SOR: books=`, `SOR: whatsapp=`, `SOR: hospitality-pay=`, `SOR: hmplant=`, `SOR: trust-lets=`.
+8. Rate cards + cancel/refund policy + HM zone card dropped in Drive `_Inbox`.
+9. After each live phase week, fill `labor-ledger.md` actuals.
 
 ---
 
@@ -490,34 +672,40 @@ Grok asks for these with the exact approval phrases. Do not nag more than once p
 
 ## 9. Success metrics (review monthly)
 
-| Metric | Target after Phase 1–3 |
+| Metric | Target once named phases are live |
 | --- | --- |
-| Inbox threads needing Grant open >24h | trending down from current 43 unread / 7720 pile |
-| Hospitality inquiries with a same-day **draft** | ≥90% |
-| Bank / CIPC / GBP mail auto-labelled (after `G6`) | ≥95% precision on those classes |
-| Drive files left in `_Inbox` >7 days | falling |
-| Unreconciled transactions older than 14 days | exception list only |
-| Live client messages sent without `H1` | **zero** |
+| Texas morning reconstruct time | ≤30 min (Phase 1d) |
+| Inbox threads needing Grant open >24h | falling from ~43 unread / 7720 pile (1a) |
+| Hospitality inquiries with same-day **draft** | ≥90% (1a/5) |
+| SLA breaches appearing only on digest | 100% visible, not lost in scrollback (1d/1e) |
+| Bank / CIPC / GBP auto-labelled (after `G6`) | ≥95% precision |
+| Unapplied cash older than 7 days | on 3b list, not in Grant’s head |
+| Drive files left in `_Inbox` >7 days | falling (2) |
+| Live client messages sent without `H1`/`H10` | **zero** |
+| Combined Grant+Liana admin hours | steering target 8–12 h/week after 1a, 1b, 1d, 3, 5, 6, 11 |
 
 ---
 
 ## 10. How Grok runs a week
 
-1. Read `STATUS.md`.
+1. Read `STATUS.md` and `BUSINESS-REQUIREMENTS.md` §4 if choosing a new package.
 2. If a PR is open for the current package, review it; do not start a sibling package in the same repo area.
 3. Copy the next prompt from `launch-prompts.md` into a new Cloud agent on the correct repo.
-4. When the agent opens a PR, update STATUS (or tell the agent to).
-5. Ask Grant only for gated phrases.
-6. After merge, pick the next **parallel-allowed** package.
+4. When the agent opens a PR, update STATUS and the matching `labor-ledger.md` row.
+5. Ask Grant only for gated phrases and SoR lines.
+6. After merge, pick the next **parallel-allowed** package that still removes a named ritual.
 
-If Grant says “continue”, interpret that as: execute the next `not started` phase that is unblocked.
+If Grant says “continue”, run `phase-01a-email-classifier` then `phase-01d-daily-digest`.
 
 ---
 
-## 11. First three Cloud agents after this spec merges
+## 11. First Cloud agents after this expansion merges
 
-1. `phase-01a-email-classifier` on `GrantB83/GrantB83`
-2. `phase-02-drive-taxonomy` on `GrantB83/GrantB83` (parallel)
-3. `phase-01b-wa-slots` on the PR #2 branch (extend, do not fork a third WhatsApp design)
+Ship labour cuts first, not architecture.
 
-That is the entire directed start. Do not skip ahead to rebuild Aquabuddy or The Browns until `G2` and Phase 1a samples exist.
+1. `phase-01a-email-classifier` — stop scanning a mixed inbox.
+2. `phase-01d-daily-digest` — replace the Texas-morning reconstruct (largest single cut).
+3. `phase-02-drive-taxonomy` — parallel; include attachment *proposals*, not names only.
+4. `phase-01b-wa-slots` on PR #2 — extend, do not fork a third WhatsApp design.
+
+Do not rebuild Aquabuddy or The Browns until `G2` and a real digest sample exist. If Grant says “continue”, run 1a then 1d in that order.

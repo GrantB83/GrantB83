@@ -2,6 +2,9 @@
 # Do not put secrets, account numbers, street addresses, or family medical data here.
 schema_version: 1
 updated: 2026-08-22
+required_reading:
+  - docs/automation/BUSINESS-REQUIREMENTS.md
+  - docs/automation/labor-ledger.md
 timezone:
   household: America/Chicago
   sa_operations: Africa/Johannesburg
@@ -42,9 +45,14 @@ entities:
       - inquiry-to-quote
       - payment-link
       - calendar-block
+      - ota-ingest
+      - stay-day-housekeeping
+      - extras-damage-deposits
+      - cancel-refund-policy
       - pre-post-stay-sequences
       - review-request
       - comms-audit-trail
+      - stale-inquiry-followup
 
   perfect-water:
     lane: perfect-water
@@ -68,7 +76,13 @@ entities:
         - aquabuddy
     automation_targets:
       - whatsapp-and-qr-order-intake
+      - fulfilment-status
+      - till-vs-bank
       - inventory-alerts
+      - stock-take-variance
+      - returns-deposits-job-cards
+      - franchisor-royalty-pack
+      - quality-log
       - supplier-po
       - bank-recon-exceptions
       - gbp-review-drafts
@@ -89,7 +103,9 @@ entities:
       mentioned_private_or_unverified: []
     automation_targets:
       - structured-whatsapp-quotes
-      - delivery-scheduling
+      - access-and-truck-slots
+      - cod-vs-account
+      - delivery-day-and-pod
       - invoice-and-reminders
       - yard-stock-alerts
 
@@ -108,7 +124,9 @@ entities:
       - document-vault
       - compliance-calendar
       - statement-ingest
-      - liquidation-status-board
+      - liquidation-next-action-board
+      - forex-document-checklist
+      - family-safe-onepager
       - secure-share-portal
 
   household:
@@ -122,11 +140,11 @@ entities:
       - Household budget spreadsheet
       - Tesla vehicles (insurance / charging / maintenance / tolls)
     automation_targets:
-      - bill-triage
+      - bill-due-dates-on-digest
       - vehicle-admin
       - school-admin-without-content-leak
       - pet-admin
-      - household-budget-sync
+      - household-budget-totals-only
 
 inboxes:
   connected_now:

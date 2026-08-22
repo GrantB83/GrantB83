@@ -6,7 +6,9 @@ Grok Bot directs Cursor Cloud agents from this folder. This is the map, not the 
 
 | File | Purpose |
 | --- | --- |
-| [SPEC.md](SPEC.md) | Phased build spec, architecture, and done criteria |
+| [BUSINESS-REQUIREMENTS.md](BUSINESS-REQUIREMENTS.md) | Per-entity admin evaluation, gaps, RACI, labour tests |
+| [SPEC.md](SPEC.md) | Phased build, workable approach, done criteria |
+| [labor-ledger.md](labor-ledger.md) | Hours removed per phase — Grant fills actuals |
 | [entity-map.yaml](entity-map.yaml) | Machine-readable entities, inboxes, calendars, repos, labels |
 | [approval-gates.md](approval-gates.md) | What agents may do without asking, and what they must queue |
 | [launch-prompts.md](launch-prompts.md) | Copy-paste prompts Grok uses to spawn each Cloud agent |

@@ -6,7 +6,7 @@ Employment-related workflows are out of scope. Do not add them.
 
 ## Who may act
 
-- **Grok Bot** is the only orchestrator. It reads `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md`, and launches one specialised Cursor Cloud agent per phase or work package.
+- **Grok Bot** is the only orchestrator. It reads `docs/automation/BUSINESS-REQUIREMENTS.md` and `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md`, and launches one specialised Cursor Cloud agent per phase or work package.
 - **Cursor Cloud agents** implement a single assigned work package, then stop.
 - **Humans** (Grant, Liana) approve anything in `docs/automation/approval-gates.md`. Agents never bypass a gate.
 
@@ -25,11 +25,15 @@ Employment-related workflows are out of scope. Do not add them.
 
 ## Required reading before any implementation agent starts
 
-1. `docs/automation/SPEC.md`
-2. `docs/automation/entity-map.yaml`
-3. `docs/automation/approval-gates.md`
-4. `docs/automation/STATUS.md`
-5. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
+1. `docs/automation/BUSINESS-REQUIREMENTS.md`
+2. `docs/automation/SPEC.md`
+3. `docs/automation/entity-map.yaml`
+4. `docs/automation/approval-gates.md`
+5. `docs/automation/STATUS.md`
+6. `docs/automation/labor-ledger.md`
+7. The launch prompt for the assigned phase in `docs/automation/launch-prompts.md`
+
+A phase is incomplete until it names a ritual it removes and writes an artefact Grant can use that week.
 
 ## Quality gates
 

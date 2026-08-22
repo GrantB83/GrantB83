@@ -17,6 +17,7 @@ Use this phrase in STATUS.md when a human must act:
 | `A5` | Create Calendar **draft proposals** in STATUS (do not write events yet) |
 | `A6` | Unit-test WhatsApp / email routers with fixtures; no live send |
 | `A7` | Label **≤50** Gmail threads in a named sample after a dry-run log is attached to the PR |
+| `A8` | Write a daily/weekly digest file or Gmail **draft** to Grant from metadata (no `N3` bodies) |
 
 ## Needs one-time Grant setup, then allowed
 
@@ -42,6 +43,8 @@ Use this phrase in STATUS.md when a human must act:
 | `H7` | Generate and send an invoice or payment link | `APPROVE INVOICE <entity> <ref>` |
 | `H8` | Place a supplier purchase order | `APPROVE PO <entity> <ref>` |
 | `H9` | Apply a schema migration or production deploy | `APPROVE APPLY MIGRATION` / `APPROVE DEPLOY <app>` |
+| `H10` | Send a debtor/creditor reminder batch | `APPROVE COLLECT <list-id>` |
+| `H11` | Publish a staff / HK / driver run-sheet | `APPROVE RUN SHEET <date>` |
 
 ## Never allowed for agents
 
