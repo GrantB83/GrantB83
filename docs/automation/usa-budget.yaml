@@ -55,6 +55,14 @@ funds:
   bell_should_hold: sinking_target_plus_month_left
   month_left: unspent intended Essential + Controlled this month
 
+forecast:
+  horizon_months: 3
+  income_rule: average_last_3_paystubs
+  grant_phrase: "FORECAST: average-3"
+  fewer_than_3_stubs: ask_grant   # pending chat lock
+  do_not_invent_income: true
+  numbers_only_on_paystubs_tab: true
+
 archive:
   dated_budget_vs_actual_on_sheet: true
   file_copy_under: The Browns USA / Finance
