@@ -1,0 +1,77 @@
+{
+  "phoneNumber": "+27836458313",
+  "operator": "Hospitality Partners",
+  "defaultBusinessId": "hospitality",
+  "businesses": [
+    {
+      "id": "hospitality",
+      "name": "Hospitality Partners",
+      "aliases": ["hospitality partners", "hp"],
+      "keywords": ["hospitality partners", "stay@hospitality"],
+      "handoffEmail": "stay@hospitality.partners",
+      "website": "https://hospitality.partners/"
+    },
+    {
+      "id": "the-browns",
+      "name": "The Browns Luxury Guest Suites",
+      "aliases": ["the browns", "browns", "dullstroom", "guest suite", "guest house"],
+      "keywords": [
+        "browns",
+        "dullstroom",
+        "blue crane",
+        "guest suite",
+        "guest house",
+        "self catering",
+        "nespresso",
+        "highland gate"
+      ],
+      "handoffEmail": "stay@hospitality.partners",
+      "website": "https://www.thebrowns.co.za/"
+    },
+    {
+      "id": "rivendell",
+      "name": "Rivendell Trout Estate",
+      "aliases": ["rivendell", "trout", "fly fish", "flyfishing", "lydenburg", "spekboom"],
+      "keywords": [
+        "rivendell",
+        "trout",
+        "fly fish",
+        "flyfishing",
+        "spekboom",
+        "lydenburg",
+        "hobbiton",
+        "bag end",
+        "mirkwood",
+        "bucklebury",
+        "elvinbrook",
+        "finsbury"
+      ],
+      "handoffEmail": "stay@hospitality.partners",
+      "website": "https://hospitality.partners/rivendell-trout-estate/"
+    },
+    {
+      "id": "perfect-water",
+      "name": "Perfect Water",
+      "aliases": ["perfect water", "water", "refill", "bottle", "dispenser"],
+      "keywords": ["perfect water", "water refill", "water bottle", "dispenser", "franchise"],
+      "handoffEmail": "grant@thebrowns.co.za",
+      "website": ""
+    },
+    {
+      "id": "credimed",
+      "name": "CrediMed",
+      "aliases": ["credimed", "medical aid", "medical scheme", "gap cover"],
+      "keywords": ["credimed", "medical aid", "medical scheme", "discovery", "momentum", "bonitas", "gap cover"],
+      "handoffEmail": "grant@thebrowns.co.za",
+      "website": ""
+    },
+    {
+      "id": "autopost",
+      "name": "AutoPost AI",
+      "aliases": ["autopost", "social media", "facebook posts"],
+      "keywords": ["autopost", "social media", "facebook post", "content calendar"],
+      "handoffEmail": "grant@thebrowns.co.za",
+      "website": ""
+    }
+  ]
+}
