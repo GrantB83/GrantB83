@@ -28,6 +28,10 @@ Here are some highlights of what I’ve built or am building:
 
 ---
 
+## 🤖 Personal & owned-business automation
+
+Grok Bot + Cursor Cloud agents follow the control-plane spec in [`docs/automation/`](docs/automation/README.md) (family, Perfect Water, The Browns, Heavy Metal, GAB Trust). Employment workflows are out of scope.
+
 ## 🎓 Current Focus
 - Completing **Metana Fullstack Bootcamp** (Web Development & Databases)  
 - Advancing **MBA studies** in Strategic Finance & Change Management  
