@@ -63,6 +63,10 @@ forecast:
   grant_phrase_short: "FORECAST SHORT: use-what-we-have"
   do_not_invent_income: true
   numbers_only_on_paystubs_tab: true
+  spend_rule: intended_plan
+  spend_includes: [Essential, Controlled, Savings, Sinking_targets]
+  spend_excludes_pending: Discretionary   # pending chat lock
+  grant_phrase_spend: "FORECAST SPEND: intended"
 
 archive:
   dated_budget_vs_actual_on_sheet: true

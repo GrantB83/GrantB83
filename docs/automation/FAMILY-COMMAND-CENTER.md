@@ -129,7 +129,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
 - **Close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds Grant to export Monarch (Bell only), upload the Bell statement PDF, and freeze Budget vs Actual. Locks: `usa-budget.yaml`.
 - **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family Bot amend waits until remaining Budget scope is locked.
-- **Forecast** (2026-08-22): next 3 months’ income = average of the last 3 Paystubs-tab numbers. If fewer than 3, average whatever exists. No stub bodies in chat.
+- **Forecast** (2026-08-22): income = average of last 3 Paystubs-tab numbers (or whatever exists if fewer). Spend = this month’s intended Essential + Controlled + Savings/Sinking. Discretionary pending. No stub bodies in chat.
 
 ---
 
