@@ -45,12 +45,12 @@ proposed:
   Gas: { group: Housing, line: Electricity, type: Essential, note: "Grant 2026-08-22: Teslas only; Monarch Gas = Tesla Supercharger. Two non-Tesla Gas merchants exist (Texaco, Chevron) — still ask if those should stay." }
   merchant_overrides:
     Texas Gas Service: { group: Housing, line: Natural gas, type: Essential, monarch_category_observed: Gas & Electric }
-    City Of Austin: { group: Housing, line: utilities_bundle_split_later, type: Essential, monarch_category_observed: Taxes, grant_phrase: "MAP AUSTIN: utilities-bundle", split_across: [Electricity, Water, Drainage, "Trash / recycling / compost", "COA Taxes", "Transportation User Fee", "Clean Community Fee", "Wastewater / sewer"] }
+    City Of Austin: { group: Housing, line: Austin utilities (bundle), type: Essential, monarch_category_observed: Taxes, grant_phrase: "MAP AUSTIN: utilities-bundle", hold_phrase: "AUSTIN HOLD: new-line", split_source: COA website bill PDF uploaded to Drive, split_across: [Electricity, Water, Drainage, "Trash / recycling / compost", "COA Taxes", "Transportation User Fee", "Clean Community Fee", "Wastewater / sewer"], family_does_not_scrape_coa: true }
 
 ask_grant:
   - Shopping          # 107 rows; no single sheet line
   - Gas & Electric    # mixed: Xcel Energy, Texas Gas Service, other — do not dump whole category
-  - "Taxes / City Of Austin hold"  # bundle locked; dry-run park rule pending
+  # City of Austin hold locked: new line Austin utilities (bundle)
   - Insurance         # Renters vs Model Y vs other
   - Clothing          # Children vs adult
   - Electronics

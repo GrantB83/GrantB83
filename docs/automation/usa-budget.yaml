@@ -28,8 +28,11 @@ books:
   monarch_gas: tesla_supercharger_to_electricity
   natural_gas_vendor: Texas Gas Service
   natural_gas_not: City of Austin
-  city_of_austin: utilities_bundle_split_later
+  city_of_austin: utilities_bundle
+  city_of_austin_hold_line: Austin utilities (bundle)
   city_of_austin_grant_phrase: "MAP AUSTIN: utilities-bundle"
+  city_of_austin_hold_phrase: "AUSTIN HOLD: new-line"
+  city_of_austin_split_source: Grant or Liana downloads the bill from the COA website and uploads the PDF to Drive. Family does not log into COA.
   unofficial_api: never
   stored_passwords: never
   monarch_session: family_bot_computer   # Grant types password; session stays

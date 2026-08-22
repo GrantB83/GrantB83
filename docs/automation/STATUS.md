@@ -97,3 +97,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | Monarch Gas = Tesla Supercharger → Housing / Electricity. Teslas only; no petrol line. |
 | 2026-08-22 | Natural gas = Texas Gas Service (merchant override → Housing / Natural gas). City of Austin is not the gas vendor. |
 | 2026-08-22 | City of Austin (Monarch Taxes) = utilities bundle to split later across Housing utility lines (`MAP AUSTIN: utilities-bundle`). |
+| 2026-08-22 | City of Austin dry-run hold = new sheet line `Austin utilities (bundle)` (`AUSTIN HOLD: new-line`). Split from a COA website bill PDF in Drive; Family does not scrape COA. |
