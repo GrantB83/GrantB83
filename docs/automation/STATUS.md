@@ -95,3 +95,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | USA Budget first close = dry-run now (`FIRST CLOSE: dry-run now`). Repeat on 7 Sep 2026 at 07:00 CT. |
 | 2026-08-22 | Monarch dry-run file uploaded (`2026-08-22__monarch__bell__transactions`). Category map proposed; Shopping/Gas/Insurance still ask Grant. |
 | 2026-08-22 | Monarch Gas = Tesla Supercharger → Housing / Electricity. Teslas only; no petrol line. |
+| 2026-08-22 | Natural gas = Texas Gas Service (merchant override → Housing / Natural gas). City of Austin is not the gas vendor. |

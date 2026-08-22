@@ -42,11 +42,14 @@ proposed:
   "Postage & Shipping": { group: Food, line: Household consumables, type: Essential }
   "Office Supplies & Expenses": { group: Children, line: School supplies, type: Essential }
   "Parking & Tolls": { group: Transport, line: Vehicle maintenance, type: Essential, note: no toll line yet }
-  Gas: { group: Housing, line: Electricity, type: Essential, note: "Grant 2026-08-22: Teslas only; Monarch Gas = Tesla Supercharger. Home charging is on the City of Austin electric bill." }
+  Gas: { group: Housing, line: Electricity, type: Essential, note: "Grant 2026-08-22: Teslas only; Monarch Gas = Tesla Supercharger. Two non-Tesla Gas merchants exist (Texaco, Chevron) — still ask if those should stay." }
+  merchant_overrides:
+    Texas Gas Service: { group: Housing, line: Natural gas, type: Essential, monarch_category_observed: Gas & Electric }
 
 ask_grant:
   - Shopping          # 107 rows; no single sheet line
-  - Gas & Electric    # Austin utility? Electricity vs Natural gas vs both
+  - Gas & Electric    # mixed: Xcel Energy, Texas Gas Service, other — do not dump whole category
+  - "Taxes / City Of Austin"  # likely Austin electric + COA fees; not Texas Gas
   - Insurance         # Renters vs Model Y vs other
   - Clothing          # Children vs adult
   - Electronics

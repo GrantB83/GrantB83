@@ -26,6 +26,8 @@ books:
   category_map: docs/automation/monarch-category-map.yaml
   vehicles: tesla_only
   monarch_gas: tesla_supercharger_to_electricity
+  natural_gas_vendor: Texas Gas Service
+  natural_gas_not: City of Austin
   unofficial_api: never
   stored_passwords: never
   monarch_session: family_bot_computer   # Grant types password; session stays
