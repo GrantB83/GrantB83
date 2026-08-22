@@ -2,27 +2,25 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (existing Grok Bots to be amended; all Google accounts must be linkable).
+Last orchestrator review: 2026-08-22 (Grant completed Bot-map + Google-link setup actions; Cloud MCP still hub-only).
 
 ## Now
 
 - Control-plane spec + business evaluation live in this folder.
 - WhatsApp Cloud API agent exists as draft [PR #2](https://github.com/GrantB83/GrantB83/pull/2). It is **not** live (Coexistence + HTTPS host still Grant).
-- **Grok Bots already exist** in Grant’s Grok Bot app. This environment has **no Grok Bot API** — names are unset in `bot-roster.yaml`. Grant pastes amend prompts from `GROK-BOT-AMENDMENTS.md` and replies `BOT ROSTER:` (`G8`). Do **not** create a duplicate Family / Ops Chief / Stay team.
-- Gmail MCP is connected to **hub only** `grant830318@gmail.com` (also sees some `grant@thebrowns.co.za` / stay@ traffic). That is **not** all accounts.
-- Drive MCP sees `The Browns USA` (owners `grant@hospitality.partners` / `thebrownsusa@gmail.com`); business entity roots are missing.
-- Calendar MCP is the hub list (primary still `Africa/Johannesburg`).
-- **Must still link** (Gmail + Drive + Calendar as applicable): `thebrownsusa@gmail.com` (school), `grant@hospitality.partners`, `grant@thebrowns.co.za`, `stay@hospitality.partners`, `accounts@bvrgroup.co.za`, `grant@hmsand.co.za`, `mail@hmsand.co.za` if it is a login, plus any extra Grant names with `GOOGLE ACCOUNTS:`.
-- Cloud environment is scoped to `GrantB83/GrantB83` only.
+- **G8 / G1 setup actions completed** in the environment panel (2026-08-22). Live Bot names were **not** pasted into this chat — `bot-roster.yaml` `existing_name` stays null until `BOT ROSTER:` is sent. Do **not** create duplicate Bots.
+- This Cloud Agent Gmail/Drive/Calendar MCP is still **hub only** `grant830318@gmail.com` (re-checked after the G1 action: still zero `from:austinisd.org`). Grok Bot plugin/browser sessions live on the Bot computer, not on this VM.
+- Drive MCP still sees `The Browns USA` (owner `grant@hospitality.partners`). Calendar MCP still the hub list (primary `Africa/Johannesburg`).
+- Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once.
 - Grok Bot entitlement (`RUNTIME:`) — **unset**. Ask Grant once.
-- Family Gmail labels **created on the hub**. Filter API returned 403. Filters must also be created on **`thebrownsusa@gmail.com`** — hub has zero `from:austinisd.org` in 90d (`G1`).
+- Family Gmail labels **created on the hub**. Filter API 403. AISD filters still belong on `thebrownsusa@gmail.com`.
 
 ## Phase board
 
 | Phase | Name | State | Next agent | Labour cut (est.) | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Control plane & safety | **in progress** | Grant `BOT ROSTER:` + Google `G1` | stop re-briefing agents | `G2` private repos; `G8`; `G1` all logins |
+| 0 | Control plane & safety | **in progress** | env Save + optional `BOT ROSTER:` names | stop re-briefing agents | `G2` private repos |
 | 1a | Email classifier + SLA | not started | `phase-01a-email-classifier` | 5–8h → 1h | `G1`; `G6` after sample |
 | 1b | WhatsApp slots | not started | `phase-01b-wa-slots` | 6–10h → 2h once live | `G4`/`G5`; `SOR: whatsapp=` |
 | 1c | Channel stitch | not started | after 1a/1b | dual-reply errors | — |
@@ -75,3 +73,4 @@ Last orchestrator review: 2026-08-22 (existing Grok Bots to be amended; all Goog
 | 2026-08-22 | Family Command Center is first-class. Labels live. Do not put medical bodies in digests. |
 | 2026-08-22 | Amend existing Grok Bots; do not create a parallel team. Map with `BOT ROSTER:`. |
 | 2026-08-22 | Every Google login is first-class (Gmail + Drive + Calendar). Hub-only MCP is insufficient. School filters belong on `thebrownsusa@gmail.com`. |
+| 2026-08-22 | Grant completed G8 Bot-map and G1 all-Google-accounts setup actions. Cloud MCP remains hub-only; Grok Bot linking is outside this VM. |

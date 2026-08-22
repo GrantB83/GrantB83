@@ -5,6 +5,8 @@ schema_version: 1
 updated: 2026-08-22
 source: docs/automation/GROK-BOT-AMENDMENTS.md
 grant_reply_phrase: "BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…"
+grant_external_action_completed: 2026-08-22
+existing_names_received_in_chat: false
 
 roles:
   ops-chief:

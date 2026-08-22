@@ -5,11 +5,13 @@ updated: 2026-08-22
 source: docs/automation/GOOGLE-ACCOUNTS.md
 approval_phrase: "APPROVE GOOGLE ACCOUNT <email> gmail,drive,calendar"
 
-# Cursor Cloud MCP on this run (2026-08-22)
+# Cursor Cloud MCP on this run (2026-08-22, re-checked after G1 setup action)
 cursor_mcp_connected:
   gmail: grant830318@gmail.com
   drive: grant830318@gmail.com   # sees files shared by other owners
   calendar: grant830318@gmail.com
+grant_external_action_completed: 2026-08-22
+note: Grok Bot plugin/browser linking is a different product from this Cloud MCP. Hub still has zero austinisd.org after the G1 action.
 
 accounts:
   - email: grant830318@gmail.com
@@ -29,11 +31,11 @@ accounts:
       primary_tz_observed: Africa/Johannesburg
       calendars_on_list: [primary, Private, Family, PW Technical Schedule, School Holidays, Holidays in South Africa]
     link:
-      grok_bot_plugin: unknown
-      grok_bot_browser: unknown
+      grok_bot_plugin: user_completed_setup_action
+      grok_bot_browser: user_completed_setup_action
       cursor_mcp: live
       forward_to_hub: n/a
-    approval: pending
+    approval: user_completed_setup_action
 
   - email: thebrownsusa@gmail.com
     kind: google_login
