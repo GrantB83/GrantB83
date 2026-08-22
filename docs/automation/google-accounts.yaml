@@ -81,26 +81,26 @@ accounts:
     required_for: [drive-vault, stay]
 
   - email: grant@thebrowns.co.za
-    kind: google_login   # Workspace
+    kind: forward   # Grant 2026-08-22: not a Google login; all mail forwards to hub
     owner: grant
     lanes: [hospitality, shared-finance]
-    services: [gmail, drive, calendar]
+    services: [gmail]
     gmail:
-      native: true
+      native: false
       hub: false
-      observed: Hiver desk; send-as from hub
+      observed: Hiver desk + send-as on hub; forwards to grant830318@gmail.com
     drive:
-      native: expected
-      notes: Preferred Shared Drive hub if Workspace confirmed
+      native: false
     calendar:
-      native: expected
+      native: false
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
-      cursor_mcp: missing
-      forward_to_hub: partial   # traffic already visible on hub
-    approval: required
+      grok_bot_plugin: n/a
+      grok_bot_browser: n/a
+      cursor_mcp: n/a
+      forward_to_hub: live
+    approval: not-a-google-login
     required_for: [stay, ops-chief, hiver]
+    note: Read this address on the hub. Do not Add account for it.
 
   - email: stay@hospitality.partners
     kind: google_login   # Workspace; Grant signed in 2026-08-22
@@ -145,45 +145,48 @@ accounts:
     required_for: [aqua]
 
   - email: accounts@bvrgroup.co.za
-    kind: mailbox   # confirm google_login
+    kind: forward   # Grant 2026-08-22: not a Google login
     owner: grant
     lanes: [perfect-water]
-    services: [gmail, drive]
+    services: [gmail]
     gmail:
-      native: expected
+      native: false
       hub: false
+      observed: forwards to grant@bvrgroup.co.za
     drive:
-      native: unknown
+      native: false
     calendar:
-      native: unknown
+      native: false
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
-      cursor_mcp: missing
-      forward_to_hub: missing
-    approval: required
+      grok_bot_plugin: n/a
+      grok_bot_browser: n/a
+      cursor_mcp: n/a
+      forward_to_hub: via-grant-bvrgroup
+    approval: not-a-google-login
     required_for: [aqua]
+    note: Read this address on grant@bvrgroup.co.za. Do not Add account.
 
   - email: grant@hmsand.co.za
-    kind: mailbox   # confirm google_login
+    kind: forward   # Grant 2026-08-22: not a Google login; forwards to hub
     owner: grant
     lanes: [heavy-metal]
-    services: [gmail, drive]
+    services: [gmail]
     gmail:
-      native: expected
+      native: false
       hub: false
-      observed: hub label grant@hmsand.co.za exists (thin)
+      observed: hub label grant@hmsand.co.za exists (thin); forwards to grant830318@gmail.com
     drive:
-      native: unknown
+      native: false
     calendar:
-      native: unknown
+      native: false
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
-      cursor_mcp: missing
-      forward_to_hub: missing
-    approval: required
+      grok_bot_plugin: n/a
+      grok_bot_browser: n/a
+      cursor_mcp: n/a
+      forward_to_hub: live
+    approval: not-a-google-login
     required_for: [yard]
+    note: Read this address on the hub. Do not Add account.
 
   - email: mail@hmsand.co.za
     kind: sender   # confirm whether this is a Google login

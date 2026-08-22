@@ -88,7 +88,7 @@ roles:
       gmail: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
       drive: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
       calendar: [grant830318@gmail.com]
-    note: Layer B avatar grant@bvrgroup.co.za is live. accounts@ is still a separate mailbox if it exists.
+    note: Layer B avatar grant@bvrgroup.co.za is live. accounts@ forwards there. Do not Add account for accounts@.
     routine: on new PW labelled mail
     create_if_missing: false
 
