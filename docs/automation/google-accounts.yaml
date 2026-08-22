@@ -52,11 +52,11 @@ accounts:
     calendar:
       native: expected
     link:
-      grok_bot_plugin: missing
-      grok_bot_browser: missing
+      grok_bot_plugin: approved_grant_action_required
+      grok_bot_browser: approved_grant_action_required
       cursor_mcp: missing
       forward_to_hub: missing
-    approval: required
+    approval: granted_2026-08-22
     required_for: [family-command-center, school-filters]
 
   - email: grant@hospitality.partners
