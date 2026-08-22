@@ -42,11 +42,11 @@ proposed:
   "Postage & Shipping": { group: Food, line: Household consumables, type: Essential }
   "Office Supplies & Expenses": { group: Children, line: School supplies, type: Essential }
   "Parking & Tolls": { group: Transport, line: Vehicle maintenance, type: Essential, note: no toll line yet }
+  Gas: { group: Housing, line: Electricity, type: Essential, note: "Grant 2026-08-22: Teslas only; Monarch Gas = Tesla Supercharger. Home charging is on the City of Austin electric bill." }
 
 ask_grant:
   - Shopping          # 107 rows; no single sheet line
-  - Gas               # 104 rows; sheet has no Fuel line (household is EV)
-  - Gas & Electric    # Electricity vs Natural gas
+  - Gas & Electric    # Austin utility? Electricity vs Natural gas vs both
   - Insurance         # Renters vs Model Y vs other
   - Clothing          # Children vs adult
   - Electronics

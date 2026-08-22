@@ -93,3 +93,5 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | USA Budget 3-month forecast income = average of last 3 NatPay stubs (`FORECAST: average-3`). If fewer than 3, average whatever exists (`FORECAST SHORT: use-what-we-have`). Numbers only; no stub bodies. |
 | 2026-08-22 | USA Budget forecast spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking (`FORECAST SPEND: intended` + `FORECAST DISCRETIONARY: include`). |
 | 2026-08-22 | USA Budget first close = dry-run now (`FIRST CLOSE: dry-run now`). Repeat on 7 Sep 2026 at 07:00 CT. |
+| 2026-08-22 | Monarch dry-run file uploaded (`2026-08-22__monarch__bell__transactions`). Category map proposed; Shopping/Gas/Insurance still ask Grant. |
+| 2026-08-22 | Monarch Gas = Tesla Supercharger → Housing / Electricity. Teslas only; no petrol line. |
