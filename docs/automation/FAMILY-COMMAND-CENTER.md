@@ -56,7 +56,7 @@ Create under Gmail (nested). Do not delete `Personal/Family`.
 | --- | --- | --- |
 | `Family/School` | AISD, campus, teacher, volunteer FYI | skip inbox |
 | `Family/Medical` | Portals, reminders, results **files** | skip inbox; Action if a date/signature |
-| `Family/Finance` | Household bank, insurance, WesBank, Tesla, utilities | skip inbox unless due ≤7d |
+| `Family/Finance` | Household bank (Bell daily flash on thebrownsusa), insurance, WesBank, Tesla, utilities | skip inbox unless due ≤7d |
 | `Family/Budget` | Budget sheet pings, category questions | skip inbox |
 | `Family/Calendar` | Extracted events (agent-applied) | skip inbox |
 | `Family/FileOnly` | Filed; no parent action | skip inbox |
@@ -126,6 +126,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - Incoming household bills → due-date row (payee, amount, due, source thread).
 - Phase 3 household categories feed **monthly totals only** into the sheet (no family narrative).
 - Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
+- **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
 
 ---
 

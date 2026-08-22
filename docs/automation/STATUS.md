@@ -16,6 +16,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
+- **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
 - **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Grant created hub filters 4–5 (2026-08-22): From `businessprofile-noreply@google.com` → `GBP`; From `mail@hmsand.co.za` → `Entity/HeavyMetal`. No Skip Inbox. Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
@@ -42,10 +43,10 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 7b | Forex checklist + family one-pager | not started | `phase-07b-forex` | 2h/event → 0.5h | Grant doc list |
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
-| 10a | Family filters | **labels live on hub only** | Grant: add filters on **thebrownsusa** + hub (403) | 2–4h → 0 on FYI | filter scope; `G1` thebrownsusa |
+| 10a | Family filters | **thebrownsusa AISD + Bell from-only** | leftovers cap ~20/day; propose standing filters | 2–4h → 0 on FYI | Grant creates filters (MCP create 403) |
 | 10b | Family digest | **Family Bot live** | first fire Monday 06:20 CT | 10 min/day | S10/S11 off |
 | 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
-| 10d | Budget / bills | not started | after 10a | hunt → due list | Budget sheet |
+| 10d | Budget / bills | **scope locking** | Bell flash filter + Budget sheet + Monarch on 7th | hunt → due list | close day 7th CT |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
 | 12 | Stale pipeline | not started | `phase-12-stale` | 1–2h → 0.2h | `H2` |
 
@@ -84,3 +85,5 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | `accounts@bvrgroup.co.za` forwards to `grant@bvrgroup.co.za`. `grant@hmsand.co.za` forwards to the hub. Neither is a Google login. |
 | 2026-08-22 | Hub labels `Queue/NeedsGrant`, `Entity/Hospitality`, `Entity/PerfectWater`, `Entity/HeavyMetal`, `GBP` created via MCP. Sample stamped: GBP 20, HeavyMetal 10. Gmail filter create still 403. |
 | 2026-08-22 | Hub filters 4–5 live: GBP from `businessprofile-noreply@google.com`; Entity/HeavyMetal from `mail@hmsand.co.za`. No Skip Inbox. |
+| 2026-08-22 | Grant skipped Cloud MCP for `thebrownsusa@gmail.com` on this VM. Hub Gmail stays the only Cloud MCP. Family/Bell work stays on the Grok Bot thebrownsusa avatar. |
+| 2026-08-22 | Bell daily-flash filter locked from-only: `from:donotreply@customercenter.net` → `Family/Finance` on thebrownsusa. No Skip Inbox. Do not create on hub. |

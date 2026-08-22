@@ -37,6 +37,15 @@ filters:
       add_labels: [Family/Finance]
     notes: Vehicle finance already arriving on grant@thebrowns.co.za.
 
+  - id: household-bell-flash
+    mailbox: thebrownsusa@gmail.com
+    criteria:
+      from: donotreply@customercenter.net
+    action:
+      add_labels: [Family/Finance]
+    skip_inbox: false
+    notes: Grant 2026-08-22 BELL FILTER from-only. Daily Bell Bank flash only. Search on thebrownsusa was Bell-only so no subject constraint. Do not create this filter on the hub. Cloud MCP stays hub-only (Grant skipped second Gmail on this VM). Family Bot reads Family/Finance on the thebrownsusa avatar.
+
   - id: household-budget-sheet
     criteria:
       containWords: ["Budget"]
