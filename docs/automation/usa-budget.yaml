@@ -81,7 +81,9 @@ books:
     leftover_when: only if merchant and purpose remain unknown after a best-guess onto an existing plan line
     leftover_policy: prefer_existing_line_over_ask
     leftover_asks: grant
-    leftover_contains: [merchant, item_description, date, source_email_or_monarch_image]
+    leftover_contains: [merchant, item_description, date, amount, source_email_or_monarch_image]
+    intended_source_tab: Group / Line Item / Type / Amount
+    bills_scratch_tab: not_used_for_close
     leftover_omits_unless_grant_asks: [last_four, medical_item_text]
     amounts_on_drive: true
     amounts_in_chat_or_git: false
