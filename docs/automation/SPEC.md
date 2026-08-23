@@ -572,7 +572,7 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 **Spec:** `FAMILY-COMMAND-CENTER.md` + `family-filters.yaml`. This is **not** a leftover. It is a first-class daily system so kids’ school, medical, bills, and budget stop landing in the business inbox.
 
 **Labour:** 2–4 h/week of interrupt-driven family mail → **10 min morning + 5 min evening** on `Family/Action` only.  
-**Runtime:** Zero-token filters **route** senders into `Family/*`. Grok Bot **Family** AI classifies those labelled threads (Action / This Week / FYI). No action-word lists. Cloud Agents **build** filters/templates; they do not run every morning (`RUNTIME.md`).
+**Runtime:** Zero-token filters **route** senders into `Family/*`. Grok Bot **Family** AI classifies those labelled threads (Action / This Week / FYI). No action-word lists. Cloud Agents **record** locks in git; they do not run Family (`RUNTIME.md`, `CAPABILITIES.md`).
 
 #### 10a. Filters and labels (do first — $0, no Bot)
 

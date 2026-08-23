@@ -1,8 +1,8 @@
 # Runtime: Grok Bot, Cursor, and Cloud Agents
 
-**Sources (22 Aug 2026):** [Cloud Agents](https://cursor.com/docs/cloud-agent.md), [Capabilities](https://cursor.com/docs/cloud-agent/capabilities.md), [Automations](https://cursor.com/docs/cloud-agent/automations.md), [Models & Pricing](https://cursor.com/docs/models-and-pricing.md), [Grok Bot getting started](https://cursor.com/help/grok-bot/getting-started.md), [Grok Bot plans](https://cursor.com/help/grok-bot/plans.md), [Grok Bot plugins](https://cursor.com/help/grok-bot/connect-plugins.md), [xAI Grok Bot announcement](https://x.ai/news/introducing-grok-bot).
+**Sources (23 Aug 2026 rethink):** [CAPABILITIES.md](CAPABILITIES.md) is the fact sheet. Vendor pages: [Grok Bot use cases](https://docs.x.ai/grok-bot/use-cases), [computer](https://docs.x.ai/grok-bot/computer-and-apps), [routines](https://docs.x.ai/grok-bot/skills-routines-and-automations), [Cloud Agents](https://cursor.com/docs/cloud-agent.md), [Automations](https://cursor.com/docs/cloud-agent/automations.md), [plans](https://cursor.com/help/grok-bot/plans.md).
 
-This file is the **platform contract**. If a phase fights these characteristics, the phase is wrong.
+This file is the **platform contract**. If a phase fights these characteristics, the phase is wrong. If this file fights `CAPABILITIES.md`, this file is wrong.
 
 ---
 
@@ -21,32 +21,32 @@ This file is the **platform contract**. If a phase fights these characteristics,
 - Cloud Agents: any paid Cursor plan (including Start). On-demand billing must be enabled.
 - Automations: **not on Start**. Pro and up.
 - Grok Bot: **Pro+, Ultra, or Teams** (every member). Pro alone cannot run Grok Bot unless SuperGrok Plus/Heavy is linked.
-- This Cloud environment already has Gmail / Drive / Calendar MCP — Cloud Agents *can* triage mail **when launched**, but a **daily Automation** that clones the repo at max context is the wrong tool for volume.
+- This Cloud environment already has Gmail / Drive / Calendar MCP on the **hub only**. Cloud Agents may lock a decision they can see on the hub. They cannot see AISD and they cannot keep a thebrownsusa / Monarch session. Do not use them as a Family digest fallback.
 
 ---
 
 ## 2. Cost characteristics that redesign the build
 
-1. **Token cost is dominated by context, not cleverness.** A daily Cloud Automation at max context that re-reads `SPEC.md` + the repo to label mail will burn more than Grok Bot reading `Family/Action` only.
-2. **Grok Bot weekly meter is precious.** Use it for *judgment and routines*, not for walking 7,720 threads. One fat overnight scan can exhaust a trial or a weekly bucket ([plans](https://cursor.com/help/grok-bot/plans.md): usage is steps + tokens, not message count).
-3. **Composer 2.5** ($0.50 / $2.50 per 1M) or **Cursor Models Grok** is the default for **build** Cloud Agents. Do not pick Claude Opus / Fast Grok for classify-and-file.
-4. **Rules before models for routing.** Gmail filters and sender tables are free for *who* mailed (AISD, Standard Bank, CIPC, GBP). Family Bot AI then decides Action / This Week / FYI on those labelled threads — do not use keyword lists for Action.
-5. **Cache the control plane.** Cloud Agents must read `RUNTIME.md` + the *one* phase prompt, not the whole history of the profile. Keep launch prompts short.
-6. **One Cloud Agent per build package, then die.** Subscriptions (`/subscribe`, timers up to 180 days) only for “keep this PR green”, not for daily mail.
-7. **Human time is also a cost.** Per-item `APPROVE SEND` on every school newsletter is a failed design. Standing approvals exist so the human is the exception path.
+1. **Grok Bot runs the household.** Official method: Bot description → one real task → correct → skill → routine. Do not invent a Cloud Agent digest or a keyword Action filter.
+2. **Token cost is dominated by context.** A daily Cloud Automation at max context that re-reads `SPEC.md` is the wrong tool. Grok Bot routines do not clone this repo.
+3. **Grok Bot weekly meter is precious.** Use it for judgment on **labelled** Family/* / queues, not 7,720 unlabelled threads. Usage is steps + tokens, not message count ([plans](https://cursor.com/help/grok-bot/plans.md)).
+4. **Composer 2.5** or **Cursor Models Grok** for **build** Cloud Agents (code / lock files). Family classify is not a Cloud Agent job.
+5. **Rules before models for routing.** Gmail filters answer *who mailed*. Family AI answers Action / This Week / FYI.
+6. **One Cloud Agent per repo package, then die.** Subscriptions only to keep a PR green. Never daily mail.
+7. **Human time is also a cost.** Per-item `APPROVE SEND` on every newsletter is a failed design. `S*` after a sample. Teach Family by doing one Sunday, not by pasting a novel.
 
 **Steering spend (order of magnitude, not a quote)**
 
 | Daily job | Right surface | Why |
 | --- | --- | --- |
 | Label AISD / bank / CIPC | Gmail filter | $0, instant, no weekly meter |
-| Family + business **action cards** | Grok Bot routine on **labelled** queues only | Weekly meter; Gmail plugin; no repo clone |
-| Texas-morning digest | Grok Bot routine (preferred) or a **tiny** Cloud Agent with Gmail MCP and **no extra repo files** | If Automation: attach repo but prompt “do not read SPEC; write digest only” — still max context, so prefer Bot |
-| Sunday pack / weekly AR | Cloud Automation cron | Once a week can afford max context |
+| Family + business **action cards** | Grok Bot on labelled `Family/*` / queues | Persistent computer; AI decides; no repo clone |
+| Texas-morning / Sunday Family digest | **Family Bot routine** | Official Chief of Staff pattern. Not a Cloud Agent. |
+| Sunday *code* pack / weekly AR template | Cloud Agent only if the output is a PR | Automations always max context — do not cron the Family digest |
 | New feature / parser / WA slots | Cloud Agent on Composer or Grok 4.6 (Cursor Models) | PR is the review gate |
 | Guest-tone or legal edge | Grok Bot or interactive Cursor | Human still owns send |
 
-If Grok Bot is **not** entitled on this Cursor account: daily work falls back to Gmail filters + one Cloud Agent launched from Grok-in-Cursor chat (model, not Bot) with MCP. Do not invent a third orchestrator.
+This account is `RUNTIME: grok-bot=yes cursor-plan=ultra on-demand=yes`. There is no Cloud Agent digest fallback. If Grok Bot were ever off, Grant would launch Family work himself — still not a daily Automation.
 
 ---
 
@@ -55,11 +55,11 @@ If Grok Bot is **not** entitled on this Cursor account: daily work falls back to
 ### Grok Bot can
 
 - Stay up 24/7 on its own computer; jobs do not die when Grant closes the laptop.
-- Use **Gmail, Drive, Calendar, Notion, Slack** plugins; **browser-sign-in every Google login** plus tools without APIs (NightsBridge, Loyverse, FNB) — Grant types the password on the Bot computer; the Bot does not see it.
-- Learn a workflow **by watching once**, save it as a **routine**, run it on a schedule.
-- Run **many Bots** (Ops Chief, Family, PW, Hospitality, HM, Trust) in sidebar sections; they can pass work and only ping Grant for judgment ([announcement](https://x.ai/news/introducing-grok-bot)).
-- Launch or instruct Cursor Cloud Agents for repo work (this programme’s original intent).
-- Come back only when approval is required — **if** standing policies are written.
+- Use the **Gmail plugin** (named in Help). Drive / Calendar / Monarch / AISD portals: **browser** on the shared computer. Grant types the password; the Bot does not see it. Plugins are account-wide; browser sessions are shared by every Bot.
+- Learn a workflow **by watching once** (draft skill, ≤10 min, desktop). Then a **routine** on a schedule. Official: do not start with a giant written OS.
+- Run **many Bots** (Ops Chief, Family, Stay, Aqua, Yard, Vault). They DM each other. Group chat 2–6. A Bot is not a login wall — one computer per person.
+- **Launch Cursor Cloud Agents** for repo work (team toggle, default on). They cannot use this Bot computer’s Google sessions.
+- Come back only when approval is required — standing never-do in the Bot description (`N*`, `S10`/`S11`).
 
 ### Grok Bot must not be used for
 
@@ -78,8 +78,9 @@ If Grok Bot is **not** entitled on this Cursor account: daily work falls back to
 
 ### Cloud Agents must not be used for
 
-- Daily max-context mail walks (Automations always max context).
-- Long-running “stay alive and watch Gmail” (idle VMs hibernate; this is not Grok Bot).
+- Daily mail, Family digest, Budget close, Monarch export (wrong computer; no session).
+- Daily max-context Automations.
+- Long-running “stay alive and watch Gmail” (idle VMs hibernate).
 - Expecting a dirty local tree (cloud starts from git).
 
 ---
@@ -168,11 +169,12 @@ Do not scan the full inbox. Do not use X. Do not send mail.
 
 | Old assumption | Why it was wrong | New rule |
 | --- | --- | --- |
-| Grok Bot is the daily inbox walker | Weekly meter + 7720 threads | Filters first; Bot reads queues |
-| Daily Cloud Automation for digest | Automations = max context = expensive | Grok Bot routine preferred; Automation at most **weekly** |
+| Grok Bot is a keyword filter + Action labels only | Official Bot **reads and decides** (Chief of Staff / Expense Manager) | Filters route; Family AI classifies labelled threads |
+| Daily Cloud Agent / Automation for Family digest | Wrong computer, hub-only MCP, max context, dies | Family Bot routine. Teach one Sunday. |
+| Giant amend pastes every lock | Official path is description → one task → skill → routine | Short role text. Correct in the Family thread. |
 | Per-item approve every draft | Recreates the labour we are removing | Standing `S*` after a sample |
-| Phase 10 = light household labels | School/medical/budget is high-volume daily | **Family Command Center** (Phase 10a–10d) is first-class, zero-token + Family Bot |
-| One orchestrator chat does everything | Context rot + cost | Specialist Bots + dying Cloud Agents |
+| Phase 10 = a future Cloud Agent package | Family is already live | Cloud Agent only to **record** locks in git |
+| One orchestrator chat does everything | Context rot + cost | Specialist Bots + dying Cloud Agents for PRs |
 
 ---
 

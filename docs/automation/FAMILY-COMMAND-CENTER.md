@@ -46,7 +46,9 @@ Inbound Gmail
 
 Filters do **not** decide Action. Action-word lists are retired (`DIGEST CLASSIFY: ai`). Family reads subject + snippet first, opens the body only if it still cannot decide, and cards it if unsure. Do **not** scan the whole inbox. A sender that is not filtered (Remind, ParentSquare, …) never reaches AI until a from-filter exists.
 
-Cloud Agents **build** this (filters, schema, digest template). They do **not** run it every morning.
+**Who runs this:** Grok Bot **Family** (persistent computer, thebrownsusa avatar). Official pattern: Chief of Staff digest + Expense Manager close. Teach one real Sunday, save a skill/routine. Cloud Agents only **record** locks in git. They do not run the digest and they cannot keep a Monarch session.
+
+Cloud Agents **build** filter specs and lock files. They do **not** run Family every morning.
 
 ---
 
