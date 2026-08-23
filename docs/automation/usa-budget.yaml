@@ -29,14 +29,18 @@ sheet:
     - 3-month forecast
     - Leftover for Grant
   draft:
-    line_items_title: Budget — Line items draft 2026-08-23
-    line_items_id: 1YDpE0IQEYWGEwgsUlIpXPNqME0PQnPpUYFny94zJNLk
-    leftover_title: Budget — Leftover for Grant 2026-08-23
-    leftover_id: 1bGS9BJGAyluaPM_4NidLZLgXWAAcJskvmnZNgwpdx0Q
+    line_items_title: Budget — Line items AI 2026-08-23
+    line_items_id: 1lo_DjuCLl-5oniqsuBSP_ibCQbtRwdPCK1FPmRYZC1M
+    line_items_row_count: 64
+    leftover_title: Budget — Leftover for Grant 2026-08-23 — 1 left
+    leftover_id: 1W0-gr_FB5VPjGUchIn8GyUVMNNLLYik7ZEVYuFdZ7Zk
     leftover_compile: 2026-08-23
     leftover_mailbox: hub_only   # thebrownsusa Cloud MCP skipped
-    leftover_row_count: 66
-    ai_mapped_hub_amazon_count: 12
+    leftover_row_count: 1
+    leftover_merchant: Brown & Grant
+    empty_line_items_draft_trashed: 1YDpE0IQEYWGEwgsUlIpXPNqME0PQnPpUYFny94zJNLk
+    old_66_row_leftover_trashed: 1bGS9BJGAyluaPM_4NidLZLgXWAAcJskvmnZNgwpdx0Q
+    ai_mapped_hub_amazon_count: 21
     write_path: family_bot_as_thebrownsusa
 
 books:
@@ -67,12 +71,14 @@ books:
   allocator:
     first: ai_identify_item_then_map_to_budget_line
     if_ai_fails: leftover_list_for_grant
-    leftover_when: sheet compile or update (7th close and any dry-run compile)
+    leftover_when: only if merchant and purpose remain unknown after a best-guess onto an existing plan line
+    leftover_policy: prefer_existing_line_over_ask
     leftover_asks: grant
     leftover_contains: [merchant, item_description, date, source_email_or_monarch_image]
     leftover_omits_unless_grant_asks: [amount, last_four, medical_item_text]
     after_grant_answers: write Line items tab and roll category totals to main Budget
-    do_not_invent: true
+    do_not_invent_new_plan_lines: true
+    may_pick_existing_line: true
   shopping_main_sheet: category_totals_only
   shopping_detail_tab: Line items
   shopping_detail_tab_feeds: category totals on the main Budget plan / Budget vs Actual
