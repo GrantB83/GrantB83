@@ -135,6 +135,14 @@ close:
     - log into City of Austin
     - pay anyone
   grant_phrase_family_closes: "FAMILY CLOSES: yes"
+  family_locked: 2026-08-23
+  family_locked_text: Family confirmed reminder-only is out; routine USA Budget close 7th 07:00 CT is on
+  test_close:
+    grant_phrase: "TEST CLOSE: now"
+    uses: existing_monarch_dry_run_first
+    optional_export: if_monarch_session_live
+    write_to: live Budget tab "Budget vs Actual — test" plus refresh Exceptions sibling
+    do_not: [overwrite intended plan, freeze official close, archive as official, quote amounts in chat]
   books_are: monarch_csv_plus_statement
   daily_flash_is_not_books: true
   first_close: dry_run_now
@@ -178,7 +186,7 @@ build_vs_run:
   tabs_formulas_mapping: cursor_cloud_agent_once
   monthly_and_daily_run: family_bot
   cloud_mcp_thebrownsusa: skipped_2026-08-22
-  family_amend_prompt: close_block_ready   # Grant 2026-08-23: Family takes the 7th close load
+  family_amend_prompt: locked_by_family_2026-08-23
   daily_digest_amend: wait_until_grant_says   # still not pasted unless Grant asks
 
 never:
