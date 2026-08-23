@@ -16,6 +16,13 @@ sheet:
   grant_phrase_editors: "LIANA SHEET: yes"
   currency: USD
   zar_snapshot: out_of_scope_until_grant_says
+  planned_tabs:
+    - existing intended plan (category totals)
+    - Line items   # receipt/email item rows; feeds category totals; queryable
+    - Budget vs Actual
+    - Paystubs     # numbers only
+    - Sinking target
+    - 3-month forecast
 
 books:
   source: monarch_official_csv
@@ -37,19 +44,23 @@ books:
   shopping_grant_phrase: "MAP SHOPPING: new-line Shopping"
   shopping_split: autonomous_item_level_from_receipts
   shopping_split_sources:
-    - monarch_receipt_images_on_family_bot_session
-    - retailer_emails_when_no_monarch_image
-  shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a Budget sheet line
+    - retailer_emails_first
+    - monarch_receipt_images_only_for_remainder
+  shopping_receipt_mailboxes: [grant830318@gmail.com, thebrownsusa@gmail.com]
+  shopping_receipt_mail_phrase: "RECEIPTS MAIL: both"
+  shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a sheet line
+  shopping_main_sheet: category_totals_only
+  shopping_detail_tab: Line items
+  shopping_detail_tab_feeds: category totals on the main Budget plan / Budget vs Actual
   shopping_split_run: family_bot_on_7th_close
   shopping_split_not: this_cloud_vm_daily
   shopping_tax:
-    keep_item_level_allocation: true
+    keep_item_level_on_detail_tab: true
     agent_does_not_determine_deductibility: true
     agent_does_not_file: true   # N2
     flag_tax_review: true
     never_quote_line_items_in_chat_or_git: true
   shopping_skip_n3: true   # pharmacy / medical item text stays out
-  shopping_mailbox_pending: hub_has_amazon_90d_estimate_201_metadata_only
   unofficial_api: never
   stored_passwords: never
   monarch_session: family_bot_computer   # Grant types password; session stays
