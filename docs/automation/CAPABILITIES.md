@@ -94,3 +94,24 @@ Do **not** start a Cloud Agent to “fix the Family digest.” Message Family. T
 Do **not** start a Cloud Agent to close the Budget. Family already can, as thebrownsusa.
 
 Do start a Cloud Agent when the output is a **repo change** (locks, WhatsApp agent, a new filter spec Grant asked to record).
+
+---
+
+## 6. Public jobs that fit this household (2026-08-23)
+
+X search from this VM is **blocked** until Grant onboards that X account at https://console.x.com. Below is from official “jobs Bots are doing today” ([more plans](https://x.ai/news/grok-bot-more-plans)), [use-cases](https://docs.x.ai/grok-bot/use-cases), Cursor forum, and Automations docs — not a live X crawl.
+
+| Public job | Fits | How we use it | Do not |
+| --- | --- | --- | --- |
+| **Inbox manager** | Family + Ops Chief | Work the labelled lane. Leave only mail that needs a person. AI decides Action / This Week / FYI. | Full 7k inbox. Keyword Action lists. |
+| **Chief of Staff digest** | Family 06:20 / Sunday 17:00 · Ops Chief 06:30 | Source-linked cards. Teach one real Sunday. | Cloud Agent digest. Daily Automation. |
+| **Expense Manager** | Family 7th close | Monarch + Budget sheet as thebrownsusa. TEST CLOSE already proved the write. | This Cloud VM closing books. |
+| **Office manager** | Stay / Aqua / Yard | Browser the real portals (Hiver, NightsBridge, Loyverse, mail@). Work lands in the tool. | Invent rates. New WA Cloud API number. |
+| **Digital declutterer** | Vault / Family Drive | Audit Drive + subscriptions. Discard only after Grant says. | Bulk delete before `S10`. |
+| **Sales prospector** | Stay | Draft guest follow-ups. Grant/Liana send. | Auto-send (`H1`/`H2`). |
+| **Bug reproduction → Cloud Agent** | WhatsApp / entity apps | Family/Ops Chief may *ask* a Cloud Agent for a **PR**. Forum: launch can fail (GitHub rate-limit). If it fails, Grant starts the Cloud Agent from Cursor. | Daily mail via Cloud Agent. |
+| **Cursor Automations** | Code only | PR review, CI babysit, Slack *bug* triage, codebase digest. | Family school mail. Budget close. |
+
+**Forum caveats we keep:** all Bots share one computer; some Google sites still ask each Bot to sign in; Grok Bot → Cloud Agent launch is not guaranteed.
+
+**Skip for now:** meeting stand-in, website builder, unsupervised refunds, game artist.
