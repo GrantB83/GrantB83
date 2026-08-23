@@ -29,18 +29,20 @@ sheet:
     - 3-month forecast
     - Leftover for Grant
   draft:
-    line_items_title: Budget — Line items AI 2026-08-23
-    line_items_id: 1lo_DjuCLl-5oniqsuBSP_ibCQbtRwdPCK1FPmRYZC1M
-    line_items_row_count: 64
-    leftover_title: Budget — Leftover for Grant 2026-08-23 — 1 left
-    leftover_id: 1W0-gr_FB5VPjGUchIn8GyUVMNNLLYik7ZEVYuFdZ7Zk
+    actuals_title: Budget — Actuals dry-run 2026-08-23
+    actuals_id: 19OGoNTA3vZRd8tcB5Gi0-1oguht-Fk1DdILhOnnIjAg
+    actuals_row_count: 64
+    leftover_title: Budget — Exceptions dry-run 2026-08-23
+    leftover_id: 13XYcQZv_O25Rl77iLkQly3JQpXUm30PZLCRME7Dyurw
     leftover_compile: 2026-08-23
     leftover_mailbox: hub_only   # thebrownsusa Cloud MCP skipped
     leftover_row_count: 1
     leftover_merchant: Brown & Grant
+    exceptions_row_count: 84
     empty_line_items_draft_trashed: 1YDpE0IQEYWGEwgsUlIpXPNqME0PQnPpUYFny94zJNLk
     old_66_row_leftover_trashed: 1bGS9BJGAyluaPM_4NidLZLgXWAAcJskvmnZNgwpdx0Q
-    ai_mapped_hub_amazon_count: 21
+    line_items_ai_no_amounts_trashed: 1lo_DjuCLl-5oniqsuBSP_ibCQbtRwdPCK1FPmRYZC1M
+    leftover_no_amounts_trashed: 1W0-gr_FB5VPjGUchIn8GyUVMNNLLYik7ZEVYuFdZ7Zk
     write_path: family_bot_as_thebrownsusa
 
 books:
@@ -61,13 +63,18 @@ books:
   city_of_austin_split_source: Grant or Liana downloads the bill from the COA website and uploads the PDF to Drive. Family does not log into COA.
   shopping_hold_line: Shopping (bundle)
   shopping_grant_phrase: "MAP SHOPPING: new-line Shopping"
-  shopping_split: autonomous_item_level_from_receipts
+  shopping_split: optional_refinement_when_receipt_changes_a_line
+  shopping_split_not_a_close_blocker: true
   shopping_split_sources:
     - retailer_emails_first
     - monarch_receipt_images_only_for_remainder
   shopping_receipt_mailboxes: [grant830318@gmail.com, thebrownsusa@gmail.com]
   shopping_receipt_mail_phrase: "RECEIPTS MAIL: both"
   shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a sheet line
+  close_unit: monarch_transaction
+  close_primary_output: actuals_by_plan_line_with_amounts
+  close_compare: intended_monthly_vs_full_month_actuals
+  last_full_month_rule: last calendar month fully inside the export
   allocator:
     first: ai_identify_item_then_map_to_budget_line
     if_ai_fails: leftover_list_for_grant
@@ -75,7 +82,9 @@ books:
     leftover_policy: prefer_existing_line_over_ask
     leftover_asks: grant
     leftover_contains: [merchant, item_description, date, source_email_or_monarch_image]
-    leftover_omits_unless_grant_asks: [amount, last_four, medical_item_text]
+    leftover_omits_unless_grant_asks: [last_four, medical_item_text]
+    amounts_on_drive: true
+    amounts_in_chat_or_git: false
     after_grant_answers: write Line items tab and roll category totals to main Budget
     do_not_invent_new_plan_lines: true
     may_pick_existing_line: true

@@ -4,13 +4,17 @@
 schema_version: 1
 updated: 2026-08-23
 leftover_compile: 2026-08-23
-leftover_file_id: 1W0-gr_FB5VPjGUchIn8GyUVMNNLLYik7ZEVYuFdZ7Zk
+leftover_file_id: 13XYcQZv_O25Rl77iLkQly3JQpXUm30PZLCRME7Dyurw
 leftover_row_count: 1
 leftover_merchant: Brown & Grant
-line_items_ai_file_id: 1lo_DjuCLl-5oniqsuBSP_ibCQbtRwdPCK1FPmRYZC1M
-line_items_ai_row_count: 64
+actuals_file_id: 19OGoNTA3vZRd8tcB5Gi0-1oguht-Fk1DdILhOnnIjAg
+actuals_row_count: 64
+exceptions_row_count: 84
 leftover_mailbox: hub_only
 allocator_policy: prefer_existing_line_over_ask
+amounts_on_drive: true
+amounts_in_chat_or_git: false
+close_unit: monarch_transaction
 source_file_title: 2026-08-22__monarch__bell__transactions
 source_file_id: 1C7YZ8Qaj5wazgm_EEr8ITZVkEJr9YLrO7sUYGW48H30
 source_folder: The Browns USA / Finance / Bell Bank
