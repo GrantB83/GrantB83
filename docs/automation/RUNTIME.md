@@ -30,7 +30,7 @@ This file is the **platform contract**. If a phase fights these characteristics,
 1. **Token cost is dominated by context, not cleverness.** A daily Cloud Automation at max context that re-reads `SPEC.md` + the repo to label mail will burn more than Grok Bot reading `Family/Action` only.
 2. **Grok Bot weekly meter is precious.** Use it for *judgment and routines*, not for walking 7,720 threads. One fat overnight scan can exhaust a trial or a weekly bucket ([plans](https://cursor.com/help/grok-bot/plans.md): usage is steps + tokens, not message count).
 3. **Composer 2.5** ($0.50 / $2.50 per 1M) or **Cursor Models Grok** is the default for **build** Cloud Agents. Do not pick Claude Opus / Fast Grok for classify-and-file.
-4. **Rules before models.** Gmail filters and sender tables are free and more reliable than an LLM for AISD, Standard Bank, CIPC, GBP.
+4. **Rules before models for routing.** Gmail filters and sender tables are free for *who* mailed (AISD, Standard Bank, CIPC, GBP). Family Bot AI then decides Action / This Week / FYI on those labelled threads — do not use keyword lists for Action.
 5. **Cache the control plane.** Cloud Agents must read `RUNTIME.md` + the *one* phase prompt, not the whole history of the profile. Keep launch prompts short.
 6. **One Cloud Agent per build package, then die.** Subscriptions (`/subscribe`, timers up to 180 days) only for “keep this PR green”, not for daily mail.
 7. **Human time is also a cost.** Per-item `APPROVE SEND` on every school newsletter is a failed design. Standing approvals exist so the human is the exception path.

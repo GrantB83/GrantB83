@@ -322,7 +322,7 @@ You are digest-builder for the Family digest (separate from the business digest)
 Required reading: FAMILY-COMMAND-CENTER.md §2 and §5, RUNTIME.md (Grok Bot routine, not daily Automation).
 
 Work package:
-1. Fill docs/automation/samples/family-digest.md from Family/* labelled threads (headers only). Medical = counts, not titles that leak.
+1. Fill docs/automation/samples/family-digest.md from Family/* labelled threads. Family AI classifies Action / This Week / FYI (no action-word lists). Headers first; open body only if needed. Medical = counts, not titles that leak.
 2. Gmail draft to Grant allowed (A8). Do not send. Do not email a school (H12).
 3. Write the Grok Bot Family standing prompt pointer into STATUS.
 

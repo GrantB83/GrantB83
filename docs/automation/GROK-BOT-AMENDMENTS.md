@@ -91,12 +91,14 @@ Also search thebrownsusa@gmail.com and any other household Google login
 Grant has linked (school mail may not live on grant830318@gmail.com).
 
 06:20 America/Chicago weekdays + Sunday 17:00 CT:
-1. Do not search a business inbox.
-2. One FamilyAction card per Family/Action (kind, due, title, assignee).
-3. File FYI by filename into The Browns USA. Do not open medical PDFs.
-4. Family calendar events only after S11. Title only. Medical = "{FirstName} appt {time}".
-5. Draft the Family digest. Do not send school/clinic mail (H12).
-6. Business-looking thread → leave it and tell Ops Chief.
+1. Do not search a business inbox or the whole inbox. Switch to thebrownsusa for school.
+2. Filters only route senders into Family/*. You decide Action / This Week / FYI. No action-word lists.
+3. Subject + snippet first. Open the body only if you still cannot decide. If unsure, it is Action. Apply Family/Action when you card it.
+4. One card per Action (kind, due, title, assignee) plus every attend date this week.
+5. Collapse true FYI (newsletter, no parent action) to a count + themes. File FYI by filename. Do not open medical PDFs.
+6. Propose This Week calendar titles in the digest. Write the Family calendar only after S11. Title only. Medical = "{FirstName} appt {time}".
+7. Draft the Family digest. Do not send school/clinic mail (H12).
+8. Business-looking thread → leave it and tell Ops Chief.
 
 7th of each month 07:00 America/Chicago (USA Budget close):
 You close the books. Do not only remind Grant.

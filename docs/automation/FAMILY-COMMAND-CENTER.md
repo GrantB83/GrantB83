@@ -32,17 +32,19 @@ No scrolling AISD newsletters. No hunting “was that vaccine form filed?”. No
 Inbound Gmail
     │
     ├─ ZERO-TOKEN filters  →  Family/School|Medical|Finance|Budget
+    │                         sender/domain routing only
     │                         skip-inbox after S10 standing approval
     │
-    ├─ Action heuristics   →  Family/Action  (stays in inbox)
-    │   due, sign, permission, volunteer, appointment, pay, overdue
-    │
-    └─ Grok Bot "Family" routine (labelled mail ONLY)
+    └─ Grok Bot "Family" AI (labelled Family/* ONLY)
+          ├─ classify each thread: Action | This Week attend | FYI
+          ├─ apply Family/Action when carded (stays in inbox)
           ├─ file attachments → 10_Household / existing The Browns USA
-          ├─ calendar events  → Family calendar (school + appt times)
+          ├─ calendar events  → Family calendar after S11; propose before
           ├─ budget lines     → Budget sheet totals / bill due list
           └─ digest draft     → Grant + Liana
 ```
+
+Filters do **not** decide Action. Action-word lists are retired (`DIGEST CLASSIFY: ai`). Family reads subject + snippet first, opens the body only if it still cannot decide, and cards it if unsure. Do **not** scan the whole inbox. A sender that is not filtered (Remind, ParentSquare, …) never reaches AI until a from-filter exists.
 
 Cloud Agents **build** this (filters, schema, digest template). They do **not** run it every morning.
 
@@ -84,7 +86,9 @@ Rules:
 - School: title may include campus + form name + due date.
 - Medical: title may include **person first name + “appointment/form/bill” + time**. Never test names, conditions, or PDF text.
 - Finance: payee + amount + due date only.
+- Family AI decides Action vs This Week vs FYI from labelled threads. No keyword list.
 - If unsure whether it is an action: **Action**, not FileOnly (false positive is cheaper than a missed permission slip).
+- This Week: any attend date in the next 7 days is a card, even when `S11` is off. Propose the calendar title. Do not write the Family calendar until `APPROVE FAMILY CAL`.
 
 ---
 
@@ -109,6 +113,11 @@ Naming: `YYYY-MM-DD__household__school|medical|bill__{counterparty}__{ref}`.
 ## 7. Calendar
 
 Calendar `Family` already exists (plus `School Holidays`).
+
+Before `APPROVE FAMILY CAL` (`S11` still off):
+
+- Read the Family calendar anyway (it may be empty).
+- List proposed This Week titles on the digest from labelled School/Medical subjects and snippets. Do not write events.
 
 After `APPROVE FAMILY CAL`:
 
@@ -145,16 +154,20 @@ Amend the **existing** household / school / calendar Bot (`GROK-BOT-AMENDMENTS.m
 Gmail plugin on the hub is **not** enough. Also sign in `thebrownsusa@gmail.com` (and any Liana login) on the Bot computer — AISD is not on `grant830318@gmail.com`. Create `family-filters.yaml` filters on **that** mailbox too.
 
 ```text
-You are Family. You only read Gmail labels Family/School, Family/Medical,
-Family/Finance, Family/Budget, Family/Action.
+You are Family. You only read labelled Family/* on the mailbox that
+has the mail (thebrownsusa for AISD). Do not search the whole inbox.
 
-06:20 America/Chicago every weekday (and Sunday 17:00 CT weekly):
-1. Do not search the whole inbox.
-2. For each Family/Action: one card (kind, due, title, assignee).
-3. File FYI attachments by filename into The Browns USA. Do not open medical PDFs.
-4. Propose or create Family calendar events only if standing approval S11 is on.
-5. Draft the Family digest to Grant and Liana. Do not send medical body text.
-6. If something looks like a business thread, leave it and tell Ops Chief.
+06:20 America/Chicago weekdays + Sunday 17:00 CT:
+1. Filters only route senders into Family/*. You decide Action / This Week / FYI.
+   No action-word lists.
+2. Subject + snippet first. Open the body only if you still cannot decide.
+   If unsure, it is Action. Apply Family/Action when you card it.
+3. Card sign / pay / attend / reply / buy, plus every attend date this week.
+4. Collapse true FYI (newsletter, no parent action) to a count + themes.
+5. File FYI by filename. Do not open medical PDFs.
+6. Propose This Week calendar titles. Write the Family calendar only after S11.
+7. Draft the digest. Do not send school/clinic mail (H12).
+8. Business-looking thread → leave it and tell Ops Chief.
 
 7th of each month 07:00 CT: you close. Export Monarch (Bell only) if
 the session is live; write Budget vs Actual; ping Grant only for

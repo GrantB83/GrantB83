@@ -16,6 +16,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
+- **Family digest classify** (2026-08-23): Grant retired action-word lists (`DIGEST CLASSIFY: ai`). Filters only route senders into `Family/*`. Family Bot AI decides Action / This Week / FYI on labelled threads. Subject + snippet first; body only if needed; if unsure, Action. This Week attend cards even while `S11` is off. No full-inbox scan. Unlabelled senders (Remind, ParentSquare) still need a from-filter.
 - **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
 - **USA Budget close** (2026-08-23): Family locked it. 7th 07:00 CT Family closes the books (reminder-only out). Grant pinged only for ask rows, a dead Monarch login, or a missing statement. Daily Family digest amend still waits.
 - **USA Budget TEST CLOSE** (2026-08-23 evening CT): **passed**. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget as thebrownsusa. Plan tab left alone. No official archive. Used existing Monarch file. Monarch session was **dead**. Ask rows: 1 (Brown & Grant). Nothing blocked. Mapping + sheet write already work. Before 7 Sep Grant types the Monarch password once on the Family computer so export is proven.
@@ -46,9 +47,9 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 7b | Forex checklist + family one-pager | not started | `phase-07b-forex` | 2h/event → 0.5h | Grant doc list |
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
-| 10a | Family filters | **thebrownsusa AISD + Bell from-only** | leftovers cap ~20/day; propose standing filters | 2–4h → 0 on FYI | Grant creates filters (MCP create 403) |
-| 10b | Family digest | **Family Bot live** | first fire Monday 06:20 CT | 10 min/day | S10/S11 off |
-| 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
+| 10a | Family filters | **route-only AISD + Bell** | add from-filters for Remind/ParentSquare if those senders matter | 2–4h → 0 on FYI | Grant creates filters (MCP create 403) |
+| 10b | Family digest | **AI classify locked** | paste Family amend; next Sunday/weekday digest uses AI not keywords | 10 min/day | S10/S11 off |
+| 10c | Family calendar | propose This Week on digest | write events only after `S11` | copy-paste → 0 | `S11` |
 | 10d | Budget / bills | **TEST CLOSE passed** | Grant types Monarch password once before 7 Sep; answers Brown & Grant; add 2 plan lines | hunt → due list | first live close 7 Sep 07:00 CT |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
 | 12 | Stale pipeline | not started | `phase-12-stale` | 1–2h → 0.2h | `H2` |
@@ -110,3 +111,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-23 | Family takes the 7th close load (`FAMILY CLOSES: yes`). Remind-only is off. Grant only types Monarch password if the session is dead, answers Status=ask, and supplies a missing Bell statement. Daily digest amend still waits. |
 | 2026-08-23 | Family confirmed the 7th 07:00 CT close routine is on. Test phrase `TEST CLOSE: now`. |
 | 2026-08-23 | TEST CLOSE passed. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget. Plan tab left alone. No official archive. Monarch session dead. Ask: Brown & Grant. |
+| 2026-08-23 | Family digest: retire action-word filters. AI classifies labelled Family/* (`DIGEST CLASSIFY: ai` + `DIGEST THIS WEEK: yes`). |
