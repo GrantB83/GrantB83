@@ -131,6 +131,7 @@ Existing Drive `Budget` sheet stays the SoR.
 - **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family Bot amend waits until remaining Budget scope is locked.
 - **Forecast** (2026-08-22): income = average of last 3 Paystubs-tab numbers (or whatever exists if fewer). Spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking. No stub bodies in chat.
 - **First close** (2026-08-22): dry-run now, then repeat 7 Sep 2026 at 07:00 CT. Books = official Monarch CSV (Bell only), not a Bell portal CSV.
+- **Shopping split** (2026-08-23): autonomous on the 7th. Item-level from Monarch receipt images, else retailer emails. AI assigns each item description to a Budget line. Park remainder on `Shopping (bundle)`. Flag tax-review; do not decide deductibility or file (`N2`). No line items or prices in chat/git. Skip pharmacy/medical item text (`N3`).
 
 ---
 

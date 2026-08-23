@@ -35,7 +35,21 @@ books:
   city_of_austin_split_source: Grant or Liana downloads the bill from the COA website and uploads the PDF to Drive. Family does not log into COA.
   shopping_hold_line: Shopping (bundle)
   shopping_grant_phrase: "MAP SHOPPING: new-line Shopping"
-  shopping_split: merchant_names_from_existing_monarch_export_no_amounts
+  shopping_split: autonomous_item_level_from_receipts
+  shopping_split_sources:
+    - monarch_receipt_images_on_family_bot_session
+    - retailer_emails_when_no_monarch_image
+  shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a Budget sheet line
+  shopping_split_run: family_bot_on_7th_close
+  shopping_split_not: this_cloud_vm_daily
+  shopping_tax:
+    keep_item_level_allocation: true
+    agent_does_not_determine_deductibility: true
+    agent_does_not_file: true   # N2
+    flag_tax_review: true
+    never_quote_line_items_in_chat_or_git: true
+  shopping_skip_n3: true   # pharmacy / medical item text stays out
+  shopping_mailbox_pending: hub_has_amazon_90d_estimate_201_metadata_only
   unofficial_api: never
   stored_passwords: never
   monarch_session: family_bot_computer   # Grant types password; session stays
@@ -52,6 +66,7 @@ close:
     - remind Grant to upload Bell statement PDF
     - freeze Budget vs Actual for prior month
     - check sinking target vs MONTH LEFT
+    - allocate Shopping (bundle) from Monarch receipt images, else retailer emails (item descriptions → sheet lines; tax-review flag; no N3)
   books_are: monarch_csv_plus_statement
   daily_flash_is_not_books: true
   first_close: dry_run_now
@@ -102,3 +117,5 @@ never:
   - N3 medical/will/tax-emigration bodies
   - quote amounts or last-four in chat or git
   - unofficial Monarch APIs
+  - determine tax deductibility or file income tax
+  - quote receipt line items or prices in chat or git
