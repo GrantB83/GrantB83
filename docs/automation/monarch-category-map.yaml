@@ -48,13 +48,18 @@ proposed:
     Texas Gas Service: { group: Housing, line: Natural gas, type: Essential, monarch_category_observed: Gas & Electric }
     City Of Austin: { group: Housing, line: Austin utilities (bundle), type: Essential, monarch_category_observed: Taxes, grant_phrase: "MAP AUSTIN: utilities-bundle", hold_phrase: "AUSTIN HOLD: new-line", split_source: COA website bill PDF uploaded to Drive, split_across: [Electricity, Water, Drainage, "Trash / recycling / compost", "COA Taxes", "Transportation User Fee", "Clean Community Fee", "Wastewater / sewer"], family_does_not_scrape_coa: true }
 
+allocator:
+  first: ai
+  fallback: leftover_list_for_grant_at_compile
+  applies_to: [Shopping, Insurance, Clothing, Electronics, remaining ask_grant, Line items queries]
+
 ask_grant:
   # Shopping receipts: both hub and thebrownsusa; emails first
   - Gas & Electric    # mixed: Xcel Energy, Texas Gas Service, other — do not dump whole category
   # City of Austin hold locked: new line Austin utilities (bundle)
-  - Insurance         # Renters vs Model Y vs other
-  - Clothing          # Children vs adult
-  - Electronics
+  - Insurance         # AI then leftover list (Renters vs Model Y vs Term life)
+  - Clothing          # AI then leftover list (children vs adult)
+  - Electronics       # AI then leftover list
   - Taxes
   - Financial Fees
   - Financial & Legal Services

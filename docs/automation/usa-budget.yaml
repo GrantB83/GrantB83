@@ -49,6 +49,15 @@ books:
   shopping_receipt_mailboxes: [grant830318@gmail.com, thebrownsusa@gmail.com]
   shopping_receipt_mail_phrase: "RECEIPTS MAIL: both"
   shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a sheet line
+  allocator:
+    first: ai_identify_item_then_map_to_budget_line
+    if_ai_fails: leftover_list_for_grant
+    leftover_when: sheet compile or update (7th close and any dry-run compile)
+    leftover_asks: grant
+    leftover_contains: [merchant, item_description, date, source_email_or_monarch_image]
+    leftover_omits_unless_grant_asks: [amount, last_four, medical_item_text]
+    after_grant_answers: write Line items tab and roll category totals to main Budget
+    do_not_invent: true
   shopping_main_sheet: category_totals_only
   shopping_detail_tab: Line items
   shopping_detail_tab_feeds: category totals on the main Budget plan / Budget vs Actual

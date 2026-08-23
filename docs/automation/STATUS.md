@@ -101,3 +101,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | Monarch Shopping parks on new sheet line `Shopping (bundle)` (`MAP SHOPPING: new-line Shopping`). Split later from merchant names on the existing export; no amounts in chat. |
 | 2026-08-23 | Shopping split is autonomous item-level: Monarch receipt images first, else retailer emails. AI maps item descriptions to Budget lines. Tax-review flag only — no deductibility, no eFile (`N2`). No line items in chat/git. Hub has Amazon mail (metadata only, ~201 threads/90d). thebrownsusa Cloud MCP still skipped. |
 | 2026-08-23 | Shopping receipts = both hub and thebrownsusa. Emails first; Monarch images only for remainder. Main Budget = category totals. Detail = `Line items` tab. |
+| 2026-08-23 | Allocator: AI first. If AI cannot allocate, leftover list at sheet compile/update; Grant answers; then write Line items and roll totals. No invented categories. |
