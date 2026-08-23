@@ -16,7 +16,7 @@ sheet:
   grant_phrase_editors: "LIANA SHEET: yes"
   currency: USD
   zar_snapshot: out_of_scope_until_grant_says
-  live_budget_edited: false   # no Sheets write API on this Cloud VM
+  live_budget_edited: test_tabs_only   # Family 2026-08-23 TEST CLOSE; intended plan left alone
   new_plan_lines:
     - { group: Housing, line: Austin utilities (bundle), type: Essential }
     - { group: Lifestyle, line: Shopping (bundle), type: Discretionary }
@@ -143,6 +143,17 @@ close:
     optional_export: if_monarch_session_live
     write_to: live Budget tab "Budget vs Actual — test" plus refresh Exceptions sibling
     do_not: [overwrite intended plan, freeze official close, archive as official, quote amounts in chat]
+    ran: 2026-08-23
+    outcome: passed
+    result:
+      thebrownsusa_avatar: yes
+      monarch_session: dead
+      wrote_test_tab: yes
+      exceptions_written: yes
+      ask_merchants: [Brown & Grant]
+      blocked: no
+      official_archive: no
+      plan_tab: left_alone
   books_are: monarch_csv_plus_statement
   daily_flash_is_not_books: true
   first_close: dry_run_now

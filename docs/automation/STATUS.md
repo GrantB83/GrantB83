@@ -17,8 +17,9 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
 - **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
-- **USA Budget close** (2026-08-23): Family locked it. 7th 07:00 CT Family closes the books (reminder-only out). Grant pinged only for ask rows, a dead Monarch login, or a missing statement. Test run phrase: `TEST CLOSE: now` (uses existing Monarch dry-run; writes a test tab; does not freeze official close). Daily Family digest amend still waits.
-- **USA Budget dry-run compile** (2026-08-23): live Budget **not** edited (no Sheets write API). Method corrected: Drive close files **include amounts**; chat/git still omit them. Books unit = Monarch transaction. Primary output = Actuals by plan line. Item-split is an optional later refinement, not a close blocker. Finance has `Budget — Actuals dry-run 2026-08-23` and `Budget — Exceptions dry-run 2026-08-23`. Name-only leftover sheets were trashed. One leftover merchant remains: Brown & Grant.
+- **USA Budget close** (2026-08-23): Family locked it. 7th 07:00 CT Family closes the books (reminder-only out). Grant pinged only for ask rows, a dead Monarch login, or a missing statement. Daily Family digest amend still waits.
+- **USA Budget TEST CLOSE** (2026-08-23 evening CT): **passed**. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget as thebrownsusa. Plan tab left alone. No official archive. Used existing Monarch file. Monarch session was **dead**. Ask rows: 1 (Brown & Grant). Nothing blocked. Mapping + sheet write already work. Before 7 Sep Grant types the Monarch password once on the Family computer so export is proven.
+- **USA Budget dry-run compile** (2026-08-23): this Cloud VM still has no Sheets write API. Drive close files **include amounts**; chat/git still omit them. Books unit = Monarch transaction. Primary output = Actuals by plan line. Item-split is an optional later refinement, not a close blocker. Finance still has the dry-run Actuals and Exceptions sheets. Name-only leftover sheets were trashed. One leftover merchant remains: Brown & Grant. Grant still adds `Austin utilities (bundle)` and `Shopping (bundle)` on the live **plan** tab if they are only on the test Actuals tab.
 - **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Grant created hub filters 4–5 (2026-08-22): From `businessprofile-noreply@google.com` → `GBP`; From `mail@hmsand.co.za` → `Entity/HeavyMetal`. No Skip Inbox. Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
@@ -48,7 +49,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 10a | Family filters | **thebrownsusa AISD + Bell from-only** | leftovers cap ~20/day; propose standing filters | 2–4h → 0 on FYI | Grant creates filters (MCP create 403) |
 | 10b | Family digest | **Family Bot live** | first fire Monday 06:20 CT | 10 min/day | S10/S11 off |
 | 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
-| 10d | Budget / bills | **Family close locked** | Grant pastes `TEST CLOSE: now`; answers Brown & Grant; add 2 plan lines | hunt → due list | first live close 7 Sep 07:00 CT |
+| 10d | Budget / bills | **TEST CLOSE passed** | Grant types Monarch password once before 7 Sep; answers Brown & Grant; add 2 plan lines | hunt → due list | first live close 7 Sep 07:00 CT |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
 | 12 | Stale pipeline | not started | `phase-12-stale` | 1–2h → 0.2h | `H2` |
 
@@ -108,3 +109,4 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-23 | Grant: name-only leftover sheets are inefficient. Close output is Actuals by plan line **with amounts** on Drive. Chat/git still omit amounts. Item-split is optional, not a close blocker. |
 | 2026-08-23 | Family takes the 7th close load (`FAMILY CLOSES: yes`). Remind-only is off. Grant only types Monarch password if the session is dead, answers Status=ask, and supplies a missing Bell statement. Daily digest amend still waits. |
 | 2026-08-23 | Family confirmed the 7th 07:00 CT close routine is on. Test phrase `TEST CLOSE: now`. |
+| 2026-08-23 | TEST CLOSE passed. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget. Plan tab left alone. No official archive. Monarch session dead. Ask: Brown & Grant. |
