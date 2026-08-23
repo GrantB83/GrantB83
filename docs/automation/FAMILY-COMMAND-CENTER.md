@@ -127,12 +127,12 @@ Existing Drive `Budget` sheet stays the SoR.
 - Phase 3 household categories feed **monthly totals only** into the sheet (no family narrative).
 - Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
 - **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
-- **Close** (2026-08-22): 7th of each month at **07:00 America/Chicago**. Family reminds Grant to export Monarch (Bell only), upload the Bell statement PDF, and freeze Budget vs Actual. Locks: `usa-budget.yaml`.
-- **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family Bot amend waits until remaining Budget scope is locked.
+- **Close** (2026-08-23): 7th of each month at **07:00 America/Chicago**. **Family closes** — export Monarch (Bell only) if the session is live, map transactions, write Budget vs Actual with amounts, file the Bell statement if present, archive a dated copy. Grant is pinged only for a dead Monarch session, a missing statement, or Status=ask. Locks: `usa-budget.yaml`.
+- **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family writes the close as `thebrownsusa`. Daily Family digest amend can still wait; the 7th close block is locked.
 - **Forecast** (2026-08-22): income = average of last 3 Paystubs-tab numbers (or whatever exists if fewer). Spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking. No stub bodies in chat.
 - **First close** (2026-08-22): dry-run now, then repeat 7 Sep 2026 at 07:00 CT. Books = official Monarch CSV (Bell only), not a Bell portal CSV.
 - **Shopping split** (2026-08-23): optional later, only when a receipt would move money between plan lines. Close does **not** wait on item-split. **Emails first** (hub and thebrownsusa), then Monarch receipt images only for remainder. Prefer an existing plan line over asking Grant. Main Budget shows **category totals**. Park still-open Amazon rows on `Shopping (bundle)`. Flag tax-review; do not decide deductibility or file (`N2`). Skip pharmacy/medical item text (`N3`).
-- **Close pack** (2026-08-23): books unit = each Monarch transaction, mapped to a plan line, **with amounts on Drive**. Chat/git still omit amounts. Primary file = `Budget — Actuals dry-run 2026-08-23` (intended vs monthly actuals). Drill-down = `Budget — Exceptions dry-run 2026-08-23` (ask / review / exclude only). One leftover merchant: Brown & Grant. Live Budget was not edited. Add two plan lines there: `Austin utilities (bundle)`, `Shopping (bundle)`. Family copies Actuals onto the live Budget vs Actual tab on the 7th.
+- **Close pack** (2026-08-23): books unit = each Monarch transaction, mapped to a plan line, **with amounts on Drive**. Chat/git still omit amounts. Primary file = `Budget — Actuals dry-run 2026-08-23` (intended vs monthly actuals). Drill-down = `Budget — Exceptions dry-run 2026-08-23` (ask / review / exclude only). One leftover merchant: Brown & Grant. Live Budget was not edited. Add two plan lines there: `Austin utilities (bundle)`, `Shopping (bundle)`. On the 7th Family writes Budget vs Actual on the live sheet as `thebrownsusa`.
 
 ---
 
@@ -154,8 +154,9 @@ Family/Finance, Family/Budget, Family/Action.
 5. Draft the Family digest to Grant and Liana. Do not send medical body text.
 6. If something looks like a business thread, leave it and tell Ops Chief.
 
-7th of each month 07:00 CT: remind Grant — Monarch CSV (Bell only),
-Bell statement PDF upload, freeze Budget vs Actual. Flash mail is not books.
+7th of each month 07:00 CT: you close. Export Monarch (Bell only) if
+the session is live; write Budget vs Actual; ping Grant only for
+session / missing statement / Status=ask. Flash mail is not books.
 
 Never: pay, give medical advice, email a school, quote a lab result, use X.
 ```
