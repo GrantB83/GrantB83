@@ -1,7 +1,7 @@
 # USA household Budget automation locks.
 # No account numbers, balances, medical notes, or NatPay stub bodies.
 schema_version: 1
-updated: 2026-08-22
+updated: 2026-08-23
 lane: family
 owner_bot: Family
 approval: Grant locks in chat; this file records them
@@ -16,6 +16,10 @@ sheet:
   grant_phrase_editors: "LIANA SHEET: yes"
   currency: USD
   zar_snapshot: out_of_scope_until_grant_says
+  live_budget_edited: false   # no Sheets write API on this Cloud VM
+  new_plan_lines:
+    - { group: Housing, line: Austin utilities (bundle), type: Essential }
+    - { group: Lifestyle, line: Shopping (bundle), type: Discretionary }
   planned_tabs:
     - existing intended plan (category totals)
     - Line items   # receipt/email item rows; feeds category totals; queryable
@@ -23,6 +27,17 @@ sheet:
     - Paystubs     # numbers only
     - Sinking target
     - 3-month forecast
+    - Leftover for Grant
+  draft:
+    line_items_title: Budget — Line items draft 2026-08-23
+    line_items_id: 1YDpE0IQEYWGEwgsUlIpXPNqME0PQnPpUYFny94zJNLk
+    leftover_title: Budget — Leftover for Grant 2026-08-23
+    leftover_id: 1bGS9BJGAyluaPM_4NidLZLgXWAAcJskvmnZNgwpdx0Q
+    leftover_compile: 2026-08-23
+    leftover_mailbox: hub_only   # thebrownsusa Cloud MCP skipped
+    leftover_row_count: 66
+    ai_mapped_hub_amazon_count: 12
+    write_path: family_bot_as_thebrownsusa
 
 books:
   source: monarch_official_csv
