@@ -2,17 +2,19 @@
 # Grant fills existing_name from the Grok Bot sidebar. Agents do not invent names.
 # Do not create a second Bot for a role that already has existing_name set.
 schema_version: 1
-updated: 2026-08-22
+updated: 2026-08-29
 source: docs/automation/GROK-BOT-AMENDMENTS.md
 grant_reply_phrase: "BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…"
-grant_external_action_completed: 2026-08-22
-existing_names_received_in_chat: true
+grant_external_action_completed: null
+existing_names_received_in_chat: false
+wiped: 2026-08-29
+wipe_reason: Grant created a new Grok Bot on the desktop app outside this control plane. 2026-08-22 sidebar names are no longer treated as live. Do not assume Ops Chief / Family / Old - * still exist.
 
 roles:
   ops-chief:
     plan_name: Ops Chief
     section: Ops
-    existing_name: Ops Chief
+    existing_name: null
     aliases_to_absorb:
       - Inbox
       - Mail
@@ -31,12 +33,12 @@ roles:
       drive: [grant830318@gmail.com]
       calendar: [grant830318@gmail.com]
     routine: 06:30 America/Chicago weekdays
-    create_if_missing: true
+    create_if_missing: false
 
   family:
     plan_name: Family
     section: Family
-    existing_name: Family
+    existing_name: null
     aliases_to_absorb:
       - Family
       - Home
@@ -50,12 +52,12 @@ roles:
       drive: [thebrownsusa@gmail.com, grant@hospitality.partners]
       calendar: [thebrownsusa@gmail.com, grant830318@gmail.com]
     routine: 06:20 America/Chicago weekdays; Sunday 17:00 CT
-    create_if_missing: true
+    create_if_missing: false
 
   stay:
     plan_name: Stay
     section: Hospitality
-    existing_name: Old - The Browns
+    existing_name: null
     aliases_to_absorb:
       - Hospitality
       - Stay
@@ -77,7 +79,7 @@ roles:
   aqua:
     plan_name: Aqua
     section: PW
-    existing_name: Old - Perfect Water
+    existing_name: null
     aliases_to_absorb:
       - Perfect Water
       - Aqua
@@ -95,7 +97,7 @@ roles:
   yard:
     plan_name: Yard
     section: HM
-    existing_name: Old - Heavy Metal
+    existing_name: null
     aliases_to_absorb:
       - Heavy Metal
       - Yard
@@ -112,7 +114,7 @@ roles:
   vault:
     plan_name: Vault
     section: Trust
-    existing_name: Old - Files
+    existing_name: null
     aliases_to_absorb:
       - Trust
       - Legal
@@ -132,23 +134,19 @@ roles:
     note: Drive/Files Bot maps here only for trust/legal filenames. Household Drive stays with Family.
 
 unused_aliases:
-  names:
-    - Old - WhatsApp
-    - Old - Inbox
-    - Old - Calendar
-    - Old - Memory
-    - Old - Revenue
-    - New Bot
+  names: []
+  out_of_scope_if_they_reappear:
     - CrediMed
     - AutoPost
     - MBA
     - Job search
     - Recruiter
     - Career
-  note: Park these. Do not amend them into ops roles (N6 / out-of-scope).
+  note: 2026-08-22 parked sidebar names (Old - WhatsApp / Inbox / Calendar / Memory / Revenue / New Bot) were wiped with the live roster. If they reappear, park them again. Do not amend N6 names into ops roles.
 
 rules:
   - Never create a plan-role Bot when existing_name is set or an alias already matches.
+  - Never invent a sidebar name after a wipe. Wait for BOT ROSTER:.
   - Never two Bots scanning the same full inbox.
   - Calendar-only Bot is absorbed by family (household) or ops-chief (SA ops).
   - WhatsApp Bot is absorbed by stay.

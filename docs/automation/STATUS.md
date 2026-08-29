@@ -2,14 +2,14 @@
 
 Update this file in the same PR as the work. Newest package on top of each phase.
 
-Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP labels created; filter API 403).
+Last orchestrator review: 2026-08-29 (2026-08-22 Grok Bot sidebar snapshot wiped; wait for new `BOT ROSTER:`).
 
 ## Now
 
 - Control-plane spec + business evaluation live in this folder.
 - WhatsApp Cloud API agent exists as draft [PR #2](https://github.com/GrantB83/GrantB83/pull/2). It is **not** live (Coexistence + HTTPS host still Grant).
 - **RUNTIME received** (2026-08-22): `grok-bot=yes`, `cursor-plan=ultra`, `on-demand=yes`. Grok Bot routines are the daily ops surface; Cursor Cloud Agents are on-demand for phases/packages.
-- **G8 BOT ROSTER locked** (2026-08-22). Live: Ops Chief, Family, Stay (was Old - The Browns), Aqua (was Old - Perfect Water), Yard (was Old - Heavy Metal), Vault (was Old - Files). Unused parked: Old - WhatsApp, Old - Inbox, Old - Calendar, Old - Memory, Old - Revenue, New Bot. Do **not** create duplicate Bots. Do **not** reopen merged [PR #4](https://github.com/GrantB83/GrantB83/pull/4).
+- **G8 BOT ROSTER wiped** (2026-08-29). Grant created a new Grok Bot on the desktop app outside this control plane. All `existing_name` fields in `bot-roster.yaml` are `null`. Do **not** treat Ops Chief / Family / Old - The Browns / Old - Perfect Water / Old - Heavy Metal / Old - Files as live. Do **not** invent names or create a parallel team. Next Grant action: paste `BOT ROSTER:` with current sidebar names. Do **not** reopen merged [PR #4](https://github.com/GrantB83/GrantB83/pull/4).
 - **G1 Layer B browser live** (2026-08-22) for `thebrownsusa@gmail.com`, `grant@hospitality.partners`, `stay@hospitality.partners`, `grant@bvrgroup.co.za` (gmail,drive,calendar). Keep hub on Grok Bot Plugins. Bots switch the Google avatar before acting. This Cloud Agent MCP is still **hub only** `grant830318@gmail.com` (still zero `from:austinisd.org`).
 - Forwards, not Google logins (2026-08-22): `grant@thebrowns.co.za` → hub; `accounts@bvrgroup.co.za` → `grant@bvrgroup.co.za`; `grant@hmsand.co.za` → hub. Do not Add account. `mail@hmsand.co.za` stays a **sender** into the hub unless Grant later says it is a login.
 - Drive MCP still sees `The Browns USA` (owner `grant@hospitality.partners`) via share. Calendar MCP still the hub list (primary `Africa/Johannesburg`).
@@ -22,7 +22,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 
 | Phase | Name | State | Next agent | Labour cut (est.) | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Control plane & safety | **in progress** | idle until Monday routines | stop re-briefing agents | `G2` private repos |
+| 0 | Control plane & safety | **in progress** | wait for `BOT ROSTER:` then `amend-existing-grok-bots` | stop re-briefing agents | `G8` rematch; `G2` private repos |
 | 1a | Email classifier + SLA | not started | `phase-01a-email-classifier` | 5–8h → 1h | `G1`; `G6` after sample |
 | 1b | WhatsApp slots | not started | `phase-01b-wa-slots` | 6–10h → 2h once live | `G4`/`G5`; `SOR: whatsapp=` |
 | 1c | Channel stitch | not started | after 1a/1b | dual-reply errors | — |
@@ -43,7 +43,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
 | 10a | Family filters | **labels live on hub only** | Grant: add filters on **thebrownsusa** + hub (403) | 2–4h → 0 on FYI | filter scope; `G1` thebrownsusa |
-| 10b | Family digest | **Family Bot live** | first fire Monday 06:20 CT | 10 min/day | S10/S11 off |
+| 10b | Family digest | **roster wiped — Family name unknown** | Grant: `BOT ROSTER:` then Family amend prompt | 10 min/day | `G8`; S10/S11 off |
 | 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
 | 10d | Budget / bills | not started | after 10a | hunt → due list | Budget sheet |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
@@ -65,6 +65,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 
 | Date | Decision |
 | --- | --- |
+| 2026-08-29 | Wipe 2026-08-22 live Grok Bot sidebar snapshot. New desktop Bot exists outside this repo. `existing_name` is null until Grant pastes `BOT ROSTER:`. Do not invent names. |
 | 2026-08-22 | GrantB83 is the orchestration repo. Entity apps stay in their own repos. |
 | 2026-08-22 | Extend PR #2 WhatsApp agent; do not register a new Cloud API number. |
 | 2026-08-22 | Draft-only comms until `H1`/`H2`/`H10`/`H11`. |

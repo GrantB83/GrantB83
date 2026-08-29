@@ -1,5 +1,7 @@
 # Amend existing Grok Bots (do not create a second team)
 
+**Roster wipe (2026-08-29):** The 2026-08-22 sidebar snapshot is **not live**. Grant created a new Grok Bot on the desktop app outside this control plane. `bot-roster.yaml` `existing_name` fields are `null`. This Cloud Agent still cannot open the Grok Bot UI or delete desktop Bots. Paste a fresh `BOT ROSTER:` before any agent fills names again.
+
 **Why this file exists:** Grant already has Grok Bots in the Grok Bot app. Prior Cloud Agents never recorded their names. This Cloud Agent **cannot** open the Grok Bot sidebar or rewrite Bot configs via API. The work is: map each live Bot to a plan role, paste the standing prompt, wire Google accounts, then save the routine.
 
 **Do not** create Family / Ops Chief / Stay / Aqua / Yard / Vault if a Bot already covers that lane. Rename + amend. Duplicates burn the weekly meter.
