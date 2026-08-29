@@ -57,7 +57,7 @@ If Grok Bot is **not** entitled on this Cursor account: daily work falls back to
 - Stay up 24/7 on its own computer; jobs do not die when Grant closes the laptop.
 - Use **Gmail, Drive, Calendar, Notion, Slack** plugins; **browser-sign-in every Google login** plus tools without APIs (NightsBridge, Loyverse, FNB) — Grant types the password on the Bot computer; the Bot does not see it.
 - Learn a workflow **by watching once**, save it as a **routine**, run it on a schedule.
-- Run **many Bots** (Ops Chief, Family, PW, Hospitality, HM, Trust) in sidebar sections; they can pass work and only ping Grant for judgment ([announcement](https://x.ai/news/introducing-grok-bot)).
+- Run **many Bots** in sidebar sections ([announcement](https://x.ai/news/introducing-grok-bot)). **This household uses one desktop Bot** (`bot-roster.yaml`, [x.ai/bot](https://x.ai/bot)). Do not recreate the retired six-role team.
 - Launch or instruct Cursor Cloud Agents for repo work (this programme’s original intent).
 - Come back only when approval is required — **if** standing policies are written.
 
@@ -94,11 +94,11 @@ If Grok Bot is **not** entitled on this Cursor account: daily work falls back to
                     └──────────────┬──────────────────────┘
                                    │ only labelled leftovers
                     ┌──────────────▼──────────────────────┐
-                    │  GROK BOT team  (weekly meter)      │
-                    │  Ops Chief · Family · (optional     │
-                    │  PW / Hospitality / HM / Trust)     │
-                    │  Routines: 06:30 CT digest,         │
-                    │  16:00 SAST run-sheet, Sunday pack  │
+                    │  GROK BOT desktop (weekly meter)    │
+                    │  One live Bot (already set up)      │
+                    │  https://x.ai/bot                   │
+                    │  Routines: 06:20 CT family,         │
+                    │  06:30 CT digest, 16:00 SAST sheet  │
                     └──────────────┬──────────────────────┘
                          exceptions │ build work
                     ┌──────────────▼──────────────────────┐
@@ -128,20 +128,13 @@ Replace per-item gates after a measured sample. See `approval-gates.md` `S*`.
 
 **Still always human:** payments (`N1`), statutory submit (`N2`), medical *decisions*, guest-tone exceptions, new credit, first send of a new template.
 
-### Bot roster — amend what exists (do not create a second team)
+### Bot roster — one desktop Bot
 
-Grant already has Grok Bots. Map them with `BOT ROSTER:` (`G8`). Standing prompts and alias table: `GROK-BOT-AMENDMENTS.md` + `bot-roster.yaml`.
+Grant’s live Grok Bot is already set up in the **desktop app**. Record: `bot-roster.yaml`. Product: [https://x.ai/bot](https://x.ai/bot). Docs: [https://docs.x.ai/grok-bot/bots](https://docs.x.ai/grok-bot/bots).
 
-| Section | Plan role | Routine | Reads | Pings human when |
-| --- | --- | --- | --- | --- |
-| Family | **Family** (absorb Home / School / Calendar) | 06:20 CT | `Family/*` + `thebrownsusa@gmail.com` | `Family/Action` cards (sign, pay, attend) |
-| Ops | **Ops Chief** (absorb Inbox / Mail / Chief) | 06:30 CT | `Queue/NeedsGrant`, Hiver open, bank/CIPC/GBP | RED SLA, money, legal |
-| Hospitality | **Stay** (absorb WhatsApp / Concierge) | on new `Entity/Hospitality` | Hiver + stay@ + hospitality Google logins | Liana if tone/confidence low |
-| PW | **Aqua** | on `Entity/PerfectWater` | `accounts@bvrgroup.co.za` + PW calendar | stockout, till≠bank |
-| HM | **Yard** | on `Entity/HeavyMetal` | `grant@hmsand.co.za` / `mail@hmsand.co.za` | no price card, POD missing |
-| Trust | **Vault** (absorb Drive/Legal if that is its job) | on `Entity/Trust` | CIPC/SARS/forex; filenames only on will/emigration | due ≤14 days |
+The 2026-08-22 six-role team is retired. Do not create Family / Ops Chief / Stay / Aqua / Yard / Vault as extra Bots. One Bot reads labelled leftovers only and launches Cloud Agents for build work. Keep entity **data** in separate Drive / label / vault lanes.
 
-Ops Chief may message the others. Grant is not the router. **Unused** Bots (MBA, job-search, CrediMed deep-dive) stay parked.
+Optional Grant line (do not invent): `LIVE BOT: name=<sidebar>` or `LIVE BOT: share=<url>`. MBA / job-search / CrediMed stay out of this programme (`N6`).
 
 ### Google accounts — every login, not the hub only
 
@@ -171,7 +164,7 @@ Do not scan the full inbox. Do not use X. Do not send mail.
 | Grok Bot is the daily inbox walker | Weekly meter + 7720 threads | Filters first; Bot reads queues |
 | Daily Cloud Automation for digest | Automations = max context = expensive | Grok Bot routine preferred; Automation at most **weekly** |
 | Per-item approve every draft | Recreates the labour we are removing | Standing `S*` after a sample |
-| Phase 10 = light household labels | School/medical/budget is high-volume daily | **Family Command Center** (Phase 10a–10d) is first-class, zero-token + Family Bot |
+| Phase 10 = light household labels | School/medical/budget is high-volume daily | **Family Command Center** (Phase 10a–10d) is first-class, zero-token + desktop Grok Bot |
 | One orchestrator chat does everything | Context rot + cost | Specialist Bots + dying Cloud Agents |
 
 ---

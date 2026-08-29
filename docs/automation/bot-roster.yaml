@@ -1,152 +1,61 @@
-# Live Grok Bot → plan role map.
-# Grant fills existing_name from the Grok Bot sidebar. Agents do not invent names.
-# Do not create a second Bot for a role that already has existing_name set.
-schema_version: 1
+# Live Grok Bot. One desktop Bot on SuperGrok / Grok Bot app.
+# The 2026-08-22 six-role team is retired. Do not recreate it.
+schema_version: 2
 updated: 2026-08-29
-source: docs/automation/GROK-BOT-AMENDMENTS.md
-grant_reply_phrase: "BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…"
-grant_external_action_completed: null
-existing_names_received_in_chat: false
-wiped: 2026-08-29
-wipe_reason: Grant created a new Grok Bot on the desktop app outside this control plane. 2026-08-22 sidebar names are no longer treated as live. Do not assume Ops Chief / Family / Old - * still exist.
+policy: single_desktop_bot
+retired_six_role_team: true
 
-roles:
-  ops-chief:
-    plan_name: Ops Chief
-    section: Ops
-    existing_name: null
-    aliases_to_absorb:
-      - Inbox
-      - Mail
-      - Gmail
-      - Email
-      - Sorter
-      - Triage
-      - Chief
-      - COS
-      - Orchestrator
-      - Manager
-      - Director
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.1
-    google_accounts:
-      gmail: [grant830318@gmail.com, grant@thebrowns.co.za]
-      drive: [grant830318@gmail.com]
-      calendar: [grant830318@gmail.com]
-    routine: 06:30 America/Chicago weekdays
-    create_if_missing: false
+live:
+  kind: grok_bot_desktop
+  status: already_set_up
+  confirmed_by: Grant in Cursor Cloud chat 2026-08-29
+  entitlement:
+    cursor_ultra: yes
+    supergrok: yes
+    evidence: hub mail 2026-08-27 from updates@email.grok.com subject "Grok Bot is now included with SuperGrok"
+  product_url: https://x.ai/bot
+  docs_url: https://docs.x.ai/grok-bot/bots
+  manage_docs_url: https://docs.x.ai/grok-bot/bots
+  announcement_url: https://x.ai/news/introducing-grok-bot
+  existing_name: null
+  share_url: null
+  name_note: This Cloud Agent cannot read the Grok Bot sidebar. Do not invent a name. If Grant pastes a sidebar name or public share link, record it here only.
+  absorbs: all daily family and owned-business ops that the retired six-role roster used to split
+  create_if_missing: false
+  google_accounts: every login in google-accounts.yaml via plugin and/or Bot-computer browser
+  never:
+    - scan any full inbox
+    - pay, forex submit, or eFiling
+    - invent rates or stock
+    - quote medical, will, or tax-emigration bodies
+    - register a new WhatsApp Cloud API number
+    - recreate Ops Chief, Family, Stay, Aqua, Yard, or Vault as extra Bots
 
-  family:
-    plan_name: Family
-    section: Family
-    existing_name: null
-    aliases_to_absorb:
-      - Family
-      - Home
-      - School
-      - Household
-      - Personal
-      - Calendar
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.2
-    google_accounts:
-      gmail: [thebrownsusa@gmail.com, grant830318@gmail.com]
-      drive: [thebrownsusa@gmail.com, grant@hospitality.partners]
-      calendar: [thebrownsusa@gmail.com, grant830318@gmail.com]
-    routine: 06:20 America/Chicago weekdays; Sunday 17:00 CT
-    create_if_missing: false
-
-  stay:
-    plan_name: Stay
-    section: Hospitality
-    existing_name: null
-    aliases_to_absorb:
-      - Hospitality
-      - Stay
-      - Browns
-      - Rivendell
-      - Guest
-      - Concierge
-      - WhatsApp
-      - WA
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.3
-    google_accounts:
-      gmail: [stay@hospitality.partners, grant@thebrowns.co.za, grant@hospitality.partners]
-      drive: [grant@hospitality.partners, grant@thebrowns.co.za]
-      calendar: [grant@thebrowns.co.za, grant@hospitality.partners]
-    routine: on new hospitality labelled mail
-    create_if_missing: false
-    note: Absorb WhatsApp Bot into Stay. Do not add a second Cloud API number.
-
-  aqua:
-    plan_name: Aqua
-    section: PW
-    existing_name: null
-    aliases_to_absorb:
-      - Perfect Water
-      - Aqua
-      - BVR
-      - Orders
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.4
-    google_accounts:
-      gmail: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
-      drive: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
-      calendar: [grant830318@gmail.com]
-    note: Layer B avatar grant@bvrgroup.co.za is live. accounts@ forwards there. Do not Add account for accounts@.
-    routine: on new PW labelled mail
-    create_if_missing: false
-
-  yard:
-    plan_name: Yard
-    section: HM
-    existing_name: null
-    aliases_to_absorb:
-      - Heavy Metal
-      - Yard
-      - Sand
-      - HM
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.5
-    google_accounts:
-      gmail: [grant@hmsand.co.za, mail@hmsand.co.za]
-      drive: [grant@hmsand.co.za]
-      calendar: []
-    routine: on new HM labelled mail
-    create_if_missing: false
-
-  vault:
-    plan_name: Vault
-    section: Trust
-    existing_name: null
-    aliases_to_absorb:
-      - Trust
-      - Legal
-      - CIPC
-      - Forex
-      - Compliance
-      - Drive
-      - Files
-      - Librarian
-    amend_prompt: GROK-BOT-AMENDMENTS.md §3.6
-    google_accounts:
-      gmail: [grant830318@gmail.com, grant@thebrowns.co.za]
-      drive: [grant@hospitality.partners, thebrownsusa@gmail.com]
-      calendar: [grant830318@gmail.com]
-    routine: weekday with Ops Chief
-    create_if_missing: false
-    note: Drive/Files Bot maps here only for trust/legal filenames. Household Drive stays with Family.
-
-unused_aliases:
-  names: []
-  out_of_scope_if_they_reappear:
-    - CrediMed
-    - AutoPost
-    - MBA
-    - Job search
-    - Recruiter
-    - Career
-  note: 2026-08-22 parked sidebar names (Old - WhatsApp / Inbox / Calendar / Memory / Revenue / New Bot) were wiped with the live roster. If they reappear, park them again. Do not amend N6 names into ops roles.
+retired:
+  reason: Grant set up a new Bot on the Grok Bot desktop app outside this control plane.
+  do_not_use_as_live:
+    - Ops Chief
+    - Family
+    - Old - The Browns
+    - Old - Perfect Water
+    - Old - Heavy Metal
+    - Old - Files
+    - Old - WhatsApp
+    - Old - Inbox
+    - Old - Calendar
+    - Old - Memory
+    - Old - Revenue
+    - New Bot
+  plan_roles_retired:
+    - ops-chief
+    - family
+    - stay
+    - aqua
+    - yard
+    - vault
 
 rules:
-  - Never create a plan-role Bot when existing_name is set or an alias already matches.
-  - Never invent a sidebar name after a wipe. Wait for BOT ROSTER:.
+  - One live desktop Bot. Do not spawn a parallel team.
+  - Never invent a sidebar name or share URL.
   - Never two Bots scanning the same full inbox.
-  - Calendar-only Bot is absorbed by family (household) or ops-chief (SA ops).
-  - WhatsApp Bot is absorbed by stay.
+  - Out of scope if they reappear: CrediMed, AutoPost, MBA, job search, Recruiter, Career.
