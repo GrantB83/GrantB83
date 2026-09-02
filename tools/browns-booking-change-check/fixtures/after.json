@@ -1,0 +1,34 @@
+[
+  {
+    "guestName": "Sarah & Tom Henderson",
+    "suiteOrUnit": "Luxury Suite 1",
+    "status": "arriving",
+    "checkInDate": "2026-09-20",
+    "checkOutDate": "2026-09-22",
+    "adults": 2,
+    "children": 0,
+    "notes": "Anniversary celebration. Champagne arranged."
+  },
+  {
+    "guestName": "The Mbeki Family",
+    "suiteOrUnit": "Family Suite 3",
+    "status": "arriving",
+    "checkInDate": "2026-09-20",
+    "checkOutDate": "2026-09-24",
+    "adults": 2,
+    "children": 2,
+    "phone": "+27 82 555 1234",
+    "notes": "Late arrival confirmed 19:30. Extra bedding ready."
+  },
+  {
+    "guestName": "Emma Thompson",
+    "suiteOrUnit": "Garden Suite 2",
+    "status": "arriving",
+    "checkInDate": "2026-09-20",
+    "checkOutDate": "2026-09-22",
+    "adults": 1,
+    "children": 0,
+    "phone": "+27 83 777 9999",
+    "notes": "Vegetarian breakfast requested"
+  }
+]
