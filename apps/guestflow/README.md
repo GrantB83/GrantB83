@@ -69,6 +69,31 @@ npm start
 
 ---
 
+## What Works (Phase 5)
+
+### ✅ Phase 5 Additions (Demo Walkthrough + Sales Leave-Behind)
+
+1. **Demo Walkthrough Script** (`/demo/walkthrough`)
+   - Step-by-step sales presentation guide for Grant/CoS demos
+   - 9-step sequence: Landing → Pricing → Waitlist → CRM → Rate Cards → Quote → NightsBridge → Tenant → Leave-Behind
+   - Talking points and demo actions for each step (2-3 min per step)
+   - Objection handling section (OTA integrations, payments, multi-property)
+   - Hard gates reminder (NO live payments, NO auto-send, DEMO labeling)
+   - Complete 20-25 minute demo flow
+
+2. **Sales Leave-Behind** (`/demo/leavebehind`)
+   - Printable one-pager summarizing platform value (no invented rates/promises)
+   - Markdown export for email follow-up (download as `.md` file)
+   - On-screen preview and print-to-PDF support
+   - Preserves COMING SOON messaging and waitlist/pricing copy
+   - Includes: What It Is, Core Features, How It Works, Roadmap, Pricing, Safety & Control
+   - Professional formatting for post-demo handoff
+
+3. **Demo Hub Phase 5 Integration**
+   - Prominent purple cards linking walkthrough + leave-behind (Phase 5 badges)
+   - Positioned above existing quick-nav for visibility
+   - Completes sales funnel: discovery → demo script → leave-behind → follow-up
+
 ## What Works (Phase 4)
 
 ### ✅ Phase 4 Additions (Rate Cards, Auth Stub, Funnel Polish)
@@ -350,6 +375,22 @@ Verify tables:
 
 ---
 
+## Phase 5 Summary
+
+**What Changed:**
+- Demo walkthrough script page (`/demo/walkthrough`) with step-by-step sales presentation guide
+- Sales leave-behind page (`/demo/leavebehind`) with printable one-pager and markdown export
+- 9-step demo flow covering entire platform (landing → pricing → CRM → ops → leave-behind)
+- Objection handling section and hard gates reminder on walkthrough page
+- Demo hub updated with prominent Phase 5 purple cards linking both new pages
+- README updated with Phase 5 section documenting sales demo tools
+
+**What Works vs. Stubbed:**
+- ✅ Works: Complete sales demo script, printable/exportable leave-behind, no invented content
+- 🚧 Stubbed: Same as Phase 4 (production auth, live payments, email/WhatsApp auto-send)
+
+---
+
 ## Phase 4 Summary
 
 **What Changed:**
@@ -366,7 +407,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 4)
+## Hard Gates Reminder (Phase 5)
 
 **GuestFlow respects these safety constraints:**
 
@@ -380,7 +421,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 3. Phase 4 adds rate card functionality and a demo auth stub, but maintains all safety constraints.**
+**These gates are unchanged from Phase 4. Phase 5 adds sales demo tools (walkthrough script + leave-behind), but maintains all safety constraints. No new functionality that touches payments, messaging, or data storage.**
 
 ---
 
@@ -401,7 +442,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-4)
+## Next Steps (Post-Phase-5)
+
+**Phase 5 completes the sales demo toolkit.** Next priorities focus on production-readiness:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow
