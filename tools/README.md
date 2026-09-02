@@ -19,6 +19,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
 | [vault-due-digest-pack](#vault-due-digest-pack) | Assemble weekday Vault due digest by orchestrating vault-filename-due-queue and vault-entity-due-pack | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Never submits to SARS/CIPC. |
+| [vault-due-digest-post-checklist](#vault-due-digest-post-checklist) | Validate vault-due-digest-pack output before Vault weekday ops with go/no-go checklist | Vault / CoS | **Offline only**. Never opens file bodies. Never invents dates/amounts. N2 gate reminder. Exit 1 if checks fail. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
@@ -792,6 +793,76 @@ npm run digest -- --packs ../vault-entity-due-pack/packs/by-entity/ --outdir dig
 ```
 
 [→ Full README](./vault-due-digest-pack/README.md)
+
+---
+
+## vault-due-digest-post-checklist
+
+**One-line:** Offline CLI to generate pre-action checklist from vault-due-digest-pack output before CIPC/SARS/trust research or filing steps.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-due-digest-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/vault-due-digest-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run checklist -- --pack ./digest-pack-2026-09-02
+
+# With date label and output directory
+npm run checklist -- --pack ./digest-pack-2026-09-02 --as-of 2026-09-02 --outdir reports/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No file body reads, no network calls
+- ✅ **Read-only** - Validates pack structure only (filename/markdown heuristics)
+- ✅ **Never invents** - No dates, amounts, or legal positions fabricated
+- ✅ **Never submits** - Vault owns all CIPC/SARS/trust filings (N2 gate)
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **N2 gate reminder** - Human approval required before SARS/CIPC submit
+
+### Checks Performed
+
+1. Required overview (DIGEST.md or master.md) present
+2. APPROVAL.md present with relevant keywords
+3. by-entity/ directory exists (warns if missing)
+4. DIGEST/master does NOT contain currency tokens (amounts must stay in files)
+5. N2 gate reminder: human approval before any statutory filing
+
+### Output Files
+
+- **ACTION-CHECKLIST.md** - Numbered go/no-go for Vault weekday ops
+- **ISSUES.md** - Failures and warnings only
+- **APPROVAL.md** - Vault research gates and N2 reminder
+- **manifest.json** - Machine-readable metadata
+
+### Integration with vault-due-digest-pack
+
+This tool validates the output from `vault-due-digest-pack` before research:
+
+```bash
+# Step 1: Generate due digest pack
+cd tools/vault-due-digest-pack
+npm run pack -- --filenames vault-filenames.txt --run-filename-queue --run-entity-pack --outdir digest/
+
+# Step 2: Validate pack before research
+cd ../vault-due-digest-post-checklist
+npm run checklist -- --pack ../vault-due-digest-pack/digest/ --outdir checklist/
+
+# Step 3: Review ACTION-CHECKLIST.md and ISSUES.md
+# Step 4: Vault proceeds with research (never auto-submits)
+```
+
+[→ Full README](./vault-due-digest-post-checklist/README.md)
 
 ---
 
