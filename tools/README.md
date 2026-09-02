@@ -11,6 +11,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
+| [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
@@ -238,6 +239,68 @@ npm run match -- \
 - ⚠️ **For ledger maintenance only** - Not for financial advice or decision-making
 
 [→ Full README](./budget-merchant-matcher/README.md)
+
+---
+
+## ledger-unmatched-merchant-queue
+
+**One-line:** Build an offline research queue for unmatched merchants from budget CSV exports.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-unmatched-merchant-queue/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-unmatched-merchant-queue
+npm install
+npm run build
+
+# Basic usage
+npm run queue -- --input transactions.csv --outdir out/
+
+# With status column
+npm run queue -- \
+  --input transactions.csv \
+  --outdir out/ \
+  --status-col MatchStatus \
+  --unmatched-values "unmatched,unknown"
+
+# Custom merchant column and limit
+npm run queue -- \
+  --input transactions.csv \
+  --outdir out/ \
+  --merchant-col Payee \
+  --limit 50
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Read-only** - Never modifies input files
+- ✅ **No invented amounts or merchant identities** - Only processes existing data
+- ✅ **Amounts stay in files** - Not printed in digest prose (refer to queue.json)
+- ⚠️ **Research aid only** - Ledger owns manual Google Sheet updates
+- ⚠️ **H2 approval required** - Before any sheet writes or merchant rule changes
+
+### Output Files
+
+- `queue.json` - Structured merchant data with sample row references, counts, date ranges
+- `queue.md` - Human-readable numbered research list (merchant name + count only, NO amounts)
+- `missing-fields.md` - Data quality report
+- `APPROVAL.md` - Safety gates and workflow guidance
+- `manifest.json` - Run metadata and statistics
+
+### Integration with budget-merchant-matcher
+
+1. Export budget transactions to CSV
+2. Run `budget-merchant-matcher` to apply known rules
+3. Run `ledger-unmatched-merchant-queue` on matcher output to research remaining unknowns
+4. Update merchant rules based on research findings
+5. Re-run matcher with updated rules
+
+[→ Full README](./ledger-unmatched-merchant-queue/README.md)
 
 ---
 
