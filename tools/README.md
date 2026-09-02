@@ -15,6 +15,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
+| [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
@@ -26,7 +27,6 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
-| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late check-in coordination queue from bookings | SA Ops / CoS | **Offline only**. Never invents times/phones. DRAFT ONLY. No auto-send. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
@@ -454,6 +454,72 @@ npm run prep -- \
 - ⚠️ **Manual step required** - Follow the generated `checklist.md` for Chrome workflow
 
 [→ Full README](./suno-package-prep/README.md)
+
+---
+
+## studio-suno-package-validate
+
+**One-line:** Validate Suno job packages before Studio spends browser time on manual Chrome paste workflow.
+
+**Owning desk(s):** Studio / BrownieTunez
+
+**Location:** `tools/studio-suno-package-validate/`
+
+### Install and Run
+
+```bash
+cd tools/studio-suno-package-validate
+npm install
+npm run build
+
+# Basic validation
+npm run validate -- --dir path/to/job-folder
+
+# With custom output directory
+npm run validate -- --dir path/to/job-folder --outdir reports/
+
+# Strict mode (exit 1 on validation failures)
+npm run validate -- --dir path/to/job-folder --strict
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Read-only** - Never modifies job folders
+- ✅ **No Suno API** - Official or unofficial
+- ✅ **No YouTube API** - No upload automation
+- ✅ **No browser automation** - Manual paste workflow only
+- ✅ **Preflight validator** - Catch issues before Chrome session
+
+### Validation Checks
+
+1. **Required Files Present** - lyrics.cleaned.txt, checklist.md, manifest.json
+2. **Metadata JSON Shape** - Valid metadata structure in manifest.json
+3. **Lyrics Not Empty** - Non-whitespace content in lyrics file
+4. **No PII Patterns** - No email addresses or phone numbers in lyrics
+5. **Manual Paste Checklist** - Checklist mentions manual workflow only
+
+### Integration with suno-package-prep
+
+This tool validates packages created by `suno-package-prep`:
+
+```bash
+# Step 1: Create job package
+cd tools/suno-package-prep
+npm run prep -- --lyrics song.txt --meta meta.json
+
+# Step 2: Validate package
+cd ../studio-suno-package-validate
+npm run validate -- --dir ../suno-package-prep/suno-jobs/song-2026-09-02/
+
+# Step 3: If validation passes, proceed with manual Chrome/Suno paste
+```
+
+**Output:** `report.json`, `report.md` (numbered pass/fail), `APPROVAL.md` (safety gates), `manifest.json`
+
+**Exit codes:** 0 if validate ran; 1 if --strict and any fail, or bad input
+
+[→ Full README](./studio-suno-package-validate/README.md)
 
 ---
 
