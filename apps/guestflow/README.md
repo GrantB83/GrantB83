@@ -69,6 +69,31 @@ npm start
 
 ---
 
+## What Works (Phase 6)
+
+### ✅ Phase 6 Additions (Demo Smoke Test + Hosting Readiness)
+
+1. **Demo Smoke Script** (`scripts/smoke-demo.mjs`)
+   - Automated test suite that validates all key routes and pages locally
+   - Checks database initialization and schema tables
+   - Tests all demo pages (inquiry, quote, welcome pack, daily brief, etc.)
+   - Validates API routes (/api/waitlist, /api/tenants, /api/rate-cards)
+   - Exit code 0 on success, 1 on failure (CI/CD friendly)
+   - Run with: `npm run smoke`
+
+2. **Hosting Readiness Page** (`/demo/hosting-readiness`)
+   - Comprehensive checklist for Origin namespace setup and deployment
+   - Vercel ↔ Origin integration notes (recommended vs. self-hosted)
+   - Hard gates reminder (NO live payments, NO auto-send, NO public signup)
+   - Step-by-step deployment workflow (staging → production)
+   - Security considerations (auth stub warning, HTTPS, rate limiting)
+   - Public launch gates (noindex, legal, POPIA/GDPR compliance)
+
+3. **Demo Hub Phase 6 Integration**
+   - Prominent indigo card linking hosting readiness page (Phase 6 badge)
+   - Positioned above Phase 5 sales tools for visibility
+   - Completes pre-deployment checklist for Grant/CoS
+
 ## What Works (Phase 5)
 
 ### ✅ Phase 5 Additions (Demo Walkthrough + Sales Leave-Behind)
@@ -375,6 +400,26 @@ Verify tables:
 
 ---
 
+## Phase 6 Summary
+
+**What Changed:**
+- Demo smoke test script (`scripts/smoke-demo.mjs`) validates all routes, API endpoints, and database
+- Hosting readiness page (`/demo/hosting-readiness`) with Origin namespace checklist and deployment workflow
+- Comprehensive pre-deployment checklist covering security, Vercel↔Origin integration, and public launch gates
+- Demo hub updated with prominent Phase 6 indigo card linking hosting readiness page
+- `npm run smoke` added to package.json scripts for CI/CD integration
+- README updated with Phase 6 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Automated smoke tests, hosting readiness checklist, deployment workflow documentation
+- 🚧 Stubbed: Same as Phase 5 (production auth, live payments, email/WhatsApp auto-send, public launch)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—not ready for public SaaS launch without Grant approval via Origin/CoS
+
+---
+
 ## Phase 5 Summary
 
 **What Changed:**
@@ -407,7 +452,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 5)
+## Hard Gates Reminder (Phase 6)
 
 **GuestFlow respects these safety constraints:**
 
@@ -421,7 +466,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 4. Phase 5 adds sales demo tools (walkthrough script + leave-behind), but maintains all safety constraints. No new functionality that touches payments, messaging, or data storage.**
+**These gates are unchanged from Phase 5. Phase 6 adds deployment readiness tools (smoke test script + hosting checklist), but maintains all safety constraints. No new functionality that touches payments, messaging, or data storage.**
 
 ---
 
@@ -442,9 +487,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-5)
+## Next Steps (Post-Phase-6)
 
-**Phase 5 completes the sales demo toolkit.** Next priorities focus on production-readiness:
+**Phase 6 completes the deployment readiness toolkit.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow
