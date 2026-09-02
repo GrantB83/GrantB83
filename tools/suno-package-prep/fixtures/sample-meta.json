@@ -1,0 +1,9 @@
+{
+  "title": "Twinkle Star Dreams",
+  "kids": ["Emma", "Liam"],
+  "artist": "BrownieTunez",
+  "style": "children's music, lullaby, gentle, acoustic",
+  "mood": "Calm and soothing bedtime vibe",
+  "duration_hint": "2 minutes",
+  "negative_prompts": ["loud", "aggressive", "fast-paced"]
+}
