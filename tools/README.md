@@ -13,6 +13,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
+| [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
@@ -357,6 +358,69 @@ npm run queue -- \
 5. Re-run matcher with updated rules
 
 [→ Full README](./ledger-unmatched-merchant-queue/README.md)
+
+---
+
+## ledger-month-close-pack
+
+**One-line:** Build offline USA Budget month-end close pack: CSV inventory, header sanity, unmatched-merchant queue pointer, APPROVAL checklist.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-month-close-pack/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-month-close-pack
+npm install
+npm run build
+
+# Basic pack
+npm run pack -- --month 2024-01 --exports-dir exports/ --outdir out/
+
+# With header validation
+npm run pack -- \
+  --month 2024-01 \
+  --exports-dir exports/ \
+  --outdir out/ \
+  --require-headers Date,Amount,Merchant
+
+# With unmatched queue
+npm run pack -- \
+  --month 2024-01 \
+  --exports-dir exports/ \
+  --outdir out/ \
+  --unmatched-queue path/to/queue.md
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Read-only** - Never modifies source CSV files
+- ✅ **Amounts stay in files** - Headers and filenames only in markdown; amounts NEVER in prose
+- ✅ **No invented amounts** - Only reports what exists in source CSVs
+- ✅ **H2 approval required** - Before any Google Sheet writes
+- ⚠️ **Ledger owns sheet writes** - Coding/CoS never writes directly to Sheets
+- ⚠️ **Manual verification required** - Review all reports before any updates
+
+### Output Files
+
+- `manifest.json` - Machine-readable pack metadata
+- `inventory.json` - Machine-readable CSV file details
+- `inventory.md` - Human-readable inventory (filenames, sizes, headers only)
+- `CLOSE.md` - Month-close checklist
+- `APPROVAL.md` - Safety gates and workflow guidance
+- `unmatched-queue.md` - Unmatched merchants (if provided via --unmatched-queue)
+
+### Integration with budget-merchant-matcher and ledger-unmatched-merchant-queue
+
+1. Export budget transactions to CSV
+2. Run `budget-merchant-matcher` to classify merchants
+3. Run `ledger-unmatched-merchant-queue` on unmatched.csv output
+4. Run `ledger-month-close-pack` to assemble the final close pack with all reports
+
+[→ Full README](./ledger-month-close-pack/README.md)
 
 ---
 
