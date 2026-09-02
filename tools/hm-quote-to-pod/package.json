@@ -1,0 +1,28 @@
+{
+  "name": "hm-quote-to-pod",
+  "version": "1.0.0",
+  "description": "Offline CLI tool to map Heavy Metal quote.json into pod.json stub for hm-delivery-pod-draft",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "map": "node dist/index.js",
+    "test": "node --test dist/mapper.test.js",
+    "test:fixtures": "npm run build && npm run map -- --quote fixtures/sample-quote.json --outdir test-out",
+    "clean": "rm -rf dist out test-out"
+  },
+  "keywords": [
+    "heavy-metal",
+    "quote",
+    "pod",
+    "mapper",
+    "offline",
+    "cli"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  }
+}
