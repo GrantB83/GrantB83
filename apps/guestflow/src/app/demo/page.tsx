@@ -25,7 +25,6 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
-<<<<<<< HEAD
       {/* Phase 25: Guided Sales Demo Walkthrough */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -41,7 +40,10 @@ export default function DemoPage() {
           </div>
           <p className="text-emerald-100">
             Ordered walkthrough chaining existing demo capabilities: inquiry→quote→CRM/bookings→ops→OTA. Checklist UI for salesperson progress (DRAFT/fixtures only, hard gates held).
-=======
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 24: OTA Rate Worksheet */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -57,7 +59,6 @@ export default function DemoPage() {
           </div>
           <p className="text-fuchsia-100">
             Generate OTA promotional rate worksheet from tenant rate cards—mirrors tools/browns-ota-rate-worksheet, never invents rates, DRAFT/fixtures only for manual entry
->>>>>>> origin/main
           </p>
         </Link>
       </div>
