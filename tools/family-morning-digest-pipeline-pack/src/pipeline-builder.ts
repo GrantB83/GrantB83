@@ -318,16 +318,20 @@ function generateManifest(
 ): PipelineManifest {
   const files = ['PACK.md', 'manifest.json'];
   
-  const possibleFiles = [
+  // Core morning pack files (always potential outputs)
+  const morningPackFiles = [
     'school.md',
     'family.md',
     'calendar.md',
     'calendar-events.json',
     'school-due-queue.md',
-    'APPROVAL.md',
-    'POST-CHECKLIST.md',
-    'ISSUES.md'
+    'APPROVAL.md'
   ];
+
+  // Post-checklist files (only when post-checklist ran)
+  const checklistFiles = postChecklistRan ? ['POST-CHECKLIST.md', 'ISSUES.md'] : [];
+  
+  const possibleFiles = [...morningPackFiles, ...checklistFiles];
 
   return {
     tool: 'family-morning-digest-pipeline-pack',
