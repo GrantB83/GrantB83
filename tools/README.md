@@ -25,7 +25,6 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
-| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late check-in coordination queue from bookings | SA Ops / CoS | **Offline only**. Never invents times/phones. DRAFT ONLY. No auto-send. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
@@ -876,64 +875,6 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 - ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
 
 [→ Full README](./browns-ota-rate-worksheet/README.md)
-
----
-
-## browns-late-checkin-queue
-
-**One-line:** Generate late check-in coordination queue from bookings for CoS SA Ops timed workflow.
-
-**Owning desk(s):** SA Ops / CoS
-
-**Location:** `tools/browns-late-checkin-queue/`
-
-### Install and Run
-
-```bash
-cd tools/browns-late-checkin-queue
-npm install
-npm run build
-
-# Basic usage
-npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir out/
-
-# Production usage
-npm run queue -- \
-  --bookings /workspace/bookings/2026-09-20.json \
-  --day 2026-09-20 \
-  --outdir /workspace/ct-packs/2026-09-20/
-```
-
-### Critical Safety Note
-
-- ✅ **Offline only** - No APIs or network calls
-- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
-- ✅ **No invented times or phones** - Missing data explicitly flagged
-- ✅ **CoS workflow** - Manual WhatsApp coordination via Coexistence of Service
-- ⚠️ **Never auto-send** - Queue files require manual review and approval
-
-### Output Files
-
-- `queue.md` - Late check-in queue with confirmed times
-- `unknown-time.md` - Late check-ins with unknown/unconfirmed times
-- `APPROVAL.md` - Safety gates and workflow guidance
-- `manifest.json` - Run metadata
-
-### Integration with browns-ct-pack-assemble
-
-This tool is called by `browns-ct-pack-assemble` using the `--run-late-checkin` flag:
-
-```bash
-npm run assemble -- \
-  --day 2026-09-20 \
-  --bookings bookings.json \
-  --run-late-checkin \
-  --outdir out/ct-2026-09-20/
-```
-
-The assembler copies `queue.md` and `unknown-time.md` into the pack and includes them in the 20:00 CT checklist.
-
-[→ Full README](./browns-late-checkin-queue/README.md)
 
 ---
 
