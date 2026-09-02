@@ -10,6 +10,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
+| [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
@@ -210,6 +211,53 @@ npm run index -- \
 - ⚠️ **Sensitive files:** Family medical, tax-emigration, will files are filename-only; bodies never enter indexing
 
 [→ Full README](./attachment-filename-index/README.md)
+
+---
+
+## vault-filename-due-queue
+
+**One-line:** Extract due date and category hints from CIPC/SARS/trust filenames without opening file bodies.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-filename-due-queue/`
+
+### Install and Run
+
+```bash
+cd tools/vault-filename-due-queue
+npm install
+npm run build
+
+# Filename list mode
+npm run queue -- --files filenames.txt --outdir out/
+
+# Directory scan mode
+npm run queue -- --dir /vault/documents --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **No file body reads** - Only processes basenames/filenames
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented dates** - Date tokens extracted from filenames only
+- ✅ **No invented amounts** - Never handles monetary values
+- ✅ **No legal positions** - Category hints are heuristic, not advice
+- ⚠️ **Vault owns next actions** - All CIPC/SARS filings require human approval (N2 gate)
+
+### Document Categories
+
+21 categories: CIPC (annual-return, change-form, certificate), SARS (annual-tax-return, provisional-tax, vat-return, emp-return, correspondence), BEE (affidavit, certificate), Trust (distribution, resolution, compliance), Property (rates, levies), plus insurance-renewal, forex-application, bank-statement, attorney-letter, other-compliance, unknown.
+
+### Output Files
+
+- `queue.json` - Structured queue data with categories, dates, confidence
+- `queue.md` - Numbered list (priority queue with dates, research queue without)
+- `missing-signals.md` - Files without category or date hints
+- `APPROVAL.md` - Safety gates and Vault ownership notice
+- `manifest.json` - Run metadata
+
+[→ Full README](./vault-filename-due-queue/README.md)
 
 ---
 
