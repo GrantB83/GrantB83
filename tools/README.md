@@ -10,6 +10,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
+| [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -229,6 +230,72 @@ npm run digest -- \
 - `manifest.json` - Run metadata
 
 [→ Full README](./pw-loyverse-daily-sales-digest/README.md)
+
+---
+
+## pw-ordered-vs-sold-diff
+
+**One-line:** Compare ordered exports vs sold/Loyverse exports by SKU/Item (+ optional Store) for Perfect Water / CoS cost-of-sales reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-ordered-vs-sold-diff/`
+
+### Install and Run
+
+```bash
+cd tools/pw-ordered-vs-sold-diff
+npm install
+npm run build
+
+# Basic usage (no Store)
+npm run diff -- --ordered ordered.csv --sold sold.csv --outdir out/
+
+# With Store column for per-store comparison
+npm run diff -- \
+  --ordered ordered.csv \
+  --sold sold.csv \
+  --outdir out/ \
+  --store-col Store
+
+# Custom column names
+npm run diff -- \
+  --ordered ordered.csv \
+  --sold sold.csv \
+  --outdir out/ \
+  --key-col "Product" \
+  --qty-col "Qty"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Loyverse API or network calls
+- ✅ **No invented quantities** - All amounts from source CSVs only
+- ✅ **Read-only** - Never modifies source CSV files
+- ✅ **File-based** - All amounts stay in files
+- ✅ **Blank/unparseable qty → rejected** - Invalid rows reported in missing-keys.md
+- ✅ **Exit 1 on bad input** - Malformed CSVs caught early
+- ⚠️ **Helps catch CoS discrepancies** - Flags items ordered but not sold, or sold but not ordered
+- ⚠️ **Amounts stay in files** - Bots must not paste quantities into chat
+
+### Output Files
+
+- `diff.json` - Structured diff data (machine-readable)
+- `diff.md` - Human-readable diff with ordered/sold/delta
+- `missing-keys.md` - Items present in one CSV but not the other, plus rejected rows
+- `APPROVAL.md` - Safety gates and approval workflow
+- `manifest.json` - Run metadata
+
+### Use Case
+
+Perfect Water maintains ordered-vs-sold comparisons on Drive. This tool provides offline CSV diff: ordered export vs sold/Loyverse export by SKU/Item (+ optional Store). Useful for:
+
+- Cost-of-sales reconciliation
+- Stock discrepancy investigation
+- Detecting unrecorded orders
+- Identifying unsold stock
+
+[→ Full README](./pw-ordered-vs-sold-diff/README.md)
 
 ---
 
