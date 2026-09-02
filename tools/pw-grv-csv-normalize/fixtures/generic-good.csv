@@ -1,0 +1,5 @@
+Store,Item,Qty,Unit,Date,Supplier,Doc No
+LT,Water 5L,10,bottle,2026-09-01,Acme Water,GRV001
+LT,Filter,5,unit,2026-09-01,Acme Water,GRV001
+Tho,Water 20L,8,bottle,2026-09-02,Beta Supplies,GRV002
+Tho,Salt 25kg,3,bag,2026-09-02,Beta Supplies,GRV002

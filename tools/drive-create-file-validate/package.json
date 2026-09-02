@@ -1,0 +1,16 @@
+{
+  "name": "drive-create-file-validate",
+  "version": "1.0.0",
+  "description": "Offline Python CLI to validate Drive create_file JSON payloads before MCP upload",
+  "type": "module",
+  "scripts": {
+    "test": "python3 test_fixtures.py"
+  },
+  "keywords": ["drive", "mcp", "validation", "base64", "hospitality", "pdf"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "engines": {
+    "python": ">=3.8.0"
+  },
+  "note": "This is a Python tool. No pip install needed - uses stdlib only."
+}

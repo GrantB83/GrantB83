@@ -1,0 +1,27 @@
+{
+  "name": "family-morning-digest-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI to assemble morning digest pack for Family / CoS WhatsApp workflow",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test dist/pack-builder.test.js",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --outdir test-out-basic --run-subject-digest && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --ics fixtures/sample-calendar.ics --outdir test-out-with-calendar --run-subject-digest --run-ics-digest && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --school-due-subjects fixtures/school-due-subjects-sample.txt --outdir test-out-with-school-due --run-subject-digest --run-school-due && echo 'All fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out* out*"
+  },
+  "keywords": ["family", "school", "digest", "morning-pack"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

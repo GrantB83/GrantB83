@@ -1,0 +1,39 @@
+name: Tools Catalog Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/tools-catalog.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/**'
+      - '.github/workflows/tools-catalog.yml'
+
+jobs:
+  check-catalog:
+    name: Check catalog integrity
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      
+      - name: Install and build tools-catalog-doctor
+        working-directory: tools/tools-catalog-doctor
+        run: npm ci || npm install
+      
+      - name: Build tools-catalog-doctor
+        working-directory: tools/tools-catalog-doctor
+        run: npm run build
+      
+      - name: Run catalog integrity check
+        working-directory: tools/tools-catalog-doctor
+        run: npm run doctor

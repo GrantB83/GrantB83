@@ -1,0 +1,154 @@
+# Live Grok Bot → plan role map.
+# Grant fills existing_name from the Grok Bot sidebar. Agents do not invent names.
+# Do not create a second Bot for a role that already has existing_name set.
+schema_version: 1
+updated: 2026-08-22
+source: docs/automation/GROK-BOT-AMENDMENTS.md
+grant_reply_phrase: "BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…"
+grant_external_action_completed: 2026-08-22
+existing_names_received_in_chat: true
+
+roles:
+  ops-chief:
+    plan_name: Ops Chief
+    section: Ops
+    existing_name: Ops Chief
+    aliases_to_absorb:
+      - Inbox
+      - Mail
+      - Gmail
+      - Email
+      - Sorter
+      - Triage
+      - Chief
+      - COS
+      - Orchestrator
+      - Manager
+      - Director
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.1
+    google_accounts:
+      gmail: [grant830318@gmail.com, grant@thebrowns.co.za]
+      drive: [grant830318@gmail.com]
+      calendar: [grant830318@gmail.com]
+    routine: 06:30 America/Chicago weekdays
+    create_if_missing: true
+
+  family:
+    plan_name: Family
+    section: Family
+    existing_name: Family
+    aliases_to_absorb:
+      - Family
+      - Home
+      - School
+      - Household
+      - Personal
+      - Calendar
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.2
+    google_accounts:
+      gmail: [thebrownsusa@gmail.com, grant830318@gmail.com]
+      drive: [thebrownsusa@gmail.com, grant@hospitality.partners]
+      calendar: [thebrownsusa@gmail.com, grant830318@gmail.com]
+    routine: 06:20 America/Chicago weekdays; Sunday 17:00 CT
+    create_if_missing: true
+
+  stay:
+    plan_name: Stay
+    section: Hospitality
+    existing_name: Old - The Browns
+    aliases_to_absorb:
+      - Hospitality
+      - Stay
+      - Browns
+      - Rivendell
+      - Guest
+      - Concierge
+      - WhatsApp
+      - WA
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.3
+    google_accounts:
+      gmail: [stay@hospitality.partners, grant@thebrowns.co.za, grant@hospitality.partners]
+      drive: [grant@hospitality.partners, grant@thebrowns.co.za]
+      calendar: [grant@thebrowns.co.za, grant@hospitality.partners]
+    routine: on new hospitality labelled mail
+    create_if_missing: false
+    note: Absorb WhatsApp Bot into Stay. Do not add a second Cloud API number.
+
+  aqua:
+    plan_name: Aqua
+    section: PW
+    existing_name: Old - Perfect Water
+    aliases_to_absorb:
+      - Perfect Water
+      - Aqua
+      - BVR
+      - Orders
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.4
+    google_accounts:
+      gmail: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
+      drive: [grant@bvrgroup.co.za, accounts@bvrgroup.co.za]
+      calendar: [grant830318@gmail.com]
+    note: Layer B avatar grant@bvrgroup.co.za is live. accounts@ forwards there. Do not Add account for accounts@.
+    routine: on new PW labelled mail
+    create_if_missing: false
+
+  yard:
+    plan_name: Yard
+    section: HM
+    existing_name: Old - Heavy Metal
+    aliases_to_absorb:
+      - Heavy Metal
+      - Yard
+      - Sand
+      - HM
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.5
+    google_accounts:
+      gmail: [grant@hmsand.co.za, mail@hmsand.co.za]
+      drive: [grant@hmsand.co.za]
+      calendar: []
+    routine: on new HM labelled mail
+    create_if_missing: false
+
+  vault:
+    plan_name: Vault
+    section: Trust
+    existing_name: Old - Files
+    aliases_to_absorb:
+      - Trust
+      - Legal
+      - CIPC
+      - Forex
+      - Compliance
+      - Drive
+      - Files
+      - Librarian
+    amend_prompt: GROK-BOT-AMENDMENTS.md §3.6
+    google_accounts:
+      gmail: [grant830318@gmail.com, grant@thebrowns.co.za]
+      drive: [grant@hospitality.partners, thebrownsusa@gmail.com]
+      calendar: [grant830318@gmail.com]
+    routine: weekday with Ops Chief
+    create_if_missing: false
+    note: Drive/Files Bot maps here only for trust/legal filenames. Household Drive stays with Family.
+
+unused_aliases:
+  names:
+    - Old - WhatsApp
+    - Old - Inbox
+    - Old - Calendar
+    - Old - Memory
+    - Old - Revenue
+    - New Bot
+    - CrediMed
+    - AutoPost
+    - MBA
+    - Job search
+    - Recruiter
+    - Career
+  note: Park these. Do not amend them into ops roles (N6 / out-of-scope).
+
+rules:
+  - Never create a plan-role Bot when existing_name is set or an alias already matches.
+  - Never two Bots scanning the same full inbox.
+  - Calendar-only Bot is absorbed by family (household) or ops-chief (SA ops).
+  - WhatsApp Bot is absorbed by stay.

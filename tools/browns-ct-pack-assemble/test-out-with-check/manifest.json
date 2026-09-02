@@ -1,0 +1,33 @@
+{
+  "day": "2026-09-20",
+  "generatedAt": "2026-09-02T07:57:23.649Z",
+  "files": [
+    {
+      "filename": "PACK.md",
+      "type": "index",
+      "description": "Pack index with timed checklist"
+    },
+    {
+      "filename": "APPROVAL.md",
+      "type": "approval",
+      "description": "Safety gates and approval requirements"
+    },
+    {
+      "filename": "changes.md",
+      "type": "changes",
+      "description": "Booking change check output"
+    }
+  ],
+  "sources": {
+    "bookingsProvided": true,
+    "beforeAfterProvided": true,
+    "factsProvided": false,
+    "guestBookingProvided": false
+  },
+  "flags": {
+    "ranAdapter": false,
+    "ranChangeCheck": true,
+    "ranDailyOps": false,
+    "ranGuestComms": false
+  }
+}

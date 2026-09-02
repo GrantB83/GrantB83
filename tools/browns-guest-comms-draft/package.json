@@ -1,0 +1,27 @@
+{
+  "name": "browns-guest-comms-draft",
+  "version": "1.0.0",
+  "description": "Offline CLI that generates draft guest communications from booking JSON",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "draft": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "draft": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --booking fixtures/sample-booking.json --seeds fixtures/seeds --outdir out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist out"
+  },
+  "keywords": ["hospitality", "guest", "communications", "browns"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

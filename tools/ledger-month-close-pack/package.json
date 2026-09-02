@@ -1,0 +1,27 @@
+{
+  "name": "ledger-month-close-pack",
+  "version": "1.0.0",
+  "description": "Offline USA Budget month-end close pack builder for Ledger / CoS",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "test": "node --test dist/src/*.test.js",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pack -- --month 2024-01 --exports-dir fixtures/exports --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["ledger", "budget", "month-close", "cost-of-sales", "reconciliation"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

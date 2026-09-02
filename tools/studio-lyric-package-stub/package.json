@@ -1,0 +1,28 @@
+{
+  "name": "studio-lyric-package-stub",
+  "version": "1.0.0",
+  "description": "Offline CLI tool to create stub package folders from lyric text for Studio / BrownieTunez validation",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "stub": "node dist/index.js",
+    "test": "node --test dist/*.test.js",
+    "test:fixtures": "npm run build && npm run stub -- --lyrics fixtures/valid-lyrics.txt --title 'Sunshine Day' --artist 'Emma' --outdir test-out/sunshine-day",
+    "clean": "rm -rf dist/ out/ test-out/"
+  },
+  "keywords": [
+    "studio",
+    "brownie-tunez",
+    "suno",
+    "lyrics",
+    "offline",
+    "cli"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

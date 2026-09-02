@@ -1,0 +1,35 @@
+{
+  "name": "browns-booking-change-check",
+  "version": "1.0.0",
+  "description": "Offline CLI to diff two booking snapshots and report changes for CoS SA Ops last-minute verification",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "check": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "check": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --before fixtures/before.json --after fixtures/after.json --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "browns",
+    "dullstroom",
+    "bookings",
+    "diff",
+    "change-detection",
+    "hospitality",
+    "ops"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

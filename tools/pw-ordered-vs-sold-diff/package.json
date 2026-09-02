@@ -1,0 +1,27 @@
+{
+  "name": "pw-ordered-vs-sold-diff",
+  "version": "1.0.0",
+  "description": "Offline Perfect Water ordered-vs-sold comparison CLI for CoS",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "diff": "dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "test": "node --test dist/**/*.test.js",
+    "diff": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --ordered fixtures/ordered.csv --sold fixtures/sold.csv --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["perfect-water", "cos", "ordered", "sold", "diff"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

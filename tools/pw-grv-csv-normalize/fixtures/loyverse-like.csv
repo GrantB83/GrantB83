@@ -1,0 +1,5 @@
+Outlet,Item,Quantity,Unit,Date,Supplier,Receipt Number,Note
+Louis Trichardt,Bottled Water 5L,12,bottle,2026-09-01,Acme Water Supply,REC-001,Morning delivery
+Louis Trichardt,Replacement Filter,6,unit,2026-09-01,Acme Water Supply,REC-001,
+Thohoyandou,Bottled Water 20L,10,bottle,2026-09-02,Beta Wholesalers,REC-002,
+Thohoyandou,Rock Salt 25kg,4,bag,2026-09-02,Beta Wholesalers,REC-002,Restock

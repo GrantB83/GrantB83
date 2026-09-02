@@ -1,0 +1,27 @@
+{
+  "name": "ledger-unmatched-merchant-queue",
+  "version": "1.0.0",
+  "description": "Offline unmatched merchant research queue builder",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "queue": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/src/*.test.js",
+    "queue": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run queue -- --input fixtures/mixed-matched.csv --outdir test-out/mixed --status-col MatchStatus && npm run queue -- --input fixtures/all-unmatched.csv --outdir test-out/all --merchant-col Payee --status-col MatchStatus && npm run queue -- --input fixtures/no-status.csv --outdir test-out/no-status && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["ledger", "merchant", "research", "queue", "unmatched"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
