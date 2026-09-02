@@ -249,9 +249,10 @@ async function runTests() {
   await testRoute('/demo/inquiry-intake', 'Inquiry intake - fixtures mention', { checkContent: 'Load Sample Fixtures' });
   await testRoute('/demo/inquiry-intake', 'Inquiry intake - hard gates', { checkContent: 'DRAFT/fixtures only' });
   
-  // Phase 26 page
-  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind pack (Phase 26)', { checkContent: 'Sales Leave-Behind Pack' });
-  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - 11-step path', { checkContent: '11-Step Demo Walkthrough Path' });
+  // Phase 29 page (updated from Phase 26)
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind pack (Phase 29)', { checkContent: 'Sales Leave-Behind Pack' });
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - 13-step path with invite codes', { checkContent: '13-Step Demo Walkthrough Path' });
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - invite codes section', { checkContent: 'Demo Invite Codes' });
   await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - hard gates', { checkContent: 'Hard Gates' });
   
   // Demo pages
@@ -520,8 +521,10 @@ async function runTests() {
   // Test Phase 23 quote-draft page with JSON input support
   await testRoute('/demo/quote-draft', 'Quote draft page with JSON input (Phase 23)', { checkContent: 'Quote & Invoice Packager' });
   
-  // Test Phase 25 sales walkthrough page
-  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough page (Phase 25)', { checkContent: 'Guided Sales Demo Walkthrough' });
+  // Test Phase 29 sales walkthrough page (updated from Phase 25)
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough page (Phase 29)', { checkContent: 'Guided Sales Demo Walkthrough' });
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - invite codes steps', { checkContent: 'Generate Demo Invite Code' });
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - redeem step', { checkContent: 'Redeem Demo Invite Code' });
   await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - hard gates', { checkContent: 'Hard Gates' });
   await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - progress tracking', { checkContent: 'Progress' });
   
