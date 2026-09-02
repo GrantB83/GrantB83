@@ -14,6 +14,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
+| [pw-rejected-csv-digest](#pw-rejected-csv-digest) | Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose | Perfect Water / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Read-only. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
@@ -517,6 +518,64 @@ Perfect Water maintains ordered-vs-sold comparisons on Drive. This tool provides
 - Identifying unsold stock
 
 [→ Full README](./pw-ordered-vs-sold-diff/README.md)
+
+---
+
+## pw-rejected-csv-digest
+
+**One-line:** Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-rejected-csv-digest/`
+
+### Install and Run
+
+```bash
+cd tools/pw-rejected-csv-digest
+npm install
+npm run build
+
+# Single file
+npm run digest -- --csv rejected.csv --outdir out/
+
+# Multiple files with custom labels
+npm run digest -- \
+  --csv grv-rejected.csv --label "GRV August" \
+  --csv stocktake-rejected.csv --label "Stocktake LT" \
+  --outdir out/
+
+# Directory scan (all rejected*.csv files)
+npm run digest -- --dir exports/ --outdir out/
+
+# Required headers check
+npm run digest -- --csv rejected.csv --outdir out/ \
+  --require-headers "Store,SKU,ReceivedQty,Unit"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Amounts stay in files** - NEVER pasted into DIGEST.md prose
+- ✅ **Read-only** - Does not modify source CSVs
+- ✅ **File-based** - All quantities stay in files
+- ✅ **Exit 1 on bad input** - Unreadable or empty CSVs rejected
+- ⚠️ **Perfect Water owns ops decisions** - No auto-upload or inventory system writes
+- ⚠️ **Bots must not paste amounts** - When referencing this digest, refer to files only
+
+### Output Files
+
+- `DIGEST.md` - Numbered findings with row counts and reason buckets (no amounts in prose)
+- `reasons.json` - Machine-readable reason → count + sample indices
+- `missing-headers.md` - Files with unexpected/empty headers
+- `APPROVAL.md` - Safety checklist
+- `manifest.json` - Run metadata
+
+### Use Case
+
+Digest one or more `rejected.csv` files produced by sibling normalizers (pw-grv-csv-normalize, pw-stocktake-csv-normalize, pw-bank-csv-normalize, pw-ordered-vs-sold-diff, etc.) into a structured human review pack. Classifies rejection reasons heuristically from common columns (RejectionReason, Error, Notes) or from blank required fields. Perfect Water / CoS can review multi-file rejection patterns without hunting through individual CSVs.
+
+[→ Full README](./pw-rejected-csv-digest/README.md)
 
 ---
 

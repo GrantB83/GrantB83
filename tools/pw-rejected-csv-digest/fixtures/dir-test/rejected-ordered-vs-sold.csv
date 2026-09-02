@@ -1,0 +1,4 @@
+SKU,Ordered,Sold,Diff,RejectionReason
+Water 5L,100,,10,Missing or blank Sold
+,50,45,5,Missing or blank SKU
+Filter,abc,20,abc,Unparseable Ordered: "abc"

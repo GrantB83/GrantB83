@@ -1,0 +1,27 @@
+{
+  "name": "pw-rejected-csv-digest",
+  "version": "1.0.0",
+  "description": "Offline CLI to digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "digest": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "digest": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --csv fixtures/grv-rejected.csv --outdir test-out-single && node dist/index.js --csv fixtures/grv-rejected.csv --csv fixtures/stocktake-rejected.csv --outdir test-out-multi && node dist/index.js --dir fixtures/dir-test --outdir test-out-dir && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out-single test-out-multi test-out-dir"
+  },
+  "keywords": ["rejected", "csv", "digest", "perfect-water", "inventory", "recon"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

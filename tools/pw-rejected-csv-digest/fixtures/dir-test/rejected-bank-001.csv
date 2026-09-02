@@ -1,0 +1,4 @@
+Date,Description,Amount,Account,RejectionReason
+2026-09-01,Payment,1250.00,,Missing or blank Account
+2026-09-01,Deposit,,Checking,Missing or blank Amount
+,Transfer,500.00,Savings,Missing or blank Date

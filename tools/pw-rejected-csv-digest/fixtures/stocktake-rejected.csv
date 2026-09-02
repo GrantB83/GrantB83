@@ -1,0 +1,4 @@
+Store,SKU/Item,CountedQty,Unit,RejectionReason
+LT,Water 5L,xyz,bottle,Unparseable CountedQty: "xyz"
+,Filter,100,unit,Missing or blank Store
+Tho,Salt,,kg,Missing or blank CountedQty
