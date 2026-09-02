@@ -16,6 +16,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
+| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
@@ -27,7 +28,6 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late check-in coordination queue from bookings | SA Ops / CoS | **Offline only**. Never invents times/phones. DRAFT ONLY. No auto-send. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
-| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
@@ -495,6 +495,75 @@ npm run test:fixtures
 
 ---
 
+## family-morning-digest-pack
+
+**One-line:** Offline CLI assembler for Family / CoS weekday morning digest pack with clear school/family separation.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-morning-digest-pack/`
+
+### Install and Run
+
+```bash
+cd tools/family-morning-digest-pack
+npm install
+npm run build
+
+# Option 1: Let this tool call family-school-subject-digest
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --outdir out/ --run-subject-digest
+
+# Option 2: Use pre-generated items.json from family-school-subject-digest
+npm run pack -- --date 2026-09-02 --subjects digest-output/items.json --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **DRAFT ONLY** - Never sends to WhatsApp
+- ✅ **No WhatsApp API** - WhatsApp posting stays on CoS
+- ✅ **Clear separation** - Kids School and Family Admin lists are distinct
+- ✅ **No duplication** - Each item appears exactly once
+- ✅ **Full sentences** - Per Family skill tone
+- ✅ **No invented data** - Never fabricates school facts or due dates
+- ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review APPROVAL.md before every post
+
+### Output Files
+
+Creates pack folder: `<outdir>/pack-YYYY-MM-DD/`
+
+- **PACK.md** - Index and checklist with item counts and review steps
+- **school.md** - Kids School items only (numbered 1-N)
+- **family.md** - Family Admin items only (numbered N+1 onward, no school repeats)
+- **APPROVAL.md** - Review document with safety gates
+- **manifest.json** - Machine-readable pack metadata
+
+### Integration with family-school-subject-digest
+
+This tool preferably consumes outputs from `family-school-subject-digest`:
+
+```bash
+# Step 1: Run subject digest
+cd tools/family-school-subject-digest
+npm run digest -- --input subjects.txt --outdir digest-out/
+
+# Step 2: Assemble morning pack
+cd ../family-morning-digest-pack
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects ../family-school-subject-digest/digest-out/digest-TIMESTAMP/items.json
+```
+
+Or use `--run-subject-digest` to do both in one command.
+
+[→ Full README](./family-morning-digest-pack/README.md)
+
+---
+
 ## browns-guest-facts-pack
 
 **One-line:** Extract structured guest facts from markdown knowledge files into JSON and snippet files.
@@ -875,64 +944,6 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 - ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
 
 [→ Full README](./browns-ota-rate-worksheet/README.md)
-
----
-
-## browns-late-checkin-queue
-
-**One-line:** Generate late check-in coordination queue from bookings for CoS SA Ops timed workflow.
-
-**Owning desk(s):** SA Ops / CoS
-
-**Location:** `tools/browns-late-checkin-queue/`
-
-### Install and Run
-
-```bash
-cd tools/browns-late-checkin-queue
-npm install
-npm run build
-
-# Basic usage
-npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir out/
-
-# Production usage
-npm run queue -- \
-  --bookings /workspace/bookings/2026-09-20.json \
-  --day 2026-09-20 \
-  --outdir /workspace/ct-packs/2026-09-20/
-```
-
-### Critical Safety Note
-
-- ✅ **Offline only** - No APIs or network calls
-- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
-- ✅ **No invented times or phones** - Missing data explicitly flagged
-- ✅ **CoS workflow** - Manual WhatsApp coordination via Coexistence of Service
-- ⚠️ **Never auto-send** - Queue files require manual review and approval
-
-### Output Files
-
-- `queue.md` - Late check-in queue with confirmed times
-- `unknown-time.md` - Late check-ins with unknown/unconfirmed times
-- `APPROVAL.md` - Safety gates and workflow guidance
-- `manifest.json` - Run metadata
-
-### Integration with browns-ct-pack-assemble
-
-This tool is called by `browns-ct-pack-assemble` using the `--run-late-checkin` flag:
-
-```bash
-npm run assemble -- \
-  --day 2026-09-20 \
-  --bookings bookings.json \
-  --run-late-checkin \
-  --outdir out/ct-2026-09-20/
-```
-
-The assembler copies `queue.md` and `unknown-time.md` into the pack and includes them in the 20:00 CT checklist.
-
-[→ Full README](./browns-late-checkin-queue/README.md)
 
 ---
 
