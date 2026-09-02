@@ -177,7 +177,7 @@ export async function POST(request: Request) {
         adults: 2,
         children: 3,
         pets: 0,
-        specialRequests: 'DEMO - Kids ages 8, 10, 12. Need extra bedding and kid-friendly breakfast options. Vegetarian meals.',
+        specialRequests: 'DEMO - Kids ages 8, 10, 12. Need extra bedding and kid-friendly breakfast options',
         rawInquiry: 'DEMO INQUIRY: Looking for a family cottage Jan 5-9, 2027. We have 3 kids. Do you have availability?'
       },
       {
@@ -216,7 +216,7 @@ export async function POST(request: Request) {
         lead.currentSystem, lead.phone, lead.notes
       )
 
-        // Insert into inquiries (for quote draft)
+      // Insert into inquiries (for quote draft)
       const inquiryResult = db.prepare(`
         INSERT INTO inquiries (
           tenant_id, property_id, guest_name, guest_email, guest_phone,
@@ -231,168 +231,80 @@ export async function POST(request: Request) {
       inquiryIds.push(Number(inquiryResult.lastInsertRowid))
     }
 
-    // Add extra inquiries for bookings without leads
-    const extraInquiries = [
-      {
-        tenantId: demoTenantId,
-        propertyId: property2Id,
-        guestName: 'David Chen',
-        guestEmail: null, // Missing email
-        guestPhone: '+27 85 555 3344',
-        checkIn: new Date().toISOString().split('T')[0],
-        checkOut: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-        adults: 1,
-        children: 0,
-        pets: 0,
-        specialRequests: 'DEMO - Late arrival ~21:00, flight delayed',
-        rawInquiry: 'DEMO INQUIRY: Need suite tonight, arriving late'
-      },
-      {
-        tenantId: demoTenantId,
-        propertyId: property1Id,
-        guestName: 'Emma Williams',
-        guestEmail: 'emma.demo@example.com',
-        guestPhone: null, // Missing phone
-        checkIn: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-        checkOut: new Date().toISOString().split('T')[0],
-        adults: 1,
-        children: 0,
-        pets: 0,
-        specialRequests: 'DEMO - Early breakfast 06:30',
-        rawInquiry: 'DEMO INQUIRY: Weekend getaway'
-      },
-      {
-        tenantId: demoTenantId,
-        propertyId: property1Id,
-        guestName: 'Lisa Anderson',
-        guestEmail: 'lisa.demo@example.com',
-        guestPhone: '+27 86 555 7788',
-        checkIn: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-        checkOut: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-        adults: 2,
-        children: 0,
-        pets: 1,
-        specialRequests: 'DEMO - Small dog, hypoallergenic bedding preferred',
-        rawInquiry: 'DEMO INQUIRY: Week-long stay with pet'
-      }
-    ]
-
-    for (const inq of extraInquiries) {
-      const result = db.prepare(`
-        INSERT INTO inquiries (
-          tenant_id, property_id, guest_name, guest_email, guest_phone,
-          check_in, check_out, adults, children, pets, special_requests, raw_inquiry
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        inq.tenantId, inq.propertyId, inq.guestName, inq.guestEmail, inq.guestPhone,
-        inq.checkIn, inq.checkOut, inq.adults, inq.children, inq.pets,
-        inq.specialRequests, inq.rawInquiry
-      )
-      inquiryIds.push(Number(result.lastInsertRowid))
-    }
-
-    // Step 6: Create sample bookings (for daily brief / ops demos)
-    // Use dates relative to today for realistic demo
-    const today = new Date().toISOString().split('T')[0]
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
-    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
-    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0]
-
+    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos)
     const bookings = [
-      // Arriving today - normal
       {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[0],
         propertyId: property1Id,
         guestName: 'Sarah Johnson',
-        checkIn: today,
-        checkOut: tomorrow,
+        checkIn: '2026-12-20',
+        checkOut: '2026-12-22',
         roomNumber: 'Suite 1',
+        suiteOrUnit: 'Riverside Suite 1',
+        adults: 2,
+        children: 0,
+        notes: 'Anniversary celebration - champagne on arrival',
+        lateCheckIn: false,
         status: 'confirmed'
       },
-      // Arriving today - late check-in
-      {
-        tenantId: demoTenantId,
-        inquiryId: null,
-        propertyId: property2Id,
-        guestName: 'David Chen',
-        checkIn: today,
-        checkOut: nextWeek,
-        roomNumber: 'Cottage A',
-        status: 'confirmed'
-      },
-      // Departing today
-      {
-        tenantId: demoTenantId,
-        inquiryId: null,
-        propertyId: property1Id,
-        guestName: 'Emma Williams',
-        checkIn: twoDaysAgo,
-        checkOut: today,
-        roomNumber: 'Suite 2',
-        status: 'confirmed'
-      },
-      // In-house (arrived yesterday, leaving tomorrow)
       {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[1],
         propertyId: property2Id,
         guestName: 'Mark Thompson',
-        checkIn: yesterday,
-        checkOut: tomorrow,
-        roomNumber: 'Cottage B',
+        checkIn: '2027-01-05',
+        checkOut: '2027-01-09',
+        roomNumber: 'Cottage A',
+        suiteOrUnit: 'Mountain View Cottage A',
+        adults: 2,
+        children: 3,
+        notes: 'Kids ages 8, 10, 12 - extra bedding requested',
+        lateCheckIn: false,
         status: 'confirmed'
       },
-      // In-house (long stay)
-      {
-        tenantId: demoTenantId,
-        inquiryId: null,
-        propertyId: property1Id,
-        guestName: 'Lisa Anderson',
-        checkIn: twoDaysAgo,
-        checkOut: nextWeek,
-        roomNumber: 'TBD',
-        status: 'confirmed'
-      },
-      // Future booking
       {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[2],
-        propertyId: property2Id,
+        propertyId: property1Id,
         guestName: 'Jennifer Williams',
-        checkIn: nextWeek,
-        checkOut: new Date(Date.now() + 10 * 86400000).toISOString().split('T')[0],
-        roomNumber: 'Cottage C',
+        checkIn: '2027-02-10',
+        checkOut: '2027-02-13',
+        roomNumber: 'Suite 2',
+        suiteOrUnit: 'Riverside Suite 2',
+        adults: 1,
+        children: 0,
+        notes: 'Remote work - needs desk and WiFi. Late arrival ~21:00',
+        lateCheckIn: true,
         status: 'confirmed'
       }
     ]
 
-    for (let i = 0; i < bookings.length; i++) {
-      const booking = bookings[i]
-      const inquiryId = booking.inquiryId || (inquiryIds[i] || null)
+    for (const booking of bookings) {
       db.prepare(`
         INSERT INTO bookings (
           tenant_id, inquiry_id, property_id, guest_name, 
-          check_in, check_out, room_number, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          check_in, check_out, room_number, suite_or_unit,
+          adults, children, notes, late_check_in, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        booking.tenantId, inquiryId, booking.propertyId, booking.guestName,
-        booking.checkIn, booking.checkOut, booking.roomNumber, booking.status
+        booking.tenantId, booking.inquiryId, booking.propertyId, booking.guestName,
+        booking.checkIn, booking.checkOut, booking.roomNumber, booking.suiteOrUnit,
+        booking.adults, booking.children, booking.notes, booking.lateCheckIn ? 1 : 0, booking.status
       )
     }
 
     // Step 7: Return summary
     return NextResponse.json({
       success: true,
-      message: 'Demo seed complete (Phase 17: enhanced with varied bookings for daily ops brief)',
+      message: 'Demo seed complete',
       summary: {
         tenant: 'Dullstroom Demo Guesthouse',
         tenantId: demoTenantId,
         properties: 2,
         rateCards: rateCards.length,
         leads: leads.length,
-        inquiries: leads.length + extraInquiries.length,
+        inquiries: leads.length,
         bookings: bookings.length
       }
     }, { status: 200 })

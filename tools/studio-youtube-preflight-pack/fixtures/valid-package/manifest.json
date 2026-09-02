@@ -1,0 +1,17 @@
+{
+  "tool": "studio-lyric-package-stub",
+  "version": "1.0.0",
+  "timestamp": "2026-09-02T12:00:00.000Z",
+  "metadata": {
+    "title": "Twinkle Star",
+    "artist": "Emma",
+    "mood": "Gentle and soothing",
+    "source": "stub",
+    "createdAt": "2026-09-02T12:00:00.000Z"
+  },
+  "files": {
+    "lyrics": "lyrics.cleaned.txt",
+    "checklist": "checklist.md",
+    "manifest": "manifest.json"
+  }
+}

@@ -1,97 +1,112 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 
-export const dynamic = 'force-dynamic'
-
-/**
- * GET /api/bookings?tenant_id=N&date=YYYY-MM-DD
- * 
- * Fetch bookings for a tenant, optionally filtered by date for daily brief generation
- * Returns bookings with status derived from date comparison
- */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const tenantId = searchParams.get('tenant_id')
-    const targetDate = searchParams.get('date') || new Date().toISOString().split('T')[0]
+    const day = searchParams.get('day')
 
     if (!tenantId) {
-      return NextResponse.json(
-        { error: 'tenant_id is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'tenant_id required' }, { status: 400 })
     }
 
     const db = getDb()
 
-    // Fetch all bookings for tenant with related data
-    const bookings = db.prepare(`
-      SELECT 
-        b.id,
-        b.tenant_id,
-        b.property_id,
-        b.guest_name,
-        b.check_in,
-        b.check_out,
-        b.room_number,
-        b.status,
-        p.name as property_name,
-        i.guest_email,
-        i.guest_phone,
-        i.adults,
-        i.children,
-        i.pets,
-        i.special_requests
-      FROM bookings b
-      LEFT JOIN properties p ON b.property_id = p.id
-      LEFT JOIN inquiries i ON b.inquiry_id = i.id
-      WHERE b.tenant_id = ?
-      ORDER BY b.check_in ASC
-    `).all(tenantId)
+    // If day is specified, filter by arrival/departure/in-house on that day
+    if (day) {
+      const bookings = db
+        .prepare(
+          `SELECT * FROM bookings 
+           WHERE tenant_id = ? 
+           AND (
+             check_in = ? OR 
+             check_out = ? OR 
+             (check_in < ? AND check_out > ?)
+           )
+           ORDER BY check_in ASC`
+        )
+        .all(tenantId, day, day, day, day)
 
-    // Derive status based on target date if requested
-    const processedBookings = bookings.map((booking: any) => {
-      const checkIn = booking.check_in
-      const checkOut = booking.check_out
-      
-      // Derive status relative to target date
-      let derivedStatus = booking.status
-      if (checkIn === targetDate) {
-        derivedStatus = 'arriving'
-      } else if (checkOut === targetDate) {
-        derivedStatus = 'departing'
-      } else if (targetDate > checkIn && targetDate < checkOut) {
-        derivedStatus = 'inhouse'
+      return NextResponse.json({ bookings })
+    }
+
+    // Otherwise return all bookings for tenant
+    const bookings = db
+      .prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY check_in ASC')
+      .all(tenantId)
+
+    return NextResponse.json({ bookings })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { tenant_id, bookings } = body
+
+    if (!tenant_id) {
+      return NextResponse.json({ error: 'tenant_id required' }, { status: 400 })
+    }
+
+    if (!Array.isArray(bookings) || bookings.length === 0) {
+      return NextResponse.json({ error: 'bookings array required' }, { status: 400 })
+    }
+
+    const db = getDb()
+
+    const insert = db.prepare(
+      `INSERT INTO bookings 
+       (tenant_id, guest_name, check_in, check_out, suite_or_unit, adults, children, notes, late_check_in, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+
+    const inserted = []
+    const errors = []
+
+    for (const booking of bookings) {
+      try {
+        if (!booking.guestName || !booking.checkInDate || !booking.checkOutDate) {
+          errors.push({
+            guest: booking.guestName || 'Unknown',
+            field: !booking.guestName ? 'guestName' : !booking.checkInDate ? 'checkInDate' : 'checkOutDate',
+            reason: 'Required field missing',
+          })
+          continue
+        }
+
+        const result = insert.run(
+          tenant_id,
+          booking.guestName,
+          booking.checkInDate,
+          booking.checkOutDate,
+          booking.suiteOrUnit || null,
+          booking.adults || 2,
+          booking.children || 0,
+          booking.notes || null,
+          booking.lateCheckIn ? 1 : 0,
+          booking.status || ''
+        )
+
+        inserted.push({ id: result.lastInsertRowid, ...booking })
+      } catch (err: any) {
+        errors.push({
+          guest: booking.guestName || 'Unknown',
+          field: 'database',
+          reason: err.message,
+        })
       }
-
-      // Detect late check-in from special requests
-      const lateCheckIn = booking.special_requests?.toLowerCase().includes('late') || false
-
-      // Detect missing fields
-      const missingFields = []
-      if (!booking.guest_email) missingFields.push('email')
-      if (!booking.guest_phone) missingFields.push('phone')
-      if (!booking.room_number || booking.room_number === 'TBD') missingFields.push('room')
-
-      return {
-        ...booking,
-        derivedStatus,
-        lateCheckIn,
-        missingFields
-      }
-    })
+    }
 
     return NextResponse.json({
       success: true,
-      targetDate,
-      bookings: processedBookings
+      inserted: inserted.length,
+      errors: errors.length > 0 ? errors : undefined,
+      bookings: inserted,
     })
-
-  } catch (error) {
-    console.error('Error fetching bookings:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch bookings', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
