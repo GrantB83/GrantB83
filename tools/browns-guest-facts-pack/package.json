@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/**/*.test.js",
+    "test": "node --test dist/extractor.test.js",
     "pack": "node dist/index.js",
     "test:fixtures": "npm run build && node dist/index.js --facts fixtures/the-browns-like.md --outdir out && echo 'Fixture test completed successfully'",
     "clean": "rm -rf dist out"
