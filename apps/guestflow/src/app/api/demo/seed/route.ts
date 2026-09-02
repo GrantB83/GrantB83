@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     db.prepare('DELETE FROM rate_cards WHERE tenant_id = ?').run(demoTenantId)
     db.prepare('DELETE FROM waitlist WHERE tenant_id = ?').run(demoTenantId)
     db.prepare('DELETE FROM properties WHERE tenant_id = ?').run(demoTenantId)
+    db.prepare('DELETE FROM invite_codes WHERE tenant_id = ?').run(demoTenantId)
 
     // Step 3: Create 2 sample properties
     const property1Result = db.prepare(
@@ -69,6 +70,40 @@ export async function POST(request: Request) {
 
     const property1Id = Number(property1Result.lastInsertRowid)
     const property2Id = Number(property2Result.lastInsertRowid)
+
+    // Step 3a: Create sample invite codes (Phase 30)
+    const inviteCodes = [
+      {
+        tenantId: demoTenantId,
+        code: 'DEMO2026',
+        maxUses: 10,
+        expiresAt: '2027-12-31',
+        note: 'Primary demo code for 2026 sales walkthroughs'
+      },
+      {
+        tenantId: demoTenantId,
+        code: 'SALES-OCT',
+        maxUses: 5,
+        expiresAt: '2026-10-31',
+        note: 'October sales demo series'
+      },
+      {
+        tenantId: demoTenantId,
+        code: 'PARTNER',
+        maxUses: 20,
+        expiresAt: null,
+        note: 'Partner channel distribution'
+      }
+    ]
+
+    const inviteCodeIds: number[] = []
+    for (const ic of inviteCodes) {
+      const result = db.prepare(`
+        INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note, uses_count)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(ic.tenantId, ic.code, ic.maxUses, ic.expiresAt, ic.note, 1) // Pre-seed with 1 use for DEMO2026
+      inviteCodeIds.push(Number(result.lastInsertRowid))
+    }
 
     // Step 4: Create sample rate cards (DEMO rates - clearly synthetic)
     const rateCards = [
@@ -136,7 +171,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Step 5: Create 3 sample leads/inquiries for CRM
+    // Step 5: Create 3 sample leads/inquiries for CRM (with one attributed to invite code)
     const leads = [
       {
         tenantId: demoTenantId,
@@ -206,14 +241,20 @@ export async function POST(request: Request) {
     const inquiryIds: number[] = []
     for (const lead of leads) {
       // Insert into waitlist (for CRM)
+      // First lead gets attributed to DEMO2026 invite code
+      const isFirstLead = leads.indexOf(lead) === 0
+      const inviteCodeIdForLead = isFirstLead ? inviteCodeIds[0] : null
+
       db.prepare(`
         INSERT INTO waitlist (
           tenant_id, name, email, property_name, room_count, 
-          current_system, phone, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          current_system, phone, notes, invite_code_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         lead.tenantId, lead.name, lead.email, lead.propertyName, lead.roomCount,
-        lead.currentSystem, lead.phone, lead.notes
+        lead.currentSystem, lead.phone, 
+        isFirstLead ? `${lead.notes} (via invite code DEMO2026)` : lead.notes,
+        inviteCodeIdForLead
       )
 
       // Insert into inquiries (for quote draft)
@@ -423,6 +464,7 @@ export async function POST(request: Request) {
         tenant: 'Dullstroom Demo Guesthouse',
         tenantId: demoTenantId,
         properties: 2,
+        inviteCodes: inviteCodes.length,
         rateCards: rateCards.length,
         leads: leads.length,
         inquiries: leads.length,

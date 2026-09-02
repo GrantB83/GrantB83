@@ -116,6 +116,14 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     route: '/demo/rate-card-upload',
     pitch: 'View/export rate cards for OTA channel uploads—DEMO placeholders only, never live publishing.',
     icon: <BarChart3 className="w-5 h-5" />
+  },
+  {
+    id: 'invite-usage',
+    number: 12,
+    title: 'Invite Code Usage Report (Sales Attribution)',
+    route: '/demo/invite-usage',
+    pitch: 'Track which invite codes drive interest—redemption + waitlist attribution with markdown export.',
+    icon: <BarChart3 className="w-5 h-5" />
   }
 ]
 

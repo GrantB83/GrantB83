@@ -1,8 +1,86 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 27 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 30 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 27 — Waitlist capture polish (DRAFT/fixtures only; NO paid signup)
+**Current Phase:** Phase 30 — Invite code attribution + usage reporting (DRAFT/fixtures only; NO paid signup)
+
+---
+
+## What Works (Phase 30)
+
+### ✅ Phase 30 Additions (Invite Code Attribution + Usage Reporting for Sales Demos)
+
+1. **Invite Code Generation & Management** (`/demo/invite-codes`)
+   - Protected admin UI (DemoAuthGuard) for creating and managing invite codes
+   - Each code has: unique code string, max uses, uses count, optional expiry date, and note
+   - Create codes for different sales channels (e.g. DEMO2026, SALES-OCT, PARTNER)
+   - View all codes for active tenant with status indicators (Active, Maxed Out, Expired)
+   - Tenant-scoped SQLite storage with `invite_codes` table
+
+2. **Public Invite Code Redemption** (`/demo/redeem`)
+   - Public-facing page where prospects can redeem invite codes
+   - Validates code exists, not expired, and hasn't reached max uses
+   - Increments uses_count on successful redemption
+   - Stores invite code ID in sessionStorage for optional waitlist attribution
+   - Clear "DEMO ACCESS ONLY" messaging—not a paid funnel
+   - Next steps: explore demo hub or join waitlist with attribution
+
+3. **Waitlist Attribution (Optional & Never Invents PII)**
+   - On `/demo/redeem` success, invite code ID stored in sessionStorage
+   - If user then joins waitlist (`/waitlist`), their lead is linked to the redeemed code
+   - Extends `waitlist` table with nullable `invite_code_id` foreign key
+   - Migration-safe: existing waitlist entries have NULL invite_code_id
+   - Never invents contact info—only stores user-provided form data + code metadata
+
+4. **Sales Usage Report** (`/demo/invite-usage`)
+   - Protected admin page (DemoAuthGuard) showing per-tenant invite code usage
+   - Per code: displays redemptions (uses_count), max uses, expiry, note, and attributed waitlist leads count
+   - Summary cards: Total Codes, Total Redemptions, Total Waitlist Leads Attributed
+   - Sortable table view with status indicators
+   - Markdown export for sales reporting (local download only)
+   - Clear "DEMO ACCESS ONLY / Not a Paid Funnel" banner
+
+5. **Demo Seed Integration** (Phase 9 extended)
+   - Demo seed (`/api/demo/seed`) now creates 3 sample invite codes:
+     - DEMO2026 (10 uses, expires 2027-12-31, note: "Primary demo code for 2026 sales walkthroughs")
+     - SALES-OCT (5 uses, expires 2026-10-31, note: "October sales demo series")
+     - PARTNER (20 uses, no expiry, note: "Partner channel distribution")
+   - At least one waitlist lead (Sarah Johnson) is attributed to DEMO2026 code
+   - Pre-seeds DEMO2026 with 1 use for realistic usage report demo
+
+6. **Demo Hub Integration**
+   - Phase 30 cards on `/demo` hub:
+     - Teal card: "Invite Code Usage Report" (links to `/demo/invite-usage`)
+     - Purple card: "Invite Codes Management" (links to `/demo/invite-codes`)
+     - Cyan card: "Redeem Invite Code (Public)" (links to `/demo/redeem`)
+   - All cards positioned above Phase 26 for visibility
+   - Clear Phase 30 🎯 badges
+
+7. **Sales Walkthrough & Leave-Behind Updates**
+   - Sales walkthrough (`/demo/sales-walkthrough`) now includes Step 12: "Invite Code Usage Report (Sales Attribution)"
+   - Leave-behind pack (`/demo/sales-leavebehind`) updated to 12-step demo path (was 11-step)
+   - Both documents include invite usage reporting in their flows
+
+8. **Extended Smoke Test Coverage** (Phase 6 extended)
+   - Smoke test validates:
+     - `/demo/redeem` route and "DEMO ACCESS ONLY" banner
+     - `/demo/invite-codes` auth check (protected)
+     - `/demo/invite-usage` auth check (protected)
+     - `/api/invite-codes?tenant_id=1` GET endpoint
+     - `/api/invite-codes/redeem` POST endpoint (error case)
+     - `invite_codes` table exists in database schema
+   - Updated "12-Step Demo Walkthrough Path" check in leave-behind test
+
+**What Works vs. Stubbed:**
+- ✅ Works: Invite code creation, redemption with validation, optional waitlist attribution, usage report with markdown export, tenant-scoped tracking
+- 🚧 Stubbed: Same as Phase 27 (production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—invite codes and attribution for sales demos with clearly labeled DRAFT/demo data
+- All data persists to local SQLite only with tenant scoping
+- Never invents contact details—only stores user-provided data + redeemed code metadata
+- Usage report is DEMO ACCESS ONLY—not a paid funnel tracking system
 
 ---
 

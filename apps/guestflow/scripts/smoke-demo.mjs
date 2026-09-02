@@ -71,7 +71,7 @@ async function testDatabase() {
     const Database = (await import('better-sqlite3')).default;
     const db = new Database(dbPath, { readonly: true });
     
-    const requiredTables = ['tenants', 'properties', 'waitlist', 'inquiries', 'bookings', 'rate_cards'];
+    const requiredTables = ['tenants', 'properties', 'waitlist', 'inquiries', 'bookings', 'rate_cards', 'invite_codes'];
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
     const tableNames = tables.map(t => t.name);
     
@@ -251,8 +251,34 @@ async function runTests() {
   
   // Phase 26 page
   await testRoute('/demo/sales-leavebehind', 'Sales leave-behind pack (Phase 26)', { checkContent: 'Sales Leave-Behind Pack' });
-  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - 11-step path', { checkContent: '11-Step Demo Walkthrough Path' });
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - 12-step path', { checkContent: '12-Step Demo Walkthrough Path' });
   await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - hard gates', { checkContent: 'Hard Gates' });
+  
+  // Phase 30 pages
+  await testRoute('/demo/redeem', 'Invite code redeem (Phase 30 public)', { checkContent: 'Redeem Invite Code' });
+  await testRoute('/demo/redeem', 'Redeem - DEMO ACCESS ONLY banner', { checkContent: 'DEMO ACCESS ONLY' });
+  
+  try {
+    const response = await fetch(`${BASE_URL}/demo/invite-codes`);
+    if ([200, 401, 403].includes(response.status)) {
+      pass('Invite codes management page (auth check, Phase 30)');
+    } else {
+      fail(`Invite codes management page: Unexpected status ${response.status}`);
+    }
+  } catch (err) {
+    fail(`Invite codes management page: ${err.message}`);
+  }
+  
+  try {
+    const response = await fetch(`${BASE_URL}/demo/invite-usage`);
+    if ([200, 401, 403].includes(response.status)) {
+      pass('Invite usage report page (auth check, Phase 30)');
+    } else {
+      fail(`Invite usage report page: Unexpected status ${response.status}`);
+    }
+  } catch (err) {
+    fail(`Invite usage report page: ${err.message}`);
+  }
   
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
@@ -294,6 +320,14 @@ async function runTests() {
   await testRoute('/api/properties', 'Properties API (GET)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards', 'Rate cards API (GET)', { expectedStatus: 200 });
   await testRoute('/api/bookings?tenant_id=1', 'Bookings API (GET with tenant)', { expectedStatus: 200 });
+  
+  // Test Phase 30 invite codes API
+  await testRoute('/api/invite-codes?tenant_id=1', 'Invite codes API (GET)', { expectedStatus: 200 });
+  await testRoute('/api/invite-codes/redeem', 'Invite codes redeem API (POST, expect error)', { 
+    method: 'POST', 
+    body: { code: 'INVALID123' },
+    expectedStatus: 404
+  });
   
   // Test Phase 8 quote export API (POST)
   const sampleQuoteExport = {

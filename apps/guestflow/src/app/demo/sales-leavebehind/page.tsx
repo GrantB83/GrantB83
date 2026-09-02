@@ -318,9 +318,9 @@ function generateLeaveBehind(
         </p>
       </section>
 
-      {/* 11-Step Demo Path Summary */}
+      {/* 12-Step Demo Path Summary */}
       <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-3">11-Step Demo Walkthrough Path</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-3">12-Step Demo Walkthrough Path</h2>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <ol className="space-y-2 text-sm text-gray-700">
             <li className="flex gap-2">
@@ -366,6 +366,10 @@ function generateLeaveBehind(
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">11.</span>
               <span><strong>CT-Pack Assembly</strong> → Dated leave-behind combining ops brief, welcome drafts, late check-ins</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary-600">12.</span>
+              <span><strong>Invite Usage Report</strong> → Track which invite codes drive interest with redemption + waitlist attribution</span>
             </li>
           </ol>
         </div>
