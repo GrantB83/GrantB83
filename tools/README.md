@@ -278,6 +278,8 @@ npm run prep -- \
 
 **Location:** `tools/browns-guest-facts-pack/`
 
+**Note:** Supports both section-heading-based and prose-based knowledge files. Extracts facts heuristically from headings and body text.
+
 ### Install and Run
 
 ```bash

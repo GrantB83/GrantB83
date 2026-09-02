@@ -23,7 +23,7 @@ export function extractFactsPack(
   const markdown = readFileSync(factsFile, 'utf-8');
   
   const sections = parseMarkdown(markdown);
-  const facts = extractFacts(sections);
+  const facts = extractFacts(sections, markdown);
 
   const propertyName = detectPropertyName(markdown);
 
