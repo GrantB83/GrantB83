@@ -19,7 +19,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
-| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
+| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar pass-through only. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
@@ -691,6 +691,9 @@ npm run pack -- --date 2026-09-02 --subjects subjects.txt --outdir out/ --run-su
 # Option 2: Use pre-generated items.json from family-school-subject-digest
 npm run pack -- --date 2026-09-02 --subjects digest-output/items.json --outdir out/
 
+# Option 3: Include calendar events from ICS file
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --ics calendar.ics --outdir out/ --run-subject-digest --run-ics-digest
+
 # Test with fixtures
 npm run test:fixtures
 ```
@@ -704,6 +707,7 @@ npm run test:fixtures
 - ✅ **No duplication** - Each item appears exactly once
 - ✅ **Full sentences** - Per Family skill tone
 - ✅ **No invented data** - Never fabricates school facts or due dates
+- ✅ **Calendar pass-through only** - ICS events copied verbatim, never invented
 - ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
 - ⚠️ **Manual review required** - Review APPROVAL.md before every post
 
@@ -714,26 +718,36 @@ Creates pack folder: `<outdir>/pack-YYYY-MM-DD/`
 - **PACK.md** - Index and checklist with item counts and review steps
 - **school.md** - Kids School items only (numbered 1-N)
 - **family.md** - Family Admin items only (numbered N+1 onward, no school repeats)
+- **calendar.md** - Calendar events from ICS digest (if `--run-ics-digest` provided)
+- **calendar-events.json** - Structured calendar event data (if `--run-ics-digest` provided)
 - **APPROVAL.md** - Review document with safety gates
 - **manifest.json** - Machine-readable pack metadata
 
-### Integration with family-school-subject-digest
+### Integration with family-school-subject-digest and family-calendar-ics-digest
 
-This tool preferably consumes outputs from `family-school-subject-digest`:
+This tool preferably consumes outputs from `family-school-subject-digest` and optionally from `family-calendar-ics-digest`:
 
 ```bash
 # Step 1: Run subject digest
 cd tools/family-school-subject-digest
 npm run digest -- --input subjects.txt --outdir digest-out/
 
-# Step 2: Assemble morning pack
+# Step 2: Assemble morning pack (with subjects only)
 cd ../family-morning-digest-pack
 npm run pack -- \
   --date 2026-09-02 \
   --subjects ../family-school-subject-digest/digest-out/digest-TIMESTAMP/items.json
+
+# Or with calendar events from ICS file
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects subjects.txt \
+  --ics calendar.ics \
+  --run-subject-digest \
+  --run-ics-digest
 ```
 
-Or use `--run-subject-digest` to do both in one command.
+Or use `--run-subject-digest` and/or `--run-ics-digest` to call sibling tools in one command.
 
 [→ Full README](./family-morning-digest-pack/README.md)
 

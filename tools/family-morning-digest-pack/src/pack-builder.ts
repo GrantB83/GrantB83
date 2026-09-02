@@ -90,7 +90,7 @@ export function generateFamilyMarkdown(items: DigestItem[], date: string): strin
 /**
  * Generate PACK.md index with checklist
  */
-export function generatePackIndex(date: string, schoolCount: number, familyCount: number): string {
+export function generatePackIndex(date: string, schoolCount: number, familyCount: number, calendarEventCount?: number): string {
   const lines: string[] = [];
   
   lines.push(`# Family Morning Digest Pack — ${date}`);
@@ -101,6 +101,12 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
   lines.push('');
   lines.push(`- **school.md** — Kids School items (${schoolCount} items)`);
   lines.push(`- **family.md** — Family Admin items (${familyCount} items, no school repeats)`);
+  
+  if (calendarEventCount !== undefined) {
+    lines.push(`- **calendar.md** — Calendar events from ICS digest (${calendarEventCount} events)`);
+    lines.push('- **calendar-events.json** — Structured calendar event data');
+  }
+  
   lines.push('- **APPROVAL.md** — Review document with safety gates');
   lines.push('- **manifest.json** — Machine-readable pack metadata');
   lines.push('');
@@ -110,6 +116,12 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
   lines.push('- [ ] Review family.md for accuracy');
   lines.push('- [ ] No school items repeated in family.md');
   lines.push('- [ ] No invented due dates or school facts');
+  
+  if (calendarEventCount !== undefined) {
+    lines.push('- [ ] Review calendar.md for accuracy');
+    lines.push('- [ ] No invented events or times in calendar digest');
+  }
+  
   lines.push('- [ ] Read APPROVAL.md before posting');
   lines.push('- [ ] Family / CoS owns WhatsApp send');
   lines.push('');
@@ -120,6 +132,11 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
   lines.push('- Family bot or CoS owns the send workflow.');
   lines.push('- School items are clearly separated from Family Admin items.');
   lines.push('- No items appear in both sections.');
+  
+  if (calendarEventCount !== undefined) {
+    lines.push('- Calendar events are pass-through from ICS file only.');
+  }
+  
   lines.push('');
   
   return lines.join('\n');
