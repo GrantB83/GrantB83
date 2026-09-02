@@ -16,7 +16,8 @@ import {
   Package,
   RefreshCw,
   BarChart3,
-  AlertTriangle
+  AlertTriangle,
+  Key
 } from 'lucide-react'
 
 interface WalkthroughStep {
@@ -46,8 +47,24 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <BarChart3 className="w-5 h-5" />
   },
   {
-    id: 'inquiry',
+    id: 'invite-generate',
     number: 3,
+    title: 'Generate Demo Invite Code',
+    route: '/demo/invite-codes',
+    pitch: 'Create short-lived demo invite codes for prospects—DEMO ACCESS ONLY (not a paid account, no signup, no payments).',
+    icon: <MessageSquare className="w-5 h-5" />
+  },
+  {
+    id: 'invite-redeem',
+    number: 4,
+    title: 'Redeem Demo Invite Code',
+    route: '/demo/redeem',
+    pitch: 'Prospect redeems code to unlock tenant demo access—local SQLite only, DRAFT/fixtures only, never creates accounts.',
+    icon: <CheckCircle className="w-5 h-5" />
+  },
+  {
+    id: 'inquiry',
+    number: 5,
     title: 'Inquiry Intake (Heuristic Extraction)',
     route: '/demo/inquiry-intake',
     pitch: 'Paste email/WhatsApp inquiry → structured booking fields. Never invents rates or contact info.',
@@ -55,7 +72,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'quote',
-    number: 4,
+    number: 6,
     title: 'Quote Draft from Inquiry JSON',
     route: '/demo/quote-draft',
     pitch: 'Generate professional quotes with embedded amounts or rate card lookup—[RATE CARD REQUIRED] when missing.',
@@ -63,7 +80,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'nightsbridge',
-    number: 5,
+    number: 7,
     title: 'NightsBridge CSV Import & Bookings Board',
     route: '/demo/nightsbridge-import',
     pitch: 'Import OTA bookings CSV → parse, detect gaps, identify late arrivals. View on bookings board.',
@@ -71,7 +88,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'bookings-board',
-    number: 6,
+    number: 8,
     title: 'Bookings Board & Daily Ops Brief',
     route: '/demo/bookings-board',
     pitch: 'Visual bookings timeline → generate dynamic daily ops brief with RED/AMBER/GREEN priorities.',
@@ -79,7 +96,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'welcome',
-    number: 7,
+    number: 9,
     title: 'Welcome Message Drafts',
     route: '/demo/welcome-drafts',
     pitch: 'Same-day/upcoming welcome stubs with warm tone—never invents guest phone or Wi-Fi codes.',
@@ -87,7 +104,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'late-checkin',
-    number: 8,
+    number: 10,
     title: 'Late / After-Hours Check-In Queue',
     route: '/demo/late-checkin-queue',
     pitch: 'Surface late arrivals and unknown ETAs—never invents arrival times or guest phone numbers.',
@@ -95,7 +112,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'ct-pack',
-    number: 9,
+    number: 11,
     title: 'CT-Pack Assembly (Ops Brief + Welcome + Late)',
     route: '/demo/ct-pack',
     pitch: 'Bundle daily brief, welcome stubs, and late check-in queue into one dated leave-behind pack.',
@@ -103,7 +120,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'booking-change',
-    number: 10,
+    number: 12,
     title: 'Booking Change Check (Last-Minute Verification)',
     route: '/demo/booking-change-check',
     pitch: 'Diff before/after snapshots to catch suite changes, cancellations, or new bookings before sending.',
@@ -111,7 +128,7 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'ota-worksheet',
-    number: 11,
+    number: 13,
     title: 'OTA Rate Worksheet (Export Placeholder)',
     route: '/demo/rate-card-upload',
     pitch: 'View/export rate cards for OTA channel uploads—DEMO placeholders only, never live publishing.',
@@ -189,7 +206,7 @@ export default function SalesWalkthroughPage() {
     md += `**Progress:** ${completedCount}/${totalCount} steps completed (${progressPercent}%)\n\n`
     md += `**Generated:** ${new Date().toLocaleString()}\n\n`
     md += `---\n\n`
-    md += `## Guided Sales Flow (Inquiry → Quote → CRM/Bookings → Ops → OTA)\n\n`
+    md += `## Guided Sales Flow (Invite Codes → Demo Access → Inquiry → Quote → CRM/Bookings → Ops → OTA)\n\n`
 
     WALKTHROUGH_STEPS.forEach(step => {
       const completed = completedSteps.has(step.id)
@@ -207,6 +224,7 @@ export default function SalesWalkthroughPage() {
     md += `- ❌ NO WhatsApp/email auto-send (draft-only with approval gates)\n`
     md += `- ❌ NO live NightsBridge API (CSV import only in demo)\n`
     md += `- ❌ NO live OTA publishing (rate cards are DEMO placeholders only)\n`
+    md += `- ⚠️ Invite codes are DEMO ACCESS ONLY (not a paid account, no signup, no subscription)\n`
     md += `- ✅ All data persists to local SQLite only\n`
     md += `- ✅ Never invents rates, contact info, guest phone, ETAs, or Wi-Fi codes\n\n`
 
@@ -231,13 +249,13 @@ export default function SalesWalkthroughPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mb-4">
-          🎯 PHASE 25 · Guided Sales Demo Walkthrough
+          🎯 PHASE 29 · Guided Sales Demo Walkthrough (with Invite Codes)
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Guided Sales Demo Walkthrough
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Complete ordered path through GuestFlow's demo capabilities: inquiry intake → quote draft → CRM/bookings → daily ops → OTA worksheet.
+          Complete ordered path through GuestFlow's demo capabilities: generate invite codes → redeem demo access → inquiry intake → quote draft → CRM/bookings → daily ops → OTA worksheet.
           <br />
           <strong className="text-primary-600">Track your progress, check off completed steps, and export your walkthrough notes.</strong>
         </p>

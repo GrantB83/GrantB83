@@ -28,7 +28,8 @@ interface InquiryFixture {
 export default function SalesLeaveBehindPage() {
   const [showMarkdown, setShowMarkdown] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
   const [inquiryWithAmounts, setInquiryWithAmounts] = useState<InquiryFixture | null>(null)
   const [inquiryWithoutAmounts, setInquiryWithoutAmounts] = useState<InquiryFixture | null>(null)
   const [loading, setLoading] = useState(true)
@@ -188,14 +189,14 @@ export default function SalesLeaveBehindPage() {
       <div className="no-print mb-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-800 rounded-full text-sm font-medium mb-4">
-            🎯 PHASE 26 · Sales Leave-Behind Pack (DRAFT/Fixtures Only)
+            🎯 PHASE 29 · Sales Leave-Behind Pack (with Invite Codes)
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             GuestFlow Sales Leave-Behind Pack
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Complete sales leave-behind for prospects after Phase 25 walkthrough demo. 
-            Includes product overview, 11-step demo path, hard gates, sample fixtures, and next steps.
+            Complete sales leave-behind for prospects after Phase 29 walkthrough demo. 
+            Includes product overview, 13-step demo path with invite codes, hard gates, sample fixtures, and next steps.
             {loading && <span className="block mt-2 text-sm text-blue-600">Loading sample fixtures...</span>}
           </p>
         </div>
@@ -318,42 +319,42 @@ function generateLeaveBehind(
         </p>
       </section>
 
-      {/* 12-Step Demo Path Summary */}
+      {/* 13-Step Demo Path Summary (with Invite Codes) */}
       <section className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-3">12-Step Demo Walkthrough Path</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-3">13-Step Demo Walkthrough Path (with Invite Codes)</h2>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <ol className="space-y-2 text-sm text-gray-700">
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">1.</span>
-              <span><strong>Landing Page</strong> → Multi-property value prop with explicit Inquiry→Quote→Welcome→Operations flow</span>
+              <span><strong>Seed Demo Tenant</strong> → One-click setup with tenant, properties, rate cards, sample data</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">2.</span>
-              <span><strong>Pricing Page</strong> → Three-tier structure with DEMO PLACEHOLDER labels (not live offers)</span>
+              <span><strong>Tenant Switcher</strong> → Multi-tenant architecture demonstration with isolated data</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">3.</span>
-              <span><strong>Waitlist Form</strong> → Lead capture with property details, room count, current system</span>
+              <span><strong>Generate Invite Code</strong> → Create short-lived demo codes (DEMO ACCESS ONLY—not a paid account)</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">4.</span>
-              <span><strong>CRM Pipeline</strong> → Status tracking (New→Contacted→Qualified→Won/Lost), CSV export</span>
+              <span><strong>Redeem Invite Code</strong> → Prospect unlocks tenant demo access (local SQLite, DRAFT/fixtures only)</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">5.</span>
-              <span><strong>Rate Card Upload</strong> → CSV/JSON seasonal rates with tenant-scoped SQLite storage</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="font-bold text-primary-600">6.</span>
               <span><strong>Inquiry Intake</strong> → Heuristic extraction from email/WhatsApp text into structured JSON</span>
             </li>
             <li className="flex gap-2">
-              <span className="font-bold text-primary-600">7.</span>
+              <span className="font-bold text-primary-600">6.</span>
               <span><strong>Quote Draft</strong> → Professional quotes from rate cards or [RATE CARD REQUIRED] placeholders</span>
             </li>
             <li className="flex gap-2">
-              <span className="font-bold text-primary-600">8.</span>
+              <span className="font-bold text-primary-600">7.</span>
               <span><strong>NightsBridge Import</strong> → CSV booking parser with gap detection and late check-in alerts</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary-600">8.</span>
+              <span><strong>Bookings Board</strong> → Visual timeline with dynamic daily ops brief generation</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">9.</span>
@@ -361,7 +362,7 @@ function generateLeaveBehind(
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">10.</span>
-              <span><strong>Daily Ops Brief</strong> → Morning coordination with RED/AMBER/GREEN priority system</span>
+              <span><strong>Late Check-In Queue</strong> → Surface late arrivals and unknown ETAs</span>
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">11.</span>
@@ -369,9 +370,33 @@ function generateLeaveBehind(
             </li>
             <li className="flex gap-2">
               <span className="font-bold text-primary-600">12.</span>
-              <span><strong>Invite Usage Report</strong> → Track which invite codes drive interest with redemption + waitlist attribution</span>
+              <span><strong>Booking Change Check</strong> → Diff snapshots to catch suite changes, cancellations before sending</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-primary-600">13.</span>
+              <span><strong>OTA Rate Worksheet</strong> → Export rate cards for OTA channels (DEMO placeholders only)</span>
             </li>
           </ol>
+        </div>
+      </section>
+
+      {/* Invite Code Usage Section */}
+      <section className="mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-3">Demo Invite Codes (Phase 28→29 Integration)</h2>
+        <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+          <h3 className="font-semibold text-violet-900 mb-2">How Invite Codes Work</h3>
+          <ol className="space-y-2 text-sm text-violet-800 mb-3">
+            <li>1. <strong>Generate:</strong> Create demo invite code with max uses and expiry at <code className="bg-violet-100 px-2 py-1 rounded">/demo/invite-codes</code></li>
+            <li>2. <strong>Share:</strong> Provide code to prospect (copy button provided)</li>
+            <li>3. <strong>Redeem:</strong> Prospect visits <code className="bg-violet-100 px-2 py-1 rounded">/demo/redeem</code> and enters code</li>
+            <li>4. <strong>Access:</strong> Code unlocks tenant demo context for sales walkthrough</li>
+            <li>5. <strong>Track:</strong> Usage count tracked automatically per code</li>
+          </ol>
+          <p className="text-sm text-violet-900 font-medium border-t border-violet-200 pt-3 mt-3">
+            ⚠️ <strong>DEMO ACCESS ONLY:</strong> Invite codes unlock demo tenant access for sales walkthroughs. 
+            This is NOT a paid account, NOT a signup, and does NOT create any subscription or payment.
+            All data is local SQLite fixtures only. Never invents PII.
+          </p>
         </div>
       </section>
 
@@ -393,10 +418,10 @@ function generateLeaveBehind(
             </ul>
             <h3 className="font-semibold text-gray-900 mb-2">Quote Draft (From Fixture Amounts Only):</h3>
             <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Rate: {inquiryWithAmounts.amounts.currency} {inquiryWithAmounts.amounts.ratePerNight}/night ({inquiryWithAmounts.amounts.season} season)</li>
-              <li>• Subtotal: {inquiryWithAmounts.amounts.currency} {(inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights).toLocaleString()}</li>
-              <li>• Tax (15%): {inquiryWithAmounts.amounts.currency} {((inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights) * 0.15).toLocaleString()}</li>
-              <li>• <strong>Total: {inquiryWithAmounts.amounts.currency} {((inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights) * 1.15).toLocaleString()}</strong></li>
+              <li>• Rate: {inquiryWithAmounts?.amounts?.currency} {inquiryWithAmounts?.amounts?.ratePerNight}/night ({inquiryWithAmounts?.amounts?.season} season)</li>
+              <li>• Subtotal: {inquiryWithAmounts?.amounts?.currency} {((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights).toLocaleString()}</li>
+              <li>• Tax (15%): {inquiryWithAmounts?.amounts?.currency} {(((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights) * 0.15).toLocaleString()}</li>
+              <li>• <strong>Total: {inquiryWithAmounts?.amounts?.currency} {(((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights) * 1.15).toLocaleString()}</strong></li>
             </ul>
             <p className="text-xs text-gray-600 mt-2 italic">
               ⚠️ DEMO AMOUNTS FROM FIXTURE ONLY — Never invents pricing. Missing rates show [RATE CARD REQUIRED].
@@ -512,7 +537,7 @@ function generateLeaveBehind(
 
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-        <p><strong>GuestFlow</strong> · Sales Leave-Behind Pack (Phase 26) · DRAFT/Fixtures Only</p>
+        <p><strong>GuestFlow</strong> · Sales Leave-Behind Pack (Phase 29) · DRAFT/Fixtures Only</p>
         <p className="mt-1">Built by The Browns Guest Suites portfolio · {tenantName}</p>
         <p className="mt-1 text-xs">All sample amounts from fixtures only—never invented. Hard gates respected throughout demo.</p>
       </div>
@@ -581,19 +606,35 @@ GuestFlow is a multi-tenant SaaS platform that automates guesthouse operations f
 
 ---
 
-## 11-Step Demo Walkthrough Path
+## 13-Step Demo Walkthrough Path (with Invite Codes)
 
-1. **Landing Page** → Multi-property value prop with explicit Inquiry→Quote→Welcome→Operations flow
-2. **Pricing Page** → Three-tier structure with DEMO PLACEHOLDER labels (not live offers)
-3. **Waitlist Form** → Lead capture with property details, room count, current system
-4. **CRM Pipeline** → Status tracking (New→Contacted→Qualified→Won/Lost), CSV export
-5. **Rate Card Upload** → CSV/JSON seasonal rates with tenant-scoped SQLite storage
-6. **Inquiry Intake** → Heuristic extraction from email/WhatsApp text into structured JSON
-7. **Quote Draft** → Professional quotes from rate cards or [RATE CARD REQUIRED] placeholders
-8. **NightsBridge Import** → CSV booking parser with gap detection and late check-in alerts
+1. **Seed Demo Tenant** → One-click setup with tenant, properties, rate cards, sample data
+2. **Tenant Switcher** → Multi-tenant architecture demonstration with isolated data
+3. **Generate Invite Code** → Create short-lived demo codes (DEMO ACCESS ONLY—not a paid account)
+4. **Redeem Invite Code** → Prospect unlocks tenant demo access (local SQLite, DRAFT/fixtures only)
+5. **Inquiry Intake** → Heuristic extraction from email/WhatsApp text into structured JSON
+6. **Quote Draft** → Professional quotes from rate cards or [RATE CARD REQUIRED] placeholders
+7. **NightsBridge Import** → CSV booking parser with gap detection and late check-in alerts
+8. **Bookings Board** → Visual timeline with dynamic daily ops brief generation
 9. **Welcome Packs** → Personalized pre-arrival messages with property facts
-10. **Daily Ops Brief** → Morning coordination with RED/AMBER/GREEN priority system
+10. **Late Check-In Queue** → Surface late arrivals and unknown ETAs
 11. **CT-Pack Assembly** → Dated leave-behind combining ops brief, welcome drafts, late check-ins
+12. **Booking Change Check** → Diff snapshots to catch suite changes, cancellations before sending
+13. **OTA Rate Worksheet** → Export rate cards for OTA channels (DEMO placeholders only)
+
+---
+
+## Demo Invite Codes (Phase 28→29 Integration)
+
+**How Invite Codes Work:**
+
+1. **Generate:** Create demo invite code with max uses and expiry at \`/demo/invite-codes\`
+2. **Share:** Provide code to prospect (copy button provided)
+3. **Redeem:** Prospect visits \`/demo/redeem\` and enters code
+4. **Access:** Code unlocks tenant demo context for sales walkthrough
+5. **Track:** Usage count tracked automatically per code
+
+⚠️ **DEMO ACCESS ONLY:** Invite codes unlock demo tenant access for sales walkthroughs. This is NOT a paid account, NOT a signup, and does NOT create any subscription or payment. All data is local SQLite fixtures only. Never invents PII.
 
 ---
 ${withAmountsSection}
@@ -636,7 +677,7 @@ Three-tier structure planned (Starter, Professional, Portfolio) with beta pricin
 
 ---
 
-_GuestFlow · Sales Leave-Behind Pack (Phase 26) · DRAFT/Fixtures Only_  
+_GuestFlow · Sales Leave-Behind Pack (Phase 29) · DRAFT/Fixtures Only_  
 _Built by The Browns Guest Suites portfolio · ${tenantName}_  
 _All sample amounts from fixtures only—never invented. Hard gates respected throughout demo._
 `

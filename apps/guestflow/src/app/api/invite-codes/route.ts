@@ -1,79 +1,78 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { z } from 'zod'
 
-const DEMO_PASSWORD = 'demo2026'
+const CreateInviteCodeSchema = z.object({
+  tenant_id: z.number(),
+  max_uses: z.number().min(1).default(1),
+  expires_at: z.string().optional(),
+  note: z.string().optional()
+})
 
-// GET /api/invite-codes?tenant_id=N - List invite codes for tenant
-export async function GET(request: Request) {
+function generateCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const tenantId = searchParams.get('tenant_id')
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'Missing tenant_id' }, { status: 400 })
-    }
-
+    const body = await request.json()
+    const validated = CreateInviteCodeSchema.parse(body)
+    
     const db = getDb()
-    const codes = db.prepare(`
-      SELECT 
-        id, tenant_id, code, max_uses, uses_count, expires_at, note, created_at
-      FROM invite_codes
-      WHERE tenant_id = ?
-      ORDER BY created_at DESC
-    `).all(tenantId)
-
-    return NextResponse.json({ codes })
+    const code = generateCode()
+    
+    const stmt = db.prepare(`
+      INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note)
+      VALUES (?, ?, ?, ?, ?)
+    `)
+    
+    const result = stmt.run(
+      validated.tenant_id,
+      code,
+      validated.max_uses,
+      validated.expires_at || null,
+      validated.note || null
+    )
+    
+    return NextResponse.json({
+      id: result.lastInsertRowid,
+      code,
+      tenant_id: validated.tenant_id,
+      max_uses: validated.max_uses,
+      current_uses: 0,
+      expires_at: validated.expires_at || null,
+      note: validated.note || null
+    })
   } catch (error) {
-    console.error('Error fetching invite codes:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error creating invite code:', error)
+    return NextResponse.json({ error: 'Failed to create invite code' }, { status: 500 })
   }
 }
 
-// POST /api/invite-codes - Create new invite code
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Check demo auth
-    const authHeader = request.headers.get('authorization')
-    const providedPassword = authHeader?.replace('Bearer ', '')
+    const searchParams = request.nextUrl.searchParams
+    const tenantId = searchParams.get('tenant_id')
     
-    if (providedPassword !== DEMO_PASSWORD) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid demo password' },
-        { status: 401 }
-      )
+    if (!tenantId) {
+      return NextResponse.json({ error: 'tenant_id required' }, { status: 400 })
     }
-
-    const data = await request.json()
-    const { tenantId, code, maxUses, expiresAt, note } = data
-
-    if (!tenantId || !code) {
-      return NextResponse.json(
-        { error: 'Missing required fields: tenantId, code' },
-        { status: 400 }
-      )
-    }
-
+    
     const db = getDb()
+    const codes = db.prepare(`
+      SELECT * FROM invite_codes
+      WHERE tenant_id = ?
+      ORDER BY created_at DESC
+    `).all(parseInt(tenantId))
     
-    // Check if code already exists
-    const existing = db.prepare('SELECT id FROM invite_codes WHERE code = ?').get(code)
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Invite code already exists' },
-        { status: 409 }
-      )
-    }
-
-    const result = db.prepare(`
-      INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(tenantId, code, maxUses || 1, expiresAt || null, note || null)
-
-    const newCode = db.prepare('SELECT * FROM invite_codes WHERE id = ?').get(result.lastInsertRowid)
-
-    return NextResponse.json({ success: true, code: newCode }, { status: 201 })
+    return NextResponse.json({ codes })
   } catch (error) {
-    console.error('Error creating invite code:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching invite codes:', error)
+    return NextResponse.json({ error: 'Failed to fetch invite codes' }, { status: 500 })
   }
 }

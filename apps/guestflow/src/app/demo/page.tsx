@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote, RefreshCw } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote, RefreshCw, Key } from 'lucide-react'
 import TenantSwitcher from '@/components/TenantSwitcher'
 
 export default function DemoPage() {
@@ -44,40 +44,21 @@ export default function DemoPage() {
         </Link>
       </div>
 
-      {/* Phase 30: Invite Codes Management */}
+      {/* Phase 28: Demo Invite Codes */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
           href="/demo/invite-codes"
-          className="block bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+          className="block bg-gradient-to-r from-violet-600 to-violet-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <CheckCircle className="w-8 h-8" />
-              <h3 className="text-2xl font-bold">Invite Codes Management</h3>
+              <Key className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Demo Invite / Access Codes</h3>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 30 🎯</span>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 28 🎯</span>
           </div>
-          <p className="text-purple-100">
-            Create and manage invite codes for sales demos. Each code has max uses, optional expiry, and note for tracking. Codes can be redeemed at /demo/redeem and optionally linked to waitlist leads.
-          </p>
-        </Link>
-      </div>
-
-      {/* Phase 30: Redeem Invite Code (Public) */}
-      <div className="mb-8 max-w-5xl mx-auto">
-        <Link 
-          href="/demo/redeem"
-          className="block bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Upload className="w-8 h-8" />
-              <h3 className="text-2xl font-bold">Redeem Invite Code (Public)</h3>
-            </div>
-            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 30 🎯</span>
-          </div>
-          <p className="text-cyan-100">
-            Public page where prospects redeem invite codes. Successful redemption unlocks demo access and optionally links to waitlist submission for attribution tracking.
+          <p className="text-violet-100">
+            Generate short-lived demo invite codes for sales walkthroughs—unlock tenant demo access without payments or signup (DRAFT/fixtures only, NO paid signup)
           </p>
         </Link>
       </div>
@@ -136,8 +117,6 @@ export default function DemoPage() {
           <p className="text-fuchsia-100">
             Generate OTA promotional rate worksheet from tenant rate cards—mirrors tools/browns-ota-rate-worksheet, never invents rates, DRAFT/fixtures only for manual entry
           </p>
-        </Link>
-      </div>
         </Link>
       </div>
 

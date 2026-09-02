@@ -1,205 +1,217 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Key, CheckCircle, XCircle } from 'lucide-react'
 import Link from 'next/link'
-import { Gift, Check, AlertCircle, ArrowRight } from 'lucide-react'
 
 export default function RedeemPage() {
+  const router = useRouter()
   const [code, setCode] = useState('')
-  const [isRedeeming, setIsRedeeming] = useState(false)
-  const [redeemSuccess, setRedeemSuccess] = useState(false)
-  const [redeemError, setRedeemError] = useState<string | null>(null)
-  const [inviteCodeId, setInviteCodeId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{
+    success: boolean
+    message?: string
+    error?: string
+    tenant?: any
+  } | null>(null)
 
-  const handleRedeem = async () => {
+  async function handleRedeem() {
     if (!code.trim()) {
-      setRedeemError('Please enter an invite code')
+      setResult({ success: false, error: 'Please enter a code' })
       return
     }
 
-    setIsRedeeming(true)
-    setRedeemError(null)
+    setLoading(true)
+    setResult(null)
 
     try {
       const response = await fetch('/api/invite-codes/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.trim() })
+        body: JSON.stringify({ code: code.trim().toUpperCase() })
       })
 
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to redeem invite code')
+      if (response.ok && data.success) {
+        setResult({
+          success: true,
+          message: data.message,
+          tenant: data.tenant
+        })
+        
+        if (data.tenant) {
+          localStorage.setItem('demo_tenant_id', data.tenant.id.toString())
+        }
+      } else {
+        setResult({
+          success: false,
+          error: data.error || 'Invalid code'
+        })
       }
-
-      setRedeemSuccess(true)
-      setInviteCodeId(data.inviteCodeId)
-      
-      // Store invite code ID in sessionStorage for optional waitlist attribution
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('guestflow_invite_code_id', String(data.inviteCodeId))
-      }
-    } catch (error: any) {
-      setRedeemError(error.message || 'Failed to redeem invite code')
+    } catch (error) {
+      console.error('Error redeeming code:', error)
+      setResult({
+        success: false,
+        error: 'Failed to redeem code. Please try again.'
+      })
     } finally {
-      setIsRedeeming(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-800 rounded-full text-sm font-medium mb-4">
-          <Gift className="w-4 h-4" />
-          DEMO ACCESS ONLY
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-100 text-violet-800 rounded-full text-sm font-medium mb-4">
+          Phase 28 — Redeem Demo Code
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Redeem Invite Code
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Enter your invite code to unlock demo access and join the waitlist with attribution.
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Redeem Invite Code</h1>
+        <p className="text-lg text-gray-600">
+          Enter your demo invite code to unlock tenant access
         </p>
       </div>
 
-      {/* Amber Banner */}
-      <div className="mb-8 bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-amber-800">
-            <p className="font-semibold mb-1">Demo Environment Only</p>
-            <p>This is a <strong>DEMO/FIXTURE</strong> redeem flow. No production data. Hard gates: NO live payments, NO public paid signup, NO auto-send.</p>
-          </div>
-        </div>
+      <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8">
+        <p className="text-amber-800 font-medium mb-2">
+          ⚠️ DEMO ACCESS ONLY
+        </p>
+        <p className="text-amber-700 text-sm">
+          This unlocks demo tenant context for sales walkthroughs. This is NOT a paid account, 
+          NOT a signup, and does NOT create any subscription or payment. All data is local 
+          SQLite fixtures only.
+        </p>
       </div>
 
-      {!redeemSuccess ? (
-        /* Redeem Form */
-        <div className="bg-white rounded-xl border-2 border-gray-200 p-8 shadow-sm">
-          <div className="mb-6">
-            <label htmlFor="code" className="block text-sm font-semibold text-gray-700 mb-2">
-              Invite Code <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Enter your invite code (e.g. DEMO2026)"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent uppercase"
-              disabled={isRedeeming}
-            />
+      {!result?.success && (
+        <div className="bg-white rounded-xl border-2 border-gray-200 p-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Key className="w-8 h-8 text-violet-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Enter Code</h2>
           </div>
 
-          {redeemError && (
-            <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-red-800">
-                  <p className="font-semibold">Error</p>
-                  <p>{redeemError}</p>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Invite Code
+              </label>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="ABCD1234"
+                maxLength={8}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-center text-2xl font-mono font-bold tracking-wider uppercase"
+                disabled={loading}
+              />
             </div>
-          )}
 
-          <button
-            onClick={handleRedeem}
-            disabled={isRedeeming || !code.trim()}
-            className="w-full bg-teal-600 text-white px-8 py-4 rounded-lg hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold text-lg"
-          >
-            {isRedeeming ? 'Redeeming...' : 'Redeem Invite Code'}
-          </button>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Don't have an invite code? <Link href="/waitlist" className="text-teal-600 hover:text-teal-700 font-medium">Join the waitlist</Link>
-          </p>
-        </div>
-      ) : (
-        /* Success State */
-        <div className="bg-white rounded-xl border-2 border-green-200 p-8 shadow-sm">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Invite Code Redeemed!
-            </h2>
-            <p className="text-gray-600">
-              Your invite code has been successfully redeemed. You now have demo access.
-            </p>
-          </div>
-
-          {/* Next Steps */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">What's Next?</h3>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
-                  1
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Explore Demo Features</p>
-                  <p className="text-sm text-gray-600">Check out the interactive demo hub to see GuestFlow in action</p>
-                </div>
+            {result?.error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-red-800">{result.error}</p>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-teal-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
-                  2
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Join the Waitlist (Optional)</p>
-                  <p className="text-sm text-gray-600">Join our waitlist to receive early access updates. Your invite code will be tracked for attribution.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link 
-              href="/demo"
-              className="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition font-semibold text-center inline-flex items-center justify-center gap-2"
+            <button
+              onClick={handleRedeem}
+              disabled={loading || !code.trim()}
+              className="w-full px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:bg-gray-400 font-semibold transition text-lg"
             >
-              <span>Go to Demo Hub</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link 
-              href="/waitlist"
-              className="flex-1 bg-white text-teal-600 px-6 py-3 rounded-lg border-2 border-teal-600 hover:bg-teal-50 transition font-semibold text-center"
-            >
-              Join Waitlist
-            </Link>
+              {loading ? 'Redeeming...' : 'Redeem Code'}
+            </button>
           </div>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Invite Code ID: {inviteCodeId} • DEMO ACCESS ONLY
-          </p>
         </div>
       )}
 
-      {/* Info Card */}
-      <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">About Invite Codes</h3>
-        <ul className="space-y-2 text-sm text-blue-800">
+      {result?.success && result.tenant && (
+        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-8 mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+            <h2 className="text-2xl font-bold text-green-900">Demo Access Unlocked!</h2>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-green-800 font-medium mb-2">{result.message}</p>
+            <p className="text-green-700">
+              You now have demo access to <strong>{result.tenant.name}</strong>
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg border border-green-200 p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Demo Tenant Details</h3>
+            <dl className="space-y-2 text-sm">
+              <div>
+                <dt className="font-medium text-gray-700">Name:</dt>
+                <dd className="text-gray-900">{result.tenant.name}</dd>
+              </div>
+              {result.tenant.location && (
+                <div>
+                  <dt className="font-medium text-gray-700">Location:</dt>
+                  <dd className="text-gray-900">{result.tenant.location}</dd>
+                </div>
+              )}
+              {result.tenant.timezone && (
+                <div>
+                  <dt className="font-medium text-gray-700">Timezone:</dt>
+                  <dd className="text-gray-900">{result.tenant.timezone}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+
+          <div className="space-y-3">
+            <Link
+              href="/demo"
+              className="block text-center px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 font-semibold transition"
+            >
+              Go to Demo Hub
+            </Link>
+            <Link
+              href="/demo/sales-walkthrough"
+              className="block text-center px-6 py-3 bg-white text-violet-600 border-2 border-violet-600 rounded-lg hover:bg-violet-50 font-semibold transition"
+            >
+              Start Sales Walkthrough
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="font-semibold text-blue-900 mb-2">What This Is</h3>
+        <ul className="space-y-2 text-blue-800 text-sm">
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Invite codes unlock demo access and track which demos drive interest</span>
+            <span className="font-bold mt-0.5">✓</span>
+            <span>Demo/preview access to a tenant for sales walkthroughs</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>If you join the waitlist after redeeming, your code will be linked to your lead for attribution</span>
+            <span className="font-bold mt-0.5">✓</span>
+            <span>Local SQLite fixtures only — no cloud sync</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Each code has a maximum number of uses and optional expiry date</span>
+            <span className="font-bold mt-0.5">✗</span>
+            <span className="line-through">NOT a paid account or subscription</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span><strong>DEMO ONLY:</strong> This is not a paid funnel—hard gates remain in place</span>
+            <span className="font-bold mt-0.5">✗</span>
+            <span className="line-through">NO Stripe, NO payments, NO signup flow</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="font-bold mt-0.5">✗</span>
+            <span className="line-through">NO WhatsApp/email auto-send</span>
           </li>
         </ul>
+
+        <p className="mt-4 text-sm text-blue-900 font-medium">
+          All hard gates from Phase 27 remain: DRAFT/fixtures only, never invents PII.
+        </p>
+      </div>
+
+      <div className="mt-6 text-center">
+        <Link href="/demo" className="text-violet-600 hover:text-violet-700 font-medium">
+          ← Back to Demo Hub
+        </Link>
       </div>
     </div>
   )

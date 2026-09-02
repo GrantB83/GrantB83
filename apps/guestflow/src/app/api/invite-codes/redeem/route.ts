@@ -1,57 +1,64 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { z } from 'zod'
 
-// POST /api/invite-codes/redeem - Redeem an invite code
-export async function POST(request: Request) {
+const RedeemCodeSchema = z.object({
+  code: z.string().min(1)
+})
+
+export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
-    const { code } = data
-
-    if (!code) {
-      return NextResponse.json({ error: 'Missing code' }, { status: 400 })
-    }
-
+    const body = await request.json()
+    const { code } = RedeemCodeSchema.parse(body)
+    
     const db = getDb()
     
-    // Get invite code
     const inviteCode = db.prepare(`
-      SELECT id, tenant_id, code, max_uses, uses_count, expires_at, note
-      FROM invite_codes
+      SELECT * FROM invite_codes
       WHERE code = ?
-    `).get(code) as any
-
+    `).get(code.toUpperCase()) as any
+    
     if (!inviteCode) {
-      return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid code' 
+      }, { status: 404 })
     }
-
-    // Check if expired
+    
+    if (inviteCode.current_uses >= inviteCode.max_uses) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Code has reached maximum uses' 
+      }, { status: 400 })
+    }
+    
     if (inviteCode.expires_at) {
-      const expiresAt = new Date(inviteCode.expires_at)
-      if (expiresAt < new Date()) {
-        return NextResponse.json({ error: 'Invite code has expired' }, { status: 400 })
+      const expiry = new Date(inviteCode.expires_at)
+      if (expiry < new Date()) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Code has expired' 
+        }, { status: 400 })
       }
     }
-
-    // Check if max uses reached
-    if (inviteCode.uses_count >= inviteCode.max_uses) {
-      return NextResponse.json({ error: 'Invite code has reached maximum uses' }, { status: 400 })
-    }
-
-    // Increment uses_count
+    
     db.prepare(`
       UPDATE invite_codes
-      SET uses_count = uses_count + 1
+      SET current_uses = current_uses + 1
       WHERE id = ?
     `).run(inviteCode.id)
-
+    
+    const tenant = db.prepare(`
+      SELECT * FROM tenants WHERE id = ?
+    `).get(inviteCode.tenant_id)
+    
     return NextResponse.json({
       success: true,
-      inviteCodeId: inviteCode.id,
-      tenantId: inviteCode.tenant_id,
-      note: inviteCode.note
-    }, { status: 200 })
+      tenant,
+      message: 'Demo access unlocked! This is demo/preview access only — NOT a paid account.'
+    })
   } catch (error) {
-    console.error('Error redeeming invite code:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error redeeming code:', error)
+    return NextResponse.json({ error: 'Failed to redeem code' }, { status: 500 })
   }
 }

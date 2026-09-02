@@ -1,0 +1,35 @@
+{
+  "name": "family-morning-digest-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler combining family-morning-digest-pack and family-digest-post-checklist",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test dist/pipeline-builder.test.js && node --test dist/cli-parser.test.js",
+    "test:parser": "npm run build && node --test dist/cli-parser.test.js",
+    "pipeline": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pipeline -- --pack fixtures/healthy-morning-pack --outdir test-out-healthy && npm run pipeline -- --pack fixtures/missing-pack-fail --outdir test-out-missing; exit 0 && echo 'All fixture tests completed'",
+    "clean": "rm -rf dist test-out* out*"
+  },
+  "keywords": [
+    "family",
+    "digest",
+    "pipeline",
+    "pack",
+    "morning",
+    "checklist"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

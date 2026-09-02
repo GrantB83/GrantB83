@@ -1,86 +1,113 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 30 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 29 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 30 — Invite code attribution + usage reporting (DRAFT/fixtures only; NO paid signup)
+**Current Phase:** Phase 29 — Invite codes in sales walkthrough & leave-behind (DRAFT/fixtures only; NO paid signup)
 
 ---
 
-## What Works (Phase 30)
+## What Works (Phase 28)
 
-### ✅ Phase 30 Additions (Invite Code Attribution + Usage Reporting for Sales Demos)
+### ✅ Phase 28 Additions (Demo Invite / Access Codes for Sales Demos)
 
-1. **Invite Code Generation & Management** (`/demo/invite-codes`)
-   - Protected admin UI (DemoAuthGuard) for creating and managing invite codes
-   - Each code has: unique code string, max uses, uses count, optional expiry date, and note
-   - Create codes for different sales channels (e.g. DEMO2026, SALES-OCT, PARTNER)
-   - View all codes for active tenant with status indicators (Active, Maxed Out, Expired)
-   - Tenant-scoped SQLite storage with `invite_codes` table
+1. **Invite Code Generation** (`/demo/invite-codes`)
+   - Admin/demo page to generate and list invite codes for active demo tenant
+   - Protected by DemoAuthGuard (password: demo2026)
+   - Configure max uses (1-100) and expiry (1-90 days)
+   - Optional note field for tracking (e.g., "Sales demo for Prospect XYZ")
+   - Auto-generates 8-character codes (e.g., DEMO2026, TRIAL123)
+   - Copy-to-clipboard functionality for sharing codes
+   - Active/expired/maxed status indicators with color coding
 
-2. **Public Invite Code Redemption** (`/demo/redeem`)
-   - Public-facing page where prospects can redeem invite codes
-   - Validates code exists, not expired, and hasn't reached max uses
-   - Increments uses_count on successful redemption
-   - Stores invite code ID in sessionStorage for optional waitlist attribution
-   - Clear "DEMO ACCESS ONLY" messaging—not a paid funnel
-   - Next steps: explore demo hub or join waitlist with attribution
+2. **Invite Code Redeem Page** (`/demo/redeem`)
+   - Public page to enter and redeem demo invite codes
+   - Clear copy: "DEMO ACCESS ONLY — NOT a paid account or signup"
+   - Amber warning banner explaining no payment, no subscription
+   - Code validation: checks expiry, max uses, and existence
+   - Success state shows unlocked tenant details with links to demo hub
+   - Stores tenant selection in localStorage for sticky navigation
 
-3. **Waitlist Attribution (Optional & Never Invents PII)**
-   - On `/demo/redeem` success, invite code ID stored in sessionStorage
-   - If user then joins waitlist (`/waitlist`), their lead is linked to the redeemed code
-   - Extends `waitlist` table with nullable `invite_code_id` foreign key
-   - Migration-safe: existing waitlist entries have NULL invite_code_id
-   - Never invents contact info—only stores user-provided form data + code metadata
+3. **Invite Codes API** (`/api/invite-codes`)
+   - POST endpoint to generate new codes with tenant_id, max_uses, expires_at, note
+   - GET endpoint to list all codes for a tenant (tenant-scoped)
+   - Redeem endpoint (`/api/invite-codes/redeem`) validates and increments usage count
+   - Never invents PII—only stores user-provided note text
 
-4. **Sales Usage Report** (`/demo/invite-usage`)
-   - Protected admin page (DemoAuthGuard) showing per-tenant invite code usage
-   - Per code: displays redemptions (uses_count), max uses, expiry, note, and attributed waitlist leads count
-   - Summary cards: Total Codes, Total Redemptions, Total Waitlist Leads Attributed
-   - Sortable table view with status indicators
-   - Markdown export for sales reporting (local download only)
-   - Clear "DEMO ACCESS ONLY / Not a Paid Funnel" banner
+4. **Demo Seed Integration** (Phase 9 extended)
+   - Demo seed now creates 2 sample invite codes for demo tenant
+   - `DEMO2026` — multi-use (10 uses), 30-day expiry
+   - `TRIAL123` — single-use (1 use), 7-day expiry
+   - Idempotent seed safe to re-run (clears existing codes for demo tenant)
 
-5. **Demo Seed Integration** (Phase 9 extended)
-   - Demo seed (`/api/demo/seed`) now creates 3 sample invite codes:
-     - DEMO2026 (10 uses, expires 2027-12-31, note: "Primary demo code for 2026 sales walkthroughs")
-     - SALES-OCT (5 uses, expires 2026-10-31, note: "October sales demo series")
-     - PARTNER (20 uses, no expiry, note: "Partner channel distribution")
-   - At least one waitlist lead (Sarah Johnson) is attributed to DEMO2026 code
-   - Pre-seeds DEMO2026 with 1 use for realistic usage report demo
+5. **Clear "Demo-Only" Messaging Throughout**
+   - All pages include amber banners: "⚠️ DEMO ACCESS ONLY"
+   - Explicitly states: NOT a paid account, NOT a signup, NO payments
+   - Invite codes unlock demo tenant context for sales walkthroughs only
+   - No Stripe, no WhatsApp/email auto-send, no public signup flow
 
 6. **Demo Hub Integration**
-   - Phase 30 cards on `/demo` hub:
-     - Teal card: "Invite Code Usage Report" (links to `/demo/invite-usage`)
-     - Purple card: "Invite Codes Management" (links to `/demo/invite-codes`)
-     - Cyan card: "Redeem Invite Code (Public)" (links to `/demo/redeem`)
-   - All cards positioned above Phase 26 for visibility
-   - Clear Phase 30 🎯 badges
-
-7. **Sales Walkthrough & Leave-Behind Updates**
-   - Sales walkthrough (`/demo/sales-walkthrough`) now includes Step 12: "Invite Code Usage Report (Sales Attribution)"
-   - Leave-behind pack (`/demo/sales-leavebehind`) updated to 12-step demo path (was 11-step)
-   - Both documents include invite usage reporting in their flows
-
-8. **Extended Smoke Test Coverage** (Phase 6 extended)
-   - Smoke test validates:
-     - `/demo/redeem` route and "DEMO ACCESS ONLY" banner
-     - `/demo/invite-codes` auth check (protected)
-     - `/demo/invite-usage` auth check (protected)
-     - `/api/invite-codes?tenant_id=1` GET endpoint
-     - `/api/invite-codes/redeem` POST endpoint (error case)
-     - `invite_codes` table exists in database schema
-   - Updated "12-Step Demo Walkthrough Path" check in leave-behind test
+   - Prominent Phase 28 violet card at top of demo hub linking to invite codes page
+   - Link from redeem success page to sales walkthrough and demo hub
+   - Complete sales flow: generate code → share → redeem → demo walkthrough
 
 **What Works vs. Stubbed:**
-- ✅ Works: Invite code creation, redemption with validation, optional waitlist attribution, usage report with markdown export, tenant-scoped tracking
-- 🚧 Stubbed: Same as Phase 27 (production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns)
+- ✅ Works: Code generation, redeem page, tenant unlock, fixtures/seed, SQLite persistence
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup
 
 **Hard Gates (UNCHANGED):**
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only—invite codes and attribution for sales demos with clearly labeled DRAFT/demo data
+- Demo environment only—invite codes for local SQLite sales demos with demo auth stub
+- Codes unlock demo tenant context only—NOT a paid account, NOT a subscription
+- Never invents contact details—only stores code metadata (note, max uses, expiry)
 - All data persists to local SQLite only with tenant scoping
-- Never invents contact details—only stores user-provided data + redeemed code metadata
-- Usage report is DEMO ACCESS ONLY—not a paid funnel tracking system
+- Clear messaging: "This is demo/preview access only — NOT a paid account"
+
+---
+
+## What Works (Phase 29)
+
+### ✅ Phase 29 Additions (Invite Codes in Sales Walkthrough & Leave-Behind)
+
+1. **Sales Walkthrough with Invite Codes** (`/demo/sales-walkthrough`)
+   - Added Step 3: Generate Demo Invite Code with "DEMO ACCESS ONLY" messaging
+   - Added Step 4: Redeem Demo Invite Code with clear non-payment, non-signup copy
+   - Updated walkthrough to 13 steps (previously 11) with invite code generate→redeem flow
+   - Checklist UI tracks progress through full path: invite codes → demo access → inquiry → quote → ops
+   - Export markdown includes invite code steps and hard gates reminder
+   - Never creates paid accounts—invite codes are fixtures for local SQLite demo only
+
+2. **Sales Leave-Behind with Invite Codes** (`/demo/sales-leavebehind`)
+   - Added "Demo Invite Codes (Phase 28→29 Integration)" section to leave-behind pack
+   - Explains 5-step invite code flow: Generate → Share → Redeem → Access → Track
+   - Updated demo path from 11 to 13 steps with invite code steps included
+   - Clear messaging: "DEMO ACCESS ONLY—not a paid account, not a signup, no subscription"
+   - Export (markdown/HTML/ZIP) includes invite code usage instructions
+   - Leave-behind now references `/demo/invite-codes` and `/demo/redeem` pages
+
+3. **Seamless Phase 28 Integration**
+   - Wires existing Phase 28 invite code generation and redemption into sales pitch path
+   - Salespeople can now demo: generate code → share with prospect → prospect redeems → walkthrough
+   - All Phase 28 hard gates respected: DEMO ACCESS ONLY, no payments, no signup, local SQLite only
+   - Invite codes track usage count, expiry, and notes for demo purposes
+   - Never invents PII or contact info—codes are fixtures for sales walkthroughs only
+
+4. **Quality Gates Respected**
+   - NO live payments, NO paid ads, NO public paid signup
+   - NO WhatsApp/email auto-send—all communication is DRAFT only
+   - Invite codes are DEMO ACCESS ONLY—not a paid account, no subscription created
+   - All data labeled DRAFT/demo—suitable for sales walkthrough demos only
+   - Never invents rates, contact info, or other details not provided by user
+
+**What Works vs. Stubbed:**
+- ✅ Works: Invite code generation/redemption wired into sales walkthrough and leave-behind, 13-step demo path, export with invite code instructions
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—invite codes unlock demo tenant access for sales walkthroughs with clearly labeled DRAFT/demo data
+- Invite codes are NOT a paid account, NOT a signup, do NOT create subscriptions
+- All data persists to local SQLite only with tenant scoping
+- Never invents contact details—only stores user-provided name/email/property/notes
 
 ---
 
