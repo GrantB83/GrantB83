@@ -1,0 +1,33 @@
+{
+  "name": "studio-youtube-preflight-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI preflight tool for Studio/BrownieTunez YouTube upload approval workflow",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "preflight": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "preflight": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --dir fixtures/valid-package --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": [
+    "studio",
+    "youtube",
+    "preflight",
+    "brownie-tunez",
+    "offline"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -25,6 +25,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
+| [studio-youtube-preflight-pack](#studio-youtube-preflight-pack) | Offline preflight for YouTube upload approval workflow with Drive link and gate validation | Studio / BrownieTunez | **Offline only**. Never uploads. No YouTube/Suno/Drive APIs. Drive approval link BLOCKING. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events and school due queue | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar and due queue pass-through only. |
@@ -1149,6 +1150,90 @@ npm run validate -- --dir ../studio-lyric-package-stub/out/my-song/
 **Recommended next step:** Run `studio-suno-package-validate` on output directory to verify package before Studio work.
 
 [→ Full README](./studio-lyric-package-stub/README.md)
+
+---
+
+## studio-youtube-preflight-pack
+
+**One-line:** Offline preflight tool for Studio/BrownieTunez YouTube upload approval workflow - validates packages, checks Drive link, ensures hard gates held.
+
+**Owning desk(s):** Studio / BrownieTunez
+
+**Location:** `tools/studio-youtube-preflight-pack/`
+
+### Install and Run
+
+```bash
+cd tools/studio-youtube-preflight-pack
+npm install
+npm run build
+
+# Basic preflight with Drive URL
+npm run preflight -- --dir path/to/package --drive-url "https://drive.google.com/..."
+
+# With Drive URL file
+npm run preflight -- --dir path/to/package --drive-url-file drive-link.txt
+
+# With video check
+npm run preflight -- --dir path/to/package --drive-url "https://..." --video video.mp4
+
+# With validation (option 1: prebuilt report)
+npm run preflight -- --dir path/to/package --validate-report report.json --drive-url "https://..."
+
+# With validation (option 2: shell out to validate tool)
+npm run preflight -- --dir path/to/package --run-validate --drive-url "https://..."
+
+# Strict mode (exit 1 on failures)
+npm run preflight -- --dir path/to/package --drive-url "https://..." --strict
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No YouTube/Suno/Drive API calls
+- ✅ **Never uploads** - This tool never uploads anything anywhere
+- ✅ **Never invents** - No invented lyrics, titles, or URLs
+- ✅ **Drive approval BLOCKING** - CoS chat Drive link required for Grant approval
+- ✅ **Video check is path-only** - No media decoding (existence check only)
+- ✅ **Read-only** - No file modifications
+- ⚠️ **Hard gates enforced** - APPROVAL.md documents that Grant must approve in CoS before any YouTube upload
+
+### Preflight Checks
+
+1. **Required files present** - lyrics.cleaned.txt, checklist.md, manifest.json
+2. **Validate report pass** (if `--validate-report` or `--run-validate`)
+3. **Drive approval link** (BLOCKING - CoS chat link required)
+4. **Video file exists** (if `--video`, path existence only)
+5. **PII pattern scan** (emails/phones in lyrics, warning only)
+
+### Integration with Sibling Tools
+
+This tool completes the Studio workflow pipeline:
+
+```bash
+# Step 1: Create stub package
+cd tools/studio-lyric-package-stub
+npm run stub -- --lyrics song.txt --title "My Song" --outdir out/my-song/
+
+# Step 2: Validate package
+cd ../studio-suno-package-validate
+npm run validate -- --dir ../studio-lyric-package-stub/out/my-song/
+
+# Step 3: Preflight before YouTube upload request (THIS TOOL)
+cd ../studio-youtube-preflight-pack
+npm run preflight -- \
+  --dir ../studio-lyric-package-stub/out/my-song/ \
+  --validate-report ../studio-suno-package-validate/out/report.json \
+  --drive-url "https://drive.google.com/file/d/abc123/view" \
+  --video my-song.mp4
+
+# Step 4: If preflight passes, request CoS/Grant approval for YouTube upload
+```
+
+**Output:** `PREFLIGHT.md` (numbered checks), `APPROVAL.md` (explicit gate rules), `missing.md` (what's blocking), `manifest.json`
+
+**Exit codes:** 0 if preflight ran; 1 if --strict and any required check fails, or bad input
+
+[→ Full README](./studio-youtube-preflight-pack/README.md)
 
 ---
 

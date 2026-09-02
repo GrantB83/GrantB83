@@ -1,0 +1,19 @@
+{
+  "tool": "studio-youtube-preflight-pack",
+  "version": "1.0.0",
+  "timestamp": "2026-09-02T16:13:37.764Z",
+  "package_dir": "/workspace/tools/studio-youtube-preflight-pack/fixtures/valid-package",
+  "summary": {
+    "total_checks": 3,
+    "passed": 3,
+    "failed": 0,
+    "all_passed": true
+  },
+  "drive_url": "https://drive.google.com/file/d/test123/view",
+  "files": {
+    "preflight": "PREFLIGHT.md",
+    "approval": "APPROVAL.md",
+    "missing": "missing.md",
+    "manifest": "manifest.json"
+  }
+}
