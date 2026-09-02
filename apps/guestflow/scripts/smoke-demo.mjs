@@ -240,6 +240,9 @@ async function runTests() {
   } catch (err) {
     fail(`Waitlist management page: ${err.message}`);
   }
+
+  // Phase 16 page
+  await testRoute('/demo/bookings-board', 'Bookings board page (Phase 16)', { checkContent: 'Same-Day Bookings Board' });
   
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
@@ -279,6 +282,7 @@ async function runTests() {
   await testRoute('/api/tenants', 'Tenants API (GET)', { expectedStatus: 200 });
   await testRoute('/api/properties', 'Properties API (GET)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards', 'Rate cards API (GET)', { expectedStatus: 200 });
+  await testRoute('/api/bookings', 'Bookings API (GET)', { expectedStatus: 200 });
   
   // Test Phase 8 quote export API (POST)
   const sampleQuoteExport = {

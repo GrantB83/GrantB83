@@ -231,7 +231,7 @@ export async function POST(request: Request) {
       inquiryIds.push(Number(inquiryResult.lastInsertRowid))
     }
 
-    // Step 6: Create 2 sample bookings (for daily brief / ops demos)
+    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos)
     const bookings = [
       {
         tenantId: demoTenantId,
@@ -241,6 +241,11 @@ export async function POST(request: Request) {
         checkIn: '2026-12-20',
         checkOut: '2026-12-22',
         roomNumber: 'Suite 1',
+        suiteOrUnit: 'Riverside Suite 1',
+        adults: 2,
+        children: 0,
+        notes: 'Anniversary celebration - champagne on arrival',
+        lateCheckIn: false,
         status: 'confirmed'
       },
       {
@@ -251,6 +256,26 @@ export async function POST(request: Request) {
         checkIn: '2027-01-05',
         checkOut: '2027-01-09',
         roomNumber: 'Cottage A',
+        suiteOrUnit: 'Mountain View Cottage A',
+        adults: 2,
+        children: 3,
+        notes: 'Kids ages 8, 10, 12 - extra bedding requested',
+        lateCheckIn: false,
+        status: 'confirmed'
+      },
+      {
+        tenantId: demoTenantId,
+        inquiryId: inquiryIds[2],
+        propertyId: property1Id,
+        guestName: 'Jennifer Williams',
+        checkIn: '2027-02-10',
+        checkOut: '2027-02-13',
+        roomNumber: 'Suite 2',
+        suiteOrUnit: 'Riverside Suite 2',
+        adults: 1,
+        children: 0,
+        notes: 'Remote work - needs desk and WiFi. Late arrival ~21:00',
+        lateCheckIn: true,
         status: 'confirmed'
       }
     ]
@@ -259,11 +284,13 @@ export async function POST(request: Request) {
       db.prepare(`
         INSERT INTO bookings (
           tenant_id, inquiry_id, property_id, guest_name, 
-          check_in, check_out, room_number, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          check_in, check_out, room_number, suite_or_unit,
+          adults, children, notes, late_check_in, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         booking.tenantId, booking.inquiryId, booking.propertyId, booking.guestName,
-        booking.checkIn, booking.checkOut, booking.roomNumber, booking.status
+        booking.checkIn, booking.checkOut, booking.roomNumber, booking.suiteOrUnit,
+        booking.adults, booking.children, booking.notes, booking.lateCheckIn ? 1 : 0, booking.status
       )
     }
 
