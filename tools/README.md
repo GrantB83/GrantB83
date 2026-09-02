@@ -19,6 +19,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
+| [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar pass-through only. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
@@ -695,6 +696,85 @@ npm run validate -- --dir ../suno-package-prep/suno-jobs/song-2026-09-02/
 **Exit codes:** 0 if validate ran; 1 if --strict and any fail, or bad input
 
 [→ Full README](./studio-suno-package-validate/README.md)
+
+---
+
+## studio-lyric-package-stub
+
+**One-line:** Create stub package folders from lyric text (+ optional metadata) for Studio / BrownieTunez validation with studio-suno-package-validate.
+
+**Owning desk(s):** Studio / BrownieTunez
+
+**Location:** `tools/studio-lyric-package-stub/`
+
+### Install and Run
+
+```bash
+cd tools/studio-lyric-package-stub
+npm install
+npm run build
+
+# Basic usage (title derived from first lyric line)
+npm run stub -- --lyrics path/to/lyrics.txt --outdir out/my-song/
+
+# With title and artist
+npm run stub -- \
+  --lyrics lyrics.txt \
+  --title "Sunshine Day" \
+  --artist "Emma" \
+  --outdir out/sunshine-day/
+
+# With all metadata
+npm run stub -- \
+  --lyrics lyrics.txt \
+  --title "Happy Birthday" \
+  --artist "Katelyn" \
+  --mood "Celebratory and joyful" \
+  --notes notes.md \
+  --outdir out/happy-birthday/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls or network requests
+- ✅ **Never uploads** - No YouTube/Suno/Drive uploads
+- ✅ **Never invents lyrics** - Exact copy from input file
+- ✅ **Read-only source** - Input lyrics file not modified
+- ✅ **Title derivation** - Derives safe stub title from first lyric line if --title omitted
+- ✅ **Exit 1 on empty** - Rejects empty or whitespace-only lyrics
+- ⚠️ **Stub package only** - For validation purposes before manual Studio workflow
+
+### Package Structure
+
+Creates package folder with:
+- `lyrics.cleaned.txt` - Exact copy of input lyrics (never rewritten)
+- `meta.json` - Metadata: title, artist?, mood?, source: "stub", createdAt, titleDerived?
+- `checklist.md` - Notes from --notes file or placeholder checklist
+- `APPROVAL.md` - Drive approval reminder (no auto-upload)
+- `manifest.json` - Package manifest with metadata and file paths
+
+### Integration with studio-suno-package-validate
+
+This tool creates stub packages that can be validated by `studio-suno-package-validate`:
+
+```bash
+# Step 1: Create stub package
+cd tools/studio-lyric-package-stub
+npm run stub -- --lyrics song.txt --title "My Song" --outdir out/my-song/
+
+# Step 2: Validate package
+cd ../studio-suno-package-validate
+npm run validate -- --dir ../studio-lyric-package-stub/out/my-song/
+
+# Step 3: If validation passes, proceed with manual Studio workflow
+```
+
+**Recommended next step:** Run `studio-suno-package-validate` on output directory to verify package before Studio work.
+
+[→ Full README](./studio-lyric-package-stub/README.md)
 
 ---
 
