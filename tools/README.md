@@ -488,6 +488,7 @@ npm run draft -- \
 - ✅ **Offline only** - No Gmail/WhatsApp/NightsBridge APIs
 - ✅ **Never invents rates or check-in times** - Uses placeholders or omits
 - ✅ **Seed-based tone** - Learns from redacted samples (no PII in git)
+- ✅ **Optional guest phone support** - When `guestPhone` present in booking JSON, included in team/admin drafts with `wa.me` link helper for CoS WhatsApp packs; omitted from guest-facing messages
 - ⚠️ **Approval gates** - H1/H2 required per `docs/automation/approval-gates.md`
 - ⚠️ **CoS only for WhatsApp** - Sends must use Coexistence of Service
 

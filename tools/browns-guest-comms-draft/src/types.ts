@@ -12,6 +12,7 @@ export interface BookingData {
   children?: number;
   notes?: string;
   channel: 'whatsapp' | 'email';
+  guestPhone?: string;
 }
 
 export interface BrandFacts {

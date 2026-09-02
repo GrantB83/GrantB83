@@ -140,4 +140,105 @@ describe('Draft Generator', () => {
       'Approval notice should warn about draft status'
     );
   });
+
+  it('should include guest phone in team check-in when present', () => {
+    const bookingWithPhone: BookingData = { 
+      ...sampleBooking, 
+      guestPhone: '+27 83 645 1234' 
+    };
+    const facts = getDefaultFacts();
+    const seeds = {};
+    const drafts = generateDrafts(bookingWithPhone, facts, seeds);
+
+    assert.ok(
+      drafts.teamCheckIn.includes('Guest phone: +27 83 645 1234'),
+      'Team check-in should include guest phone'
+    );
+    assert.ok(
+      drafts.teamCheckIn.includes('wa.me/27836451234'),
+      'Team check-in should include WhatsApp link'
+    );
+  });
+
+  it('should include guest phone in approval notice when present', () => {
+    const bookingWithPhone: BookingData = { 
+      ...sampleBooking, 
+      guestPhone: '+27 83 645 1234' 
+    };
+    const facts = getDefaultFacts();
+    const seeds = {};
+    const drafts = generateDrafts(bookingWithPhone, facts, seeds);
+
+    assert.ok(
+      drafts.approval.includes('Guest phone: +27 83 645 1234'),
+      'Approval notice should include guest phone'
+    );
+    assert.ok(
+      drafts.approval.includes('wa.me/27836451234'),
+      'Approval notice should include WhatsApp link'
+    );
+  });
+
+  it('should omit guest phone section when not present', () => {
+    const facts = getDefaultFacts();
+    const seeds = {};
+    const drafts = generateDrafts(sampleBooking, facts, seeds);
+
+    assert.ok(
+      !drafts.teamCheckIn.includes('Guest phone:'),
+      'Team check-in should not include phone section when absent'
+    );
+    assert.ok(
+      !drafts.teamCheckIn.includes('wa.me'),
+      'Team check-in should not include wa.me link when phone absent'
+    );
+    assert.ok(
+      !drafts.approval.includes('Guest Contact'),
+      'Approval notice should not include phone section when absent'
+    );
+  });
+
+  it('should not include guest phone in guest-facing messages', () => {
+    const bookingWithPhone: BookingData = { 
+      ...sampleBooking, 
+      guestPhone: '+27 83 645 1234' 
+    };
+    const facts = getDefaultFacts();
+    const seeds = {};
+    const drafts = generateDrafts(bookingWithPhone, facts, seeds);
+
+    // Guest-facing messages should NOT include the guest's own phone
+    assert.ok(
+      !drafts.welcomeWhatsApp.includes('+27 83 645 1234'),
+      'WhatsApp welcome should not include guest phone'
+    );
+    assert.ok(
+      !drafts.welcomeEmail.body.includes('+27 83 645 1234'),
+      'Email welcome should not include guest phone'
+    );
+  });
+
+  it('should format wa.me links correctly', () => {
+    const testCases = [
+      { input: '+27 83 645 1234', expected: '27836451234' },
+      { input: '27836451234', expected: '27836451234' },
+      { input: '+1 555 123 4567', expected: '15551234567' }
+    ];
+
+    const facts = getDefaultFacts();
+    const seeds = {};
+
+    for (const testCase of testCases) {
+      const bookingWithPhone: BookingData = { 
+        ...sampleBooking, 
+        guestPhone: testCase.input
+      };
+      const drafts = generateDrafts(bookingWithPhone, facts, seeds);
+
+      assert.ok(
+        drafts.teamCheckIn.includes(`wa.me/${testCase.expected}`),
+        `Should format ${testCase.input} as wa.me/${testCase.expected}`
+      );
+    }
+  });
 });
