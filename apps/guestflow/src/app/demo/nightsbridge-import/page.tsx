@@ -24,7 +24,8 @@ interface Gap {
 }
 
 export default function NightsbridgeImportPage() {
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
   const [csvText, setCsvText] = useState('')
   const [targetDate, setTargetDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [bookings, setBookings] = useState<ParsedBooking[]>([])

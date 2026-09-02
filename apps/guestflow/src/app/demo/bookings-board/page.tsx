@@ -20,26 +20,27 @@ interface Booking {
 }
 
 export default function BookingsBoardPage() {
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
   const [selectedDay, setSelectedDay] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (activeTenant) {
+    if (selectedTenantId) {
       fetchBookings()
     }
-  }, [selectedDay, activeTenant])
+  }, [selectedDay, selectedTenantId])
 
   const fetchBookings = async () => {
-    if (!activeTenant) return
+    if (!selectedTenantId) return
 
     setLoading(true)
     setError('')
 
     try {
-      const res = await fetch(`/api/bookings?tenant_id=${activeTenant.id}&day=${selectedDay}`)
+      const res = await fetch(`/api/bookings?tenant_id=${selectedTenantId}&day=${selectedDay}`)
       const data = await res.json()
 
       if (res.ok) {
