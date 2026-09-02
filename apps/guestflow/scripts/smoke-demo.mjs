@@ -464,6 +464,9 @@ async function runTests() {
     'Welcome drafts API with tenant filter (Phase 18)', 
     { expectedStatus: 200 }
   );
+
+  // Test Phase 20 CT-pack assembly page
+  await testRoute('/demo/ct-pack', 'CT-pack assembly page (Phase 20)', { checkContent: 'Demo CT-Pack Assembly' });
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });

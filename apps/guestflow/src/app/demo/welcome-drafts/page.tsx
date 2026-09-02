@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Download, Printer, Calendar, AlertCircle } from 'lucide-react'
+import { Mail, Download, Printer, Calendar, AlertCircle, Package } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
 
@@ -323,7 +323,21 @@ export default function WelcomeDraftsPage() {
       )}
 
       {/* Hard Gates Warning */}
-      <div className="mt-12 bg-red-50 border border-red-200 rounded-xl p-6">
+      <div className="mt-12 bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-6">
+        <h3 className="font-semibold text-indigo-900 mb-3">📦 Phase 20: Demo CT-Pack Assembly</h3>
+        <p className="text-sm text-indigo-800 mb-4">
+          Assemble these welcome drafts + daily ops brief + late-checkin queue into one dated CT pack (timed checklist flavor with 20:00 / 09:00 / 21:00 CT demo copy).
+        </p>
+        <Link
+          href="/demo/ct-pack"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
+        >
+          <Package className="w-4 h-4" />
+          Assemble CT Pack
+        </Link>
+      </div>
+
+      <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-6">
         <h3 className="font-semibold text-red-900 mb-3">⚠️ Hard Gates (Phase 18)</h3>
         <ul className="space-y-2 text-sm text-red-800">
           <li>✅ <strong>DRAFT ONLY</strong> — Never sends WhatsApp or email automatically</li>

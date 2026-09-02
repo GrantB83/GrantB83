@@ -1,8 +1,68 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 18 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 20 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 18 — Welcome message drafts from tenant bookings (DRAFT/fixtures only)
+**Current Phase:** Phase 20 — Demo CT-pack assembly from daily-ops brief + welcome stubs + late-checkin queue (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 20)
+
+### ✅ Phase 20 Additions (Demo CT-Pack Assembly)
+
+1. **CT-Pack Assembly Page** (`/demo/ct-pack`)
+   - Assemble dated pack for active demo tenant from existing ops pages
+   - Mirrors `tools/browns-ct-pack-assemble` semantics for sales demo
+   - Combines: daily-ops brief + welcome stubs + late-checkin queue
+   - Timed checklist flavor (20:00 / 09:00 / 21:00 CT as demo copy only)
+   - Never WhatsApp/email auto-send—DRAFT ONLY
+
+2. **PACK.md Index Generation**
+   - Pack purpose and generation timestamp
+   - Timed checklist with 20:00 CT (welcome drafts), 09:00 CT (after-hours check-ins), 21:00 CT (staff ops brief)
+   - Pack contents table with status indicators (✅ included / ⚠️ missing)
+   - Daily brief section (arrivals, departures, in-house, RED alerts)
+   - Welcome message drafts section (numbered stubs with guest details)
+   - Late check-in queue section (expected arrival times, property, room)
+   - Sources summary and safety reminder
+
+3. **APPROVAL.md Gates Document**
+   - Hard gates: DRAFT ONLY, CoS ownership, never auto-send, never invent data, demo tenant only
+   - Timed send checklist (20:00 CT / 09:00 CT / 21:00 CT)
+   - Approval phrase template: `APPROVE SEND CT PACK YYYY-MM-DD`
+   - Clear reminder that this is for sales demo purposes only
+
+4. **Export Options** (`POST /api/ct-pack`)
+   - Download as Markdown (.md) or HTML (.html) file
+   - Print to PDF via browser print dialog (opens HTML in new window)
+   - Mirrors Phase 8 quote export and Phase 13 leave-behind UX
+   - Export includes both PACK.md and APPROVAL.md in one file
+   - Local-only operations with no external storage
+
+5. **Demo Hub Integration**
+   - Prominent Phase 20 indigo card at top of demo hub linking to CT-pack page
+   - Link from daily-brief page to CT-pack assembly ("Assemble CT Pack" button)
+   - Link from welcome-drafts page to CT-pack assembly ("Assemble CT Pack" button)
+   - Integration with tenant switcher for multi-tenant demo
+   - Positioned above Phase 18 welcome drafts
+
+6. **Extended Smoke Tests**
+   - Route test for `/demo/ct-pack` accessibility
+   - Validates CT-pack page renders correctly with Phase 20 content
+
+**What Works vs. Stubbed:**
+- ✅ Works: Pack assembly from existing ops pages, PACK.md + APPROVAL.md generation, markdown/HTML export, print-to-PDF, timed checklist flavor
+- 🚧 Stubbed: Same as Phase 18 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — CT-pack assembly is DRAFT ONLY for sales demonstration
+- Never invents guest phone (uses `[GUEST_PHONE]` placeholder)
+- Never invents rates (uses `[RATE CARD REQUIRED]` placeholder)
+- Never invents data—all placeholders stay flagged
+- CoS owns real WhatsApp sending for The Browns operations
+- All export operations are local-only (no external storage or tracking)
+- All data persists to local SQLite only
 
 ---
 

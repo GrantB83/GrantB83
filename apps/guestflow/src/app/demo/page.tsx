@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 20: Demo CT-Pack Assembly */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/ct-pack"
+          className="block bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <StickyNote className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Demo CT-Pack Assembly</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 20</span>
+          </div>
+          <p className="text-indigo-100">
+            Assemble dated pack for active demo tenant: daily-ops brief + welcome stubs + late-checkin queue into one leave-behind pack (mirrors tools/browns-ct-pack-assemble, DRAFT/fixtures only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 18: Welcome Message Drafts */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
