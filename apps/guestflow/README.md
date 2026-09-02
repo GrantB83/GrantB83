@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 3 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 4 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 3 — CRM enhancements, lead management, and funnel walkthrough
+**Current Phase:** Phase 4 — Rate card upload, demo auth stub, and funnel polish
 
 ---
 
@@ -68,6 +68,41 @@ npm start
 ```
 
 ---
+
+## What Works (Phase 4)
+
+### ✅ Phase 4 Additions (Rate Cards, Auth Stub, Funnel Polish)
+
+1. **Rate Card Upload** (`/demo/rate-card-upload`)
+   - CSV and JSON upload support
+   - Tenant-scoped SQLite storage for seasonal rates
+   - Real-time validation (room_type and rate_per_night required)
+   - View existing rate cards with clear display of seasons, dates, and min nights
+   - Clear all rates function for testing
+   - Sample CSV and JSON templates provided
+   - Protected by demo auth stub
+
+2. **Demo Auth Stub**
+   - Simple session-based authentication for protected routes
+   - Password: `demo2026` (clearly labeled as DEMO only)
+   - Protects `/crm`, `/demo/rate-card-upload`, and `/demo/tenant` routes
+   - Session persists in browser sessionStorage (local only)
+   - Logout button on protected pages
+   - ⚠️ NOT production auth—clearly labeled as stub for demo purposes only
+
+3. **Funnel Polish - Rate Card Integration**
+   - Quote draft page (`/demo/quote-draft`) now fetches real rate cards from database
+   - Automatic rate matching by room type and date range
+   - Shows green status when rate cards are loaded, amber when missing
+   - Calculates actual totals (subtotal + 15% tax) when rate is found
+   - Falls back to `[RATE CARD REQUIRED]` placeholders when no matching rate exists
+   - Link to rate card upload from quote draft page
+   - Never invents pricing—strict adherence to uploaded rates only
+
+4. **Demo Hub Enhancements**
+   - Prominent rate card upload card in quick-nav section (Phase 4 badge)
+   - Updated demo walk to reflect rate card integration
+   - All protected routes clearly labeled with DEMO badges
 
 ## What Works (Phase 3)
 
@@ -169,12 +204,13 @@ npm start
 
 ### 🚧 Stubbed / Coming Soon
 
-- Live rate card uploads (manual entry only)
-- Multi-tenant authentication (NextAuth.js)
+- **Production authentication** (NextAuth.js with OAuth providers and proper session management)
+- Multi-tenant user management and team permissions
 - Email/WhatsApp sending (all drafts, no auto-send)
 - Payment processing (no Stripe/card charges)
 - Analytics dashboard
 - Automated lead campaigns and email sequences
+- Live OTA API integrations (beyond CSV import)
 
 ---
 
@@ -314,6 +350,40 @@ Verify tables:
 
 ---
 
+## Phase 4 Summary
+
+**What Changed:**
+- Rate card upload UI with CSV/JSON parser (tenant-scoped SQLite)
+- Quote draft page now uses real rate cards from database with automatic matching
+- Demo auth stub protecting CRM, rate card upload, and tenant admin routes
+- Rate card display on quote/demo pages with clear status indicators
+- Never invents rates—missing rates stay flagged as `[RATE CARD REQUIRED]`
+- README updated with Phase 4 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Rate card upload/storage, real quote calculations, demo auth stub (password: demo2026)
+- 🚧 Stubbed: Production auth (NextAuth.js), live payments, email auto-send, WhatsApp auto-send
+
+---
+
+## Hard Gates Reminder (Phase 4)
+
+**GuestFlow respects these safety constraints:**
+
+1. ❌ **NO live payments** — No Stripe, no card charges, no payment processing
+2. ❌ **NO paid ads** — No Google Ads pixels, no Meta conversion tracking
+3. ❌ **NO public signup** — Waitlist only, demo auth stub is NOT production-ready
+4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
+5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
+6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly.
+7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
+8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
+9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
+
+**These gates are unchanged from Phase 3. Phase 4 adds rate card functionality and a demo auth stub, but maintains all safety constraints.**
+
+---
+
 ## Phase 3 Summary
 
 **What Changed:**
@@ -331,27 +401,10 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 3)
+## Next Steps (Post-Phase-4)
 
-**GuestFlow respects these safety constraints:**
-
-1. ❌ **NO live payments** — No Stripe, no card charges, no payment processing
-2. ❌ **NO paid ads** — No Google Ads pixels, no Meta conversion tracking
-3. ❌ **NO public signup** — Waitlist only, no live user authentication yet
-4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
-5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
-6. ✅ **No invented data** — Rate cards flagged as `[RATE CARD REQUIRED]`, never fabricated
-7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
-8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
-
-**These gates are unchanged from Phase 2. Phase 3 only improved the local sales and ops demo experience.**
-
----
-
-## Next Steps (Post-Phase-3)
-
-1. **Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation
-2. **Rate Card Upload:** CSV/JSON parser for seasonal rates
+1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
+2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow
 3. **NightsBridge Integration:** Live API integration (beyond CSV import demo)
 4. **Email Sending:** Resend or Postmark with H1/H2 approval gates
 5. **Analytics Dashboard:** Booking conversion, inquiry velocity
