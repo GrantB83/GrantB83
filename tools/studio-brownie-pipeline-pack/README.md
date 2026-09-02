@@ -244,6 +244,16 @@ cat out/brownie-pipeline-pack-2026-09-02/preflight-PREFLIGHT.md
 
 ## Integration with Sibling Tools
 
+This tool automatically builds sibling tools if their `dist/index.js` is missing. No manual build step required.
+
+**Auto-Build Behavior:**
+
+- Before calling `studio-suno-package-validate`, checks if `../studio-suno-package-validate/dist/index.js` exists
+- Before calling `studio-youtube-preflight-pack`, checks if `../studio-youtube-preflight-pack/dist/index.js` exists
+- If either is missing, runs `npm run build` in that tool's directory first
+- Fails gracefully with clear error message if auto-build fails
+- Makes fresh checkout / green-box fixture testing work with a single `npm run test:fixtures` command
+
 ### studio-lyric-package-stub
 
 Primary input source (Mode 1) or called stage (Mode 2). Provides:
@@ -288,12 +298,19 @@ Checks:
 # Run unit tests (when implemented)
 npm test
 
-# Run fixture tests (generates sample pipeline pack)
+# Run fixture tests (generates sample pipeline pack with demo Drive URL)
 npm run test:fixtures
 
 # Clean generated artifacts
 npm run clean
 ```
+
+**Fixture Testing Notes:**
+
+- The `test:fixtures` script passes a demo Drive URL (`https://drive.google.com/file/d/FIXTURE-DEMO-ID/view`) to satisfy preflight checks in fixture smoke tests
+- This demo URL is clearly marked as FIXTURE-DEMO and is not a real approval link
+- Fixture tests exercise the full pipeline including validation and preflight stages
+- Exit code 0 indicates fixture test success (all checks passed)
 
 ## Critical Safety Notes
 
