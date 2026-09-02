@@ -1,8 +1,66 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 23 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 25 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 23 — Demo quote/invoice draft from inquiry JSON (DRAFT/fixtures only)
+**Current Phase:** Phase 25 — Guided sales demo walkthrough (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 25)
+
+### ✅ Phase 25 Additions (Guided Sales Demo Walkthrough)
+
+1. **Sales Walkthrough Page** (`/demo/sales-walkthrough`)
+   - Ordered walkthrough chaining existing demo capabilities into coherent SaaS pitch
+   - 11 numbered steps: Seed → Tenant Switcher → Inquiry → Quote → NightsBridge → Bookings → Welcome → Late Check-In → CT-Pack → Change Check → OTA Worksheet
+   - One-liner pitch copy per step explaining value proposition
+   - Hard gates callout banner (NO live payments, NO auto-send, NO OTA publishing, etc.)
+   - Progress persists across sessions via browser localStorage
+
+2. **Checklist UI for Salesperson Progress**
+   - Click checkbox to mark steps complete/incomplete
+   - Real-time progress bar showing completion percentage (e.g., "5/11 steps (45%)")
+   - Completed steps highlighted with green border and checkmark
+   - Local-only tracking (no server auth or sync)—purely client-side for demo convenience
+   - Reset progress button with confirmation prompt
+
+3. **Printable Markdown Export**
+   - "Export Walkthrough (Markdown)" button generates downloadable `.md` file
+   - Includes progress summary (X/11 steps completed with percentage)
+   - Lists all 11 steps with completion status (✅ Completed / ⬜ Pending)
+   - Each step shows route, pitch copy, and completion status
+   - Embedded hard gates reminder section (NO payments, NO ads, etc.)
+   - Timestamped filename: `guestflow-sales-walkthrough-YYYY-MM-DD.md`
+
+4. **Demo Hub Integration**
+   - Prominent Phase 25 emerald card at top of demo hub linking to sales walkthrough
+   - Badge: "Phase 25 🎯"
+   - Positioned above Phase 23 quote draft for visibility
+   - Description: "Ordered walkthrough chaining existing demo capabilities: inquiry→quote→CRM/bookings→ops→OTA"
+
+5. **Extended Smoke Test Coverage**
+   - Route test for `/demo/sales-walkthrough` accessibility
+   - Content checks: "Guided Sales Demo Walkthrough", "Hard Gates", "Progress"
+   - Validates page renders correctly with expected sections
+
+6. **Mirrors Guided Demo Best Practices**
+   - Linear progression: Inquiry → Quote → Operations → OTA
+   - Each step links to existing phase route (no new integrations)
+   - Never invents rates, contact info, or data—uses existing fixtures only
+   - Clear "DEMO PLACEHOLDER reminder" on all steps
+   - Hard gates held: NO live payments, NO WhatsApp/email auto-send, NO live NB API, NO OTA publishing
+
+**What Works vs. Stubbed:**
+- ✅ Works: 11-step walkthrough, checklist UI, localStorage progress, markdown export, hard gates callout
+- 🚧 Stubbed: Same as Phase 23 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — walkthrough is DRAFT ONLY with local-only progress tracking
+- Never invents rates, contact info, guest phone, ETAs, or Wi-Fi codes
+- All data persists to local SQLite only (no live NB API or WhatsApp sends)
+- Fixtures and DEMO data only—no production rate publishing or OTA live integrations
+- Checklist progress stored in browser localStorage only (no server sync)
 
 ---
 

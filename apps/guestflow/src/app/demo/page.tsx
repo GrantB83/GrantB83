@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 25: Guided Sales Demo Walkthrough */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/sales-walkthrough"
+          className="block bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Presentation className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Guided Sales Demo Walkthrough</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 25 🎯</span>
+          </div>
+          <p className="text-emerald-100">
+            Ordered walkthrough chaining existing demo capabilities: inquiry→quote→CRM/bookings→ops→OTA. Checklist UI for salesperson progress (DRAFT/fixtures only, hard gates held).
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 23: Quote/Invoice Draft from Inquiry JSON */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
