@@ -16,6 +16,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
+| [vault-due-digest-pack](#vault-due-digest-pack) | Assemble weekday Vault due digest by orchestrating vault-filename-due-queue and vault-entity-due-pack | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Never submits to SARS/CIPC. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
@@ -576,6 +577,68 @@ npm run pack -- --queue ../vault-filename-due-queue/due-queue/queue.json --outdi
 ```
 
 [→ Full README](./vault-entity-due-pack/README.md)
+
+---
+
+## vault-due-digest-pack
+
+**One-line:** Assemble weekday Vault due digest by orchestrating vault-filename-due-queue and vault-entity-due-pack.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-due-digest-pack/`
+
+### Install and Run
+
+```bash
+cd tools/vault-due-digest-pack
+npm install
+npm run build
+
+# Full orchestration: runs both sibling tools
+npm run digest -- --filenames filenames.txt --outdir out/
+
+# Use existing queue.json
+npm run digest -- --queue queue.json --outdir out/
+
+# Use existing entity packs
+npm run digest -- --packs by-entity/ --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Filename heuristics only** - No file bodies opened
+- ✅ **No invented dates/amounts** - Pass-through from sibling tools only
+- ✅ **Never submits to SARS/CIPC** - Vault owns all research and next actions
+- ⚠️ **N2 approval gate** - All compliance filings require human approval
+- ⚠️ **Never post figures in chat** - Amounts stay in files, never in prose
+
+### Output Structure
+
+- `DIGEST.md` - Master overview with numbered entity summaries
+- `by-entity/<slug>/pack.md` - Entity-specific research packs
+- `by-entity/<slug>/items.json` - Structured item data
+- `missing-signals.md` - Items without due dates or entity matches
+- `APPROVAL.md` - H-gate safety rules and Vault ownership
+- `manifest.json` - Run metadata
+
+### Integration Pattern
+
+```bash
+# One-step digest generation (recommended)
+cd tools/vault-due-digest-pack
+npm run digest -- --filenames vault-filenames.txt --outdir weekday-digest/
+
+# Manual multi-step workflow
+cd tools/vault-filename-due-queue
+npm run queue -- --files filenames.txt --outdir queue/
+cd ../vault-entity-due-pack
+npm run pack -- --queue ../vault-filename-due-queue/queue/queue.json --outdir packs/
+cd ../vault-due-digest-pack
+npm run digest -- --packs ../vault-entity-due-pack/packs/by-entity/ --outdir digest/
+```
+
+[→ Full README](./vault-due-digest-pack/README.md)
 
 ---
 
