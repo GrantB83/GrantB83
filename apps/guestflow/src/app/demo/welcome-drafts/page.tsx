@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Mail, Download, Printer, Calendar, AlertCircle, Package } from 'lucide-react'
+import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
 
