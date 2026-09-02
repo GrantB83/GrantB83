@@ -13,6 +13,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
+| [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
@@ -269,6 +270,47 @@ npm run prep -- \
 
 ---
 
+## browns-guest-facts-pack
+
+**One-line:** Extract structured guest facts from markdown knowledge files into JSON and snippet files.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-guest-facts-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-guest-facts-pack
+npm install
+npm run build
+
+# Basic usage
+npm run pack -- --facts stay-knowledge/the-browns.md --outdir out/
+
+# With seed samples (for tone reference only)
+npm run pack -- \
+  --facts stay-knowledge/the-browns.md \
+  --seeds seeds/ \
+  --outdir out/
+
+# Test with fixture
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Never invents facts** - Missing fields are explicitly flagged
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No fabricated passwords** - If Wi-Fi password is not in source, omitted and reported
+- ✅ **No rates or amounts** - Does not handle pricing
+- ✅ **Source-faithful extraction** - Heuristic parsing of stated facts only
+- ⚠️ **For draft communications only** - Outputs feed `browns-guest-comms-draft`
+
+[→ Full README](./browns-guest-facts-pack/README.md)
+
+---
+
 ## browns-inquiry-intake
 
 **One-line:** Extract structured booking and quote JSON from freeform inquiry text (email/WhatsApp paste).
@@ -499,11 +541,16 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 The Browns guest-flow tools work together in this pipeline:
 
 ```
+stay-knowledge/the-browns.md
+    ↓
+browns-guest-facts-pack (extract brand facts → facts.json)
+    ↓
+    │
 Inquiry (email/WhatsApp) 
     ↓
 browns-inquiry-intake (extract structured JSON)
     ↓
-    ├──→ browns-guest-comms-draft (welcome messages)
+    ├──→ browns-guest-comms-draft (welcome messages, consumes facts.json)
     ├──→ browns-quote-invoice-draft (quotes/invoices)
     └──→ browns-daily-ops-brief (team coordination)
 
@@ -515,6 +562,8 @@ browns-daily-ops-brief (team coordination)
 
 browns-ota-rate-worksheet (separate: rate card → OTA entry)
 ```
+
+**Note:** `browns-guest-facts-pack` feeds facts to `browns-guest-comms-draft` via `--facts` argument.
 
 ### Pipeline Rules
 
