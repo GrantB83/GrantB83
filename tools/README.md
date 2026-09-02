@@ -1528,6 +1528,8 @@ When adding a new tool:
 4. Ensure tool follows general constraints above
 5. Add conventional commit: `feat(tools): add <tool-name>`
 
+**Quality gate:** CI runs `tools-catalog-doctor` on every PR to verify catalog integrity.
+
 ---
 
 ## License
