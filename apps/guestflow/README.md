@@ -1,8 +1,64 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 18 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 19 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 18 — Welcome message drafts from tenant bookings (DRAFT/fixtures only)
+**Current Phase:** Phase 19 — Late / after-hours check-in queue from tenant bookings (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 19)
+
+### ✅ Phase 19 Additions (Late Check-In Queue from Bookings)
+
+1. **Late Check-In Queue Page** (`/demo/late-checkin-queue`)
+   - Track arriving guests with late check-ins, after-hours arrivals, or unknown ETAs
+   - Configurable after-hours threshold (default: 15:00 local demo)
+   - Uses active demo tenant from tenant context
+   - Categorizes by: after-hours flag, late/after-hours keywords in notes, or missing check-in time
+   - Surfaces missing phone and ETA with placeholders—never invents contact info or arrival times
+
+2. **Smart Categorization**
+   - `after-hours`: bookings with `late_check_in = true` flag
+   - `note-keyword`: bookings with "late", "after-hours", or "ETA" keywords in notes
+   - `unknown-time`: bookings without check-in time specified and no late indicators
+   - Displays missing phone as `[GUEST_PHONE]` placeholder
+   - Displays unknown ETA as `[ETA UNKNOWN]` placeholder
+
+3. **Export Options** (`POST /api/late-checkin/export`)
+   - Download as Markdown (.md) or plain text (.txt) file
+   - Includes queue summary stats and individual late check-in details
+   - Export for leave-behind or handoff notes (no send)
+   - Local-only operations with no external storage
+
+4. **Demo Hub Integration**
+   - Prominent Phase 19 orange card at top of demo hub linking to late check-in queue page
+   - Links from bookings board, daily-brief, and welcome-drafts pages
+   - Integration with tenant switcher for multi-tenant demo
+   - Positioned above Phase 18 welcome drafts
+
+5. **Extended Fixtures & Database Schema**
+   - Added `guest_phone` and `property_name` fields to bookings table
+   - Migration script `scripts/migrate-phase19-guest-phone.js` for existing databases
+   - Demo seed includes at least one late check-in and one unknown-time arrival
+   - Test bookings: late arrival with phone, unknown time without phone, note keyword "late"
+
+6. **Mirrors tools/browns-late-checkin-queue Semantics**
+   - Same filtering logic: late_check_in flag, note keywords, or missing check-in time
+   - Same placeholder rules: never invents phone or ETAs
+   - Tenant-scoped SQLite bookings query with date filtering
+   - Export mirrors Phase 8 quote export and Phase 13 leave-behind UX
+
+**What Works vs. Stubbed:**
+- ✅ Works: Late check-in queue filtering/categorization, markdown/text export, tenant-scoped queries, missing field placeholders
+- 🚧 Stubbed: Same as Phase 18 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — late check-in queue is DRAFT ONLY with local-only export
+- Never invents guest phone (uses `[GUEST_PHONE]` placeholder)
+- Never invents ETAs (uses `[ETA UNKNOWN]` placeholder when check-in time not specified)
+- All data persists to local SQLite only with no external sends
+- Fixtures only — no live NB API or OTA integrations
 
 ---
 

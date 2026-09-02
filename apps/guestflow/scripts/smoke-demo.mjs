@@ -465,6 +465,51 @@ async function runTests() {
     { expectedStatus: 200 }
   );
   
+  // Test Phase 19 late check-in queue page
+  await testRoute('/demo/late-checkin-queue', 'Late check-in queue page (Phase 19)', { checkContent: 'Late / After-Hours Check-In Queue' });
+  
+  // Test Phase 19 late check-in export API (POST)
+  const sampleLateCheckinExport = {
+    tenantName: 'Test Tenant',
+    targetDate: '2026-09-02',
+    afterHoursThreshold: '15:00',
+    lateBookings: [
+      {
+        guestName: 'Test Guest',
+        propertyName: 'Test Property',
+        checkIn: '2026-09-02',
+        checkOut: '2026-09-04',
+        roomNumber: 'Suite 1',
+        adults: 2,
+        children: 0,
+        notes: 'Late arrival ETA 20:00',
+        guestPhone: '+27 82 555 1234',
+        estimatedArrival: '20:00',
+        lateReason: 'after-hours',
+        missingFields: []
+      }
+    ],
+    stats: {
+      totalLate: 1,
+      afterHours: 1,
+      unknownTime: 0,
+      noteKeyword: 0,
+      missingPhone: 0,
+      missingETA: 0
+    },
+    format: 'markdown'
+  };
+  await testRoute('/api/late-checkin/export', 'Late check-in export API (POST markdown)', { 
+    method: 'POST', 
+    body: sampleLateCheckinExport,
+    expectedStatus: 200
+  });
+  await testRoute('/api/late-checkin/export', 'Late check-in export API (POST text)', { 
+    method: 'POST', 
+    body: { ...sampleLateCheckinExport, format: 'text' },
+    expectedStatus: 200
+  });
+  
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
   

@@ -296,6 +296,20 @@ export default function DailyBriefPage() {
         </ul>
       </div>
 
+      <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-6">
+        <h3 className="font-semibold text-gray-900 mb-3">🎯 Phase 19: Late Check-In Queue</h3>
+        <p className="text-sm text-gray-700 mb-4">
+          Track arriving guests with late check-ins, after-hours arrivals, or unknown ETAs from today's bookings.
+        </p>
+        <Link
+          href="/demo/late-checkin-queue"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
+        >
+          <Clock className="w-4 h-4" />
+          View Late Check-In Queue
+        </Link>
+      </div>
+
       <div className="mt-6 bg-rose-50 border border-rose-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-900 mb-3">🎯 Phase 18: Welcome Message Drafts</h3>
         <p className="text-sm text-gray-700 mb-4">
