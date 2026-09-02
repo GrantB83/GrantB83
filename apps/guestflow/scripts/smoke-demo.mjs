@@ -464,6 +464,9 @@ async function runTests() {
     'Welcome drafts API with tenant filter (Phase 18)', 
     { expectedStatus: 200 }
   );
+
+  // Test Phase 20 CT-pack assembly page
+  await testRoute('/demo/ct-pack', 'CT-pack assembly page (Phase 20)', { checkContent: 'Demo CT-Pack Assembly' });
   
   // Test Phase 19 late check-in queue page
   await testRoute('/demo/late-checkin-queue', 'Late check-in queue page (Phase 19)', { checkContent: 'Late / After-Hours Check-In Queue' });
