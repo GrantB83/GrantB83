@@ -136,11 +136,19 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   },
   {
     id: 'invite-usage',
-    number: 12,
+    number: 14,
     title: 'Invite Code Usage Report (Sales Attribution)',
     route: '/demo/invite-usage',
     pitch: 'Track which invite codes drive interest—redemption + waitlist attribution with markdown export.',
     icon: <BarChart3 className="w-5 h-5" />
+  },
+  {
+    id: 'sales-handoff',
+    number: 15,
+    title: 'Post-Demo Sales Handoff Pack',
+    route: '/demo/sales-handoff',
+    pitch: 'Generate downloadable handoff pack for prospects: thank-you, next steps, invite redemption links, CRM filter links, hard gates banner (DEMO ACCESS ONLY).',
+    icon: <Package className="w-5 h-5" />
   }
 ]
 

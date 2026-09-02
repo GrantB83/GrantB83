@@ -457,32 +457,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Step 7: Create sample invite codes (Phase 28)
-    const inviteCodes = [
-      {
-        tenantId: demoTenantId,
-        code: 'DEMO2026',
-        maxUses: 10,
-        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(), // 30 days
-        note: 'DEMO CODE - Sales demo multi-use'
-      },
-      {
-        tenantId: demoTenantId,
-        code: 'TRIAL123',
-        maxUses: 1,
-        expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(), // 7 days
-        note: 'DEMO CODE - Single-use trial for prospect'
-      }
-    ]
-
-    for (const ic of inviteCodes) {
-      db.prepare(`
-        INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(ic.tenantId, ic.code, ic.maxUses, ic.expiresAt, ic.note)
-    }
-
-    // Step 8: Return summary
+    // Step 7: Return summary (invite codes already created in Step 3a)
     return NextResponse.json({
       success: true,
       message: 'Demo seed complete',
@@ -494,8 +469,7 @@ export async function POST(request: Request) {
         rateCards: rateCards.length,
         leads: leads.length,
         inquiries: leads.length,
-        bookings: bookings.length,
-        inviteCodes: inviteCodes.length
+        bookings: bookings.length
       }
     }, { status: 200 })
 

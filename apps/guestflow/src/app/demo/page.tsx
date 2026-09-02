@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 32: Post-Demo Sales Handoff Pack */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/sales-handoff"
+          className="block bg-gradient-to-r from-sky-600 to-sky-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <FileDown className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Post-Demo Sales Handoff Pack</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 32 📦</span>
+          </div>
+          <p className="text-sky-100">
+            Downloadable handoff pack for prospects after demo: thank-you, next steps, invite code redemption links, CRM filter links, leave-behind summary, hard gates banner (DEMO ACCESS ONLY—not a paid account).
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 30: Invite Code Usage Report */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 

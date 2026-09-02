@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { BarChart3, Download, AlertCircle, Calendar, Users, Gift } from 'lucide-react'
-import DemoAuthGuard from '@/components/DemoAuthGuard'
+import { DemoAuthGuard } from '@/components/DemoAuthGuard'
 import { useTenant } from '@/components/TenantContext'
 
 interface InviteCodeUsage {
@@ -17,23 +17,24 @@ interface InviteCodeUsage {
 }
 
 function InviteUsageContent() {
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
   const [codes, setCodes] = useState<InviteCodeUsage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
-    if (activeTenant) {
+    if (selectedTenantId) {
       fetchUsage()
     }
-  }, [activeTenant])
+  }, [selectedTenantId])
 
   const fetchUsage = async () => {
-    if (!activeTenant) return
+    if (!selectedTenantId) return
     
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/invite-codes/usage?tenant_id=${activeTenant.id}`, {
+      const response = await fetch(`/api/invite-codes/usage?tenant_id=${selectedTenantId}`, {
         headers: {
           'Authorization': 'Bearer demo2026'
         }
