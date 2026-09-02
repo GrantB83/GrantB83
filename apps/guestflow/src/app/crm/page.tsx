@@ -1,16 +1,23 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { getDb } from '@/lib/db'
+import { getDb, getDefaultTenantId } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export default function CRMPage() {
   const db = getDb()
+  const defaultTenantId = getDefaultTenantId()
+  
+  const tenant = db.prepare('SELECT * FROM tenants WHERE id = ?').get(defaultTenantId) as any
+  
   const leads = db.prepare(`
-    SELECT id, name, email, property_name, room_count, current_system, phone, notes, created_at
-    FROM waitlist
-    ORDER BY created_at DESC
-  `).all() as any[]
+    SELECT w.id, w.name, w.email, w.property_name, w.room_count, w.current_system, w.phone, w.notes, w.created_at,
+           t.name as tenant_name
+    FROM waitlist w
+    LEFT JOIN tenants t ON w.tenant_id = t.id
+    WHERE w.tenant_id = ? OR w.tenant_id IS NULL
+    ORDER BY w.created_at DESC
+  `).all(defaultTenantId) as any[]
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -31,6 +38,11 @@ export default function CRMPage() {
             <p className="text-gray-600 mt-2">
               View and manage guesthouse operator waitlist submissions
             </p>
+            {tenant && (
+              <p className="text-sm text-gray-500 mt-1">
+                Filtered to: <span className="font-semibold">{tenant.name}</span>
+              </p>
+            )}
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-primary-600">{leads.length}</div>
@@ -129,6 +141,7 @@ export default function CRMPage() {
           <li>✅ Property interest and room count visible</li>
           <li>✅ Current system tracking (NightsBridge, Google Calendar, etc.)</li>
           <li>✅ Submission timestamp for follow-up prioritization</li>
+          <li>✅ Multi-tenant filtering (demo tenant: {tenant?.name || 'N/A'})</li>
           <li>⚠️ In production: export to CSV, email campaigns, qualification workflow</li>
           <li>⚠️ Demo only: No email sending, no lead qualification, no status updates</li>
         </ul>

@@ -13,8 +13,17 @@ const db = new Database(dbPath)
 console.log('Initializing GuestFlow database...')
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS tenants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    location TEXT,
+    timezone TEXT DEFAULT 'Africa/Johannesburg',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS waitlist (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     property_name TEXT NOT NULL,
@@ -22,19 +31,23 @@ db.exec(`
     current_system TEXT,
     phone TEXT,
     notes TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
   );
 
   CREATE TABLE IF NOT EXISTS properties (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     location TEXT,
     room_count INTEGER NOT NULL DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
   );
 
   CREATE TABLE IF NOT EXISTS inquiries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
     property_id INTEGER,
     guest_name TEXT NOT NULL,
     guest_email TEXT,
@@ -48,11 +61,13 @@ db.exec(`
     raw_inquiry TEXT,
     confidence REAL DEFAULT 1.0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     FOREIGN KEY (property_id) REFERENCES properties(id)
   );
 
   CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
     inquiry_id INTEGER,
     property_id INTEGER,
     guest_name TEXT NOT NULL,
@@ -61,19 +76,31 @@ db.exec(`
     room_number TEXT,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     FOREIGN KEY (inquiry_id) REFERENCES inquiries(id),
     FOREIGN KEY (property_id) REFERENCES properties(id)
   );
 `)
 
+const tenantCount = db.prepare('SELECT COUNT(*) as count FROM tenants').get()
+
+if (tenantCount.count === 0) {
+  console.log('Inserting demo tenant...')
+  const insertTenant = db.prepare('INSERT INTO tenants (name, location, timezone) VALUES (?, ?, ?)')
+  insertTenant.run('The Browns Luxury Guest Suites (Dullstroom)', 'Dullstroom, Mpumalanga, South Africa', 'Africa/Johannesburg')
+  console.log('✓ Demo tenant created')
+}
+
+const demoTenantId = db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%').id
+
 const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get()
 
 if (propertyCount.count === 0) {
   console.log('Inserting sample properties...')
-  const insert = db.prepare('INSERT INTO properties (name, location, room_count) VALUES (?, ?, ?)')
-  insert.run('Riverside Lodge', 'Dullstroom, SA', 5)
-  insert.run('Mountain View Suites', 'Clarens, SA', 3)
-  insert.run('Coastal Retreat', 'Hermanus, SA', 4)
+  const insert = db.prepare('INSERT INTO properties (tenant_id, name, location, room_count) VALUES (?, ?, ?, ?)')
+  insert.run(demoTenantId, 'Riverside Lodge', 'Dullstroom, SA', 5)
+  insert.run(demoTenantId, 'Mountain View Suites', 'Clarens, SA', 3)
+  insert.run(demoTenantId, 'Coastal Retreat', 'Hermanus, SA', 4)
   console.log('✓ Sample properties created')
 }
 

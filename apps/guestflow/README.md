@@ -1,7 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 1 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 2 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
-**Purpose:** Productize The Browns guest-flow automation for other guesthouse owners
+**Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
+**Current Phase:** Phase 2 — Multi-tenant stub + CSV import demo
 
 ---
 
@@ -13,11 +14,12 @@ GuestFlow is a multi-tenant SaaS platform that automates guesthouse operations:
 2. **Quote & Invoice Drafts** → Professional packager (draft-only, never invents rates)
 3. **Guest Welcome Packs** → Personalized pre-arrival messages (never invents Wi-Fi/times)
 4. **Daily Ops Brief** → Morning coordination from bookings JSON
-5. **OTA Rate Worksheet** → Nightsbridge-compatible CSV exports
+5. **NightsBridge CSV Import** → Parse bookings and detect availability gaps (Phase 2)
+6. **Multi-Tenant Support** → Tenant-scoped data with demo tenant switcher (Phase 2)
 
 **Plus sales platform:**
 - Landing page, pricing (COMING SOON / waitlist)
-- Waitlist lead capture + operator CRM list
+- Waitlist lead capture + operator CRM with tenant filtering (Phase 2)
 - Sandbox tenant demo walkthrough with sample properties
 
 ---
@@ -67,7 +69,7 @@ npm start
 
 ---
 
-## What Works (Phase 1)
+## What Works (Phase 2)
 
 ### ✅ Fully Functional
 
@@ -113,29 +115,43 @@ npm start
    - Success confirmation flow
 
 9. **Operator CRM** (`/crm`)
-   - Read-only list of all waitlist leads
+   - Read-only list of all waitlist leads with tenant filtering
    - Property interest, room count, current system tracking
    - Submission timestamps for follow-up prioritization
+   - Shows tenant name for each lead
    - Demo-labeled (no email campaigns or qualification workflow)
 
-10. **Database Layer**
-    - SQLite schema: waitlist, properties, inquiries, bookings
-    - Sample data seeding
-    - API routes for waitlist CRUD
+10. **Multi-Tenant Support** (Phase 2)
+    - `tenants` table with demo tenant "The Browns Luxury Guest Suites (Dullstroom)"
+    - `tenant_id` on leads, bookings, inquiries, and properties
+    - All demo routes default to demo tenant
+    - Tenant switcher at `/demo/tenant` (local dev only)
+
+11. **NightsBridge CSV Import** (`/demo/nightsbridge-import`) (Phase 2)
+    - Upload/paste CSV with flexible header aliases
+    - Parse bookings with status derivation (arriving/inhouse/departing)
+    - Detect availability gaps between bookings
+    - Late check-in detection
+    - Draft-only, no live OTA API calls
+
+12. **Database Layer**
+    - SQLite schema: tenants, waitlist, properties, inquiries, bookings
+    - Multi-tenant foreign keys
+    - Sample data seeding with demo tenant
+    - API routes for waitlist and tenant management
 
 ### 🚧 Stubbed / Coming Soon
 
 - Live rate card uploads (manual entry only)
-- Live NightsBridge CSV import (demo CSV generation only)
-- Multi-tenant authentication (single demo tenant)
+- Multi-tenant authentication (NextAuth.js)
 - Email/WhatsApp sending (all drafts, no auto-send)
 - Payment processing (no Stripe/card charges)
 - Analytics dashboard
-- Operator CRM list management
+- Operator CRM list management and qualification workflow
 
 ---
 
-## 6-Step Demo Walk
+## 7-Step Demo Walk
 
 ### For Grant / CoS to Demo:
 
@@ -166,14 +182,20 @@ npm start
    - AMBER priorities for dietary/pet requirements
    - Housekeeping and breakfast schedules
 
-6. **Step 5 - Waitlist:**
-   - Navigate to `/waitlist`
-   - Fill in sample lead info
-   - Submit and observe success confirmation
+6. **Step 5 - NightsBridge CSV Import (Phase 2):**
+   - Navigate to `/demo/nightsbridge-import`
+   - Click "Load Sample" to populate CSV
+   - Click "Parse CSV"
+   - View parsed bookings with status and gaps detected
 
-7. **Step 6 - Operator CRM:**
+7. **Step 6 - Tenant Switcher (Phase 2):**
+   - Navigate to `/demo/tenant`
+   - View demo tenant: "The Browns Luxury Guest Suites (Dullstroom)"
+   - Note: Multi-tenant switcher for local dev only
+
+8. **Step 7 - Operator CRM:**
    - Navigate to `/crm` (or click "CRM" in nav)
-   - View all waitlist leads in read-only table
+   - View all waitlist leads filtered by tenant
    - See property details, room count, submission dates
    - Note: Demo-only, no email campaigns or status updates
 
@@ -265,11 +287,11 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-1)
+## Next Steps (Post-Phase-2)
 
-1. **Authentication:** NextAuth.js for multi-tenant operator accounts
+1. **Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation
 2. **Rate Card Upload:** CSV/JSON parser for seasonal rates
-3. **NightsBridge Integration:** Live CSV import/export
+3. **NightsBridge Integration:** Live API integration (beyond CSV import demo)
 4. **Email Sending:** Resend or Postmark with H1/H2 approval gates
 5. **Analytics Dashboard:** Booking conversion, inquiry velocity
 6. **Payment Links:** Stripe/PayFast integration (draft-only until H7)

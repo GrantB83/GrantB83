@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, getDefaultTenantId } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
@@ -15,13 +15,14 @@ export async function POST(request: Request) {
     }
 
     const db = getDb()
+    const defaultTenantId = getDefaultTenantId()
     
     const stmt = db.prepare(`
-      INSERT INTO waitlist (name, email, property_name, room_count, current_system, phone, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO waitlist (tenant_id, name, email, property_name, room_count, current_system, phone, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
     
-    stmt.run(name, email, propertyName, roomCount, currentSystem || null, phone || null, notes || null)
+    stmt.run(defaultTenantId, name, email, propertyName, roomCount, currentSystem || null, phone || null, notes || null)
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error: any) {
