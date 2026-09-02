@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ArrowLeft, Building2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { DemoAuthGuard } from '@/components/DemoAuthGuard'
 
 interface Tenant {
   id: number
@@ -33,7 +34,8 @@ export default function TenantSwitcherPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <DemoAuthGuard>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <Link href="/demo" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6">
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Demo Hub
@@ -111,14 +113,15 @@ export default function TenantSwitcherPage() {
         </ul>
       </div>
 
-      <div className="mt-6 text-center">
-        <Link
-          href="/demo"
-          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
-        >
-          Continue to Demos
-        </Link>
+        <div className="mt-6 text-center">
+          <Link
+            href="/demo"
+            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+          >
+            Continue to Demos
+          </Link>
+        </div>
       </div>
-    </div>
+    </DemoAuthGuard>
   )
 }

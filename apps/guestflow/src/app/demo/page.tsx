@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard } from 'lucide-react'
 
 export default function DemoPage() {
   return (
@@ -18,7 +18,21 @@ export default function DemoPage() {
       </div>
 
       {/* Phase 3: Quick Nav to Key Features */}
-      <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
+      <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-6xl mx-auto">
+        <Link 
+          href="/demo/rate-card-upload"
+          className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <CreditCard className="w-8 h-8" />
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 4</span>
+          </div>
+          <h3 className="text-xl font-bold mb-2">Rate Card Upload</h3>
+          <p className="text-green-100 text-sm">
+            Upload CSV/JSON rates into tenant-scoped SQLite—never invent pricing
+          </p>
+        </Link>
+
         <Link 
           href="/demo/nightsbridge-import"
           className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
@@ -49,6 +63,13 @@ export default function DemoPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <DemoCard
+          href="/demo/rate-card-upload"
+          icon={<CreditCard className="w-8 h-8 text-green-600" />}
+          title="Rate Card Upload"
+          description="Upload CSV/JSON rate cards into tenant-scoped SQLite storage"
+          status="Phase 4"
+        />
         <DemoCard
           href="/demo/inquiry-intake"
           icon={<MessageSquare className="w-8 h-8 text-primary-600" />}

@@ -20,11 +20,14 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
+| [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+| [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
+| [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
 
 ---
 
@@ -611,6 +614,168 @@ npm run brief -- \
 
 ---
 
+## browns-booking-change-check
+
+**One-line:** Diff two booking snapshots and report changes for CoS SA Ops last-minute verification before WhatsApp Admin posts.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-booking-change-check/`
+
+### Install and Run
+
+```bash
+cd tools/browns-booking-change-check
+npm install
+npm run build
+
+# Basic diff
+npm run check -- --before bookings-1900.json --after bookings-2045.json
+
+# With target day context
+npm run check -- \
+  --before before.json \
+  --after after.json \
+  --day 2026-09-20 \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Nightsbridge API or browser automation
+- ✅ **Never invents data** - Missing fields flagged, never fabricated
+- ✅ **No rates or amounts** - Not in scope
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **Pre-post checklist** - Review changes.md before every WhatsApp Admin post
+- ⚠️ **CoS workflow** - Run before 20:00 / 09:00 / 21:00 CT-pack posts
+
+### Use Case
+
+**Last-minute booking change check** before posting guest-comms or daily-ops drafts to WhatsApp Admin:
+
+1. Export bookings before CT-pack prep (19:00 SAST) → `bookings-before.json`
+2. Export bookings after CT-pack prep (20:45 SAST) → `bookings-after.json`
+3. Run this tool to diff snapshots
+4. Review `changes.md` for additions, removals, updates
+5. Update drafts if changes affect guest-comms or ops brief
+6. Post to WhatsApp Admin after approval
+
+[→ Full README](./browns-booking-change-check/README.md)
+
+---
+
+## browns-ota-rate-worksheet
+
+**One-line:** Generate OTA promotional rate worksheets for Nightsbridge manual entry.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ota-rate-worksheet/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ota-rate-worksheet
+npm install
+npm run build
+
+# Base rates only
+npm run worksheet -- --rates rates.csv --outdir reports/
+
+# Rates with promotions
+npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Booking.com or NightsBridge APIs
+- ✅ **Never invents rates** - Blanks stay blank, drafts stay draft
+- ✅ **No auto-apply** - Manual Nightsbridge entry only
+- ✅ **Clear flagging** - Missing data explicitly marked
+- ⚠️ **Grant approval required** - APPROVAL.md must be signed before OTA changes
+- ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
+
+[→ Full README](./browns-ota-rate-worksheet/README.md)
+
+---
+
+## browns-ct-pack-assemble
+
+**One-line:** Assemble CoS Browns CT timed packs from sibling tool outputs (CT = America/Chicago timezone).
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ct-pack-assemble/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ct-pack-assemble
+npm install
+npm run build
+
+# Prebuilt inputs only (recommended)
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --before before.json \
+  --after after.json
+
+# Run sibling tools during assembly
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --run-daily-ops \
+  --run-guest-comms \
+  --guest-booking guest.json
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Calls sibling tools via npm run child processes
+- ✅ **Prebuilt inputs preferred** - Accept JSON outputs from tools already run
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email automatically
+- ✅ **Timed checklist** - PACK.md includes 20:00 / 09:00 / 21:00 CT workflow
+- ✅ **CoS owns WhatsApp** - Coexistence of Service required for all sends
+- ⚠️ **Never auto-send** - Manual copy/paste to WhatsApp Admin - The Browns only
+- ⚠️ **Never invents data** - Passes through from sibling tools only
+- ⚠️ **Dullstroom / The Browns only** - Not for other properties
+
+### Output Files
+
+- `PACK.md` - Pack index with timed checklist (20:00 / 09:00 / 21:00 CT)
+- `APPROVAL.md` - Safety gates and never auto-send reminder
+- `changes.md` - Booking change check output (if run or provided)
+- `daily-ops.md` - Daily ops brief (copied from browns-daily-ops-brief)
+- `guest-*.md` - Guest welcome drafts (copied from browns-guest-comms-draft)
+- `manifest.json` - Machine-readable pack inventory
+
+### Sibling Tools Integration
+
+Calls or accepts outputs from:
+- `browns-nightsbridge-bookings-adapter` - Transform Nightsbridge day sheets
+- `browns-booking-change-check` - Detect booking changes (not yet implemented)
+- `browns-daily-ops-brief` - Generate team ops brief
+- `browns-guest-comms-draft` - Generate guest welcome messages
+
+### CoS CT Pack Workflow
+
+CoS runs timed Browns CT packs:
+- **20:00 CT**: Same-day morning guest drafts (welcome messages for arrivals)
+- **09:00 CT (next morning)**: After-hours check-ins review
+- **21:00 CT**: Staff ops brief for team WhatsApp
+
+This orchestrator assembles all outputs into one dated pack folder ready for Liana vet / Grant approval.
+
+[→ Full README](./browns-ct-pack-assemble/README.md)
+
+---
+
 ## browns-late-checkin-queue
 
 **One-line:** Generate late/after-hours check-in queue for CoS 09:00 CT after-hours check-in pack.
@@ -684,41 +849,6 @@ npm run queue -- --bookings ../browns-nightsbridge-bookings-adapter/out/bookings
 ```
 
 [→ Full README](./browns-late-checkin-queue/README.md)
-
----
-
-## browns-ota-rate-worksheet
-
-**One-line:** Generate OTA promotional rate worksheets for Nightsbridge manual entry.
-
-**Owning desk(s):** SA Ops / CoS
-
-**Location:** `tools/browns-ota-rate-worksheet/`
-
-### Install and Run
-
-```bash
-cd tools/browns-ota-rate-worksheet
-npm install
-npm run build
-
-# Base rates only
-npm run worksheet -- --rates rates.csv --outdir reports/
-
-# Rates with promotions
-npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
-```
-
-### Critical Safety Note
-
-- ✅ **Offline only** - No Booking.com or NightsBridge APIs
-- ✅ **Never invents rates** - Blanks stay blank, drafts stay draft
-- ✅ **No auto-apply** - Manual Nightsbridge entry only
-- ✅ **Clear flagging** - Missing data explicitly marked
-- ⚠️ **Grant approval required** - APPROVAL.md must be signed before OTA changes
-- ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
-
-[→ Full README](./browns-ota-rate-worksheet/README.md)
 
 ---
 
@@ -905,6 +1035,82 @@ for file_info in manifest['files']:
 ```
 
 [→ Full README](./drive-pdf-upload-prep/README.md)
+
+---
+
+## drive-create-file-validate
+
+**One-line:** Offline CLI validator for Drive `create_file` JSON payloads to catch bad base64, oversized files, and missing fields before MCP upload.
+
+**Owning desk(s):** Perfect Water / CoS / Hospitality Ops / Coding
+
+**Location:** `tools/drive-create-file-validate/`
+
+### Install and Run
+
+```bash
+cd tools/drive-create-file-validate
+
+# No pip install needed - stdlib only
+python3 --version  # Requires Python 3.8+
+
+# Validate all JSONs in a directory
+python validate.py --input-dir out/prepared/
+
+# Validate specific files with custom size limit
+python validate.py --input-files a.create_file.json b.create_file.json --max-b64 12000
+
+# Enable PDF magic byte check
+python validate.py --input-dir out/prepared/ --require-pdf-magic
+
+# Test with fixtures
+python test_fixtures.py
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Drive API calls
+- ✅ **Never invents data** - Purely validates existing payloads
+- ✅ **Read-only** - Never modifies JSON files
+- ✅ **CI-friendly** - Exit codes 0 (all valid) or 1 (some invalid)
+- ✅ **Preflight check** - Catches errors before they hit MCP connector
+- ⚠️ **Use before every upload batch** - Validation is cheap; fixing corrupted uploads is expensive
+
+### Why This Tool Exists
+
+At-PET Drive uploads hit "not a valid base64 string" / tool-bridge corruption on ~10–13KB payloads. This **preflight validator** checks `*.create_file.json` files (generated by `drive-pdf-upload-prep`) before calling hospitality Drive MCP `create_file`, catching:
+
+- Malformed base64 (non-standard characters)
+- Oversized payloads (exceeding MCP limits)
+- Missing required fields
+- Type mismatches
+- Optional: Invalid PDF magic bytes
+
+Prevents wasted API calls and partial upload failures.
+
+### Integration with drive-pdf-upload-prep
+
+```bash
+# Step 1: Prep PDFs
+cd tools/drive-pdf-upload-prep
+python upload_prep.py --input-dir invoices/ --parent-id ABC123 --output-dir prepared/
+
+# Step 2: Validate payloads
+cd ../drive-create-file-validate
+python validate.py --input-dir ../drive-pdf-upload-prep/prepared/ --require-pdf-magic
+
+# Step 3: If validation passes, proceed with MCP upload
+# If validation fails, review reports/report.md and fix prep settings
+```
+
+### Output Structure
+
+Generates:
+- `valid.json` - List of valid files (safe for upload)
+- `invalid.json` - List of invalid files with error details
+- `report.md` - Human-readable numbered digest (filename + reason, NO file bodies)
+
+[→ Full README](./drive-create-file-validate/README.md)
 
 ---
 
