@@ -1,0 +1,15 @@
+{
+  "guestName": "David and Laura Chen",
+  "checkInDate": "2026-11-10",
+  "checkOutDate": "2026-11-13",
+  "suiteOrUnit": "Presidential Suite",
+  "adults": 2,
+  "nights": 3,
+  "nightlyRate": 3500,
+  "total": 10500,
+  "depositRequired": 5250,
+  "currency": "ZAR",
+  "channel": "whatsapp",
+  "includeProforma": true,
+  "language": "en"
+}
