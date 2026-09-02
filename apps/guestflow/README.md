@@ -1,8 +1,66 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 27 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 28 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 27 — Waitlist capture polish (DRAFT/fixtures only; NO paid signup)
+**Current Phase:** Phase 28 — Demo invite / access codes (DRAFT/fixtures only; NO paid signup)
+
+---
+
+## What Works (Phase 28)
+
+### ✅ Phase 28 Additions (Demo Invite / Access Codes for Sales Demos)
+
+1. **Invite Code Generation** (`/demo/invite-codes`)
+   - Admin/demo page to generate and list invite codes for active demo tenant
+   - Protected by DemoAuthGuard (password: demo2026)
+   - Configure max uses (1-100) and expiry (1-90 days)
+   - Optional note field for tracking (e.g., "Sales demo for Prospect XYZ")
+   - Auto-generates 8-character codes (e.g., DEMO2026, TRIAL123)
+   - Copy-to-clipboard functionality for sharing codes
+   - Active/expired/maxed status indicators with color coding
+
+2. **Invite Code Redeem Page** (`/demo/redeem`)
+   - Public page to enter and redeem demo invite codes
+   - Clear copy: "DEMO ACCESS ONLY — NOT a paid account or signup"
+   - Amber warning banner explaining no payment, no subscription
+   - Code validation: checks expiry, max uses, and existence
+   - Success state shows unlocked tenant details with links to demo hub
+   - Stores tenant selection in localStorage for sticky navigation
+
+3. **Invite Codes API** (`/api/invite-codes`)
+   - POST endpoint to generate new codes with tenant_id, max_uses, expires_at, note
+   - GET endpoint to list all codes for a tenant (tenant-scoped)
+   - Redeem endpoint (`/api/invite-codes/redeem`) validates and increments usage count
+   - Never invents PII—only stores user-provided note text
+
+4. **Demo Seed Integration** (Phase 9 extended)
+   - Demo seed now creates 2 sample invite codes for demo tenant
+   - `DEMO2026` — multi-use (10 uses), 30-day expiry
+   - `TRIAL123` — single-use (1 use), 7-day expiry
+   - Idempotent seed safe to re-run (clears existing codes for demo tenant)
+
+5. **Clear "Demo-Only" Messaging Throughout**
+   - All pages include amber banners: "⚠️ DEMO ACCESS ONLY"
+   - Explicitly states: NOT a paid account, NOT a signup, NO payments
+   - Invite codes unlock demo tenant context for sales walkthroughs only
+   - No Stripe, no WhatsApp/email auto-send, no public signup flow
+
+6. **Demo Hub Integration**
+   - Prominent Phase 28 violet card at top of demo hub linking to invite codes page
+   - Link from redeem success page to sales walkthrough and demo hub
+   - Complete sales flow: generate code → share → redeem → demo walkthrough
+
+**What Works vs. Stubbed:**
+- ✅ Works: Code generation, redeem page, tenant unlock, fixtures/seed, SQLite persistence
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—invite codes for local SQLite sales demos with demo auth stub
+- Codes unlock demo tenant context only—NOT a paid account, NOT a subscription
+- Never invents contact details—only stores code metadata (note, max uses, expiry)
+- All data persists to local SQLite only with tenant scoping
+- Clear messaging: "This is demo/preview access only — NOT a paid account"
 
 ---
 

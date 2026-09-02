@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote, RefreshCw } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote, RefreshCw, Key } from 'lucide-react'
 import TenantSwitcher from '@/components/TenantSwitcher'
 
 export default function DemoPage() {
@@ -23,6 +23,25 @@ export default function DemoPage() {
       {/* Phase 10: Tenant Switcher */}
       <div className="mb-8 max-w-5xl mx-auto">
         <TenantSwitcher />
+      </div>
+
+      {/* Phase 28: Demo Invite Codes */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/invite-codes"
+          className="block bg-gradient-to-r from-violet-600 to-violet-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Key className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Demo Invite / Access Codes</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 28 🎯</span>
+          </div>
+          <p className="text-violet-100">
+            Generate short-lived demo invite codes for sales walkthroughs—unlock tenant demo access without payments or signup (DRAFT/fixtures only, NO paid signup)
+          </p>
+        </Link>
       </div>
 
       {/* Phase 26: Sales Leave-Behind Pack Export */}
@@ -79,8 +98,6 @@ export default function DemoPage() {
           <p className="text-fuchsia-100">
             Generate OTA promotional rate worksheet from tenant rate cards—mirrors tools/browns-ota-rate-worksheet, never invents rates, DRAFT/fixtures only for manual entry
           </p>
-        </Link>
-      </div>
         </Link>
       </div>
 

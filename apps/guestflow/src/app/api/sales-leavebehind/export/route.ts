@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       
       const zipBlob = await zip.generateAsync({ type: 'nodebuffer' })
       
-      return new NextResponse(zipBlob, {
+      return new NextResponse(zipBlob as any, {
         status: 200,
         headers: {
           'Content-Type': 'application/zip',
@@ -352,7 +352,6 @@ function generateInquirySample(inquiry: InquiryFixture, hasAmounts: boolean): st
 - **Check-Out:** ${inquiry.checkOut}
 - **Nights:** ${inquiry.nights}
 - **Party:** ${inquiry.adults} adults${inquiry.children > 0 ? `, ${inquiry.children} children` : ''}
-${inquiry.pets ? '- **Pets:** Yes' : ''}
 
 ## Property & Room
 - **Property:** ${inquiry.property}

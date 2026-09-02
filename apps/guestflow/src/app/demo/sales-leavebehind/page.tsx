@@ -28,7 +28,8 @@ interface InquiryFixture {
 export default function SalesLeaveBehindPage() {
   const [showMarkdown, setShowMarkdown] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
   const [inquiryWithAmounts, setInquiryWithAmounts] = useState<InquiryFixture | null>(null)
   const [inquiryWithoutAmounts, setInquiryWithoutAmounts] = useState<InquiryFixture | null>(null)
   const [loading, setLoading] = useState(true)
@@ -389,10 +390,10 @@ function generateLeaveBehind(
             </ul>
             <h3 className="font-semibold text-gray-900 mb-2">Quote Draft (From Fixture Amounts Only):</h3>
             <ul className="text-sm text-gray-700 space-y-1">
-              <li>• Rate: {inquiryWithAmounts.amounts.currency} {inquiryWithAmounts.amounts.ratePerNight}/night ({inquiryWithAmounts.amounts.season} season)</li>
-              <li>• Subtotal: {inquiryWithAmounts.amounts.currency} {(inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights).toLocaleString()}</li>
-              <li>• Tax (15%): {inquiryWithAmounts.amounts.currency} {((inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights) * 0.15).toLocaleString()}</li>
-              <li>• <strong>Total: {inquiryWithAmounts.amounts.currency} {((inquiryWithAmounts.amounts.ratePerNight * inquiryWithAmounts.nights) * 1.15).toLocaleString()}</strong></li>
+              <li>• Rate: {inquiryWithAmounts?.amounts?.currency} {inquiryWithAmounts?.amounts?.ratePerNight}/night ({inquiryWithAmounts?.amounts?.season} season)</li>
+              <li>• Subtotal: {inquiryWithAmounts?.amounts?.currency} {((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights).toLocaleString()}</li>
+              <li>• Tax (15%): {inquiryWithAmounts?.amounts?.currency} {(((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights) * 0.15).toLocaleString()}</li>
+              <li>• <strong>Total: {inquiryWithAmounts?.amounts?.currency} {(((inquiryWithAmounts?.amounts?.ratePerNight || 0) * inquiryWithAmounts.nights) * 1.15).toLocaleString()}</strong></li>
             </ul>
             <p className="text-xs text-gray-600 mt-2 italic">
               ⚠️ DEMO AMOUNTS FROM FIXTURE ONLY — Never invents pricing. Missing rates show [RATE CARD REQUIRED].
