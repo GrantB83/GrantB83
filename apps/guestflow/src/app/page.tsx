@@ -19,12 +19,12 @@ export default function HomePage() {
             DEMO / WAITLIST - Coming Soon
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Guest Operations,
+            Multi-Property Guest Operations,
             <span className="text-primary-600"> Automated</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Transform inquiry emails into quotes, bookings, and guest experiences. 
-            Built by guesthouse owners, for guesthouse owners.
+            Run multiple guesthouses with one platform. From inquiry to checkout, 
+            automate ops, quotes, and daily briefs—built by guesthouse owners.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link 
@@ -47,10 +47,11 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Everything You Need to Run Your Guesthouse
+            Everything You Need to Run Multiple Guesthouses
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            From first inquiry to guest departure, GuestFlow handles the operational heavy lifting
+            Multi-tenant platform: manage all your properties in one place. From first inquiry to guest departure, 
+            GuestFlow handles the operational heavy lifting across your portfolio.
           </p>
         </div>
 
@@ -93,10 +94,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Built from Real Operations
+              Built from Real Multi-Property Operations
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Based on proven workflows from The Browns Guest Suites and Rivendell Trout Estate
+              Proven workflows from The Browns portfolio: multiple properties, one streamlined system. 
+              Tenant-scoped data keeps each property's operations separate and secure.
             </p>
           </div>
 

@@ -31,6 +31,7 @@ db.exec(`
     current_system TEXT,
     phone TEXT,
     notes TEXT,
+    status TEXT DEFAULT 'new' CHECK(status IN ('new', 'contacted', 'qualified', 'won', 'lost')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id)
   );

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle } from 'lucide-react'
 
 export default function DemoPage() {
   return (
@@ -15,6 +15,37 @@ export default function DemoPage() {
           Explore GuestFlow with sample properties and mock bookings. 
           No real data, no live sends—just see how it works.
         </p>
+      </div>
+
+      {/* Phase 3: Quick Nav to Key Features */}
+      <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
+        <Link 
+          href="/demo/nightsbridge-import"
+          className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <Upload className="w-8 h-8" />
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 2</span>
+          </div>
+          <h3 className="text-xl font-bold mb-2">NightsBridge CSV Import</h3>
+          <p className="text-primary-100 text-sm">
+            Parse bookings, detect gaps, and identify late check-ins from your OTA exports
+          </p>
+        </Link>
+
+        <Link 
+          href="/demo/tenant"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <Building2 className="w-8 h-8" />
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 2</span>
+          </div>
+          <h3 className="text-xl font-bold mb-2">Tenant Switcher</h3>
+          <p className="text-blue-100 text-sm">
+            Switch between demo tenants to see multi-property data isolation
+          </p>
+        </Link>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -79,6 +110,32 @@ export default function DemoPage() {
             name="Coastal Retreat"
             rooms={4}
             location="Hermanus, SA"
+          />
+        </div>
+      </div>
+
+      {/* Phase 3: Funnel Walk Checklist */}
+      <div className="bg-primary-50 border-2 border-primary-200 rounded-xl p-8 mb-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Sales & Ops Funnel Checklist</h2>
+        <p className="text-gray-600 mb-6">
+          Walk through the complete operator journey from discovery to daily operations
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <FunnelItem 
+            title="Discovery" 
+            items={['Landing page → value prop', 'Pricing page → COMING SOON', 'Join waitlist form']} 
+          />
+          <FunnelItem 
+            title="Sales CRM" 
+            items={['View leads in /crm', 'Update status (New → Contacted → Qualified)', 'Export CSV for follow-up']} 
+          />
+          <FunnelItem 
+            title="Product Demo" 
+            items={['Inquiry intake → structured JSON', 'Quote draft (rate card stub)', 'Welcome pack generation']} 
+          />
+          <FunnelItem 
+            title="Operations Setup" 
+            items={['NightsBridge CSV import', 'Multi-tenant switcher', 'Daily brief walkthrough']} 
           />
         </div>
       </div>
@@ -180,6 +237,24 @@ function PropertyCard({ name, rooms, location }: { name: string, rooms: number, 
     <div className="bg-white p-4 rounded-lg border border-gray-200">
       <h3 className="font-semibold text-gray-900">{name}</h3>
       <p className="text-sm text-gray-600">{rooms} rooms · {location}</p>
+    </div>
+  )
+}
+
+function FunnelItem({ title, items }: { title: string, items: string[] }) {
+  return (
+    <div className="bg-white p-4 rounded-lg border border-gray-200">
+      <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <CheckCircle className="w-5 h-5 text-primary-600" />
+        {title}
+      </h3>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="text-sm text-gray-700 pl-7">
+            • {item}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
