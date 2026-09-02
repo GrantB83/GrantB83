@@ -5,14 +5,15 @@ export default function HostingReadinessPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
-          🚀 Phase 6
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium mb-4">
+          🚀 Phase 6 → 15 · Demo Hosting Readiness
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Hosting & Deployment Readiness
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Checklist for Grant/CoS before moving GuestFlow from local demo to Origin hosting.
+          LOCAL/DEMO hosting with Docker for Grant/CoS walkthrough demos. 
+          Plus checklist for Origin cloud hosting when ready.
           All hard gates remain in place—no live payments, no auto-send, no public signup.
         </p>
       </div>
@@ -45,10 +46,76 @@ export default function HostingReadinessPage() {
         </div>
       </div>
 
+      {/* Phase 15: Local Demo Hosting */}
+      <div className="bg-indigo-50 border-2 border-indigo-300 rounded-xl p-8 mb-8">
+        <div className="flex items-start gap-4">
+          <Server className="w-8 h-8 text-indigo-600 flex-shrink-0 mt-1" />
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-indigo-900 mb-4">Phase 15: Local Demo Hosting (Docker)</h2>
+            <p className="text-indigo-800 mb-4">
+              Run GuestFlow locally for Grant/CoS demos using Docker. 
+              SQLite database persists in a Docker volume—no cloud secrets, no production auth required.
+            </p>
+            
+            <div className="bg-white rounded-lg p-6 mb-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Quick Start with Docker Compose</h3>
+              <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm mb-3">
+                <pre className="whitespace-pre-wrap">{`# From apps/guestflow/ directory
+docker-compose up --build
+
+# Access at: http://localhost:3100
+# Database persists in named volume 'guestflow-data'
+# Stop with: Ctrl+C or docker-compose down`}</pre>
+              </div>
+              <p className="text-sm text-gray-600">
+                <strong>What it does:</strong> Builds Next.js app in production mode, initializes SQLite database with demo data, 
+                starts server on port 3100. Database persists across container restarts.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 mb-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Alternative: Docker Only (No Compose)</h3>
+              <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm mb-3">
+                <pre className="whitespace-pre-wrap">{`# Build image
+docker build -t guestflow-demo .
+
+# Run with volume for database persistence
+docker run -d \\
+  --name guestflow \\
+  -p 3100:3100 \\
+  -v guestflow-data:/app/data \\
+  guestflow-demo
+
+# View logs
+docker logs -f guestflow
+
+# Stop and remove
+docker stop guestflow && docker rm guestflow`}</pre>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+              <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                DEMO ONLY - Not Production Ready
+              </h4>
+              <ul className="text-sm text-amber-800 space-y-1.5">
+                <li>• SQLite database (not suitable for production scale/concurrency)</li>
+                <li>• No HTTPS/TLS (use reverse proxy like Caddy/nginx if exposing beyond localhost)</li>
+                <li>• Demo auth stub only (password: demo2026)</li>
+                <li>• No cloud secrets management (no Stripe, no email/WhatsApp tokens)</li>
+                <li>• No rate limiting or CSRF protection</li>
+                <li>• Database volume must be backed up manually</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Readiness Checklist */}
       <div className="space-y-6 mb-8">
         <ChecklistSection
-          title="Origin Namespace Required"
+          title="Origin Namespace Required (Future Cloud Hosting)"
           icon={<Globe className="w-6 h-6" />}
           status="action-required"
           items={[
