@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -p 3100",
     "lint": "next lint",
+    "smoke": "node scripts/smoke-demo.mjs",
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-add-status.js",
     "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js"
