@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 2 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 3 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 2 — Multi-tenant stub + CSV import demo
+**Current Phase:** Phase 3 — CRM enhancements, lead management, and funnel walkthrough
 
 ---
 
@@ -68,6 +68,33 @@ npm start
 ```
 
 ---
+
+## What Works (Phase 3)
+
+### ✅ Phase 3 Additions (Sales & Ops Demo Improvements)
+
+1. **Enhanced CRM** (`/crm`)
+   - CSV export of leads (tenant-scoped, local SQLite only)
+   - Lead status tracking (New → Contacted → Qualified → Won/Lost)
+   - Simple dropdown UI to update lead status inline
+   - Maintains all Phase 2 filtering and display features
+
+2. **Waitlist Form Enhancements** (`/waitlist`)
+   - Property/company name field (already present, now emphasized)
+   - Notes field for operational challenges (already present, now emphasized)
+   - All data stored on lead record for CRM export
+
+3. **Tightened Landing & Pricing Copy**
+   - Multi-tenant guesthouse pitch emphasized throughout
+   - "Multi-property operations" messaging on homepage
+   - Portfolio management language on pricing page
+   - COMING SOON / waitlist CTAs preserved (no live payments)
+
+4. **Demo Hub Improvements** (`/demo`)
+   - Prominent quick-nav cards for NightsBridge import and tenant switcher
+   - New "Sales & Ops Funnel Checklist" component
+   - Four-quadrant walkthrough: Discovery → Sales CRM → Product Demo → Operations Setup
+   - Clear path from landing → waitlist → CRM → daily ops
 
 ## What Works (Phase 2)
 
@@ -147,7 +174,7 @@ npm start
 - Email/WhatsApp sending (all drafts, no auto-send)
 - Payment processing (no Stripe/card charges)
 - Analytics dashboard
-- Operator CRM list management and qualification workflow
+- Automated lead campaigns and email sequences
 
 ---
 
@@ -287,7 +314,41 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-2)
+## Phase 3 Summary
+
+**What Changed:**
+- CRM now exports leads as CSV (tenant-scoped)
+- Lead status tracking with dropdown UI (new|contacted|qualified|won|lost)
+- Waitlist form already captured company/property + notes (now highlighted in docs)
+- Landing and pricing pages emphasize multi-tenant/multi-property operations
+- Demo hub features prominent links to NightsBridge import + tenant switcher
+- New "Sales & Ops Funnel Checklist" component on demo hub
+- README updated with Phase 3 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: CSV export, status updates, funnel walkthrough, all Phase 2 features
+- 🚧 Stubbed: No live payments, no email auto-send, no WhatsApp auto-send, no automated campaigns
+
+---
+
+## Hard Gates Reminder (Phase 3)
+
+**GuestFlow respects these safety constraints:**
+
+1. ❌ **NO live payments** — No Stripe, no card charges, no payment processing
+2. ❌ **NO paid ads** — No Google Ads pixels, no Meta conversion tracking
+3. ❌ **NO public signup** — Waitlist only, no live user authentication yet
+4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
+5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
+6. ✅ **No invented data** — Rate cards flagged as `[RATE CARD REQUIRED]`, never fabricated
+7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
+8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
+
+**These gates are unchanged from Phase 2. Phase 3 only improved the local sales and ops demo experience.**
+
+---
+
+## Next Steps (Post-Phase-3)
 
 1. **Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation
 2. **Rate Card Upload:** CSV/JSON parser for seasonal rates

@@ -9,10 +9,11 @@ export default function PricingPage() {
           COMING SOON
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          Simple, Transparent Pricing
+          Simple Pricing for Multi-Property Operators
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Currently in private beta. Join our waitlist to be notified when we launch with early-access pricing.
+          One platform for all your guesthouses. Currently in private beta—join our waitlist 
+          to be notified when we launch with early-access pricing.
         </p>
       </div>
 
