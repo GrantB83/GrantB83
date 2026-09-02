@@ -16,6 +16,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
+| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
@@ -26,7 +27,6 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
-| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
@@ -492,6 +492,75 @@ npm run test:fixtures
 - ⚠️ **For Grant/Liana only** - Not for automated client/school communication
 
 [→ Full README](./family-school-subject-digest/README.md)
+
+---
+
+## family-morning-digest-pack
+
+**One-line:** Offline CLI assembler for Family / CoS weekday morning digest pack with clear school/family separation.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-morning-digest-pack/`
+
+### Install and Run
+
+```bash
+cd tools/family-morning-digest-pack
+npm install
+npm run build
+
+# Option 1: Let this tool call family-school-subject-digest
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --outdir out/ --run-subject-digest
+
+# Option 2: Use pre-generated items.json from family-school-subject-digest
+npm run pack -- --date 2026-09-02 --subjects digest-output/items.json --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **DRAFT ONLY** - Never sends to WhatsApp
+- ✅ **No WhatsApp API** - WhatsApp posting stays on CoS
+- ✅ **Clear separation** - Kids School and Family Admin lists are distinct
+- ✅ **No duplication** - Each item appears exactly once
+- ✅ **Full sentences** - Per Family skill tone
+- ✅ **No invented data** - Never fabricates school facts or due dates
+- ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review APPROVAL.md before every post
+
+### Output Files
+
+Creates pack folder: `<outdir>/pack-YYYY-MM-DD/`
+
+- **PACK.md** - Index and checklist with item counts and review steps
+- **school.md** - Kids School items only (numbered 1-N)
+- **family.md** - Family Admin items only (numbered N+1 onward, no school repeats)
+- **APPROVAL.md** - Review document with safety gates
+- **manifest.json** - Machine-readable pack metadata
+
+### Integration with family-school-subject-digest
+
+This tool preferably consumes outputs from `family-school-subject-digest`:
+
+```bash
+# Step 1: Run subject digest
+cd tools/family-school-subject-digest
+npm run digest -- --input subjects.txt --outdir digest-out/
+
+# Step 2: Assemble morning pack
+cd ../family-morning-digest-pack
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects ../family-school-subject-digest/digest-out/digest-TIMESTAMP/items.json
+```
+
+Or use `--run-subject-digest` to do both in one command.
+
+[→ Full README](./family-morning-digest-pack/README.md)
 
 ---
 
