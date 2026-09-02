@@ -6,6 +6,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 
 | Tool | Purpose | Desk(s) | Safety Note |
 |------|---------|---------|-------------|
+| [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -15,6 +16,52 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+
+---
+
+## csv-fixture-harness
+
+**One-line:** Validate CSV fixtures for data quality: check headers, required columns, row counts, blank cells, and currency violations.
+
+**Owning desk(s):** Perfect Water / Ledger / Browns / Vault
+
+**Location:** `tools/csv-fixture-harness/`
+
+### Install and Run
+
+```bash
+cd tools/csv-fixture-harness
+npm install
+npm run build
+
+# Basic validation
+npm run check -- --csv data.csv
+
+# Check required headers
+npm run check -- --csv data.csv --require-headers Date,Amount
+
+# Check for currency violations
+npm run check -- --csv data.csv --forbid-currency-in Notes,Description
+
+# Multiple checks combined
+npm run check -- \
+  --csv data.csv \
+  --require-headers Date,Amount,Merchant \
+  --forbid-currency-in Notes \
+  --min-rows 10 \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Read-only** - Never modifies input files
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Only validates existing data
+- ✅ **Currency detection** - Flags $, R, ZAR, USD tokens in forbidden columns
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **Helps catch bot errors** - Detects when amounts leak into notes fields
+
+[→ Full README](./csv-fixture-harness/README.md)
 
 ---
 
