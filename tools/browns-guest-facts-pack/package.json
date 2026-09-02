@@ -1,0 +1,27 @@
+{
+  "name": "browns-guest-facts-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI that extracts structured guest facts from markdown knowledge files into JSON and snippet files",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/extractor.test.js",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --facts fixtures/the-browns-like.md --outdir out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist out"
+  },
+  "keywords": ["hospitality", "guest", "facts", "browns"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

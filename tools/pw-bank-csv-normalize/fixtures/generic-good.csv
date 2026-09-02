@@ -1,0 +1,6 @@
+Date,Reference,Amount,Description
+2024-01-15,TXN001,1234.56,Payment from ACME Corp
+2024-01-16,TXN002,567.89,Service fee payment
+2024-01-17,TXN003,2000.00,Invoice settlement
+2024-01-18,TXN004,450.25,Monthly subscription
+2024-01-19,TXN005,1800.00,Bulk order payment
