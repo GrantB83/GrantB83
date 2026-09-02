@@ -6,7 +6,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 
 | Tool | Purpose | Desk(s) | Safety Note |
 |------|---------|---------|-------------|
-| [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
+| [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -14,8 +14,55 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
+| [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+
+---
+
+## csv-fixture-harness
+
+**One-line:** Validate CSV fixtures for data quality: check headers, required columns, row counts, blank cells, and currency violations.
+
+**Owning desk(s):** Perfect Water / Ledger / Browns / Vault
+
+**Location:** `tools/csv-fixture-harness/`
+
+### Install and Run
+
+```bash
+cd tools/csv-fixture-harness
+npm install
+npm run build
+
+# Basic validation
+npm run check -- --csv data.csv
+
+# Check required headers
+npm run check -- --csv data.csv --require-headers Date,Amount
+
+# Check for currency violations
+npm run check -- --csv data.csv --forbid-currency-in Notes,Description
+
+# Multiple checks combined
+npm run check -- \
+  --csv data.csv \
+  --require-headers Date,Amount,Merchant \
+  --forbid-currency-in Notes \
+  --min-rows 10 \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Read-only** - Never modifies input files
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Only validates existing data
+- ✅ **Currency detection** - Flags $, R, ZAR, USD tokens in forbidden columns
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **Helps catch bot errors** - Detects when amounts leak into notes fields
+
+[→ Full README](./csv-fixture-harness/README.md)
 
 ---
 
@@ -333,6 +380,45 @@ npm run draft -- --quote quote-no-amounts.json --outdir out/
 
 ---
 
+## browns-nightsbridge-bookings-adapter
+
+**One-line:** Transform Nightsbridge-ish day sheets (CSV/TSV/paste) into bookings.json for browns-daily-ops-brief.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-nightsbridge-bookings-adapter/`
+
+### Install and Run
+
+```bash
+cd tools/browns-nightsbridge-bookings-adapter
+npm install
+npm run build
+
+# From CSV file
+npm run adapt -- --day 2026-09-20 --input nightsbridge.csv
+
+# From TSV file
+npm run adapt -- --day 2026-09-20 --input export.tsv --outdir reports/
+
+# From pasted text (stdin)
+cat table.txt | npm run adapt -- --day 2026-09-20 --paste
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Nightsbridge API or browser automation
+- ✅ **Never invents data** - Missing fields are flagged, never fabricated
+- ✅ **No rates or amounts** - Not in scope
+- ✅ **Flexible input** - Accepts CSV, TSV, or pasted tables with varied headers
+- ✅ **Status derivation** - Infers arriving/inhouse/departing from dates
+- ⚠️ **Manual export required** - Copy/paste or export from Nightsbridge screen
+- ⚠️ **Review missing-fields.md** - Resolve issues before feeding into daily-ops-brief
+
+[→ Full README](./browns-nightsbridge-bookings-adapter/README.md)
+
+---
+
 ## browns-daily-ops-brief
 
 **One-line:** Generate daily team operations brief from bookings (arrivals, in-house, departures).
@@ -419,6 +505,12 @@ browns-inquiry-intake (extract structured JSON)
     ├──→ browns-guest-comms-draft (welcome messages)
     ├──→ browns-quote-invoice-draft (quotes/invoices)
     └──→ browns-daily-ops-brief (team coordination)
+
+Nightsbridge screen (day sheet)
+    ↓
+browns-nightsbridge-bookings-adapter (CSV/TSV → bookings.json)
+    ↓
+browns-daily-ops-brief (team coordination)
 
 browns-ota-rate-worksheet (separate: rate card → OTA entry)
 ```
