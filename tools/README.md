@@ -66,6 +66,64 @@ npm run check -- \
 
 ---
 
+## pw-bank-csv-normalize
+
+**One-line:** Normalize SA bank statement CSVs into Xero-shaped format for Perfect Water receipt reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-bank-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-bank-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --input bank-statement.csv --outdir out/
+
+# Specific bank profile
+npm run normalize -- --input fnb-export.csv --outdir out/ --profile fnb
+
+# Xero import format (with Payee)
+npm run normalize -- --input xero-import.csv --outdir out/ --profile xero-import
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Blank/unparseable → rejected.csv
+- ✅ **No invented references** - Missing reference → rejected.csv (unless fallback possible)
+- ✅ **Read-only** - No write-back to bank systems
+- ✅ **File-based** - All amounts stay in files
+
+### Integration with loyverse-xero-recon
+
+This tool normalizes bank CSVs into the format that `loyverse-xero-recon` receipt mode expects:
+
+```bash
+# Step 1: Normalize bank CSV
+cd tools/pw-bank-csv-normalize
+npm run normalize -- --input bank-jan.csv --outdir normalized/
+
+# Step 2: Feed into receipt recon
+cd ../loyverse-xero-recon
+npm run recon -- --mode receipt \
+  --loyverse exports/loyverse-jan.csv \
+  --xero ../pw-bank-csv-normalize/normalized/xero-bank-normalized.csv \
+  --output recon-reports/
+```
+
+**Supported profiles:** auto (default), fnb, standard, absa, nedbank, payfast, yoco, generic, xero-import
+
+**Output:** `xero-bank-normalized.csv` with headers exactly: `Date,Reference,Amount,Description`
+
+[→ Full README](./pw-bank-csv-normalize/README.md)
+
+---
+
 ## loyverse-xero-recon
 
 **One-line:** Reconcile Loyverse POS sales data with Xero accounting records, identifying gaps and mismatches.
