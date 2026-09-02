@@ -214,6 +214,18 @@ async function runTests() {
   } catch (err) {
     fail(`Demo seed page: ${err.message}`);
   }
+
+  // Phase 11 page
+  try {
+    const response = await fetch(`${BASE_URL}/demo/waitlist-manage`);
+    if ([200, 401, 403].includes(response.status)) {
+      pass('Waitlist management page (auth check)');
+    } else {
+      fail(`Waitlist management page: Unexpected status ${response.status}`);
+    }
+  } catch (err) {
+    fail(`Waitlist management page: ${err.message}`);
+  }
   
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
@@ -306,6 +318,29 @@ async function runTests() {
   // Test Phase 10 tenant-scoped APIs
   await testRoute('/api/leads?tenant_id=1', 'Leads API with tenant filter (Phase 10)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards?tenant_id=1', 'Rate cards API with tenant filter (Phase 10)', { expectedStatus: 200 });
+  
+  // Test Phase 11 convert API (POST with validation)
+  const convertTestMissingFields = await fetch(`${BASE_URL}/api/waitlist/convert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ waitlistId: 1 })
+  });
+  if (convertTestMissingFields.status === 400) {
+    pass('Waitlist convert API validation (missing tenantId)');
+  } else {
+    fail(`Waitlist convert API validation: Expected 400, got ${convertTestMissingFields.status}`);
+  }
+
+  const convertTestNotFound = await fetch(`${BASE_URL}/api/waitlist/convert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ waitlistId: 999999, tenantId: 1 })
+  });
+  if (convertTestNotFound.status === 404) {
+    pass('Waitlist convert API not found handling');
+  } else {
+    fail(`Waitlist convert API not found: Expected 404, got ${convertTestNotFound.status}`);
+  }
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
