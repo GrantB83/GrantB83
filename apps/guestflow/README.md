@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 7 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 9 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 7 — Tenant onboarding wizard (local demo only)
+**Current Phase:** Phase 9 — One-click demo seed (local demo only)
 
 ---
 
@@ -66,6 +66,52 @@ Open [http://localhost:3100](http://localhost:3100)
 npm run build
 npm start
 ```
+
+---
+
+## What Works (Phase 9)
+
+### ✅ Phase 9 Additions (One-Click Demo Seed)
+
+1. **Demo Seed API** (`/api/demo/seed`)
+   - POST endpoint that resets demo SQLite to known-good sales walkthrough state
+   - Creates 1 demo tenant ("Dullstroom Demo Guesthouse")
+   - Creates 2 sample properties (Riverside Suite + Mountain View Cottage)
+   - Generates 4 rate card rows with synthetic DEMO rates (peak/standard seasons)
+   - Inserts 3 sample leads for CRM with diverse scenarios
+   - Inserts 3 inquiries for quote draft generation
+   - Inserts 2 confirmed bookings for daily brief / ops demos
+   - Protected by demo auth (Bearer token: demo2026)
+   - Idempotent: re-running replaces demo tenant data only, never touches other tenants
+
+2. **Demo Seed UI** (`/demo/seed`)
+   - Simple one-button interface to trigger seed operation
+   - Protected by DemoAuthGuard (password: demo2026)
+   - Shows detailed summary after seeding (tenant, properties, rates, leads, bookings)
+   - Quick-nav links to CRM, quote draft, rate cards after successful seed
+   - Clear warnings about idempotent behavior and DEMO-only data
+   - Hard gates reminder displayed on page
+
+3. **Demo Hub Phase 9 Integration**
+   - Prominent violet card at top linking to demo seed page (Phase 9 badge)
+   - Positioned above Phase 8 quote export for visibility
+   - Completes demo setup workflow: seed → walkthrough → leave-behind
+
+4. **Extended Smoke Test Coverage**
+   - Auth check for `/demo/seed` route
+   - Full API test for `/api/demo/seed` endpoint with Bearer auth
+   - Validates successful seed with summary data structure
+
+**What Works vs. Stubbed:**
+- ✅ Works: One-click seed, idempotent operation, demo auth protection, SQLite persistence
+- 🚧 Stubbed: Same as Phase 8 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — all rates clearly labeled DEMO (synthetic only)
+- Never invents production rates for real properties
+- Idempotent seed safe to run multiple times (replaces demo tenant data only)
+- All data persists to local SQLite only
 
 ---
 
@@ -463,6 +509,29 @@ Verify tables:
 
 ---
 
+## Phase 9 Summary
+
+**What Changed:**
+- One-click demo seed at `/demo/seed` with simple button interface (protected by DemoAuthGuard)
+- POST API endpoint `/api/demo/seed` that resets demo SQLite to known-good sales state
+- Creates 1 demo tenant, 2 properties, 4 rate cards (DEMO labeled), 3 leads, 3 inquiries, 2 bookings
+- Idempotent operation safe to re-run (replaces demo tenant data only, never touches other tenants)
+- Demo hub updated with prominent Phase 9 violet card linking seed page
+- Extended smoke test script to cover seed page and API endpoint with auth
+- README updated with Phase 9 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: One-click seed, idempotent operation, demo auth protection, SQLite persistence
+- 🚧 Stubbed: Same as Phase 8 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — seed creates synthetic DEMO rates only, never production rates
+- Idempotent seed safe to run multiple times (replaces demo tenant data only)
+- All data persists to local SQLite only
+
+---
+
 ## Phase 8 Summary
 
 **What Changed:**
@@ -560,7 +629,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 8)
+## Hard Gates Reminder (Phase 9)
 
 **GuestFlow respects these safety constraints:**
 
@@ -574,7 +643,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 6. Phase 7 adds tenant onboarding wizard (DEMO labeled, local SQLite only), and Phase 8 adds printable quote export (markdown/HTML)—both maintain all safety constraints. Exported quotes preserve [RATE CARD REQUIRED] placeholders and include H7 approval reminders. The onboarding flow is NOT a public signup — it's a protected demo feature for testing multi-tenant data flows.**
+**These gates are unchanged from Phase 8. Phase 9 adds one-click demo seed at `/demo/seed` (DEMO labeled, local SQLite only)—maintains all safety constraints. Seed creates synthetic DEMO rates only, never production rates. Idempotent operation safe to re-run (replaces demo tenant data only, never touches other tenants). The seed API is protected by demo auth Bearer token and never invents production rates for real properties.**
 
 ---
 
@@ -595,9 +664,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-8)
+## Next Steps (Post-Phase-9)
 
-**Phase 8 completes the quote workflow with printable exports.** Next priorities focus on production features and live integrations:
+**Phase 9 completes the demo seed workflow with one-click reset.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow

@@ -202,6 +202,18 @@ async function runTests() {
   } catch (err) {
     fail(`Tenant onboarding wizard: ${err.message}`);
   }
+
+  // Phase 9 page
+  try {
+    const response = await fetch(`${BASE_URL}/demo/seed`);
+    if ([200, 401, 403].includes(response.status)) {
+      pass('Demo seed page (auth check)');
+    } else {
+      fail(`Demo seed page: Unexpected status ${response.status}`);
+    }
+  } catch (err) {
+    fail(`Demo seed page: ${err.message}`);
+  }
   
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
@@ -271,6 +283,25 @@ async function runTests() {
     body: { ...sampleQuoteExport, format: 'html' },
     expectedStatus: 200
   });
+
+  // Test Phase 9 demo seed API (POST with auth)
+  const seedResponse = await fetch(`${BASE_URL}/api/demo/seed`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer demo2026',
+      'Content-Type': 'application/json'
+    }
+  });
+  if (seedResponse.status === 200) {
+    const seedData = await seedResponse.json();
+    if (seedData.success && seedData.summary) {
+      pass('Demo seed API (POST with auth)');
+    } else {
+      fail('Demo seed API: Response missing expected fields');
+    }
+  } else {
+    fail(`Demo seed API: Expected 200, got ${seedResponse.status}`);
+  }
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
