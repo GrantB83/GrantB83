@@ -1,0 +1,27 @@
+{
+  "name": "browns-ct-pack-assemble",
+  "version": "1.0.0",
+  "description": "Offline CLI assembler for CoS Browns CT (Centurion Township) timed packs",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "assemble": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "assemble": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --day 2026-09-20 --bookings fixtures/sample-bookings.json --before fixtures/sample-before.json --after fixtures/sample-after.json --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": ["browns", "dullstroom", "ct-pack", "cos", "operations", "hospitality"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
