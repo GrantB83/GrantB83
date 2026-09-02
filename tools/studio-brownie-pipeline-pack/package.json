@@ -11,7 +11,7 @@
     "build": "tsc",
     "pipeline": "npm run build && node dist/index.js",
     "test": "npm run build && node --test dist/**/*.test.js",
-    "test:fixtures": "npm run build && node dist/index.js --pack fixtures/valid-package --outdir test-out",
+    "test:fixtures": "npm run build && node dist/index.js --pack fixtures/valid-package --outdir test-out --drive-url https://drive.google.com/file/d/FIXTURE-DEMO-ID/view",
     "clean": "rm -rf dist/ test-out/ out/"
   },
   "keywords": [

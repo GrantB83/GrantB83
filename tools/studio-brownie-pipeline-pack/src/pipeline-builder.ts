@@ -283,6 +283,45 @@ function runSunoPackageValidate(
   const __dirname = path.dirname(__filename);
   const validateToolPath = path.resolve(__dirname, '../../studio-suno-package-validate');
 
+  // Auto-install and auto-build sibling tool if dist missing
+  const distPath = path.join(validateToolPath, 'dist', 'index.js');
+  if (!fs.existsSync(distPath)) {
+    console.log('⚙️  Building studio-suno-package-validate (dist missing)...');
+    
+    // Install dependencies if node_modules missing
+    const nodeModulesPath = path.join(validateToolPath, 'node_modules');
+    if (!fs.existsSync(nodeModulesPath)) {
+      console.log('   Installing dependencies...');
+      try {
+        execSync('npm install', {
+          cwd: validateToolPath,
+          stdio: 'inherit'
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          message: `Failed to install studio-suno-package-validate dependencies: ${errorMessage}`
+        };
+      }
+    }
+    
+    // Build the tool
+    try {
+      execSync('npm run build', {
+        cwd: validateToolPath,
+        stdio: 'inherit'
+      });
+      console.log('✅ studio-suno-package-validate built successfully\n');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        message: `Failed to build studio-suno-package-validate: ${errorMessage}`
+      };
+    }
+  }
+
   const validateOutdir = path.join(tempOutdir, 'validate-temp');
   fs.mkdirSync(validateOutdir, { recursive: true });
 
@@ -322,6 +361,45 @@ function runYoutubePreflightPack(
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   const preflightToolPath = path.resolve(__dirname, '../../studio-youtube-preflight-pack');
+
+  // Auto-install and auto-build sibling tool if dist missing
+  const distPath = path.join(preflightToolPath, 'dist', 'index.js');
+  if (!fs.existsSync(distPath)) {
+    console.log('⚙️  Building studio-youtube-preflight-pack (dist missing)...');
+    
+    // Install dependencies if node_modules missing
+    const nodeModulesPath = path.join(preflightToolPath, 'node_modules');
+    if (!fs.existsSync(nodeModulesPath)) {
+      console.log('   Installing dependencies...');
+      try {
+        execSync('npm install', {
+          cwd: preflightToolPath,
+          stdio: 'inherit'
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          message: `Failed to install studio-youtube-preflight-pack dependencies: ${errorMessage}`
+        };
+      }
+    }
+    
+    // Build the tool
+    try {
+      execSync('npm run build', {
+        cwd: preflightToolPath,
+        stdio: 'inherit'
+      });
+      console.log('✅ studio-youtube-preflight-pack built successfully\n');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        success: false,
+        message: `Failed to build studio-youtube-preflight-pack: ${errorMessage}`
+      };
+    }
+  }
 
   const preflightOutdir = path.join(tempOutdir, 'preflight-temp');
   fs.mkdirSync(preflightOutdir, { recursive: true });
