@@ -19,6 +19,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
+| [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
@@ -680,6 +681,57 @@ npm run pack -- \
 Or use `--run-subject-digest` to do both in one command.
 
 [→ Full README](./family-morning-digest-pack/README.md)
+
+---
+
+## family-calendar-ics-digest
+
+**One-line:** Offline CLI to parse .ics calendar exports and generate Family / CoS morning digest.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-calendar-ics-digest/`
+
+### Install and Run
+
+```bash
+cd tools/family-calendar-ics-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --ics calendar.ics --from 2026-09-02 --to 2026-09-05 --outdir out/
+
+# With custom timezone
+npm run digest -- --ics calendar.ics --from 2026-09-01 --to 2026-09-30 --timezone America/New_York
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No calendar API calls
+- ✅ **Read-only** - Never modifies .ics files or live calendars
+- ✅ **Pass-through only** - Never invents events, times, or locations
+- ✅ **Date filtering** - Only includes VEVENT entries within specified date range
+- ✅ **DRAFT ONLY** - Output is for review; does not send notifications
+- ⚠️ **Family bot / CoS owns WhatsApp** - Manual approval required before posting digest
+- ⚠️ **Not a calendar sync** - This is a one-time export parser, not a live calendar integration
+
+### Output Files
+
+- `events.json` - Structured event data array with uid, summary, dtstart, dtend, location, description
+- `digest.md` - Numbered digest with full sentences, grouped by date
+- `missing-fields.md` - Events with incomplete data (missing SUMMARY/DTSTART/LOCATION)
+- `APPROVAL.md` - Safety gates and ownership notice
+- `manifest.json` - Run metadata and statistics
+
+### Why This Tool Exists
+
+Family morning digest sometimes needs calendar events from an exported .ics file (school/admin calendars). This offline parser extracts events in a date window and generates a numbered digest. Never invents events or times.
+
+[→ Full README](./family-calendar-ics-digest/README.md)
 
 ---
 
