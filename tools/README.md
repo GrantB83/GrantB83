@@ -6,15 +6,125 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 
 | Tool | Purpose | Desk(s) | Safety Note |
 |------|---------|---------|-------------|
+| [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
+| [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
+| [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
+| [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
+| [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+| [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
+
+---
+
+## csv-fixture-harness
+
+**One-line:** Validate CSV fixtures for data quality: check headers, required columns, row counts, blank cells, and currency violations.
+
+**Owning desk(s):** Perfect Water / Ledger / Browns / Vault
+
+**Location:** `tools/csv-fixture-harness/`
+
+### Install and Run
+
+```bash
+cd tools/csv-fixture-harness
+npm install
+npm run build
+
+# Basic validation
+npm run check -- --csv data.csv
+
+# Check required headers
+npm run check -- --csv data.csv --require-headers Date,Amount
+
+# Check for currency violations
+npm run check -- --csv data.csv --forbid-currency-in Notes,Description
+
+# Multiple checks combined
+npm run check -- \
+  --csv data.csv \
+  --require-headers Date,Amount,Merchant \
+  --forbid-currency-in Notes \
+  --min-rows 10 \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Read-only** - Never modifies input files
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Only validates existing data
+- ✅ **Currency detection** - Flags $, R, ZAR, USD tokens in forbidden columns
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **Helps catch bot errors** - Detects when amounts leak into notes fields
+
+[→ Full README](./csv-fixture-harness/README.md)
+
+---
+
+## pw-bank-csv-normalize
+
+**One-line:** Normalize SA bank statement CSVs into Xero-shaped format for Perfect Water receipt reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-bank-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-bank-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --input bank-statement.csv --outdir out/
+
+# Specific bank profile
+npm run normalize -- --input fnb-export.csv --outdir out/ --profile fnb
+
+# Xero import format (with Payee)
+npm run normalize -- --input xero-import.csv --outdir out/ --profile xero-import
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Blank/unparseable → rejected.csv
+- ✅ **No invented references** - Missing reference → rejected.csv (unless fallback possible)
+- ✅ **Read-only** - No write-back to bank systems
+- ✅ **File-based** - All amounts stay in files
+
+### Integration with loyverse-xero-recon
+
+This tool normalizes bank CSVs into the format that `loyverse-xero-recon` receipt mode expects:
+
+```bash
+# Step 1: Normalize bank CSV
+cd tools/pw-bank-csv-normalize
+npm run normalize -- --input bank-jan.csv --outdir normalized/
+
+# Step 2: Feed into receipt recon
+cd ../loyverse-xero-recon
+npm run recon -- --mode receipt \
+  --loyverse exports/loyverse-jan.csv \
+  --xero ../pw-bank-csv-normalize/normalized/xero-bank-normalized.csv \
+  --output recon-reports/
+```
+
+**Supported profiles:** auto (default), fnb, standard, absa, nedbank, payfast, yoco, generic, xero-import
+
+**Output:** `xero-bank-normalized.csv` with headers exactly: `Date,Reference,Amount,Description`
+
+[→ Full README](./pw-bank-csv-normalize/README.md)
 
 ---
 
@@ -162,6 +272,88 @@ npm run prep -- \
 
 ---
 
+## family-school-subject-digest
+
+**One-line:** Generate family school/admin morning digest from email subject lines.
+
+**Owning desk(s):** Family Command Center
+
+**Location:** `tools/family-school-subject-digest/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-subject-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --input subjects.txt --outdir out/
+
+# With custom date and timezone
+npm run digest -- --input subjects.txt --date 2026-09-15 --timezone America/Chicago
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **No LLM** - Keyword classification heuristics only
+- ✅ **No invented data** - Due dates and amounts only extracted if explicitly present
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **No school facts** - Never invents teacher names, school policies, or deadlines
+- ⚠️ **Family bot owns send path** - WhatsApp digest sending via Family bot / CoS only
+- ⚠️ **For Grant/Liana only** - Not for automated client/school communication
+
+[→ Full README](./family-school-subject-digest/README.md)
+
+---
+
+## browns-guest-facts-pack
+
+**One-line:** Extract structured guest facts from markdown knowledge files into JSON and snippet files.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-guest-facts-pack/`
+
+**Note:** Supports both section-heading-based and prose-based knowledge files. Extracts facts heuristically from headings and body text.
+
+### Install and Run
+
+```bash
+cd tools/browns-guest-facts-pack
+npm install
+npm run build
+
+# Basic usage
+npm run pack -- --facts stay-knowledge/the-browns.md --outdir out/
+
+# With seed samples (for tone reference only)
+npm run pack -- \
+  --facts stay-knowledge/the-browns.md \
+  --seeds seeds/ \
+  --outdir out/
+
+# Test with fixture
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Never invents facts** - Missing fields are explicitly flagged
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No fabricated passwords** - If Wi-Fi password is not in source, omitted and reported
+- ✅ **No rates or amounts** - Does not handle pricing
+- ✅ **Source-faithful extraction** - Heuristic parsing of stated facts only
+- ⚠️ **For draft communications only** - Outputs feed `browns-guest-comms-draft`
+
+[→ Full README](./browns-guest-facts-pack/README.md)
+
+---
+
 ## browns-inquiry-intake
 
 **One-line:** Extract structured booking and quote JSON from freeform inquiry text (email/WhatsApp paste).
@@ -274,6 +466,45 @@ npm run draft -- --quote quote-no-amounts.json --outdir out/
 
 ---
 
+## browns-nightsbridge-bookings-adapter
+
+**One-line:** Transform Nightsbridge-ish day sheets (CSV/TSV/paste) into bookings.json for browns-daily-ops-brief.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-nightsbridge-bookings-adapter/`
+
+### Install and Run
+
+```bash
+cd tools/browns-nightsbridge-bookings-adapter
+npm install
+npm run build
+
+# From CSV file
+npm run adapt -- --day 2026-09-20 --input nightsbridge.csv
+
+# From TSV file
+npm run adapt -- --day 2026-09-20 --input export.tsv --outdir reports/
+
+# From pasted text (stdin)
+cat table.txt | npm run adapt -- --day 2026-09-20 --paste
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Nightsbridge API or browser automation
+- ✅ **Never invents data** - Missing fields are flagged, never fabricated
+- ✅ **No rates or amounts** - Not in scope
+- ✅ **Flexible input** - Accepts CSV, TSV, or pasted tables with varied headers
+- ✅ **Status derivation** - Infers arriving/inhouse/departing from dates
+- ⚠️ **Manual export required** - Copy/paste or export from Nightsbridge screen
+- ⚠️ **Review missing-fields.md** - Resolve issues before feeding into daily-ops-brief
+
+[→ Full README](./browns-nightsbridge-bookings-adapter/README.md)
+
+---
+
 ## browns-daily-ops-brief
 
 **One-line:** Generate daily team operations brief from bookings (arrivals, in-house, departures).
@@ -348,21 +579,78 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 
 ---
 
+## career-jd-hard-gates-score
+
+**One-line:** Score job descriptions against career hard gates for Career bot apply decisions.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-jd-hard-gates-score/`
+
+### Install and Run
+
+```bash
+cd tools/career-jd-hard-gates-score
+npm install
+npm run build
+
+# Basic scoring
+npm run score -- --jd path/to/jd.txt --outdir out/
+
+# With custom gates
+npm run score -- --jd jd.txt --gates gates.json
+
+# With overrides
+npm run score -- --jd jd.txt --company "Tesla" --title "Operations Manager"
+
+# Test with fixtures
+npm run test:fixtures
+
+# Run unit tests
+npm test
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - Keyword/regex heuristics, no LLM, no network
+- ✅ **Never invents compensation** - Dollar amounts only from JD text
+- ✅ **Facts-only reminder** - All outputs remind Career to use existing career-os claims
+- ✅ **Fail-closed** - Unknown/ambiguous cases default to safer handling
+- ⚠️ **Career bot owns apply** - This is a scoring aid, not an auto-apply system
+- ⚠️ **No LinkedIn send** - Career bot handles all application sends
+
+[→ Full README](./career-jd-hard-gates-score/README.md)
+
+---
+
 ## Browns Pipeline Flow
 
 The Browns guest-flow tools work together in this pipeline:
 
 ```
+stay-knowledge/the-browns.md
+    ↓
+browns-guest-facts-pack (extract brand facts → facts.json)
+    ↓
+    │
 Inquiry (email/WhatsApp) 
     ↓
 browns-inquiry-intake (extract structured JSON)
     ↓
-    ├──→ browns-guest-comms-draft (welcome messages)
+    ├──→ browns-guest-comms-draft (welcome messages, consumes facts.json)
     ├──→ browns-quote-invoice-draft (quotes/invoices)
     └──→ browns-daily-ops-brief (team coordination)
 
+Nightsbridge screen (day sheet)
+    ↓
+browns-nightsbridge-bookings-adapter (CSV/TSV → bookings.json)
+    ↓
+browns-daily-ops-brief (team coordination)
+
 browns-ota-rate-worksheet (separate: rate card → OTA entry)
 ```
+
+**Note:** `browns-guest-facts-pack` feeds facts to `browns-guest-comms-draft` via `--facts` argument.
 
 ### Pipeline Rules
 
