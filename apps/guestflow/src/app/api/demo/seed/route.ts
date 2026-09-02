@@ -231,8 +231,63 @@ export async function POST(request: Request) {
       inquiryIds.push(Number(inquiryResult.lastInsertRowid))
     }
 
-    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos)
+    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos + Phase 18 welcome drafts)
+    // Include today and tomorrow for Phase 18 welcome drafts testing
+    const today = new Date().toISOString().split('T')[0]
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+    const dayAfter = new Date(Date.now() + 172800000).toISOString().split('T')[0]
+    const todayPlusThree = new Date(Date.now() + 259200000).toISOString().split('T')[0]
+    
     const bookings = [
+      // Today's arrival for Phase 18 testing
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property1Id,
+        guestName: 'Emma Wilson',
+        checkIn: today,
+        checkOut: dayAfter,
+        roomNumber: 'Suite 3',
+        suiteOrUnit: 'Riverside Suite 3',
+        adults: 2,
+        children: 0,
+        notes: 'DEMO - Arriving today',
+        lateCheckIn: false,
+        status: 'confirmed'
+      },
+      // Tomorrow's arrival for Phase 18 testing
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property2Id,
+        guestName: 'David Chen',
+        checkIn: tomorrow,
+        checkOut: todayPlusThree,
+        roomNumber: 'Cottage B',
+        suiteOrUnit: 'Mountain View Cottage B',
+        adults: 2,
+        children: 0,
+        notes: 'DEMO - Business traveler',
+        lateCheckIn: false,
+        status: 'confirmed'
+      },
+      // Booking without guest name (should be skipped in welcome drafts)
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property1Id,
+        guestName: '',
+        checkIn: tomorrow,
+        checkOut: dayAfter,
+        roomNumber: 'Suite 4',
+        suiteOrUnit: 'Riverside Suite 4',
+        adults: 0,
+        children: 0,
+        notes: 'DEMO - Missing guest name test',
+        lateCheckIn: false,
+        status: 'pending'
+      },
+      // Future bookings for other demos
       {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[0],

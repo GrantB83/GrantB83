@@ -1,8 +1,70 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 17 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 18 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 17 — Demo daily ops brief generated from tenant bookings (fixtures/UI only)
+**Current Phase:** Phase 18 — Welcome message drafts from tenant bookings (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 18)
+
+### ✅ Phase 18 Additions (Welcome Message Drafts from Bookings)
+
+1. **Welcome Drafts Page** (`/demo/welcome-drafts`)
+   - Generate same-day/upcoming welcome message stubs from tenant bookings
+   - Configurable as-of date and window-days (default: same-day +1)
+   - Uses active demo tenant from tenant context
+   - Numbered DRAFT welcome stubs with warm Dullstroom-ish tone
+   - Tenant-scoped SQLite bookings query with date filtering
+
+2. **Smart Placeholder Handling**
+   - `[GUEST_PHONE]` placeholder when phone is missing (never invents)
+   - `[RATE CARD REQUIRED]` placeholder when rates are missing (never invents)
+   - Skips bookings without guest_name and lists them separately in missing-fields section
+   - Clear amber warnings for bookings with missing data
+
+3. **Export Options** (`POST /api/welcome-drafts`)
+   - Download as Markdown (.md) or HTML (.html) file
+   - Print to PDF via browser print dialog (opens HTML in new window)
+   - Mirrors Phase 8 quote export UX for consistency
+   - Export includes queue summary + individual welcome stubs
+   - Local-only operations with no external storage
+
+4. **Demo Hub Integration**
+   - Prominent Phase 18 rose card at top of demo hub linking to welcome drafts page
+   - Link from daily-brief page to welcome drafts ("View Welcome Drafts" button)
+   - Integration with tenant switcher for multi-tenant demo
+   - Positioned above Phase 13 leave-behind export
+
+5. **Extended Fixtures & Smoke Tests**
+   - Demo seed now includes today/tomorrow arrivals for welcome drafts testing
+   - Booking without guest_name to test skip logic
+   - Extended smoke test coverage for `/demo/welcome-drafts` route
+   - API test for `/api/welcome-drafts` GET endpoint with tenant filtering
+
+6. **Mirrors tools/browns-welcome-draft-pack Semantics**
+   - Same filtering logic: `asOfDate <= checkInDate < asOfDate + windowDays`
+   - Same placeholder rules: never invents phone or rates
+   - Same skip logic: bookings without guest_name are filtered out
+   - Same warm Dullstroom-ish tone in welcome message generation
+
+**What Works vs. Stubbed:**
+- ✅ Works: Booking query/filtering, welcome stub generation, markdown/HTML export, print-to-PDF, skip logic, placeholder handling
+- 🚧 Stubbed: Same as Phase 17 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — welcome drafts are DRAFT ONLY with local-only export
+- Never invents guest phone (uses `[GUEST_PHONE]` placeholder)
+- Never invents rates (uses `[RATE CARD REQUIRED]` placeholder)
+- Skips bookings without guest_name and reports them separately
+- All data persists to local SQLite only
+
+---
+
+## What Works (Phase 17)
+
+### ✅ Phase 17 Additions (Demo Daily Ops Brief from Bookings)
 
 ---
 

@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 18: Welcome Message Drafts */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/welcome-drafts"
+          className="block bg-gradient-to-r from-rose-600 to-rose-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Mail className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Welcome Message Drafts</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 18</span>
+          </div>
+          <p className="text-rose-100">
+            Generate same-day/upcoming welcome stubs from tenant bookings—mirrors tools/browns-welcome-draft-pack semantics (DRAFT/fixtures only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 17: Bookings Board & Daily Ops Brief */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
