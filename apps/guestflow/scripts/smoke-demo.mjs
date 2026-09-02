@@ -520,6 +520,11 @@ async function runTests() {
   // Test Phase 23 quote-draft page with JSON input support
   await testRoute('/demo/quote-draft', 'Quote draft page with JSON input (Phase 23)', { checkContent: 'Quote & Invoice Packager' });
   
+  // Test Phase 25 sales walkthrough page
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough page (Phase 25)', { checkContent: 'Guided Sales Demo Walkthrough' });
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - hard gates', { checkContent: 'Hard Gates' });
+  await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - progress tracking', { checkContent: 'Progress' });
+  
   // Test Phase 23 fixture files exist
   try {
     const withAmounts = await fs.promises.readFile('./fixtures/inquiry-with-amounts.json', 'utf8');

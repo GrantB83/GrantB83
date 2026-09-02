@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload, AlertCircle, CheckCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, Upload, AlertCircle, CheckCircle, Trash2, CreditCard } from 'lucide-react'
 import { DemoAuthGuard } from '@/components/DemoAuthGuard'
 import { useTenant } from '@/components/TenantContext'
 
@@ -328,6 +328,20 @@ Garden Room,high,2200,ZAR,2,2026-12-15,2027-01-15,Holiday rates`
             <li>✅ Missing rates = flagged clearly, no fabricated amounts</li>
             <li>⚠️ Demo mode: No authentication yet (Phase 4 stub only)</li>
           </ul>
+        </div>
+
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h3 className="font-semibold text-gray-900 mb-2">Next Steps</h3>
+          <p className="text-sm text-gray-700 mb-3">
+            Once you've uploaded your rate cards, generate an OTA worksheet for manual entry:
+          </p>
+          <Link
+            href="/demo/ota-rate-worksheet"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
+          >
+            <CreditCard className="w-4 h-4" />
+            Generate OTA Rate Worksheet →
+          </Link>
         </div>
       </div>
     </DemoAuthGuard>

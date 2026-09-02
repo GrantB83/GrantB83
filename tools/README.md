@@ -15,6 +15,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [pw-rejected-csv-digest](#pw-rejected-csv-digest) | Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose | Perfect Water / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Read-only. |
+| [pw-inventory-recon-pack](#pw-inventory-recon-pack) | Orchestrate PW inventory recon pack (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest) | Perfect Water / CoS | **Offline orchestrator**. Amounts stay in files. PACK.md = index + counts only. H3 gate reminder. Never invents quantities. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
@@ -25,6 +26,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
 | [ledger-alias-apply-checklist](#ledger-alias-apply-checklist) | Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before Budget sheet writes | Ledger / CoS | **Offline**. Never writes sheet. Never invents amounts/aliases. Names/patterns only. H2 approval required. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
+| [ledger-month-close-pipeline-pack](#ledger-month-close-pipeline-pack) | Assemble month-close pipeline pack from unmatched-queue → alias-suggest → alias-checklist → close-pack | Ledger / CoS | **Offline**. No amounts in PACK.md prose. H2 before sheet writes. Never writes Budget. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
@@ -583,6 +585,65 @@ npm run digest -- --csv rejected.csv --outdir out/ \
 Digest one or more `rejected.csv` files produced by sibling normalizers (pw-grv-csv-normalize, pw-stocktake-csv-normalize, pw-bank-csv-normalize, pw-ordered-vs-sold-diff, etc.) into a structured human review pack. Classifies rejection reasons heuristically from common columns (RejectionReason, Error, Notes) or from blank required fields. Perfect Water / CoS can review multi-file rejection patterns without hunting through individual CSVs.
 
 [→ Full README](./pw-rejected-csv-digest/README.md)
+
+---
+
+## pw-inventory-recon-pack
+
+**One-line:** Offline orchestrator for Perfect Water inventory recon pack assembly (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest).
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-inventory-recon-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-inventory-recon-pack
+npm install
+npm run build
+
+# Mode A: Prebuilt diff outputs
+npm run pack -- --diff-outdir ../pw-grv-vs-stocktake-diff/out --outdir pack-out/
+
+# Mode B: Prebuilt normalized CSVs
+npm run pack -- \
+  --grv grv-normalized.csv \
+  --stocktake stocktake-normalized.csv \
+  --outdir pack-out/
+
+# Mode C: Raw CSVs with full orchestration
+npm run pack -- \
+  --grv-raw raw-grv.csv \
+  --stock-raw raw-stocktake.csv \
+  --run-normalize \
+  --run-rejected-digest \
+  --outdir pack-out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - All amounts from source CSVs only
+- ✅ **Read-only** - Never modifies source CSV files or inventory systems
+- ✅ **File-based** - All amounts stay in files
+- ✅ **PACK.md = counts only** - Index with row/key counts, no quantity/amount tables in prose
+- ✅ **Exit 1 on bad input** - Missing inputs or sibling tool failures caught early
+- ⚠️ **Perfect Water owns ops** - PW owns all inventory decisions
+- ⚠️ **H3 gate** - Inventory decisions require approval per approval-gates.md
+
+### Output Files
+
+- `PACK.md` - Index with row/key counts only (NO quantity/amount tables in prose)
+- `APPROVAL.md` - H3-style gate reminder, PW ownership, offline-only constraint
+- `manifest.json` - Run metadata
+- Copies/pointers: `diff.md`, `diff.json`, `missing-keys.md`, `DIGEST.md` (if rejected digest run)
+
+### Use Case
+
+Assemble a complete Perfect Water inventory reconciliation pack by orchestrating sibling tools and bundling outputs into one deliverable. Supports three input modes: prebuilt diff outputs, prebuilt normalized CSVs, or raw CSVs with normalization. Optionally runs pw-rejected-csv-digest on rejected.csv outputs. Amounts and quantities stay in files, never in PACK.md prose.
+
+[→ Full README](./pw-inventory-recon-pack/README.md)
 
 ---
 
@@ -1185,6 +1246,108 @@ npm run pack -- \
 4. Run `ledger-month-close-pack` to assemble the final close pack with all reports
 
 [→ Full README](./ledger-month-close-pack/README.md)
+
+---
+
+## ledger-month-close-pipeline-pack
+
+**One-line:** Offline CLI tool assembling unmatched-merchant-queue → merchant-alias-suggest → alias-apply-checklist → month-close-pack artifacts into one pipeline pack.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-month-close-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-month-close-pipeline-pack
+npm install
+npm run build
+
+# Assemble from prebuilt stage outputs (preferred)
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/out/ \
+  --suggest-outdir ../ledger-merchant-alias-suggest/out/ \
+  --alias-checklist-outdir ../ledger-alias-apply-checklist/out/ \
+  --close-outdir ../ledger-month-close-pack/out/ \
+  --outdir pipeline-pack/
+
+# With partial stages (not all stages required)
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/out/ \
+  --close-outdir ../ledger-month-close-pack/out/ \
+  --outdir pipeline-pack/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Sheets API or network calls
+- ✅ **Read-only** - Never modifies stage output files
+- ✅ **No amounts in PACK.md** - Amounts stay in stage output files only
+- ✅ **H2 approval required** - Before any Google Sheet writes
+- ✅ **Exit 1 on zero stages** - At least one stage input must be present
+- ⚠️ **Ledger owns sheet writes** - Coding/CoS never writes Budget directly
+- ⚠️ **Never writes Budget sheet** - Google Sheets API is never called
+
+### Pipeline Flow
+
+```
+ledger-unmatched-merchant-queue → ledger-merchant-alias-suggest → 
+ledger-alias-apply-checklist → ledger-month-close-pack → 
+ledger-month-close-pipeline-pack (this tool)
+```
+
+### Output Files
+
+- `PACK.md` - Pipeline pack index with stage presence summary (NO amount tables)
+- `APPROVAL.md` - H2 gate workflow guidance
+- `manifest.json` - Machine-readable metadata with stage presence flags
+- `queue.md` - Unmatched merchant research queue (if stage present)
+- `suggestions.md` - Alias suggestions (if stage present)
+- `APPLY-CHECKLIST.md` - Human tick-off checklist (if stage present)
+- `CLOSE.md` - Month-close sanity checks (if stage present)
+- `CLOSE-APPROVAL.md` - Month-close approval gates (if stage present)
+
+### Integration with Pipeline Tools
+
+Full pipeline example:
+
+```bash
+# Step 1: Build unmatched merchant queue
+cd tools/ledger-unmatched-merchant-queue
+npm run queue -- --input exports/jan-2024.csv --outdir unmatched-out/
+
+# Step 2: Suggest aliases
+cd ../ledger-merchant-alias-suggest
+npm run suggest -- --unmatched ../ledger-unmatched-merchant-queue/unmatched-out/queue.json --aliases aliases.json --outdir suggest-out/
+
+# Step 3: Generate apply checklist
+cd ../ledger-alias-apply-checklist
+npm run apply -- --suggestions ../ledger-merchant-alias-suggest/suggest-out/suggestions.json --month 2024-01 --outdir checklist-out/
+
+# Step 4: Build month-close pack
+cd ../ledger-month-close-pack
+npm run pack -- --month 2024-01 --exports-dir ~/exports/january/ --outdir close-out/
+
+# Step 5: Assemble pipeline pack
+cd ../ledger-month-close-pipeline-pack
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/unmatched-out/ \
+  --suggest-outdir ../ledger-merchant-alias-suggest/suggest-out/ \
+  --alias-checklist-outdir ../ledger-alias-apply-checklist/checklist-out/ \
+  --close-outdir ../ledger-month-close-pack/close-out/ \
+  --outdir pipeline-pack-jan-2024/
+
+# Step 6: Review PACK.md and follow APPROVAL.md workflow
+```
+
+[→ Full README](./ledger-month-close-pipeline-pack/README.md)
 
 ---
 
