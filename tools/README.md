@@ -28,6 +28,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
+| [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -1069,6 +1070,75 @@ npm test
 - ⚠️ **No LinkedIn send** - Career bot handles all application sends
 
 [→ Full README](./career-jd-hard-gates-score/README.md)
+
+---
+
+## career-cover-letter-facts-lint
+
+**One-line:** Lint cover letter drafts against allowed facts from career-os to prevent invented claims.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-cover-letter-facts-lint/`
+
+### Install and Run
+
+```bash
+cd tools/career-cover-letter-facts-lint
+npm install
+npm run build
+
+# Basic linting
+npm run lint -- --draft cover.md --facts facts.json --outdir out/
+
+# Strict mode (exit 1 on unmatched)
+npm run lint -- --draft cover.md --facts facts.json --strict
+
+# Test with fixtures
+npm run test:fixtures
+
+# Run unit tests
+npm test
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - Keyword/regex heuristics, no LLM, no network
+- ✅ **Never invents compensation, titles, or employers** - Only flags claims not in facts
+- ✅ **Facts-only reminder** - All outputs remind Career to use existing career-os claims
+- ✅ **Fail-closed** - Unknown/ambiguous cases default to unmatched
+- ⚠️ **Career bot owns apply** - This is a facts-check aid, not an auto-apply system
+- ⚠️ **No LinkedIn send** - Career bot handles all application sends
+
+### Linting Heuristics
+
+- Extract sentence-level claims from draft
+- Fuzzy/token overlap matching against facts
+- Flag numbers/$ amounts in draft not present in facts
+- Flag employer/title tokens not in facts
+- Fail closed on unknowns
+
+### Facts File Format (Flexible)
+
+```json
+{ "claims": ["fact 1", "fact 2", ...] }
+{ "bullets": ["point 1", "point 2", ...] }
+["fact 1", "fact 2", ...]  (flat array)
+```
+
+### Output Files
+
+- `report.json` - Matched/unmatched/suspicious phrases
+- `report.md` - Numbered findings (NO invented rewrites)
+- `APPROVAL.md` - Career owns apply; never invents claims
+- `manifest.json` - Run metadata
+
+### Exit Codes
+
+- **0** - Ran successfully (even if unmatched found)
+- **1** - Bad input or strict mode violations
+
+[→ Full README](./career-cover-letter-facts-lint/README.md)
 
 ---
 
