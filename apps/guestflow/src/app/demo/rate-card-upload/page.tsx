@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Upload, AlertCircle, CheckCircle, Trash2 } from 'lucide-react'
 import { DemoAuthGuard } from '@/components/DemoAuthGuard'
+import { useTenant } from '@/components/TenantContext'
 
 export default function RateCardUploadPage() {
+  const { selectedTenantId } = useTenant()
   const [fileContent, setFileContent] = useState('')
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -43,12 +45,15 @@ Garden Room,high,2200,ZAR,2,2026-12-15,2027-01-15,Holiday rates`
 ]`
 
   useEffect(() => {
-    fetchExistingRates()
-  }, [])
+    if (selectedTenantId !== null) {
+      fetchExistingRates()
+    }
+  }, [selectedTenantId])
 
   const fetchExistingRates = async () => {
+    if (selectedTenantId === null) return
     try {
-      const response = await fetch('/api/rate-cards')
+      const response = await fetch(`/api/rate-cards?tenant_id=${selectedTenantId}`)
       const data = await response.json()
       setExistingRates(data.rateCards || [])
     } catch (error) {
@@ -94,6 +99,12 @@ Garden Room,high,2200,ZAR,2,2026-12-15,2027-01-15,Holiday rates`
   }
 
   const handleUpload = async () => {
+    if (selectedTenantId === null) {
+      setUploadStatus('error')
+      setErrorMessage('No tenant selected')
+      return
+    }
+
     setUploadStatus('idle')
     setErrorMessage('')
     setLoading(true)
@@ -119,7 +130,7 @@ Garden Room,high,2200,ZAR,2,2026-12-15,2027-01-15,Holiday rates`
       const response = await fetch('/api/rate-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rateCards })
+        body: JSON.stringify({ rateCards, tenant_id: selectedTenantId })
       })
 
       const result = await response.json()
@@ -141,13 +152,15 @@ Garden Room,high,2200,ZAR,2,2026-12-15,2027-01-15,Holiday rates`
   }
 
   const handleClearRates = async () => {
+    if (selectedTenantId === null) return
+    
     if (!confirm('Delete all rate cards for this tenant? This cannot be undone.')) {
       return
     }
 
     setLoading(true)
     try {
-      const response = await fetch('/api/rate-cards', { method: 'DELETE' })
+      const response = await fetch(`/api/rate-cards?tenant_id=${selectedTenantId}`, { method: 'DELETE' })
       if (response.ok) {
         await fetchExistingRates()
         setUploadStatus('idle')

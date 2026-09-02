@@ -302,6 +302,10 @@ async function runTests() {
   } else {
     fail(`Demo seed API: Expected 200, got ${seedResponse.status}`);
   }
+
+  // Test Phase 10 tenant-scoped APIs
+  await testRoute('/api/leads?tenant_id=1', 'Leads API with tenant filter (Phase 10)', { expectedStatus: 200 });
+  await testRoute('/api/rate-cards?tenant_id=1', 'Rate cards API with tenant filter (Phase 10)', { expectedStatus: 200 });
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });

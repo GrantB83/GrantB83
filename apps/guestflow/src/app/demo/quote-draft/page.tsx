@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Download, Printer } from 'lucide-react'
+import { useTenant } from '@/components/TenantContext'
 
 export default function QuoteDraftPage() {
+  const { selectedTenantId } = useTenant()
   const [generated, setGenerated] = useState(false)
   const [rateCards, setRateCards] = useState<any[]>([])
   const [hasRates, setHasRates] = useState(false)
@@ -20,12 +22,15 @@ export default function QuoteDraftPage() {
   }
 
   useEffect(() => {
-    fetchRateCards()
-  }, [])
+    if (selectedTenantId !== null) {
+      fetchRateCards()
+    }
+  }, [selectedTenantId])
 
   const fetchRateCards = async () => {
+    if (selectedTenantId === null) return
     try {
-      const response = await fetch('/api/rate-cards')
+      const response = await fetch(`/api/rate-cards?tenant_id=${selectedTenantId}`)
       const data = await response.json()
       setRateCards(data.rateCards || [])
       setHasRates(data.rateCards && data.rateCards.length > 0)
