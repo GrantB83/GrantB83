@@ -28,6 +28,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
+| [hm-quote-to-pod](#hm-quote-to-pod) | Map quote.json into pod.json stub for hm-delivery-pod-draft field bridge | SA Ops / Heavy Metal | **Offline**. No LLM. Never invents volume/signature/price. Field bridge only. |
 | [hm-delivery-pod-draft](#hm-delivery-pod-draft) | Generate DRAFT proof-of-delivery notes from Heavy Metal delivery data | SA Ops / Heavy Metal | **Offline**. No auto-send. Never invents volumes/signatures. JSON or paste text input. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
@@ -1327,6 +1328,101 @@ npm run test:fixtures
 - **Automation Target:** structured-whatsapp-quotes
 
 [→ Full README](./hm-quote-intake/README.md)
+
+---
+
+## hm-quote-to-pod
+
+**One-line:** Map quote.json (from hm-quote-intake) into pod.json stub suitable for hm-delivery-pod-draft.
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-quote-to-pod/`
+
+### Install and Run
+
+```bash
+cd tools/hm-quote-to-pod
+npm install
+npm run build
+
+# Basic mapping
+npm run map -- --quote path/to/quote.json
+
+# Custom output directory
+npm run map -- --quote quote.json --outdir out/
+
+# With additional notes
+npm run map -- --quote quote.json --notes "Rush delivery"
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No LLM, no APIs, no network calls
+- ✅ **Field bridge only** - Maps known fields, leaves missing fields undefined
+- ✅ **Never invents volume** - If missing in quote, stays missing in pod
+- ✅ **Never invents signature** - signedBy always undefined (manual only)
+- ✅ **Never invents price** - Pricing not carried to pod.json
+- ✅ **Takes first material** - If multiple materials in quote, uses materials[0]
+- ✅ **Read-only** - Never modifies source quote.json
+- ⚠️ **Human review required** - Always review APPROVAL.md before using pod.json
+
+### Field Mapping
+
+**From quote.json to pod.json:**
+
+| Quote Field        | POD Field         | Notes                              |
+|--------------------|-------------------|------------------------------------|
+| customerName       | customer          | Direct copy                        |
+| customerPhone      | phone             | Direct copy                        |
+| materials[0]       | material          | First material only                |
+| volume             | volume            | Only if present (never invented)   |
+| volumeUnit         | unit              | Direct copy                        |
+| deliveryLocation   | deliveryLocation  | Direct copy                        |
+| dateNeeded         | deliveredAt       | Placeholder (update with actual)   |
+| notes              | notes             | Copy + append --notes if provided  |
+| —                  | vehicle           | Not in quote; left undefined       |
+| —                  | driver            | Not in quote; left undefined       |
+| —                  | signedBy          | NEVER populated (manual only)      |
+
+### Output Files
+
+- `pod.json` - Mapped POD stub for hm-delivery-pod-draft
+- `mapping.md` - Field-by-field mapping report (carried vs missing)
+- `APPROVAL.md` - Review document with safety checklist
+- `manifest.json` - Metadata about the mapping
+
+### Use Case
+
+Bridges the gap between `hm-quote-intake` output and `hm-delivery-pod-draft` input:
+
+```bash
+# Step 1: Extract quote from inquiry
+cd tools/hm-quote-intake
+npm run intake -- --text inquiry.txt --outdir quote-out/
+
+# Step 2: Map quote to POD stub
+cd ../hm-quote-to-pod
+npm run map -- --quote ../hm-quote-intake/quote-out/quote.json --outdir pod-stub/
+
+# Step 3: [Manual] Edit pod.json to add vehicle, driver, actual delivery time
+
+# Step 4: Generate POD draft
+cd ../hm-delivery-pod-draft
+npm run draft -- --pod ../hm-quote-to-pod/pod-stub/pod.json
+```
+
+### Entity Context
+
+- **Lane:** heavy-metal
+- **Trading Name:** Heavy Metal Sand & Stone
+- **Location:** Dullstroom (yard)
+- **Automation Target:** Bridge step in structured-whatsapp-quotes → POD generation workflow
+
+[→ Full README](./hm-quote-to-pod/README.md)
 
 ---
 
