@@ -10,6 +10,11 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
+| [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
+| [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
+| [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
+| [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
+| [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 
 ---
 
@@ -157,29 +162,215 @@ npm run prep -- \
 
 ---
 
-## Browns Pipeline Tools (Planned)
+## browns-inquiry-intake
 
-The following tools are referenced in `docs/automation/SPEC.md` for SA Ops/CoS workflows but are **not yet implemented**:
+**One-line:** Extract structured booking and quote JSON from freeform inquiry text (email/WhatsApp paste).
 
-- **browns-inquiry-intake** - Structure hospitality inquiries (dates, guests, property) before draft replies
-- **browns-guest-comms-draft** - Draft guest communication sequences (ack, quote, pre-arrival, review request)
-- **browns-quote-invoice-draft** - Generate quotes and invoices with rate-card enforcement
-- **browns-daily-ops-brief** - Compile daily SA operations digest (arrivals, departures, delivery-day)
-- **browns-ota-rate-worksheet** - Rate card calculations for OTA channel management
+**Owning desk(s):** SA Ops / CoS
 
-### Pipeline Note
+**Location:** `tools/browns-inquiry-intake/`
 
-When these tools are added, the Browns inquiry-to-guest workflow will be:
+### Install and Run
+
+```bash
+cd tools/browns-inquiry-intake
+npm install
+npm run build
+
+# Extract from text file
+npm run intake -- --text inquiry.txt --outdir out/
+
+# Extract from stdin
+cat inquiry.txt | npm run intake -- --stdin
+
+# Extract only booking or quote mode
+npm run intake -- --text inquiry.txt --mode booking
+```
+
+### Critical Safety Note
+
+- ✅ **No LLM API calls** - Heuristic extraction only
+- ✅ **No WhatsApp Cloud API** - WhatsApp stays on CoS
+- ✅ **No auto-send** - DRAFT outputs only
+- ✅ **Never invents rates or amounts** - Only extracts if explicitly present with currency
+- ✅ **Offline only** - No Gmail, NightsBridge, or browser
+- ⚠️ **Human approval required** - Always review APPROVAL.md before using outputs
+
+[→ Full README](./browns-inquiry-intake/README.md)
+
+---
+
+## browns-guest-comms-draft
+
+**One-line:** Generate DRAFT guest welcome communications (WhatsApp/email) from booking JSON.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-guest-comms-draft/`
+
+### Install and Run
+
+```bash
+cd tools/browns-guest-comms-draft
+npm install
+npm run build
+
+# Basic usage
+npm run draft -- --booking booking.json --outdir out/
+
+# With seed samples and brand facts
+npm run draft -- \
+  --booking booking.json \
+  --seeds /workspace/redacted-seeds/ \
+  --facts /workspace/stay-knowledge/the-browns.md \
+  --outdir drafts/
+```
+
+### Critical Safety Note
+
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **Offline only** - No Gmail/WhatsApp/NightsBridge APIs
+- ✅ **Never invents rates or check-in times** - Uses placeholders or omits
+- ✅ **Seed-based tone** - Learns from redacted samples (no PII in git)
+- ⚠️ **Approval gates** - H1/H2 required per `docs/automation/approval-gates.md`
+- ⚠️ **CoS only for WhatsApp** - Sends must use Coexistence of Service
+
+[→ Full README](./browns-guest-comms-draft/README.md)
+
+---
+
+## browns-quote-invoice-draft
+
+**One-line:** Generate DRAFT quote and proforma invoice communications from booking/quote JSON.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-quote-invoice-draft/`
+
+### Install and Run
+
+```bash
+cd tools/browns-quote-invoice-draft
+npm install
+npm run build
+
+# With amounts (full quote)
+npm run draft -- --quote quote.json --outdir out/
+
+# Without amounts (availability confirmation only)
+npm run draft -- --quote quote-no-amounts.json --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **DRAFT ONLY** - Never sends email or WhatsApp
+- ✅ **Never invents rates or amounts** - Missing amounts = availability-only drafts
+- ✅ **No payment processing** - No payment links or transactions
+- ✅ **Offline only** - No APIs or network calls
+- ⚠️ **Grant approval required** - Review APPROVAL.md before every send
+- ⚠️ **CoS only for WhatsApp** - Sends must use Coexistence of Service
+
+[→ Full README](./browns-quote-invoice-draft/README.md)
+
+---
+
+## browns-daily-ops-brief
+
+**One-line:** Generate daily team operations brief from bookings (arrivals, in-house, departures).
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-daily-ops-brief/`
+
+### Install and Run
+
+```bash
+cd tools/browns-daily-ops-brief
+npm install
+npm run build
+
+# Basic usage
+npm run brief -- --day 2026-09-20 --bookings bookings.json --outdir out/
+
+# With daily facts
+npm run brief -- \
+  --day 2026-09-20 \
+  --bookings bookings.json \
+  --facts facts.json \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **DRAFT ONLY** - Never sends WhatsApp messages automatically
+- ✅ **Offline only** - No WhatsApp API or NightsBridge integration
+- ✅ **Never invents rates or guest data** - Only formats what you provide
+- ✅ **Flags late check-ins** - Highlights timing coordination needs
+- ⚠️ **Manual send required** - Copy/paste to team WhatsApp after approval
+- ⚠️ **CoS only for WhatsApp** - Team sends must use Coexistence of Service
+
+[→ Full README](./browns-daily-ops-brief/README.md)
+
+---
+
+## browns-ota-rate-worksheet
+
+**One-line:** Generate OTA promotional rate worksheets for Nightsbridge manual entry.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ota-rate-worksheet/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ota-rate-worksheet
+npm install
+npm run build
+
+# Base rates only
+npm run worksheet -- --rates rates.csv --outdir reports/
+
+# Rates with promotions
+npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Booking.com or NightsBridge APIs
+- ✅ **Never invents rates** - Blanks stay blank, drafts stay draft
+- ✅ **No auto-apply** - Manual Nightsbridge entry only
+- ✅ **Clear flagging** - Missing data explicitly marked
+- ⚠️ **Grant approval required** - APPROVAL.md must be signed before OTA changes
+- ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
+
+[→ Full README](./browns-ota-rate-worksheet/README.md)
+
+---
+
+## Browns Pipeline Flow
+
+The Browns guest-flow tools work together in this pipeline:
 
 ```
-browns-inquiry-intake
+Inquiry (email/WhatsApp) 
     ↓
-browns-guest-comms-draft  ←→  browns-quote-invoice-draft
+browns-inquiry-intake (extract structured JSON)
     ↓
-browns-daily-ops-brief
+    ├──→ browns-guest-comms-draft (welcome messages)
+    ├──→ browns-quote-invoice-draft (quotes/invoices)
+    └──→ browns-daily-ops-brief (team coordination)
+
+browns-ota-rate-worksheet (separate: rate card → OTA entry)
 ```
 
-With `browns-ota-rate-worksheet` as a separate rate-card calculation tool.
+### Pipeline Rules
+
+1. **WhatsApp sends via CoS only** - Coexistence of Service is the approved WhatsApp platform
+2. **Never invent rates or amounts** - Tools pass through provided data or leave blank
+3. **DRAFT-only outputs** - All guest-facing comms require H1/H2 approval gates
+4. **Offline operation** - No live API connections to WhatsApp, Gmail, or NightsBridge
+5. **Human review required** - Every tool generates APPROVAL.md for sign-off
 
 ---
 
