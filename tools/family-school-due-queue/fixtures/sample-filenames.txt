@@ -1,0 +1,12 @@
+# Sample filenames for testing
+
+permission-slip-field-trip-2026-09-06.pdf
+picture-day-form.pdf
+volunteer-signup-due-monday.docx
+emergency-contacts-form-deadline-9-12.pdf
+school-supply-list-fall-2026.pdf
+lunch-menu-september.pdf
+rsvp-assembly-by-sept-8.pdf
+registration-after-school-2026-09-30.pdf
+report-card-available-9-25.pdf
+early-dismissal-notice-2026-09-20.pdf

@@ -22,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
+| [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar pass-through only. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
@@ -879,6 +880,88 @@ npm run test:fixtures
 - ⚠️ **For Grant/Liana only** - Not for automated client/school communication
 
 [→ Full README](./family-school-subject-digest/README.md)
+
+---
+
+## family-school-due-queue
+
+**One-line:** Extract due/deadline signals from school email subjects or filename lists for Family / CoS morning digest.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-school-due-queue/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-due-queue
+npm install
+npm run build
+
+# From email subjects only
+npm run queue -- --subjects subjects.txt --outdir out/
+
+# From filenames only
+npm run queue -- --files filenames.txt --outdir out/
+
+# From both subjects and filenames
+npm run queue -- --subjects subjects.txt --files filenames.txt --outdir out/
+
+# With custom as-of date
+npm run queue -- --subjects subjects.txt --as-of 2026-09-15 --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Gmail API or network calls
+- ✅ **Subjects/filenames only** - Never opens email bodies or attachments
+- ✅ **No invented dates** - Only extracts dates explicitly present in text
+- ✅ **Heuristic extraction** - Date/keyword signals may have false positives
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email automatically
+- ⚠️ **Family bot owns send path** - WhatsApp digest posting via Family bot / CoS only
+- ⚠️ **For Grant/Liana only** - Not for automated school communication
+
+### Heuristic Patterns
+
+**Date formats:**
+- ISO dates (YYYY-MM-DD)
+- US dates (M/D, MM/DD/YYYY)
+- Relative dates (due Friday, by Monday)
+
+**Action keywords:**
+- due, deadline, by, before
+- permission slip, form, rsvp, sign
+- picture day, volunteer, field trip
+- registration, enrollment
+- parent conference, report card
+- reminder, urgent, submission
+
+### Output Files
+
+- `queue.json` - Structured queue data with due dates and signals
+- `queue.md` - Numbered human-readable list (sorted by due date)
+- `missing-signals.md` - Items with no recognized signals
+- `APPROVAL.md` - Safety gates and ownership
+- `manifest.json` - Run metadata
+
+### Integration with family-morning-digest-pack
+
+This tool feeds into `family-morning-digest-pack` for automated morning digest assembly:
+
+```bash
+# Step 1: Extract due queue
+cd tools/family-school-due-queue
+npm run queue -- --subjects subjects.txt --outdir due-queue/
+
+# Step 2: Assemble morning digest
+cd ../family-morning-digest-pack
+npm run pack -- --date 2026-09-02 --subjects ../family-school-due-queue/due-queue/queue.json
+```
+
+[→ Full README](./family-school-due-queue/README.md)
 
 ---
 
