@@ -23,6 +23,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
+| [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 
 ---
 
@@ -722,6 +723,111 @@ npm run doctor -- --catalog tools/README.md --toolsDir tools
 - ⚠️ **Catches catalog corruption** - Detects missing tools, duplicates, and structural errors
 
 [→ Full README](./tools-catalog-doctor/README.md)
+
+---
+
+## drive-pdf-upload-prep
+
+**One-line:** Offline CLI to prepare PDF files for Google Drive MCP `create_file` by converting to base64 JSON payloads with auto-compression.
+
+**Owning desk(s):** Perfect Water / CoS / Hospitality Ops
+
+**Location:** `tools/drive-pdf-upload-prep/`
+
+### Install and Run
+
+#### System Dependencies
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y ghostscript poppler-utils
+
+# macOS
+brew install ghostscript poppler
+
+# Alpine (Cloud Agent VMs)
+apk add ghostscript poppler-utils
+```
+
+#### Python Setup
+
+```bash
+cd tools/drive-pdf-upload-prep
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Process all PDFs in a directory
+python upload_prep.py \
+  --input-dir invoices/ \
+  --parent-id 1A2B3C4D5E6F \
+  --output-dir out/
+
+# Process specific files
+python upload_prep.py \
+  --input-files invoice1.pdf invoice2.pdf \
+  --parent-id 1A2B3C4D5E6F \
+  --output-dir prepared/
+
+# Test with fixtures
+python test_fixtures.py
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Drive API calls from this tool
+- ✅ **Never invents data** - Purely encodes existing PDFs
+- ✅ **Read-only** - Never modifies original PDF files
+- ✅ **Preserves originals** - Compressed PDFs are intermediate (not saved)
+- ✅ **Compression is lossy** - Rasterizes to greyscale JPEG when needed
+- ⚠️ **Base64 size limits** - Drive MCP may fail if JSON still exceeds ~15KB
+- ⚠️ **One file at a time** - Upload JSONs sequentially with Drive MCP (not batch)
+- ⚠️ **Review manifest** - Check `compressed: true` entries for quality before upload
+
+### Why This Tool Exists
+
+Hospitality Google Drive MCP `create_file` reliably accepts ~≤15KB base64 payloads but fails/stalls on full ~18–25KB invoice PDFs when embedded in `CallMcpTool` from subagents. This tool provides repeatable offline prep for bots (Perfect Water, Coding, CoS).
+
+### Output Structure
+
+Generates one JSON per PDF ready for Drive MCP `create_file`:
+
+```json
+{
+  "title": "invoice-001.pdf",
+  "parentId": "1A2B3C4D5E6F",
+  "contentMimeType": "application/pdf",
+  "disableConversionToGoogleType": true,
+  "base64Content": "JVBERi0xLjQKJeLjz9MK..."
+}
+```
+
+Plus `manifest.json` tracking compression outcomes and file sizes.
+
+### Bot Integration
+
+```python
+# Step 1: Prep PDFs offline
+subprocess.run(['python', 'tools/drive-pdf-upload-prep/upload_prep.py',
+                '--input-dir', 'invoices/', '--parent-id', '1A2B3C',
+                '--output-dir', 'drive-payloads/'])
+
+# Step 2: Upload with Drive MCP (one at a time)
+with open('drive-payloads/manifest.json') as f:
+    manifest = json.load(f)
+
+for file_info in manifest['files']:
+    json_path = Path('drive-payloads') / file_info['json_output']
+    with open(json_path) as f:
+        payload = json.load(f)
+    
+    # Use hospitality Google-drive MCP
+    result = await mcp.call_tool(server='Google-drive',
+                                   tool='create_file',
+                                   arguments=payload)
+```
+
+[→ Full README](./drive-pdf-upload-prep/README.md)
 
 ---
 

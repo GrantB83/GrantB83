@@ -1,0 +1,12 @@
+# Drive PDF Upload Prep Dependencies
+# Python 3.8+
+
+# PDF to image conversion and image processing
+Pillow>=10.0.0
+
+# Image to PDF conversion
+img2pdf>=0.5.0
+
+# Note: System dependencies required (install via apt/brew/etc):
+# - ghostscript (gs command)
+# - poppler-utils (pdftoppm command)
