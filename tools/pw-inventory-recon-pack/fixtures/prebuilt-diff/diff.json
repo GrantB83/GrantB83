@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "store": "LT",
+      "item": "Water 5L",
+      "received": 100,
+      "counted": 95,
+      "delta": -5,
+      "unit": "bottles"
+    },
+    {
+      "store": "Tho",
+      "item": "Filter Cartridge",
+      "received": 20,
+      "counted": 18,
+      "delta": -2,
+      "unit": "units"
+    },
+    {
+      "store": "LT",
+      "item": "Salt 25kg",
+      "received": 10,
+      "counted": 12,
+      "delta": 2,
+      "unit": "bags"
+    }
+  ],
+  "totalReceived": 130,
+  "totalCounted": 125,
+  "totalDelta": -5,
+  "missingInGRV": [],
+  "missingInStocktake": [],
+  "rejectedGRV": [],
+  "rejectedStocktake": []
+}

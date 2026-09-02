@@ -15,6 +15,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [pw-rejected-csv-digest](#pw-rejected-csv-digest) | Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose | Perfect Water / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Read-only. |
+| [pw-inventory-recon-pack](#pw-inventory-recon-pack) | Orchestrate PW inventory recon pack (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest) | Perfect Water / CoS | **Offline orchestrator**. Amounts stay in files. PACK.md = index + counts only. H3 gate reminder. Never invents quantities. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
@@ -583,6 +584,65 @@ npm run digest -- --csv rejected.csv --outdir out/ \
 Digest one or more `rejected.csv` files produced by sibling normalizers (pw-grv-csv-normalize, pw-stocktake-csv-normalize, pw-bank-csv-normalize, pw-ordered-vs-sold-diff, etc.) into a structured human review pack. Classifies rejection reasons heuristically from common columns (RejectionReason, Error, Notes) or from blank required fields. Perfect Water / CoS can review multi-file rejection patterns without hunting through individual CSVs.
 
 [→ Full README](./pw-rejected-csv-digest/README.md)
+
+---
+
+## pw-inventory-recon-pack
+
+**One-line:** Offline orchestrator for Perfect Water inventory recon pack assembly (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest).
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-inventory-recon-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-inventory-recon-pack
+npm install
+npm run build
+
+# Mode A: Prebuilt diff outputs
+npm run pack -- --diff-outdir ../pw-grv-vs-stocktake-diff/out --outdir pack-out/
+
+# Mode B: Prebuilt normalized CSVs
+npm run pack -- \
+  --grv grv-normalized.csv \
+  --stocktake stocktake-normalized.csv \
+  --outdir pack-out/
+
+# Mode C: Raw CSVs with full orchestration
+npm run pack -- \
+  --grv-raw raw-grv.csv \
+  --stock-raw raw-stocktake.csv \
+  --run-normalize \
+  --run-rejected-digest \
+  --outdir pack-out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - All amounts from source CSVs only
+- ✅ **Read-only** - Never modifies source CSV files or inventory systems
+- ✅ **File-based** - All amounts stay in files
+- ✅ **PACK.md = counts only** - Index with row/key counts, no quantity/amount tables in prose
+- ✅ **Exit 1 on bad input** - Missing inputs or sibling tool failures caught early
+- ⚠️ **Perfect Water owns ops** - PW owns all inventory decisions
+- ⚠️ **H3 gate** - Inventory decisions require approval per approval-gates.md
+
+### Output Files
+
+- `PACK.md` - Index with row/key counts only (NO quantity/amount tables in prose)
+- `APPROVAL.md` - H3-style gate reminder, PW ownership, offline-only constraint
+- `manifest.json` - Run metadata
+- Copies/pointers: `diff.md`, `diff.json`, `missing-keys.md`, `DIGEST.md` (if rejected digest run)
+
+### Use Case
+
+Assemble a complete Perfect Water inventory reconciliation pack by orchestrating sibling tools and bundling outputs into one deliverable. Supports three input modes: prebuilt diff outputs, prebuilt normalized CSVs, or raw CSVs with normalization. Optionally runs pw-rejected-csv-digest on rejected.csv outputs. Amounts and quantities stay in files, never in PACK.md prose.
+
+[→ Full README](./pw-inventory-recon-pack/README.md)
 
 ---
 
