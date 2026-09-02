@@ -18,8 +18,8 @@ browns-ct-pack-assemble - Assemble CoS Browns CT timed packs
 
 PURPOSE:
   Orchestrate offline Browns tools into one dated pack folder for WhatsApp Admin.
-  CT packs have timed posts: same-day morning drafts by 20:00 CT, after-hours
-  check-ins by 09:00, staff ops brief at 21:00. NEVER auto-send.
+  CT = America/Chicago timezone. Timed posts: same-day morning drafts by 20:00 CT,
+  after-hours check-ins by 09:00 CT, staff ops brief at 21:00 CT. NEVER auto-send.
 
 USAGE:
   npm run assemble -- --day YYYY-MM-DD --outdir out/ct-YYYY-MM-DD/ [options]
@@ -225,12 +225,20 @@ async function main(): Promise<void> {
   
   if (options['run-change-check']) {
     console.log('\\n🔧 Running browns-booking-change-check...');
-    console.warn('⚠️  Note: browns-booking-change-check tool does not exist yet');
-    console.log('   Skipping change-check for now');
-    // TODO: Implement when change-check tool exists
-    // const changeCheckOutput = join(options.outdir, 'change-check-temp');
-    // await runSiblingTool(...);
-    packResults.ranFlags.ranChangeCheck = false;
+    try {
+      const changeCheckOutput = resolve(join(options.outdir, 'change-check-temp'));
+      const args = ['--before', resolve(options.before!), '--after', resolve(options.after!), '--outdir', changeCheckOutput];
+      if (options.day) {
+        args.push('--day', options.day);
+      }
+      await runSiblingTool('browns-booking-change-check', args, toolsDir);
+      packResults.changeCheckOutput = changeCheckOutput;
+      console.log('✓ Change check completed');
+      packResults.ranFlags.ranChangeCheck = true;
+    } catch (err: any) {
+      console.error(`❌ Change check failed: ${err.message}`);
+      process.exit(1);
+    }
   }
   
   if (options['run-daily-ops'] && options.bookings) {

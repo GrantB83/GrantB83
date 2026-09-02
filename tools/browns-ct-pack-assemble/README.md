@@ -1,12 +1,12 @@
 # Browns CT Pack Assembler
 
-An offline command-line orchestrator that assembles Browns CT (Centurion Township) timed packs for CoS WhatsApp Admin. Combines outputs from multiple existing offline tools into one dated pack folder ready for manual WhatsApp approval and send.
+An offline command-line orchestrator that assembles Browns CT timed packs for CoS WhatsApp Admin. **CT = America/Chicago timezone** for timed operations at The Browns Dullstroom. Combines outputs from multiple existing offline tools into one dated pack folder ready for manual WhatsApp approval and send.
 
 Part of the Browns guest-flow automation for **Dullstroom The Browns Luxury Guest Suites**.
 
 ## Purpose
 
-CoS runs timed Browns CT packs for same-day operations coordination:
+CoS runs timed Browns CT packs for same-day operations coordination (CT = Chicago Time):
 - **20:00 CT**: Same-day morning guest drafts (welcome messages for arrivals)
 - **09:00 CT (next morning)**: After-hours check-ins review
 - **21:00 CT**: Staff ops brief for team WhatsApp

@@ -699,7 +699,7 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 
 ## browns-ct-pack-assemble
 
-**One-line:** Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs into one dated pack folder.
+**One-line:** Assemble CoS Browns CT timed packs from sibling tool outputs (CT = America/Chicago timezone).
 
 **Owning desk(s):** SA Ops / CoS
 

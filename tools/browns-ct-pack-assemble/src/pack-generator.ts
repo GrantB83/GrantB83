@@ -17,7 +17,7 @@ export function generatePackIndex(
   lines.push('');
   lines.push('## Purpose');
   lines.push('');
-  lines.push('CoS runs timed Browns CT packs for same-day operations:');
+  lines.push('CoS runs timed Browns CT packs for same-day operations (CT = America/Chicago timezone):');
   lines.push('- **20:00 CT**: Same-day morning guest drafts');
   lines.push('- **09:00 CT**: After-hours check-ins');
   lines.push('- **21:00 CT**: Staff ops brief');

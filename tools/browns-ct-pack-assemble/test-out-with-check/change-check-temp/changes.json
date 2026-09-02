@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "adds": 0,
+    "removes": 0,
+    "updates": 1,
+    "total": 1,
+    "beforeHash": "77f47d8d0c969f1c",
+    "afterHash": "ad0b326f6ab16aae"
+  },
+  "changes": [
+    {
+      "type": "update",
+      "key": "id:book-001",
+      "before": {
+        "id": "book-001",
+        "guestName": "Original Guest",
+        "suite": "Suite 1",
+        "checkIn": "2026-09-20",
+        "checkOut": "2026-09-22"
+      },
+      "after": {
+        "id": "book-001",
+        "guestName": "Updated Guest Name",
+        "suite": "Suite 2",
+        "checkIn": "2026-09-20",
+        "checkOut": "2026-09-23"
+      },
+      "fields": [
+        "guestName"
+      ]
+    }
+  ]
+}

@@ -56,7 +56,7 @@ export async function writeOutputs(
   });
   console.log('  ✓ Wrote APPROVAL.md');
   
-  // 3. Copy changes.md if change-check was run or before/after provided
+  // 3. Copy changes.md if change-check was run
   if (packResults.changeCheckOutput && existsSync(packResults.changeCheckOutput)) {
     const changesMdPath = join(packResults.changeCheckOutput, 'changes.md');
     if (existsSync(changesMdPath)) {
@@ -66,9 +66,9 @@ export async function writeOutputs(
         type: 'changes',
         description: 'Booking change check output',
       });
-      console.log('  ✓ Copied changes.md');
+      console.log('  ✓ Copied changes.md from change-check');
     }
-  } else if (sourcesProvided.beforeAfter) {
+  } else if (sourcesProvided.beforeAfter && !packResults.ranFlags.ranChangeCheck) {
     // Placeholder if before/after were provided but tool wasn't run
     const placeholderChanges = generateChangesPlaceholder();
     writeFileSync(join(options.outdir, 'changes.md'), placeholderChanges, 'utf-8');

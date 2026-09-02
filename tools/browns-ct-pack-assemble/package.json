@@ -1,7 +1,7 @@
 {
   "name": "browns-ct-pack-assemble",
   "version": "1.0.0",
-  "description": "Offline CLI assembler for CoS Browns CT (Centurion Township) timed packs",
+  "description": "Offline CLI assembler for CoS Browns CT timed packs (CT = America/Chicago timezone)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

@@ -1,0 +1,20 @@
+[
+  {
+    "filename": "changes.json",
+    "type": "changes-json",
+    "recordCount": 1
+  },
+  {
+    "filename": "changes.md",
+    "type": "changes-md",
+    "recordCount": 1
+  },
+  {
+    "filename": "APPROVAL.md",
+    "type": "approval"
+  },
+  {
+    "filename": "manifest.json",
+    "type": "manifest"
+  }
+]
