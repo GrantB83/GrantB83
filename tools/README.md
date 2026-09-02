@@ -12,6 +12,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
+| [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
@@ -268,6 +269,45 @@ npm run prep -- \
 - ⚠️ **Manual step required** - Follow the generated `checklist.md` for Chrome workflow
 
 [→ Full README](./suno-package-prep/README.md)
+
+---
+
+## family-school-subject-digest
+
+**One-line:** Generate family school/admin morning digest from email subject lines.
+
+**Owning desk(s):** Family Command Center
+
+**Location:** `tools/family-school-subject-digest/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-subject-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --input subjects.txt --outdir out/
+
+# With custom date and timezone
+npm run digest -- --input subjects.txt --date 2026-09-15 --timezone America/Chicago
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **No LLM** - Keyword classification heuristics only
+- ✅ **No invented data** - Due dates and amounts only extracted if explicitly present
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **No school facts** - Never invents teacher names, school policies, or deadlines
+- ⚠️ **Family bot owns send path** - WhatsApp digest sending via Family bot / CoS only
+- ⚠️ **For Grant/Liana only** - Not for automated client/school communication
+
+[→ Full README](./family-school-subject-digest/README.md)
 
 ---
 
