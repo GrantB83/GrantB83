@@ -282,7 +282,7 @@ async function runTests() {
   await testRoute('/api/tenants', 'Tenants API (GET)', { expectedStatus: 200 });
   await testRoute('/api/properties', 'Properties API (GET)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards', 'Rate cards API (GET)', { expectedStatus: 200 });
-  await testRoute('/api/bookings', 'Bookings API (GET)', { expectedStatus: 200 });
+  await testRoute('/api/bookings?tenant_id=1', 'Bookings API (GET with tenant)', { expectedStatus: 200 });
   
   // Test Phase 8 quote export API (POST)
   const sampleQuoteExport = {
