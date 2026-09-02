@@ -1,0 +1,6 @@
+Store,SKU/Item,ReceivedQty,Unit,ReceivedAt,Supplier,DocNo,Notes
+LT,Water 5L,100,bottles,2026-09-01,Acme Water,GRV001,Morning delivery
+LT,Water 10L,50,bottles,2026-09-01,Acme Water,GRV001,
+Tho,Water 5L,80,bottles,2026-09-01,Acme Water,GRV002,
+Tho,Filter Cartridge,20,units,2026-09-01,Filter Co,GRV003,
+LT,Salt 25kg,10,bags,2026-09-01,Salt Supplier,GRV004,Not counted yet
