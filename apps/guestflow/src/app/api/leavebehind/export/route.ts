@@ -1,11 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDb } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { format = 'markdown' } = body
 
-    const markdown = generateMarkdownLeaveBehind()
+    // Fetch real data from database for Phase 15
+    const db = getDb()
+    
+    const waitlistCount = db.prepare('SELECT COUNT(*) as count FROM waitlist').get() as { count: number }
+    const leadsByStatus = db.prepare(`
+      SELECT 
+        COALESCE(status, 'new') as status,
+        COUNT(*) as count 
+      FROM waitlist 
+      GROUP BY status
+    `).all() as Array<{ status: string; count: number }>
+
+    const recentLeads = db.prepare(`
+      SELECT name, property_name, room_count, created_at 
+      FROM waitlist 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `).all() as Array<{ name: string; property_name: string; room_count: string; created_at: string }>
+
+    const markdown = generateMarkdownLeaveBehind({
+      waitlistCount: waitlistCount.count,
+      leadsByStatus,
+      recentLeads
+    })
 
     if (format === 'html') {
       const html = markdownToSimpleHTML(markdown)
@@ -34,7 +58,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateMarkdownLeaveBehind(): string {
+interface LeaveBehindData {
+  waitlistCount: number
+  leadsByStatus: Array<{ status: string; count: number }>
+  recentLeads: Array<{ name: string; property_name: string; room_count: string; created_at: string }>
+}
+
+function generateMarkdownLeaveBehind(data: LeaveBehindData): string {
+  const statusBreakdown = data.leadsByStatus
+    .map(s => `  - ${s.status}: ${s.count}`)
+    .join('\n')
+
+  const recentLeadsText = data.recentLeads.length > 0
+    ? data.recentLeads
+        .map(l => `  - ${l.name} (${l.property_name}, ${l.room_count} rooms) — ${new Date(l.created_at).toLocaleDateString()}`)
+        .join('\n')
+    : '  - No leads yet'
+
   return `# GuestFlow Platform Overview
 
 **Multi-Property Guest Operations Platform**  
@@ -47,6 +87,20 @@ _Built by guesthouse owners, for guesthouse operators_
 GuestFlow automates the operational heavy lifting for multi-property guesthouse portfolios. From inquiry to checkout, manage all your properties in one tenant-scoped platform.
 
 **Current Status:** Demo/Waitlist phase. Built with proven workflows from The Browns portfolio (Dullstroom + regional properties).
+
+---
+
+## Waitlist & CRM Summary (Real Data)
+
+**Total Waitlist Leads:** ${data.waitlistCount}
+
+**Status Breakdown:**
+${statusBreakdown}
+
+**Recent Inquiries (Last 5):**
+${recentLeadsText}
+
+**Demo Walkthrough:** [http://localhost:3100/demo/walkthrough](http://localhost:3100/demo/walkthrough)
 
 ---
 
@@ -79,18 +133,22 @@ Managing 3+ guesthouses means juggling multiple inboxes, rate sheets, and housek
 
 ## Roadmap Highlights
 
-- **Phase 1 (Current):** Core automation demos + waitlist
-- **Phase 2:** Production authentication, live OTA API integrations
-- **Phase 3:** Email/WhatsApp sending (approval-gated), payment links
-- **Phase 4+:** Analytics dashboard, automated lead campaigns, team permissions
+- **Phase 1–15 (Current):** Core automation demos + waitlist + sales leave-behind + Docker hosting
+- **Phase 16+:** Production authentication, live OTA API integrations
+- **Future:** Email/WhatsApp sending (approval-gated), payment links, analytics dashboard
 
 ---
 
 ## Pricing
 
-**COMING SOON** — Three-tier structure planned (Starter, Professional, Portfolio).
+**⚠️ DEMO PLACEHOLDER — NOT FINAL PRICING ⚠️**
 
-Beta access program will offer early adopter pricing. Join waitlist for priority notification when launch pricing is announced.
+Three-tier structure planned (Starter, Professional, Portfolio). 
+
+**No pricing is live yet.** Beta access program will offer early adopter pricing. 
+Join waitlist for priority notification when launch pricing is announced.
+
+**DO NOT COMMIT TO ANY PRICING UNTIL GRANT APPROVES VIA CoS.**
 
 ---
 
@@ -99,15 +157,17 @@ Beta access program will offer early adopter pricing. Join waitlist for priority
 ✓ All messaging drafts require human approval before sending  
 ✓ Never invents rates—missing rate cards flagged explicitly  
 ✓ No auto-charges or payment processing without explicit approval gates  
-✓ Multi-tenant data isolation—your properties stay separate
+✓ Multi-tenant data isolation—your properties stay separate  
+✓ Local/demo hosting available via Docker (no cloud secrets required)
 
 ---
 
 ## Next Steps
 
-1. **Join Waitlist:** Reserve your spot for beta access
-2. **Try Interactive Demo:** Explore inquiry intake, quotes, and daily briefs
-3. **Share Feedback:** Help shape the platform with your operational needs
+1. **Join Waitlist:** Reserve your spot for beta access at [http://localhost:3100/waitlist](http://localhost:3100/waitlist)
+2. **Try Interactive Demo:** Explore inquiry intake, quotes, and daily briefs at [http://localhost:3100/demo](http://localhost:3100/demo)
+3. **View Walkthrough Script:** Step-by-step demo guide at [http://localhost:3100/demo/walkthrough](http://localhost:3100/demo/walkthrough)
+4. **Share Feedback:** Help shape the platform with your operational needs
 
 **Contact:** grant@thebrowns.co.za  
 **Built by:** The Browns Guest Suites
@@ -115,7 +175,8 @@ Beta access program will offer early adopter pricing. Join waitlist for priority
 ---
 
 _GuestFlow · Demo Platform · No live payments or automated messaging_  
-_Powered by proven guesthouse automation from The Browns portfolio_
+_Powered by proven guesthouse automation from The Browns portfolio_  
+_Phase 15: Local demo hosting ready (Docker) · CoS approval required for public launch_
 `
 }
 

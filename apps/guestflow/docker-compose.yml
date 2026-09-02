@@ -1,0 +1,42 @@
+# GuestFlow Demo Docker Compose
+# DEMO ONLY - Local hosting for Grant/CoS walkthrough demos
+# 
+# Usage:
+#   docker-compose up --build
+#
+# Access at: http://localhost:3100
+#
+# IMPORTANT: This is NOT production-ready
+# - No cloud secrets management
+# - No Stripe/payment processing
+# - Demo auth stub only (password: demo2026)
+# - SQLite database (not suitable for production scale)
+# - No HTTPS/TLS (use reverse proxy for demo if needed)
+
+version: '3.8'
+
+services:
+  guestflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: guestflow-demo
+    ports:
+      - "3100:3100"
+    volumes:
+      # Persist SQLite database across container restarts
+      - guestflow-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3100
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3100/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  guestflow-data:
+    driver: local

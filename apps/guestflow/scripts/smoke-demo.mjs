@@ -152,7 +152,10 @@ async function runTests() {
     'package.json',
     'next.config.mjs',
     'tsconfig.json',
-    'tailwind.config.ts'
+    'tailwind.config.ts',
+    'Dockerfile',
+    'docker-compose.yml',
+    '.dockerignore'
   ];
   
   for (const file of configFiles) {
@@ -199,8 +202,8 @@ async function runTests() {
   await testRoute('/demo/walkthrough', 'Demo walkthrough script', { checkContent: 'Walkthrough' });
   await testRoute('/demo/leavebehind', 'Sales leave-behind', { checkContent: 'GuestFlow' });
   
-  // Phase 6 page
-  await testRoute('/demo/hosting-readiness', 'Hosting readiness page', { checkContent: 'Hosting' });
+  // Phase 6 → 15 page
+  await testRoute('/demo/hosting-readiness', 'Hosting readiness page (Phase 15 Docker)', { checkContent: 'Docker' });
   
   // Phase 7 page
   try {
@@ -380,17 +383,38 @@ async function runTests() {
     fail(`Lead notes POST API validation: Expected 400, got ${notesPostMissingFields.status}`);
   }
 
-  // Test Phase 13 leave-behind export API (POST)
-  await testRoute('/api/leavebehind/export', 'Leave-behind export API (POST markdown)', { 
-    method: 'POST', 
-    body: { format: 'markdown' },
-    expectedStatus: 200
+  // Test Phase 13 → 15 leave-behind export API with real data (POST)
+  const leaveBehindMarkdownResponse = await fetch(`${BASE_URL}/api/leavebehind/export`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'markdown' })
   });
-  await testRoute('/api/leavebehind/export', 'Leave-behind export API (POST html)', { 
-    method: 'POST', 
-    body: { format: 'html' },
-    expectedStatus: 200
+  if (leaveBehindMarkdownResponse.status === 200) {
+    const markdown = await leaveBehindMarkdownResponse.text();
+    if (markdown.includes('Total Waitlist Leads:') && markdown.includes('Status Breakdown:')) {
+      pass('Leave-behind export API with real data (markdown)');
+    } else {
+      fail('Leave-behind export API: Missing waitlist data');
+    }
+  } else {
+    fail(`Leave-behind export API: Expected 200, got ${leaveBehindMarkdownResponse.status}`);
+  }
+
+  const leaveBehindHtmlResponse = await fetch(`${BASE_URL}/api/leavebehind/export`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'html' })
   });
+  if (leaveBehindHtmlResponse.status === 200) {
+    const html = await leaveBehindHtmlResponse.text();
+    if (html.includes('Total Waitlist Leads:') && html.includes('Status Breakdown:')) {
+      pass('Leave-behind export API with real data (html)');
+    } else {
+      fail('Leave-behind export API (HTML): Missing waitlist data');
+    }
+  } else {
+    fail(`Leave-behind export API (HTML): Expected 200, got ${leaveBehindHtmlResponse.status}`);
+  }
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
