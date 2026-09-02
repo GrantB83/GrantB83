@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-09-02T04:02:45.203Z",
+  "mode": "both",
+  "source": "fixtures/inquiry-with-amounts.txt",
+  "outputs": {
+    "missing_fields": "/workspace/tools/browns-inquiry-intake/test-out-amounts/missing-fields.md",
+    "approval": "/workspace/tools/browns-inquiry-intake/test-out-amounts/APPROVAL.md",
+    "manifest": "/workspace/tools/browns-inquiry-intake/test-out-amounts/manifest.json",
+    "booking": "/workspace/tools/browns-inquiry-intake/test-out-amounts/booking.json",
+    "quote": "/workspace/tools/browns-inquiry-intake/test-out-amounts/quote.json"
+  }
+}
