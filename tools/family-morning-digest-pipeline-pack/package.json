@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test dist/pipeline-builder.test.js",
+    "test": "npm run build && node --test dist/pipeline-builder.test.js && node --test dist/cli-parser.test.js",
+    "test:parser": "npm run build && node --test dist/cli-parser.test.js",
     "pipeline": "node dist/index.js",
     "test:fixtures": "npm run build && npm run pipeline -- --pack fixtures/healthy-morning-pack --outdir test-out-healthy && npm run pipeline -- --pack fixtures/missing-pack-fail --outdir test-out-missing; exit 0 && echo 'All fixture tests completed'",
     "clean": "rm -rf dist test-out* out*"

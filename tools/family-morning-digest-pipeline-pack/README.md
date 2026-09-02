@@ -28,8 +28,10 @@ npm run pipeline -- --run-morning-pack --date 2026-09-02 --subjects subjects.txt
 # With explicit date and output directory
 npm run pipeline -- --pack path/to/pack --date 2026-09-02 --outdir reports/
 
-# Skip post-checklist (not recommended)
+# Skip post-checklist (multiple syntax options)
 npm run pipeline -- --pack path/to/pack --run-post-checklist=false
+npm run pipeline -- --pack path/to/pack --run-post-checklist false
+npm run pipeline -- --pack path/to/pack --no-run-post-checklist
 
 # Test with fixtures
 npm run test:fixtures
@@ -42,6 +44,8 @@ OPTIONS:
   --pack, -p                  Path to existing family-morning-digest-pack output [preferred]
   --run-morning-pack          Run family-morning-digest-pack first
   --run-post-checklist        Run family-digest-post-checklist [default: true]
+                              Accepts: --run-post-checklist, --run-post-checklist=true/false,
+                              --run-post-checklist true/false, --no-run-post-checklist
   --date, -d                  Date label (YYYY-MM-DD) [required for --run-morning-pack]
   --outdir, -o                Output directory [default: ./out]
   --help, -h                  Show this help message
