@@ -35,6 +35,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events and school due queue | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar and due queue pass-through only. |
 | [family-digest-post-checklist](#family-digest-post-checklist) | Validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Pre-WhatsApp validation. Exit 1 if checks fail. |
+| [family-morning-digest-pipeline-pack](#family-morning-digest-pipeline-pack) | Offline pipeline pack assembler combining family-morning-digest-pack and family-digest-post-checklist for Family / CoS morning workflow | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Assembles morning pack + post-checklist. Kids School vs Family separation preserved. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
@@ -1893,6 +1894,62 @@ cat out/APPROVAL.md
 ```
 
 [→ Full README](./family-digest-post-checklist/README.md)
+
+---
+
+## family-morning-digest-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack assembler combining family-morning-digest-pack and family-digest-post-checklist for Family / CoS morning workflow.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-morning-digest-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/family-morning-digest-pipeline-pack
+npm install
+npm run build
+
+# Option 1: Use existing morning pack (preferred)
+npm run pipeline -- --pack ../family-morning-digest-pack/out/pack-2026-09-02
+
+# Option 2: Generate morning pack first
+npm run pipeline -- --run-morning-pack --date 2026-09-02 --subjects subjects.txt --run-subject-digest
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Read-only assembly** - Never modifies source pack files
+- ✅ **No invented data** - Never fabricates school facts or due dates
+- ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review PACK.md, POST-CHECKLIST.md, and ISSUES.md before every post
+
+### Example Workflow
+
+```bash
+# Step 1: Generate morning pack (or use existing)
+cd tools/family-morning-digest-pack
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest
+
+# Step 2: Assemble pipeline pack with validation
+cd ../family-morning-digest-pipeline-pack
+npm run pipeline -- --pack ../family-morning-digest-pack/out/pack-2026-09-02
+
+# Step 3: Review outputs
+cat out/pipeline-pack-2026-09-02/PACK.md
+cat out/pipeline-pack-2026-09-02/POST-CHECKLIST.md
+
+# Step 4: If all checks pass, Family / CoS posts to WhatsApp Admin
+```
+
+[→ Full README](./family-morning-digest-pipeline-pack/README.md)
 
 ---
 
