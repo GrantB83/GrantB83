@@ -44,6 +44,25 @@ export default function DemoPage() {
         </Link>
       </div>
 
+      {/* Phase 31: CRM Invite Code Filter */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/crm"
+          className="block bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Database className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">CRM Filter by Invite Code</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 31 🎯</span>
+          </div>
+          <p className="text-cyan-100">
+            Close the sales attribution loop on CRM: filter leads by specific invite code, "any attributed", or "unattributed". Display invite code on lead rows (never invents codes). Deep link from usage report to filtered CRM view. Demo seed attributes 1 lead to DEMO2026.
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 30: Invite Code Usage Report */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 

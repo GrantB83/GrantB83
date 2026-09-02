@@ -31,6 +31,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
 | [studio-youtube-preflight-pack](#studio-youtube-preflight-pack) | Offline preflight for YouTube upload approval workflow with Drive link and gate validation | Studio / BrownieTunez | **Offline only**. Never uploads. No YouTube/Suno/Drive APIs. Drive approval link BLOCKING. |
+| [studio-brownie-pipeline-pack](#studio-brownie-pipeline-pack) | Offline CLI orchestrator for BrownieTunez pipeline: lyric-package-stub → suno-validate → youtube-preflight | Studio / BrownieTunez | **Offline orchestrator**. Never uploads to YouTube. Never invents lyrics. Kids BrownieTunez only. Default ON stages with skip flags. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events and school due queue | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar and due queue pass-through only. |
@@ -52,6 +53,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-ct-pack-post-checklist](#browns-ct-pack-post-checklist) | Pre-WhatsApp post checklist from browns-ct-pack-assemble output folder before 20:00 / 09:00 / 21:00 CT Admin posts | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents guest phones/rates/ETAs. CoS owns WhatsApp. Exit 1 if checks fail. |
+| [browns-ct-pack-pipeline-pack](#browns-ct-pack-pipeline-pack) | Orchestrate Browns CT pack pipeline: booking-change-check → ct-pack-assemble → optional ct-pack-post-checklist | SA Ops / CoS | **Offline orchestrator**. Never auto-sends. Flexible boolean parsing. Accurate manifest when checklist skipped. DRAFT ONLY. |
 | [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [sa-texas-exception-post-checklist](#sa-texas-exception-post-checklist) | Pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents rates/volumes/guest facts. CoS owns WhatsApp. |
@@ -2908,6 +2910,50 @@ The `--slot` option tailors checklist warnings to specific CT time slots:
 America/Chicago (CT = Chicago Time for timed operations)
 
 [→ Full README](./browns-ct-pack-post-checklist/README.md)
+
+---
+
+## browns-ct-pack-pipeline-pack
+
+**One-line:** Offline CLI orchestrator for Browns CT pack pipeline: booking-change-check → ct-pack-assemble → optional ct-pack-post-checklist.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ct-pack-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ct-pack-pipeline-pack
+npm install
+npm run build
+
+# Use existing pack, skip post-checklist:
+npm run pipeline -- \
+  --date 2026-09-20 \
+  --pack ../browns-ct-pack-assemble/out/ct-2026-09-20 \
+  --outdir pipeline-out/ \
+  --no-run-post-checklist
+
+# Full pipeline with change-check:
+npm run pipeline -- \
+  --date 2026-09-20 \
+  --bookings bookings.json \
+  --before before.json \
+  --after after.json \
+  --run-change-check \
+  --outdir pipeline-out/
+
+# Default (post-checklist runs):
+npm run pipeline -- \
+  --date 2026-09-20 \
+  --bookings bookings.json \
+  --outdir pipeline-out/
+```
+
+Orchestrates Browns CT (America/Chicago timezone) pack pipeline for CoS WhatsApp Admin drafts. Never auto-sends. Supports flexible boolean parsing (`--run-post-checklist=false`, `--no-run-post-checklist`). When post-checklist skipped, `POST-CHECKLIST.md` and `ISSUES.md` not listed in manifest.files (accuracy fix). Offline only.
+
+[→ Full README](./browns-ct-pack-pipeline-pack/README.md)
 
 ---
 

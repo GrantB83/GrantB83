@@ -1,0 +1,36 @@
+{
+  "day": "2026-09-20",
+  "generatedAt": "2026-09-20T14:30:00.000Z",
+  "files": [
+    {
+      "filename": "PACK.md",
+      "type": "index",
+      "description": "Pack index with timed checklist"
+    },
+    {
+      "filename": "APPROVAL.md",
+      "type": "approval",
+      "description": "Approval gates"
+    },
+    {
+      "filename": "changes.md",
+      "type": "changes",
+      "description": "Booking changes"
+    },
+    {
+      "filename": "daily-ops.md",
+      "type": "daily-ops",
+      "description": "Daily operations brief"
+    },
+    {
+      "filename": "guest-henderson.md",
+      "type": "guest-draft",
+      "description": "Guest communication draft"
+    },
+    {
+      "filename": "manifest.json",
+      "type": "manifest",
+      "description": "Pack metadata"
+    }
+  ]
+}
