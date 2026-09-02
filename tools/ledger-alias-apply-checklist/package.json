@@ -1,0 +1,27 @@
+{
+  "name": "ledger-alias-apply-checklist",
+  "version": "1.0.0",
+  "description": "Offline apply checklist generator from ledger-merchant-alias-suggest output",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "apply-checklist": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/src/*.test.js",
+    "apply": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run apply -- --suggestions fixtures/suggestions.json --outdir test-out/json-only && npm run apply -- --suggestions-md fixtures/suggestions.md --no-match fixtures/no-match.md --outdir test-out/md-only && npm run apply -- --suggestions fixtures/suggestions.json --suggestions-md fixtures/suggestions.md --no-match fixtures/no-match.md --month 2026-09 --outdir test-out/combined && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["ledger", "merchant", "alias", "apply", "checklist"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
