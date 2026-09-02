@@ -25,20 +25,39 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 26: Sales Leave-Behind Pack Export */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/sales-leavebehind"
+          className="block bg-gradient-to-r from-teal-600 to-teal-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <FileDown className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Sales Leave-Behind Pack Export</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 26 🎯</span>
+          </div>
+          <p className="text-teal-100">
+            Complete sales leave-behind for prospects: product overview, 11-step demo path, hard gates, sample fixtures (inquiry→quote), next steps—download as .md/.zip (DRAFT/fixtures only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 23: Quote/Invoice Draft from Inquiry JSON */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
           href="/demo/quote-draft"
-          className="block bg-gradient-to-r from-teal-600 to-teal-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+          className="block bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <FileText className="w-8 h-8" />
               <h3 className="text-2xl font-bold">Demo Quote/Invoice Draft from Inquiry JSON</h3>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 23 🎉</span>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 23</span>
           </div>
-          <p className="text-teal-100">
+          <p className="text-purple-100">
             Generate DRAFT quote or availability confirmation from extracted inquiry/quote JSON for active demo tenant—mirrors tools/browns-quote-invoice-draft (DRAFT/fixtures only)
           </p>
         </Link>
