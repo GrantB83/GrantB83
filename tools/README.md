@@ -20,6 +20,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
+| [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
@@ -608,6 +609,56 @@ npm run brief -- \
 - ⚠️ **CoS only for WhatsApp** - Team sends must use Coexistence of Service
 
 [→ Full README](./browns-daily-ops-brief/README.md)
+
+---
+
+## browns-booking-change-check
+
+**One-line:** Diff two booking snapshots and report changes for CoS SA Ops last-minute verification before WhatsApp Admin posts.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-booking-change-check/`
+
+### Install and Run
+
+```bash
+cd tools/browns-booking-change-check
+npm install
+npm run build
+
+# Basic diff
+npm run check -- --before bookings-1900.json --after bookings-2045.json
+
+# With target day context
+npm run check -- \
+  --before before.json \
+  --after after.json \
+  --day 2026-09-20 \
+  --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Nightsbridge API or browser automation
+- ✅ **Never invents data** - Missing fields flagged, never fabricated
+- ✅ **No rates or amounts** - Not in scope
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **Pre-post checklist** - Review changes.md before every WhatsApp Admin post
+- ⚠️ **CoS workflow** - Run before 20:00 / 09:00 / 21:00 CT-pack posts
+
+### Use Case
+
+**Last-minute booking change check** before posting guest-comms or daily-ops drafts to WhatsApp Admin:
+
+1. Export bookings before CT-pack prep (19:00 SAST) → `bookings-before.json`
+2. Export bookings after CT-pack prep (20:45 SAST) → `bookings-after.json`
+3. Run this tool to diff snapshots
+4. Review `changes.md` for additions, removals, updates
+5. Update drafts if changes affect guest-comms or ops brief
+6. Post to WhatsApp Admin after approval
+
+[→ Full README](./browns-booking-change-check/README.md)
 
 ---
 
