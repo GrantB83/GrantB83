@@ -6,7 +6,7 @@ import type { CliOptions, TimedChecklistItem } from './types.js';
 
 export function generatePackIndex(
   options: CliOptions,
-  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean },
+  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean; ranWelcome: boolean },
   sourcesProvided: { bookings: boolean; beforeAfter: boolean; facts: boolean; guestBooking: boolean }
 ): string {
   const lines: string[] = [];
@@ -66,6 +66,11 @@ export function generatePackIndex(
     lines.push('| unknown-time.md | Late check-in unknown times (copied from browns-late-checkin-queue) |');
   }
   
+  if (ranFlags.ranWelcome) {
+    lines.push('| welcome-queue.md | Welcome message queue (copied from browns-welcome-draft-pack) |');
+    lines.push('| welcome-*.md | Welcome draft files (copied from browns-welcome-draft-pack) |');
+  }
+  
   lines.push('| manifest.json | Machine-readable pack inventory |');
   lines.push('');
   
@@ -84,6 +89,7 @@ export function generatePackIndex(
   lines.push(`- Ran daily-ops: ${ranFlags.ranDailyOps ? 'Yes' : 'No'}`);
   lines.push(`- Ran guest-comms: ${ranFlags.ranGuestComms ? 'Yes' : 'No'}`);
   lines.push(`- Ran late-checkin: ${ranFlags.ranLateCheckin ? 'Yes' : 'No'}`);
+  lines.push(`- Ran welcome: ${ranFlags.ranWelcome ? 'Yes' : 'No'}`);
   lines.push('');
   
   lines.push('## Safety Reminder');
@@ -100,7 +106,7 @@ export function generatePackIndex(
 }
 
 function buildTimedChecklist(
-  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean },
+  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean; ranWelcome: boolean },
   sourcesProvided: { bookings: boolean; beforeAfter: boolean; facts: boolean; guestBooking: boolean }
 ): TimedChecklistItem[] {
   const items: TimedChecklistItem[] = [];
@@ -113,6 +119,10 @@ function buildTimedChecklist(
   if (ranFlags.ranLateCheckin) {
     guestFiles.push('queue.md');
     guestFiles.push('unknown-time.md');
+  }
+  if (ranFlags.ranWelcome) {
+    guestFiles.push('welcome-queue.md');
+    guestFiles.push('welcome-*.md');
   }
   if (guestFiles.length === 0) {
     guestFiles.push('(No guest drafts in this pack)');

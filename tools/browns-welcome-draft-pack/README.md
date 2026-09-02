@@ -269,24 +269,38 @@ Machine-readable pack metadata:
 ### Feeds Into
 
 - **`browns-guest-comms-draft`** — For full welcome messages
-- **`browns-ct-pack-assemble`** — For timed CT packs
+- **`browns-ct-pack-assemble`** — For timed CT packs (automated integration via `--run-welcome`)
 
-### Optional Wire Integration
+### Wire Integration with browns-ct-pack-assemble
 
-For future integration with `browns-guest-comms-draft` or `browns-ct-pack-assemble`:
+The welcome-draft-pack is now wired into `browns-ct-pack-assemble` via the `--run-welcome` flag:
 
 ```bash
-# Generate welcome stubs
-npm run draft-pack -- --bookings bookings.json --outdir packs/welcome/
+# Automated integration (recommended)
+cd ../browns-ct-pack-assemble
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --run-welcome
 
-# Feed into guest-comms-draft (per guest)
-cd ../browns-guest-comms-draft
-npm run draft -- \
-  --booking packs/welcome/bookings.json \
-  --outdir drafts/emma-thompson/
+# With facts (optional)
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --facts facts.json \
+  --run-welcome
 ```
 
-**Note:** Wire integration is not implemented unless trivial. This tool outputs standalone stubs for manual CoS workflow.
+The CT pack assembler will:
+1. Shell out to `browns-welcome-draft-pack` with `--as-of` set to pack day
+2. Copy `queue.md` → `welcome-queue.md` in CT pack
+3. Copy `drafts/*.md` → `welcome-*.md` in CT pack
+4. Fold welcome drafts into 20:00 CT morning guest drafts slot
+5. Note welcome pack in `APPROVAL.md` and `manifest.json`
+
+This integration provides a single-command workflow for assembling all timed CT pack components, including same-day welcome messages.
 
 ## Testing
 

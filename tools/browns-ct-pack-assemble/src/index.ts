@@ -41,6 +41,7 @@ RUN FLAGS (invoke sibling tools):
   --run-daily-ops    Run browns-daily-ops-brief (needs bookings)
   --run-guest-comms  Run browns-guest-comms-draft (needs guest-booking)
   --run-late-checkin Run browns-late-checkin-queue (needs bookings+day)
+  --run-welcome      Run browns-welcome-draft-pack (needs bookings)
 
 OPTIONS:
   --help        Show this help message
@@ -53,7 +54,7 @@ EXAMPLES:
   # Run sibling tools
   npm run assemble -- --day 2026-09-20 --outdir out/ct-2026-09-20/ \\
     --bookings bookings.json --run-daily-ops --run-guest-comms \\
-    --guest-booking guest.json
+    --guest-booking guest.json --run-welcome
 
 OUTPUTS:
   PACK.md      - Index + timed-post checklist (20:00 / 09:00 / 21:00 CT)
@@ -96,6 +97,7 @@ function parseCliArgs(): CliOptions | null {
         'run-daily-ops': { type: 'boolean' },
         'run-guest-comms': { type: 'boolean' },
         'run-late-checkin': { type: 'boolean' },
+        'run-welcome': { type: 'boolean' },
         help: { type: 'boolean' },
       },
       strict: true,
@@ -136,6 +138,7 @@ function parseCliArgs(): CliOptions | null {
       'run-daily-ops': values['run-daily-ops'] || false,
       'run-guest-comms': values['run-guest-comms'] || false,
       'run-late-checkin': values['run-late-checkin'] || false,
+      'run-welcome': values['run-welcome'] || false,
     };
   } catch (err: any) {
     console.error(`❌ Error parsing arguments: ${err.message}`);
@@ -199,17 +202,24 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   
+  if (options['run-welcome'] && !options.bookings) {
+    console.error('❌ Error: --run-welcome requires --bookings');
+    process.exit(1);
+  }
+  
   const packResults = {
     changeCheckOutput: null as string | null,
     dailyOpsOutput: null as string | null,
     guestCommsOutputs: [] as string[],
     lateCheckinOutput: null as string | null,
+    welcomeOutput: null as string | null,
     ranFlags: {
       ranAdapter: false,
       ranChangeCheck: false,
       ranDailyOps: false,
       ranGuestComms: false,
       ranLateCheckin: false,
+      ranWelcome: false,
     }
   };
   
@@ -219,7 +229,7 @@ async function main(): Promise<void> {
   if (options['run-adapter']) {
     console.log('\\n🔧 Running browns-nightsbridge-bookings-adapter...');
     try {
-      const adapterOutput = join(options.outdir, 'adapter-temp');
+      const adapterOutput = resolve(join(options.outdir, 'adapter-temp'));
       await runSiblingTool(
         'browns-nightsbridge-bookings-adapter',
         ['--day', options.day, '--outdir', adapterOutput],
@@ -254,7 +264,7 @@ async function main(): Promise<void> {
   if (options['run-daily-ops'] && options.bookings) {
     console.log('\\n🔧 Running browns-daily-ops-brief...');
     try {
-      const dailyOpsOutput = join(options.outdir, 'daily-ops-temp');
+      const dailyOpsOutput = resolve(join(options.outdir, 'daily-ops-temp'));
       const args = ['--day', options.day, '--bookings', resolve(options.bookings), '--outdir', dailyOpsOutput];
       if (options.facts) {
         args.push('--facts', resolve(options.facts));
@@ -272,7 +282,7 @@ async function main(): Promise<void> {
   if (options['run-guest-comms'] && options['guest-booking']) {
     console.log('\\n🔧 Running browns-guest-comms-draft...');
     try {
-      const guestCommsOutput = join(options.outdir, 'guest-comms-temp');
+      const guestCommsOutput = resolve(join(options.outdir, 'guest-comms-temp'));
       const args = ['--booking', resolve(options['guest-booking']), '--outdir', guestCommsOutput];
       await runSiblingTool('browns-guest-comms-draft', args, toolsDir);
       packResults.guestCommsOutputs.push(guestCommsOutput);
@@ -287,7 +297,7 @@ async function main(): Promise<void> {
   if (options['run-late-checkin'] && options.bookings) {
     console.log('\\n🔧 Running browns-late-checkin-queue...');
     try {
-      const lateCheckinOutput = join(options.outdir, 'late-checkin-temp');
+      const lateCheckinOutput = resolve(join(options.outdir, 'late-checkin-temp'));
       const args = ['--bookings', resolve(options.bookings), '--day', options.day, '--outdir', lateCheckinOutput];
       await runSiblingTool('browns-late-checkin-queue', args, toolsDir);
       packResults.lateCheckinOutput = lateCheckinOutput;
@@ -295,6 +305,24 @@ async function main(): Promise<void> {
       packResults.ranFlags.ranLateCheckin = true;
     } catch (err: any) {
       console.error(`❌ Late checkin queue failed: ${err.message}`);
+      process.exit(1);
+    }
+  }
+  
+  if (options['run-welcome'] && options.bookings) {
+    console.log('\\n🔧 Running browns-welcome-draft-pack...');
+    try {
+      const welcomeOutput = resolve(join(options.outdir, 'welcome-temp'));
+      const args = ['--bookings', resolve(options.bookings), '--as-of', options.day, '--outdir', welcomeOutput];
+      if (options.facts) {
+        args.push('--facts', resolve(options.facts));
+      }
+      await runSiblingTool('browns-welcome-draft-pack', args, toolsDir);
+      packResults.welcomeOutput = welcomeOutput;
+      console.log('✓ Welcome draft pack completed');
+      packResults.ranFlags.ranWelcome = true;
+    } catch (err: any) {
+      console.error(`❌ Welcome draft pack failed: ${err.message}`);
       process.exit(1);
     }
   }

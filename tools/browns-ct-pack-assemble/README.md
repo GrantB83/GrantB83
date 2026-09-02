@@ -82,7 +82,8 @@ npm run assemble -- \\
   --run-daily-ops \\
   --run-guest-comms \\
   --guest-booking guest.json \\
-  --run-late-checkin
+  --run-late-checkin \\
+  --run-welcome
 ```
 
 **Minimal pack (index and approval only):**
@@ -108,6 +109,7 @@ npm run assemble -- \\
 | `--run-daily-ops` | No | Run browns-daily-ops-brief (needs bookings) | false |
 | `--run-guest-comms` | No | Run browns-guest-comms-draft (needs guest-booking) | false |
 | `--run-late-checkin` | No | Run browns-late-checkin-queue (needs bookings+day) | false |
+| `--run-welcome` | No | Run browns-welcome-draft-pack (needs bookings) | false |
 | `--help` | No | Show help message | - |
 
 ## Input Files
@@ -251,7 +253,15 @@ Contains:
 - `queue.md`: Late check-in coordination queue
 - `unknown-time.md`: Late check-ins with unknown arrival times
 
-### 7. `manifest.json`
+### 7. `welcome-queue.md` and `welcome-*.md` (if `--run-welcome`)
+
+Welcome message drafts copied from `browns-welcome-draft-pack` output.
+
+Contains:
+- `welcome-queue.md`: Welcome message queue for same-day arrivals
+- `welcome-*.md`: Individual welcome draft files per guest
+
+### 8. `manifest.json`
 
 **Machine-readable pack inventory**
 
@@ -277,7 +287,8 @@ Contains:
     "ranChangeCheck": false,
     "ranDailyOps": true,
     "ranGuestComms": true,
-    "ranLateCheckin": false
+    "ranLateCheckin": false,
+    "ranWelcome": true
   }
 }
 ```
@@ -325,7 +336,8 @@ npm run assemble -- \\
   --run-daily-ops \\
   --run-guest-comms \\
   --guest-booking arriving-guest.json \\
-  --run-late-checkin
+  --run-late-checkin \\
+  --run-welcome
 ```
 
 This invokes tools as child processes. Less reliable if tools fail, but faster for simple packs.
@@ -470,6 +482,16 @@ tools/browns-ct-pack-assemble/
 
 **Output copied:** `queue.md` and `unknown-time.md` → pack outdir
 
+### browns-welcome-draft-pack
+
+**Purpose:** Generate welcome message drafts for same-day arrivals
+
+**Invoked with:** `--run-welcome` flag (requires `--bookings`)
+
+**Output copied:** `welcome-queue.md` and `drafts/*.md` → pack outdir (renamed to `welcome-*.md`)
+
+**Integration notes:** Uses `--as-of` set to pack day, optional `--facts` for guest facts merging. Welcome drafts slot into the 20:00 CT morning guest drafts workflow.
+
 ## Troubleshooting
 
 ### "Error: --day is required"
@@ -523,6 +545,7 @@ Ensure sibling tools exist in `tools/` directory and have `npm run <script>` com
 - **browns-daily-ops-brief** - Daily team ops brief
 - **browns-guest-comms-draft** - Guest welcome messages
 - **browns-late-checkin-queue** - Late check-in coordination queue
+- **browns-welcome-draft-pack** - Welcome message drafts for same-day arrivals
 - **browns-guest-facts-pack** - Extract brand facts from knowledge files
 - **browns-quote-invoice-draft** - Quote and invoice communications
 
@@ -540,7 +563,8 @@ browns-ct-pack-assemble (THIS TOOL)
     ├── browns-booking-change-check (not yet implemented)
     ├── browns-daily-ops-brief
     ├── browns-guest-comms-draft
-    └── browns-late-checkin-queue
+    ├── browns-late-checkin-queue
+    └── browns-welcome-draft-pack
     ↓
 out/ct-YYYY-MM-DD/
     ├── PACK.md (timed checklist)
@@ -550,6 +574,8 @@ out/ct-YYYY-MM-DD/
     ├── guest-*.md
     ├── queue.md
     ├── unknown-time.md
+    ├── welcome-queue.md
+    ├── welcome-*.md
     └── manifest.json
     ↓
 Manual review by Liana / Grant

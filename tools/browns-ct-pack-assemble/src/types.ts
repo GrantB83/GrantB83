@@ -15,6 +15,7 @@ export interface CliOptions {
   'run-guest-comms'?: boolean;
   'run-adapter'?: boolean;
   'run-late-checkin'?: boolean;
+  'run-welcome'?: boolean;
 }
 
 export interface PackManifest {
@@ -44,6 +45,7 @@ export interface PackFlags {
   ranGuestComms: boolean;
   ranAdapter: boolean;
   ranLateCheckin: boolean;
+  ranWelcome: boolean;
 }
 
 export interface TimedChecklistItem {
