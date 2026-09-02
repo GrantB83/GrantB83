@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database } from 'lucide-react'
+import TenantSwitcher from '@/components/TenantSwitcher'
 
 export default function DemoPage() {
   return (
@@ -15,6 +18,11 @@ export default function DemoPage() {
           Explore GuestFlow with sample properties and mock bookings. 
           No real data, no live sends—just see how it works.
         </p>
+      </div>
+
+      {/* Phase 10: Tenant Switcher */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <TenantSwitcher />
       </div>
 
       {/* Phase 9: One-Click Demo Seed */}

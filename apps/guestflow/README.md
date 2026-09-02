@@ -2,7 +2,7 @@
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 9 — One-click demo seed (local demo only)
+**Current Phase:** Phase 10 — Demo tenant switcher (sticky multi-tenant selection)
 
 ---
 
@@ -66,6 +66,54 @@ Open [http://localhost:3100](http://localhost:3100)
 npm run build
 npm start
 ```
+
+---
+
+## What Works (Phase 10)
+
+### ✅ Phase 10 Additions (Demo Tenant Switcher)
+
+1. **Tenant Switcher on Demo Hub** (`/demo`)
+   - Prominent tenant selector at top of demo hub page
+   - Lists all tenants from SQLite database
+   - Pill-based UI for selecting active demo tenant
+   - Quick shortcut button for "Use Seeded Dullstroom Demo"
+   - Shows active tenant details (name, location, timezone)
+   - Selection persists across demo routes via localStorage
+
+2. **Tenant Context Provider**
+   - React Context wraps entire app for shared tenant state
+   - Automatic loading of tenants on app startup
+   - Sticky selection stored in browser localStorage
+   - Falls back to default tenant if none selected
+   - Provides useTenant() hook for all pages
+
+3. **Tenant-Scoped Pages**
+   - **CRM** (`/crm`) — Filters leads by selected tenant
+   - **Rate Card Upload** (`/demo/rate-card-upload`) — Uploads/views rates for selected tenant
+   - **Quote Draft** (`/demo/quote-draft`) — Fetches rate cards for selected tenant
+   - All pages automatically respect tenant selection
+
+4. **Tenant-Scoped APIs**
+   - `GET /api/leads?tenant_id=N` — Fetch leads for specific tenant
+   - `GET /api/rate-cards?tenant_id=N` — Fetch rate cards for specific tenant
+   - `POST /api/rate-cards` with `tenant_id` body param — Upload rates to specific tenant
+   - `DELETE /api/rate-cards?tenant_id=N` — Clear rates for specific tenant
+
+5. **Extended Smoke Test Coverage**
+   - Tests for `/api/leads?tenant_id=1` endpoint
+   - Tests for `/api/rate-cards?tenant_id=1` endpoint
+   - Validates tenant filtering works correctly
+
+**What Works vs. Stubbed:**
+- ✅ Works: Multi-tenant switcher on demo hub, sticky localStorage selection, tenant-scoped CRM/quotes/rates
+- 🚧 Stubbed: Same as Phase 9 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — tenant switcher is for local demo purposes only
+- In production, tenants authenticated via NextAuth.js with proper row-level security
+- All data persists to local SQLite only
 
 ---
 
@@ -509,6 +557,30 @@ Verify tables:
 
 ---
 
+## Phase 10 Summary
+
+**What Changed:**
+- Demo tenant switcher on `/demo` hub page with pill-based UI (Phase 10 badge)
+- React Context provider (`TenantProvider`) wraps entire app for shared tenant state
+- Selection persists across routes via localStorage (sticky navigation)
+- CRM, rate card upload, and quote draft pages now use selected tenant from context
+- Tenant-scoped API endpoints: `/api/leads?tenant_id=N`, `/api/rate-cards?tenant_id=N`
+- Quick shortcut button for "Use Seeded Dullstroom Demo"
+- Extended smoke tests for tenant-filtered APIs
+- README updated with Phase 10 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Multi-tenant switcher, sticky localStorage selection, tenant-scoped pages/APIs
+- 🚧 Stubbed: Same as Phase 9 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — tenant switcher is for local demo/development only
+- In production, tenants authenticated via NextAuth.js with proper row-level security
+- All data persists to local SQLite only
+
+---
+
 ## Phase 9 Summary
 
 **What Changed:**
@@ -629,7 +701,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 9)
+## Hard Gates Reminder (Phase 10)
 
 **GuestFlow respects these safety constraints:**
 
@@ -643,7 +715,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 8. Phase 9 adds one-click demo seed at `/demo/seed` (DEMO labeled, local SQLite only)—maintains all safety constraints. Seed creates synthetic DEMO rates only, never production rates. Idempotent operation safe to re-run (replaces demo tenant data only, never touches other tenants). The seed API is protected by demo auth Bearer token and never invents production rates for real properties.**
+**These gates are unchanged from Phase 9. Phase 10 adds demo tenant switcher on `/demo` hub (DEMO labeled, local demo only)—maintains all safety constraints. Tenant selection is sticky via localStorage for demo purposes only. In production, tenants will be authenticated via NextAuth.js with proper row-level security and data isolation. The tenant switcher is NOT production authentication—it's purely for local demo navigation.**
 
 ---
 
@@ -664,9 +736,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-9)
+## Next Steps (Post-Phase-10)
 
-**Phase 9 completes the demo seed workflow with one-click reset.** Next priorities focus on production features and live integrations:
+**Phase 10 completes the demo tenant switcher with sticky multi-tenant selection.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow

@@ -1,25 +1,39 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { getDb, getDefaultTenantId } from '@/lib/db'
 import CRMTable from '@/components/CRMTable'
 import { DemoAuthGuard } from '@/components/DemoAuthGuard'
-
-export const dynamic = 'force-dynamic'
+import { useTenant } from '@/components/TenantContext'
 
 export default function CRMPage() {
-  const db = getDb()
-  const defaultTenantId = getDefaultTenantId()
-  
-  const tenant = db.prepare('SELECT * FROM tenants WHERE id = ?').get(defaultTenantId) as any
-  
-  const initialLeads = db.prepare(`
-    SELECT w.id, w.name, w.email, w.property_name, w.room_count, w.current_system, w.phone, w.notes, w.status, w.created_at,
-           t.name as tenant_name
-    FROM waitlist w
-    LEFT JOIN tenants t ON w.tenant_id = t.id
-    WHERE w.tenant_id = ? OR w.tenant_id IS NULL
-    ORDER BY w.created_at DESC
-  `).all(defaultTenantId) as any[]
+  const { selectedTenantId, tenants } = useTenant()
+  const [leads, setLeads] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const selectedTenant = tenants.find(t => t.id === selectedTenantId)
+
+  useEffect(() => {
+    if (selectedTenantId === null) return
+
+    const fetchLeads = async () => {
+      setLoading(true)
+      try {
+        const response = await fetch(`/api/leads?tenant_id=${selectedTenantId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setLeads(data.leads || [])
+        }
+      } catch (error) {
+        console.error('Error fetching leads:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLeads()
+  }, [selectedTenantId])
 
   return (
     <DemoAuthGuard>
@@ -29,21 +43,27 @@ export default function CRMPage() {
           Back to Home
         </Link>
 
-        <CRMTable 
-          initialLeads={initialLeads} 
-          tenant={tenant}
-          defaultTenantId={defaultTenantId}
-        />
+        {loading ? (
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-12 text-center">
+            <p className="text-gray-500">Loading leads...</p>
+          </div>
+        ) : (
+          <CRMTable 
+            initialLeads={leads} 
+            tenant={selectedTenant}
+            defaultTenantId={selectedTenantId || 1}
+          />
+        )}
 
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">CRM Features (Phase 3)</h3>
+          <h3 className="font-semibold text-gray-900 mb-2">CRM Features (Phase 10)</h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li>✅ View all waitlist submissions with property details and notes</li>
             <li>✅ Lead status tracking (New → Contacted → Qualified → Won/Lost)</li>
             <li>✅ CSV export of leads (tenant-scoped, local SQLite only)</li>
             <li>✅ Current system tracking (NightsBridge, Google Calendar, etc.)</li>
             <li>✅ Submission timestamp for follow-up prioritization</li>
-            <li>✅ Multi-tenant filtering (demo tenant: {tenant?.name || 'N/A'})</li>
+            <li>✅ <strong>NEW:</strong> Multi-tenant switcher—scoped to selected tenant ({selectedTenant?.name || 'N/A'})</li>
             <li>⚠️ Demo only: No email sending, no automated campaigns, no live payments</li>
           </ul>
         </div>
