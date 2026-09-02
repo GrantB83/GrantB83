@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-02",
+  "generatedAt": "2026-09-02T10:14:34.830Z",
+  "sources": {
+    "brownsBookings": "fixtures/sample-bookings.json",
+    "hmQuotesDir": "fixtures/hm-quotes",
+    "notes": "fixtures/sample-notes.md"
+  },
+  "outputs": [
+    "PACK.md",
+    "hospitality.md",
+    "heavy-metal.md",
+    "APPROVAL.md",
+    "manifest.json"
+  ],
+  "warnings": []
+}

@@ -28,6 +28,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
+| [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
@@ -1095,33 +1096,34 @@ This orchestrator assembles all outputs into one dated pack folder ready for Lia
 
 ---
 
-## browns-late-checkin-queue
+---
 
-**One-line:** Generate late/after-hours check-in queue for CoS 09:00 CT after-hours check-in pack.
+## sa-texas-morning-exception-pack
+
+**One-line:** Assemble SA Ops / CoS weekday Texas-morning exception digest for Heavy Metal + hospitality / The Browns.
 
 **Owning desk(s):** SA Ops / CoS
 
-**Location:** `tools/browns-late-checkin-queue/`
+**Location:** `tools/sa-texas-morning-exception-pack/`
 
 ### Install and Run
 
 ```bash
-cd tools/browns-late-checkin-queue
+cd tools/sa-texas-morning-exception-pack
 npm install
 npm run build
 
-# Basic usage
-npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir out/
+# Minimal usage (with warnings for missing inputs)
+npm run pack -- --date 2026-09-02 --outdir out/
 
-# With custom after-hour threshold
-npm run queue -- --bookings bookings.json --day 2026-09-20 --after-hour 17
+# With Browns bookings
+npm run pack -- --date 2026-09-02 --outdir out/ --browns-bookings bookings.json
 
-# With timezone
-npm run queue -- \
-  --bookings bookings.json \
-  --day 2026-09-20 \
-  --after-hour 15 \
-  --timezone Africa/Johannesburg
+# Full usage with all inputs
+npm run pack -- --date 2026-09-02 --outdir out/ \
+  --browns-bookings bookings.json \
+  --hm-quotes-dir ./hm-open/ \
+  --notes notes.md
 
 # Test with fixtures
 npm run test:fixtures
@@ -1129,45 +1131,40 @@ npm run test:fixtures
 
 ### Critical Safety Note
 
+- ✅ **DRAFT ONLY** - Never auto-sends WhatsApp or email
+- ✅ **CoS owns WhatsApp** - All sends via Coexistence of Service only
+- ✅ **Never invents rates** - Heavy Metal pricing stays manual
+- ✅ **Never invents volumes** - Heavy Metal quantities from source only
+- ✅ **Never invents guest facts** - Browns data from bookings only
+- ✅ **Flags missing inputs** - Warnings reported in PACK.md and manifest.json
 - ✅ **Offline only** - No APIs or network calls
-- ✅ **Never invents times** - Missing check-in time stays missing
-- ✅ **Never invents phone numbers** - Missing phone stays missing
-- ✅ **Heuristic only** - Keyword patterns, no LLM
-- ✅ **DRAFT ONLY** - Never sends WhatsApp automatically
-- ⚠️ **Manual CoS WhatsApp send required** - Copy/paste after approval
-- ⚠️ **Dullstroom only** - The Browns Luxury Guest Suites Dullstroom
+- ✅ **Perfect Water excluded** - Not in scope for this pack
+- ⚠️ **Manual review required** - Every pack before WhatsApp posting
 
-### Queue Inclusion Rules
+### Scope
 
-A booking is included if **arriving on target day** AND:
-1. Check-in time at/after threshold hour (default 15:00), OR
-2. Late/after-hours/ETA keywords in notes, OR
-3. Check-in time missing → goes to `unknown-time.md`
+**In scope:**
+- Heavy Metal Sand & Stone: open quotes (filenames only)
+- The Browns: exceptional bookings with special requests or timing flags
+
+**Out of scope:**
+- Perfect Water operations (entirely excluded)
+- Standard Browns arrivals/departures (use `browns-daily-ops-brief`)
+- Heavy Metal quote details/rates/volumes (manual review required)
 
 ### Output Files
 
-- `queue.json` - Structured queue data
-- `queue.md` - Human-readable numbered list (guest/suite/ETA/phone)
-- `unknown-time.md` - Arrivals without check-in times (flag for ETA confirmation)
-- `missing-fields.md` - Data quality report
-- `APPROVAL.md` - DRAFT checklist for CoS WhatsApp send
-- `manifest.json` - Run metadata
+- `PACK.md` - Pack index with contents, data sources, warnings, and next steps
+- `hospitality.md` - The Browns exceptional bookings
+- `heavy-metal.md` - Heavy Metal open quotes (filenames only)
+- `APPROVAL.md` - Safety gates, CoS workflow, scope boundaries
+- `manifest.json` - Machine-readable pack metadata
 
-### Integration with Other Tools
+### Timezone Context
 
-Consumes bookings.json from `browns-nightsbridge-bookings-adapter`:
+America/Chicago (Texas morning workflow for SA Ops / CoS)
 
-```bash
-# Step 1: Adapt Nightsbridge day sheet
-cd tools/browns-nightsbridge-bookings-adapter
-npm run adapt -- --day 2026-09-20 --input nightsbridge.csv
-
-# Step 2: Generate late check-in queue
-cd ../browns-late-checkin-queue
-npm run queue -- --bookings ../browns-nightsbridge-bookings-adapter/out/bookings.json --day 2026-09-20
-```
-
-[→ Full README](./browns-late-checkin-queue/README.md)
+[→ Full README](./sa-texas-morning-exception-pack/README.md)
 
 ---
 
