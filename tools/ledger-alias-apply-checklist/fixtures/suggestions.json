@@ -1,0 +1,72 @@
+{
+  "suggestions": [
+    {
+      "merchant": "AMAZON.COM*XX1234567",
+      "topMatch": {
+        "alias": "Amazon",
+        "score": 0.789,
+        "matchedPattern": "Amazon.com"
+      },
+      "allMatches": [
+        {
+          "alias": "Amazon",
+          "score": 0.789,
+          "matchedPattern": "Amazon.com"
+        }
+      ],
+      "confidence": "high"
+    },
+    {
+      "merchant": "AMZN Mktp US*XX8765432",
+      "topMatch": {
+        "alias": "Amazon",
+        "score": 0.723,
+        "matchedPattern": "AMZN"
+      },
+      "confidence": "high"
+    },
+    {
+      "merchant": "WALMART #2345",
+      "topMatch": {
+        "alias": "Walmart",
+        "score": 0.667,
+        "matchedPattern": "Walmart"
+      },
+      "confidence": "medium"
+    },
+    {
+      "merchant": "WAL-MART STORE 2345",
+      "topMatch": {
+        "alias": "Walmart",
+        "score": 0.612,
+        "matchedPattern": "Wal-Mart"
+      },
+      "confidence": "medium"
+    },
+    {
+      "merchant": "TARGET STORE T-1234",
+      "topMatch": {
+        "alias": "Target",
+        "score": 0.456,
+        "matchedPattern": "Target Store"
+      },
+      "confidence": "low"
+    },
+    {
+      "merchant": "COSTCO WHSE #123",
+      "topMatch": {
+        "alias": "Costco",
+        "score": 0.423,
+        "matchedPattern": "Costco Warehouse"
+      },
+      "confidence": "low"
+    }
+  ],
+  "noMatches": [
+    "UNKNOWN MERCHANT ABC",
+    "MYSTERY VENDOR XYZ"
+  ],
+  "generatedAt": "2026-09-02T10:00:00.000Z",
+  "minScore": 0.4,
+  "totalMerchants": 8
+}

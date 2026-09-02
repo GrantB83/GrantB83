@@ -22,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
+| [ledger-alias-apply-checklist](#ledger-alias-apply-checklist) | Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before Budget sheet writes | Ledger / CoS | **Offline**. Never writes sheet. Never invents amounts/aliases. Names/patterns only. H2 approval required. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
@@ -969,6 +970,83 @@ npm run suggest -- \
 ```
 
 [→ Full README](./ledger-merchant-alias-suggest/README.md)
+
+---
+
+## ledger-alias-apply-checklist
+
+**One-line:** Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before any USA Budget sheet write.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-alias-apply-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-alias-apply-checklist
+npm install
+npm run build
+
+# From JSON output
+npm run apply -- \
+  --suggestions path/to/suggestions.json \
+  --outdir out/
+
+# From markdown outputs
+npm run apply -- \
+  --suggestions-md path/to/suggestions.md \
+  --no-match path/to/no-match.md \
+  --outdir out/
+
+# With month label
+npm run apply -- \
+  --suggestions suggestions.json \
+  --month 2026-09 \
+  --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Sheets API or network calls
+- ✅ **Read-only** - Never modifies input files
+- ✅ **H2 approval required** - Never writes to Budget sheet; Ledger owns sheet writes
+- ✅ **No invented amounts or aliases** - Pass-through from suggestion tool only
+- ✅ **Names/patterns only** - No transaction amounts in prose
+- ⚠️ **Approval gate enforced** - Coding/CoS never write Budget directly
+
+### Behavior
+
+1. Parse suggestions from JSON or markdown (ledger-merchant-alias-suggest output)
+2. Group by confidence (high/medium/low) using score thresholds
+3. Generate `APPLY-CHECKLIST.md` - numbered merchant→alias mappings for human tick-off
+4. Generate `SKIPPED.md` - low-confidence / no-match items for manual research
+5. Generate `APPROVAL.md` - H2 gate workflow guidance
+6. Exit 1 on missing/malformed suggestions
+
+### Example Workflow
+
+```bash
+# Step 1: Generate suggestions (previous tool)
+cd tools/ledger-merchant-alias-suggest
+npm run suggest -- \
+  --unmatched queue.json \
+  --aliases aliases.json \
+  --outdir suggestions/
+
+# Step 2: Generate apply checklist
+cd ../ledger-alias-apply-checklist
+npm run apply -- \
+  --suggestions ../ledger-merchant-alias-suggest/suggestions/suggestions.json \
+  --no-match ../ledger-merchant-alias-suggest/suggestions/no-match.md \
+  --month 2026-09 \
+  --outdir checklist/
+
+# Step 3: Review APPLY-CHECKLIST.md and get H2 approval
+# Step 4: Ledger applies approved aliases to Budget sheet manually
+```
+
+[→ Full README](./ledger-alias-apply-checklist/README.md)
 
 ---
 
