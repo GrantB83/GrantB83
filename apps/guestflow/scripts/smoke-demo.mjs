@@ -229,6 +229,36 @@ async function runTests() {
   await testRoute('/api/tenants', 'Tenants API (GET)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards', 'Rate cards API (GET)', { expectedStatus: 200 });
   
+  // Test Phase 8 quote export API (POST)
+  const sampleQuoteExport = {
+    booking: {
+      property: 'Test Property',
+      guestName: 'Test Guest',
+      checkIn: '2026-12-15',
+      checkOut: '2026-12-17',
+      nights: 2,
+      room: 'Test Room'
+    },
+    quote: {
+      ratePerNight: '[RATE CARD REQUIRED]',
+      subtotal: '[PENDING RATE CARD]',
+      tax: '[PENDING]',
+      total: '[PENDING]',
+      note: 'Test note'
+    },
+    format: 'markdown'
+  };
+  await testRoute('/api/quotes/export', 'Quote export API (POST markdown)', { 
+    method: 'POST', 
+    body: sampleQuoteExport,
+    expectedStatus: 200
+  });
+  await testRoute('/api/quotes/export', 'Quote export API (POST html)', { 
+    method: 'POST', 
+    body: { ...sampleQuoteExport, format: 'html' },
+    expectedStatus: 200
+  });
+  
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
   

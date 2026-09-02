@@ -69,6 +69,29 @@ npm start
 
 ---
 
+## What Works (Phase 8)
+
+### ✅ Phase 8 Additions (Printable Quote Export)
+
+1. **Printable Quote Export** (`/demo/quote-draft` + `/api/quotes/export`)
+   - Download quote as markdown (.md) or HTML (.html) file
+   - Print-friendly HTML format with proper styling for paper output
+   - Preserves [RATE CARD REQUIRED] placeholders when rates are missing
+   - Never invents pricing—strict adherence to uploaded rates only
+   - Export includes draft status, approval gates reminder, and reference number
+   - Three export modes: Download Markdown, Download HTML, Print to PDF
+
+2. **Export API Endpoint** (`/api/quotes/export`)
+   - POST endpoint accepting booking and quote data
+   - Returns text/markdown or text/html with proper Content-Disposition headers
+   - Markdown-to-HTML conversion with basic formatting and print-optimized CSS
+   - Automatic filename generation from property name
+
+3. **Demo Hub Phase 8 Integration**
+   - Prominent teal card linking quote export feature (Phase 8 badge)
+   - Positioned above Phase 6 hosting readiness for visibility
+   - Quote draft page now includes three export buttons below generated quote
+
 ## What Works (Phase 6)
 
 ### ✅ Phase 6 Additions (Demo Smoke Test + Hosting Readiness)
@@ -400,6 +423,28 @@ Verify tables:
 
 ---
 
+## Phase 8 Summary
+
+**What Changed:**
+- Printable quote export with markdown and HTML download options from quote draft page
+- Print-to-PDF functionality via browser print dialog (HTML formatted)
+- Export API endpoint (`/api/quotes/export`) returning markdown or HTML with proper headers
+- Preserves [RATE CARD REQUIRED] placeholders when no matching rate found (never invents)
+- Demo hub updated with prominent Phase 8 teal card linking quote export feature
+- Export includes draft status, H7 approval gate reminder, and unique reference number
+- README updated with Phase 8 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Quote export (markdown/HTML), print functionality, no invented rates
+- 🚧 Stubbed: Same as Phase 6 (production auth, live payments, email/WhatsApp auto-send)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Quotes remain DRAFT until H7 approval
+- Missing rates stay as [RATE CARD REQUIRED]—never fabricated
+
+---
+
 ## Phase 6 Summary
 
 **What Changed:**
@@ -452,7 +497,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 6)
+## Hard Gates Reminder (Phase 8)
 
 **GuestFlow respects these safety constraints:**
 
@@ -466,7 +511,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 5. Phase 6 adds deployment readiness tools (smoke test script + hosting checklist), but maintains all safety constraints. No new functionality that touches payments, messaging, or data storage.**
+**These gates are unchanged from Phase 6. Phase 8 adds printable quote export (markdown/HTML) but maintains all safety constraints—exported quotes preserve [RATE CARD REQUIRED] placeholders and include H7 approval reminders.**
 
 ---
 
@@ -489,7 +534,7 @@ Verify tables:
 
 ## Next Steps (Post-Phase-6)
 
-**Phase 6 completes the deployment readiness toolkit.** Next priorities focus on production features and live integrations:
+**Phase 8 completes the quote workflow with printable exports.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow

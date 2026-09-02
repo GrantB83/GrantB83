@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, FileText, Download, Printer } from 'lucide-react'
 
 export default function QuoteDraftPage() {
   const [generated, setGenerated] = useState(false)
   const [rateCards, setRateCards] = useState<any[]>([])
   const [hasRates, setHasRates] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const sampleBooking = {
     property: 'Riverside Lodge',
@@ -91,6 +92,78 @@ export default function QuoteDraftPage() {
   }
 
   const quote = calculateQuote()
+
+  const handleExport = async (format: 'markdown' | 'html') => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/quotes/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          booking: sampleBooking,
+          quote,
+          format
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `quote-${sampleBooking.property.replace(/\s+/g, '-')}.${format === 'markdown' ? 'md' : 'html'}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Failed to export quote. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handlePrint = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/quotes/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          booking: sampleBooking,
+          quote,
+          format: 'html'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Print preparation failed')
+      }
+
+      const htmlContent = await response.text()
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => {
+          printWindow.print()
+        }, 250)
+      }
+    } catch (error) {
+      console.error('Print error:', error)
+      alert('Failed to prepare quote for printing. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -239,7 +312,33 @@ export default function QuoteDraftPage() {
                 )}
               </div>
 
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleExport('markdown')}
+                    disabled={exporting}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download .md
+                  </button>
+                  <button
+                    onClick={() => handleExport('html')}
+                    disabled={exporting}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download .html
+                  </button>
+                </div>
+                <button
+                  onClick={handlePrint}
+                  disabled={exporting}
+                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Quote
+                </button>
                 <Link
                   href="/demo/welcome-pack"
                   className="block w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition text-center"
@@ -257,13 +356,15 @@ export default function QuoteDraftPage() {
       </div>
 
       <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-2">Quote Safety Features</h3>
+        <h3 className="font-semibold text-gray-900 mb-2">Quote Safety Features (Phase 8)</h3>
         <ul className="space-y-2 text-sm text-gray-700">
           <li>✅ All amounts from uploaded rate card only</li>
           <li>✅ Missing rate = availability-only confirmation (no pricing)</li>
           <li>✅ Draft requires H7 approval gate before send</li>
           <li>✅ No payment processing in this tool (link to your payment provider)</li>
           <li>✅ Seasonal rates, promotions, and minimum stays respected</li>
+          <li>✅ <strong>NEW:</strong> Printable/downloadable quote export (markdown & HTML)</li>
+          <li>✅ <strong>NEW:</strong> Export preserves [RATE CARD REQUIRED] placeholders when rates missing</li>
         </ul>
       </div>
     </div>
