@@ -1,0 +1,36 @@
+{
+  "name": "hm-quote-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator for Heavy Metal quote pipeline: hm-quote-intake → hm-quote-to-pod → optional hm-delivery-pod-draft",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --quote fixtures/prebuilt-quote.json --pod fixtures/prebuilt-pod.json --outdir test-out/pack-YYYYMMDD/ && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "heavy-metal",
+    "sand",
+    "stone",
+    "gravel",
+    "quote",
+    "pod",
+    "pipeline",
+    "dullstroom"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
