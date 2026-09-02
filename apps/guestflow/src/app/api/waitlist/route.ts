@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
     
-    const { name, email, propertyName, roomCount, currentSystem, phone, notes } = data
+    const { name, email, propertyName, roomCount, currentSystem, phone, notes, inviteCodeId } = data
 
     if (!name || !email || !propertyName || !roomCount) {
       return NextResponse.json(
@@ -18,11 +18,11 @@ export async function POST(request: Request) {
     const defaultTenantId = getDefaultTenantId()
     
     const stmt = db.prepare(`
-      INSERT INTO waitlist (tenant_id, name, email, property_name, room_count, current_system, phone, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO waitlist (tenant_id, name, email, property_name, room_count, current_system, phone, notes, invite_code_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     
-    stmt.run(defaultTenantId, name, email, propertyName, roomCount, currentSystem || null, phone || null, notes || null)
+    stmt.run(defaultTenantId, name, email, propertyName, roomCount, currentSystem || null, phone || null, notes || null, inviteCodeId || null)
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (error: any) {

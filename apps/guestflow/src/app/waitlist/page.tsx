@@ -22,14 +22,30 @@ export default function WaitlistPage() {
     setLoading(true)
 
     try {
+      // Check for invite code ID in sessionStorage
+      let inviteCodeId = null
+      if (typeof window !== 'undefined') {
+        const storedId = sessionStorage.getItem('guestflow_invite_code_id')
+        if (storedId) {
+          inviteCodeId = parseInt(storedId)
+        }
+      }
+
       const response = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          inviteCodeId
+        }),
       })
 
       if (response.ok) {
         setSubmitted(true)
+        // Clear invite code from sessionStorage after successful submission
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('guestflow_invite_code_id')
+        }
       } else {
         alert('Something went wrong. Please try again.')
       }

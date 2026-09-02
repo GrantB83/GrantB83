@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 30: Invite Code Usage Report */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/invite-usage"
+          className="block bg-gradient-to-r from-teal-600 to-teal-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Database className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Invite Code Usage Report</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 30 🎯</span>
+          </div>
+          <p className="text-teal-100">
+            Sales-usable invite redeem → CRM/waitlist attribution + usage report. Track which invite codes drive interest with per-code redemptions and attributed leads. Markdown export for sales reporting (DEMO ACCESS ONLY).
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 28: Demo Invite Codes */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
