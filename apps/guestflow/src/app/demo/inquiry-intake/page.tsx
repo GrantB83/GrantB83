@@ -22,7 +22,8 @@ sarah.miller@email.com
 +27 82 555 1234`
 
 export default function InquiryIntakePage() {
-  const { selectedTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
+  const selectedTenant = tenants.find(t => t.id === selectedTenantId)
   const [inquiry, setInquiry] = useState(DEFAULT_INQUIRY)
   const [extracted, setExtracted] = useState<any>(null)
   const [draftReply, setDraftReply] = useState<string>('')
