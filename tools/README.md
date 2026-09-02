@@ -18,6 +18,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
+| [hm-delivery-pod-draft](#hm-delivery-pod-draft) | Generate DRAFT proof-of-delivery notes from Heavy Metal delivery data | SA Ops / Heavy Metal | **Offline**. No auto-send. Never invents volumes/signatures. JSON or paste text input. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
@@ -637,6 +638,110 @@ npm run test:fixtures
 - **Automation Target:** structured-whatsapp-quotes
 
 [→ Full README](./hm-quote-intake/README.md)
+
+---
+
+## hm-delivery-pod-draft
+
+**One-line:** Generate DRAFT proof-of-delivery notes from Heavy Metal Sand & Stone delivery data (structured JSON or paste text).
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-delivery-pod-draft/`
+
+### Install and Run
+
+```bash
+cd tools/hm-delivery-pod-draft
+npm install
+npm run build
+
+# From structured JSON
+npm run draft -- --pod pod.json --outdir out/
+
+# From paste text (driver notes, WhatsApp)
+npm run draft -- --text paste.txt --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No WhatsApp Cloud API** - WhatsApp stays on CoS
+- ✅ **No auto-send** - DRAFT outputs only
+- ✅ **Never invents volumes** - Only extracts if explicitly present
+- ✅ **Never invents signatures** - signedBy field ONLY if actually present; unsigned deliveries are valid
+- ⚠️ **Human approval required** - Always review APPROVAL.md before using outputs
+- ⚠️ **Confirm volume + location** - Before any communication per lane:heavy-metal rules
+
+### Input Modes
+
+**Structured JSON (`--pod`):**
+```json
+{
+  "customer": "Pieter van der Merwe",
+  "phone": "+27823456789",
+  "material": "Sand",
+  "volume": 12,
+  "unit": "m³",
+  "deliveryLocation": "123 Main Road, Dullstroom",
+  "deliveredAt": "2026-09-02 14:30",
+  "vehicle": "GP 123 ABC",
+  "driver": "Johannes Malema",
+  "notes": "Delivered to side gate.",
+  "signedBy": "P. van der Merwe"
+}
+```
+
+**Paste Text (`--text`):**
+```
+Customer: Johan Botha
+Phone: 0827654321
+
+Material: Stone
+Volume: 15 m³
+Location: 45 Industrial Drive, Dullstroom
+Date: 2026-09-02 10:15
+
+Vehicle: MP 456 XYZ
+Driver: Thabo Mbeki
+
+Signed by: J. Botha
+```
+
+### Output Files
+
+- `pod.json` - Normalized POD data
+- `pod.md` - DRAFT proof-of-delivery note (marked as DRAFT)
+- `missing-fields.md` - Checklist of fields to fill manually
+- `APPROVAL.md` - Review document with safety checklist
+- `manifest.json` - Generation metadata
+
+### Field Extraction
+
+**Required (flagged if missing):** customer, material, volume, unit, deliveryLocation, deliveredAt  
+**Optional (tracked):** phone, vehicle, driver, notes, **signedBy** (NEVER invented)
+
+### Signature Handling
+
+**CRITICAL:** The tool NEVER invents the `signedBy` field.
+- If delivery was signed for → record it
+- If delivery was NOT signed for → field stays `undefined`
+- Unsigned deliveries are valid
+- Tool explicitly flags unsigned status in pod.md
+- APPROVAL.md emphasizes never inventing signatures
+
+### Entity Context
+
+- **Lane:** heavy-metal
+- **Trading Name:** Heavy Metal Sand & Stone
+- **Location:** Dullstroom (yard)
+- **Emails:** grant@hmsand.co.za, mail@hmsand.co.za
+- **Automation Target:** delivery-day-and-pod
+
+[→ Full README](./hm-delivery-pod-draft/README.md)
 
 ---
 
