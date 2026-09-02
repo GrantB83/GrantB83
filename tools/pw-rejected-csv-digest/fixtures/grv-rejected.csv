@@ -1,0 +1,6 @@
+Store,Item,Qty,Unit,RejectionReason
+,Water 5L,10,bottle,Missing or blank Store
+LT,,5,unit,Missing or blank SKU/Item
+LT,Filter,abc,unit,Unparseable ReceivedQty: "abc"
+LT,Salt,15,,Missing or blank Unit
+Tho,Sand,20,kg,Missing or blank ReceivedQty
