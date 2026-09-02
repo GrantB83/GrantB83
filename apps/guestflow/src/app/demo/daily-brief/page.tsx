@@ -1,159 +1,320 @@
+'use client'
+
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Users, Clock, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useTenant } from '@/components/TenantContext'
+import { format } from 'date-fns'
+import { useSearchParams } from 'next/navigation'
+
+interface Booking {
+  id: number
+  guest_name: string
+  property_name: string
+  check_in: string
+  check_out: string
+  room_number: string
+  derivedStatus: string
+  lateCheckIn: boolean
+  missingFields: string[]
+  adults?: number
+  children?: number
+  pets?: boolean
+  special_requests?: string
+}
 
 export default function DailyBriefPage() {
-  const briefDate = 'December 15, 2026'
+  const searchParams = useSearchParams()
+  const { selectedTenantId, tenants } = useTenant()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [targetDate, setTargetDate] = useState(
+    searchParams.get('date') || format(new Date(), 'yyyy-MM-dd')
+  )
+  const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
+
+  useEffect(() => {
+    const urlDate = searchParams.get('date')
+    if (urlDate) {
+      setTargetDate(urlDate)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (selectedTenantId) {
+      fetchBookings()
+    }
+  }, [selectedTenantId, targetDate])
+
+  const fetchBookings = async () => {
+    if (!selectedTenantId) return
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/bookings?tenant_id=${selectedTenantId}&date=${targetDate}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setBookings(data.bookings)
+      }
+    } catch (err) {
+      console.error('Error fetching bookings:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExport = async (format: 'markdown' | 'text') => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/daily-brief/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantName: activeTenant?.name,
+          targetDate,
+          bookings: bookings.map(b => ({
+            guestName: b.guest_name,
+            propertyName: b.property_name,
+            roomNumber: b.room_number,
+            checkIn: b.check_in,
+            checkOut: b.check_out,
+            status: b.derivedStatus,
+            lateCheckIn: b.lateCheckIn,
+            missingFields: b.missingFields,
+            adults: b.adults,
+            children: b.children,
+            pets: b.pets,
+            specialRequests: b.special_requests
+          })),
+          format
+        })
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `daily-brief-${targetDate}.${format === 'markdown' ? 'md' : 'txt'}`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+    } catch (err) {
+      console.error('Export error:', err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const arrivals = bookings.filter(b => b.derivedStatus === 'arriving')
+  const inHouse = bookings.filter(b => b.derivedStatus === 'inhouse')
+  const departures = bookings.filter(b => b.derivedStatus === 'departing')
   
+  const redAlerts = bookings.filter(b => b.lateCheckIn && b.derivedStatus === 'arriving')
+  const amberWarnings = bookings.filter(b => b.missingFields.length > 0 || (b.special_requests && !b.lateCheckIn))
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link href="/demo" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6">
+      <Link href="/demo/bookings-board" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Demo
+        Back to Bookings Board
       </Link>
 
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium mb-3">
+              Phase 17 🎉
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Daily Operations Brief
             </h1>
             <p className="text-gray-600">
-              Morning coordination brief for your operations team
+              Generated from {activeTenant?.name || 'demo tenant'} bookings
             </p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-600">SAST / CT</div>
-            <div className="text-lg font-semibold text-gray-900">{briefDate}</div>
+            <div className="text-sm text-gray-600 mb-2">Brief Date</div>
+            <input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+            />
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          icon={<Users className="w-6 h-6 text-blue-600" />}
-          label="Arrivals"
-          value="3"
-          color="blue"
-        />
-        <StatCard
-          icon={<Calendar className="w-6 h-6 text-green-600" />}
-          label="In-House"
-          value="5"
-          color="green"
-        />
-        <StatCard
-          icon={<Clock className="w-6 h-6 text-orange-600" />}
-          label="Departures"
-          value="2"
-          color="orange"
-        />
-      </div>
-
-      <div className="space-y-6">
-        <Section title="🔴 RED - Action Required" color="red">
-          <AlertItem
-            title="Miller Anniversary Suite - Late Check-in"
-            details="Guests arriving 8:00 PM (delayed flight). Confirm after-hours access."
-            action="Call +27 82 555 1234 to confirm ETA"
-          />
-        </Section>
-
-        <Section title="🟡 AMBER - Today's Priorities" color="amber">
-          <BriefItem
-            title="Johnson Family - Dietary Requirements"
-            details="Vegetarian breakfast requested. 2 adults, 2 children."
-            time="Check-in: 2:00 PM"
-          />
-          <BriefItem
-            title="Pet Guest - Suite 3"
-            details="Miller party has small dog. Ensure pet amenities are in room."
-            time="Arrival: 8:00 PM"
-          />
-        </Section>
-
-        <Section title="Arrivals Today (3)" color="blue">
-          <GuestCard
-            name="Sarah & John Miller"
-            room="Deluxe Suite (Room 3)"
-            time="8:00 PM (Late arrival)"
-            nights={2}
-            guests="2 adults"
-            notes="Anniversary, Pet (small dog), Late check-in"
-          />
-          <GuestCard
-            name="Johnson Family"
-            room="Family Suite (Room 5)"
-            time="2:00 PM"
-            nights={3}
-            guests="2 adults, 2 children"
-            notes="Vegetarian meals"
-          />
-          <GuestCard
-            name="Business Traveler"
-            room="Standard Room (Room 1)"
-            time="3:30 PM"
-            nights={1}
-            guests="1 adult"
-            notes="Early breakfast (7:00 AM)"
-          />
-        </Section>
-
-        <Section title="In-House Guests (5)" color="green">
-          <div className="text-sm text-gray-600">
-            <p>• Williams party - Suite 2 (checkout tomorrow)</p>
-            <p>• Corporate group - Rooms 6-8 (2 more nights)</p>
-            <p>• Chen couple - Room 4 (checkout Dec 18)</p>
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <p className="text-gray-600 mt-4">Loading brief...</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid lg:grid-cols-3 gap-6 mb-8">
+            <StatCard
+              icon={<Users className="w-6 h-6 text-blue-600" />}
+              label="Arrivals"
+              value={arrivals.length}
+              color="blue"
+            />
+            <StatCard
+              icon={<Calendar className="w-6 h-6 text-green-600" />}
+              label="In-House"
+              value={inHouse.length}
+              color="green"
+            />
+            <StatCard
+              icon={<Clock className="w-6 h-6 text-orange-600" />}
+              label="Departures"
+              value={departures.length}
+              color="orange"
+            />
           </div>
-        </Section>
 
-        <Section title="Departures Today (2)" color="orange">
-          <div className="text-sm text-gray-600">
-            <p>• Brown family - Room 7 (checkout 10:00 AM)</p>
-            <p>• Anderson couple - Room 9 (checkout 9:30 AM)</p>
+          <div className="mb-6 flex gap-3">
+            <button
+              onClick={() => handleExport('markdown')}
+              disabled={exporting || bookings.length === 0}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              Download Markdown
+            </button>
+            <button
+              onClick={() => handleExport('text')}
+              disabled={exporting || bookings.length === 0}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4" />
+              Download Text
+            </button>
           </div>
-        </Section>
 
-        <Section title="Housekeeping Schedule" color="gray">
-          <TaskItem task="Morning: Rooms 7, 9 (departures)" status="pending" />
-          <TaskItem task="Afternoon: Rooms 1, 3, 5 (arrivals)" status="pending" />
-          <TaskItem task="Pet suite preparation - Room 3" status="pending" />
-          <TaskItem task="Family suite setup - Room 5" status="pending" />
-        </Section>
+          <div className="space-y-6">
+            {redAlerts.length > 0 && (
+              <Section title="🔴 RED - Action Required" color="red">
+                {redAlerts.map(booking => (
+                  <AlertItem
+                    key={booking.id}
+                    title={`${booking.guest_name} - ${booking.property_name}`}
+                    details={`Late check-in expected. Room: ${booking.room_number || 'TBD'}`}
+                    action={`Confirm arrival time and after-hours access`}
+                  />
+                ))}
+              </Section>
+            )}
 
-        <Section title="Breakfast Service" color="gray">
-          <div className="text-sm text-gray-600">
-            <p><strong>Regular service:</strong> 7:30-10:00 AM (5 guests)</p>
-            <p><strong>Early service:</strong> 7:00 AM (1 guest, Room 1)</p>
-            <p><strong>Special dietary:</strong> Vegetarian (Johnson family, arriving today)</p>
+            {amberWarnings.length > 0 && (
+              <Section title="🟡 AMBER - Today's Priorities" color="amber">
+                {amberWarnings.map(booking => (
+                  <BriefItem
+                    key={booking.id}
+                    title={`${booking.guest_name} - ${booking.property_name}`}
+                    details={
+                      booking.missingFields.length > 0
+                        ? `Missing: ${booking.missingFields.join(', ')}`
+                        : booking.special_requests || 'Special request noted'
+                    }
+                    time={`${booking.derivedStatus === 'arriving' ? 'Check-in' : 'In-house'}`}
+                  />
+                ))}
+              </Section>
+            )}
+
+            {arrivals.length > 0 && (
+              <Section title={`Arrivals Today (${arrivals.length})`} color="blue">
+                {arrivals.map(booking => (
+                  <GuestCard key={booking.id} booking={booking} />
+                ))}
+              </Section>
+            )}
+
+            {inHouse.length > 0 && (
+              <Section title={`In-House Guests (${inHouse.length})`} color="green">
+                {inHouse.map(booking => (
+                  <GuestCard key={booking.id} booking={booking} />
+                ))}
+              </Section>
+            )}
+
+            {departures.length > 0 && (
+              <Section title={`Departures Today (${departures.length})`} color="orange">
+                {departures.map(booking => (
+                  <div key={booking.id} className="text-sm text-gray-600">
+                    • {booking.guest_name} - {booking.property_name} (Room {booking.room_number || 'TBD'}) - checkout {booking.check_out}
+                  </div>
+                ))}
+              </Section>
+            )}
+
+            {bookings.length === 0 && (
+              <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 font-medium">No bookings for {targetDate}</p>
+                <p className="text-sm text-gray-500 mt-2">Try a different date or run demo seed</p>
+              </div>
+            )}
+
+            {bookings.length > 0 && (
+              <Section title="Housekeeping Schedule" color="gray">
+                {departures.map((booking, idx) => (
+                  <TaskItem
+                    key={`depart-${idx}`}
+                    task={`Morning: ${booking.property_name} Room ${booking.room_number || 'TBD'} (departure)`}
+                    status="pending"
+                  />
+                ))}
+                {arrivals.map((booking, idx) => (
+                  <TaskItem
+                    key={`arrive-${idx}`}
+                    task={`Afternoon: ${booking.property_name} Room ${booking.room_number || 'TBD'} (arrival prep)`}
+                    status="pending"
+                  />
+                ))}
+              </Section>
+            )}
           </div>
-        </Section>
-      </div>
+        </>
+      )}
 
       <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-2">Daily Brief Features</h3>
+        <h3 className="font-semibold text-gray-900 mb-2">Daily Brief Features (Phase 17)</h3>
         <ul className="space-y-2 text-sm text-gray-700">
-          <li>✅ Generated from NightsBridge / Google Calendar / booking JSON</li>
+          <li>✅ Generated from tenant bookings in SQLite fixtures</li>
           <li>✅ RED/AMBER/GREEN priority system for fast scanning</li>
+          <li>✅ Late check-in badges and missing-fields warnings</li>
           <li>✅ Housekeeping task list per arrival/departure</li>
-          <li>✅ Special requests and dietary requirements highlighted</li>
-          <li>✅ Draft-only: team WhatsApp send requires H11 approval</li>
-          <li>✅ Never invents guest data or room assignments</li>
+          <li>✅ Export as Markdown or plain text for leave-behind</li>
+          <li>✅ Never invents guest data—blanks stay flagged</li>
+          <li>⚠️ Draft-only: team WhatsApp send requires H11 approval</li>
         </ul>
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex gap-4 justify-center">
         <Link
-          href="/demo"
+          href="/demo/bookings-board"
           className="inline-block px-8 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
         >
-          Back to Demo Overview
+          Back to Bookings Board
+        </Link>
+        <Link
+          href="/demo"
+          className="inline-block px-8 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+        >
+          Demo Hub
         </Link>
       </div>
     </div>
   )
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color: string }) {
+function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: number, color: string }) {
   const bgColor = color === 'blue' ? 'bg-blue-50' : color === 'green' ? 'bg-green-50' : 'bg-orange-50'
   return (
     <div className={`${bgColor} p-6 rounded-xl border border-gray-200`}>
@@ -207,23 +368,33 @@ function BriefItem({ title, details, time }: { title: string, details: string, t
   )
 }
 
-function GuestCard({ name, room, time, nights, guests, notes }: { 
-  name: string
-  room: string
-  time: string
-  nights: number
-  guests: string
-  notes: string
-}) {
+function GuestCard({ booking }: { booking: Booking }) {
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-semibold text-gray-900">{name}</h3>
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">{time}</span>
+        <h3 className="font-semibold text-gray-900">{booking.guest_name}</h3>
+        <div className="flex gap-2">
+          {booking.lateCheckIn && (
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">LATE</span>
+          )}
+          {booking.missingFields.length > 0 && (
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+              MISSING: {booking.missingFields.join(', ')}
+            </span>
+          )}
+        </div>
       </div>
-      <p className="text-sm text-gray-700 mb-1">{room} · {nights} {nights === 1 ? 'night' : 'nights'}</p>
-      <p className="text-sm text-gray-600 mb-2">{guests}</p>
-      {notes && <p className="text-xs text-gray-500 italic">{notes}</p>}
+      <p className="text-sm text-gray-700 mb-1">
+        {booking.property_name} · Room {booking.room_number || 'TBD'}
+      </p>
+      <p className="text-sm text-gray-600 mb-2">
+        {booking.adults || 0} adult{(booking.adults || 0) !== 1 ? 's' : ''}
+        {booking.children ? `, ${booking.children} child${booking.children !== 1 ? 'ren' : ''}` : ''}
+        {booking.pets && ' 🐾'}
+      </p>
+      {booking.special_requests && (
+        <p className="text-xs text-gray-500 italic">{booking.special_requests}</p>
+      )}
     </div>
   )
 }

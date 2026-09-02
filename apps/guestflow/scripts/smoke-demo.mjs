@@ -245,7 +245,8 @@ async function runTests() {
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
   await testRoute('/demo/quote-draft', 'Quote draft demo', { checkContent: 'Quote' });
   await testRoute('/demo/welcome-pack', 'Welcome pack demo', { checkContent: 'Welcome' });
-  await testRoute('/demo/daily-brief', 'Daily brief demo', { checkContent: 'Daily' });
+  await testRoute('/demo/bookings-board', 'Bookings board (Phase 17)', { checkContent: 'Bookings' });
+  await testRoute('/demo/daily-brief', 'Daily brief demo (Phase 17 dynamic)', { checkContent: 'Daily' });
   await testRoute('/demo/nightsbridge-import', 'NightsBridge import', { checkContent: 'NightsBridge' });
   await testRoute('/demo/tenant', 'Tenant switcher', { checkContent: 'Demo' });
   
@@ -333,6 +334,41 @@ async function runTests() {
   await testRoute('/api/leads?tenant_id=1', 'Leads API with tenant filter (Phase 10)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards?tenant_id=1', 'Rate cards API with tenant filter (Phase 10)', { expectedStatus: 200 });
   
+  // Test Phase 17 bookings API
+  await testRoute('/api/bookings?tenant_id=1', 'Bookings API with tenant filter (Phase 17)', { expectedStatus: 200 });
+  await testRoute('/api/bookings?tenant_id=1&date=2026-12-15', 'Bookings API with date filter (Phase 17)', { expectedStatus: 200 });
+
+  // Test Phase 17 daily brief export API (POST)
+  const sampleBriefExport = {
+    tenantName: 'Test Tenant',
+    targetDate: '2026-12-15',
+    bookings: [
+      {
+        guestName: 'Test Guest',
+        propertyName: 'Test Property',
+        roomNumber: 'Suite 1',
+        checkIn: '2026-12-15',
+        checkOut: '2026-12-17',
+        status: 'arriving',
+        lateCheckIn: false,
+        missingFields: [],
+        adults: 2,
+        children: 0
+      }
+    ],
+    format: 'markdown'
+  };
+  await testRoute('/api/daily-brief/export', 'Daily brief export API (POST markdown)', { 
+    method: 'POST', 
+    body: sampleBriefExport,
+    expectedStatus: 200
+  });
+  await testRoute('/api/daily-brief/export', 'Daily brief export API (POST text)', { 
+    method: 'POST', 
+    body: { ...sampleBriefExport, format: 'text' },
+    expectedStatus: 200
+  });
+
   // Test Phase 11 convert API (POST with validation)
   const convertTestMissingFields = await fetch(`${BASE_URL}/api/waitlist/convert`, {
     method: 'POST',

@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 17: Bookings Board & Daily Ops Brief */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/bookings-board"
+          className="block bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Bookings Board & Daily Ops Brief</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 17 🎉</span>
+          </div>
+          <p className="text-green-100">
+            View tenant bookings board → Generate dynamic daily ops brief from fixtures (arrivals/in-house/departing with late badges & missing-field warnings)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 13: Printable Leave-Behind Export */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -264,11 +283,11 @@ export default function DemoPage() {
           status="Interactive"
         />
         <DemoCard
-          href="/demo/daily-brief"
+          href="/demo/bookings-board"
           icon={<Calendar className="w-8 h-8 text-primary-600" />}
-          title="Daily Operations Brief"
-          description="View a sample morning brief with arrivals, departures, and tasks"
-          status="Interactive"
+          title="Bookings Board & Daily Brief"
+          description="Tenant bookings board with dynamic daily ops brief generation"
+          status="Phase 17"
         />
         <DemoCard
           href="/demo/nightsbridge-import"

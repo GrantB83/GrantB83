@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 14 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 17 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 14 — Sales funnel polish for demo walkthrough (inquiry→quote→welcome→ops)
+**Current Phase:** Phase 17 — Demo daily ops brief generated from tenant bookings (fixtures/UI only)
 
 ---
 
