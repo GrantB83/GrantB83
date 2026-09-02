@@ -112,10 +112,16 @@ npm start
    - SQLite persistence (`/api/waitlist`)
    - Success confirmation flow
 
-9. **Database Layer**
-   - SQLite schema: waitlist, properties, inquiries, bookings
-   - Sample data seeding
-   - API routes for waitlist CRUD
+9. **Operator CRM** (`/crm`)
+   - Read-only list of all waitlist leads
+   - Property interest, room count, current system tracking
+   - Submission timestamps for follow-up prioritization
+   - Demo-labeled (no email campaigns or qualification workflow)
+
+10. **Database Layer**
+    - SQLite schema: waitlist, properties, inquiries, bookings
+    - Sample data seeding
+    - API routes for waitlist CRUD
 
 ### 🚧 Stubbed / Coming Soon
 
@@ -129,7 +135,7 @@ npm start
 
 ---
 
-## 5-Step Demo Walk
+## 6-Step Demo Walk
 
 ### For Grant / CoS to Demo:
 
@@ -164,6 +170,12 @@ npm start
    - Navigate to `/waitlist`
    - Fill in sample lead info
    - Submit and observe success confirmation
+
+7. **Step 6 - Operator CRM:**
+   - Navigate to `/crm` (or click "CRM" in nav)
+   - View all waitlist leads in read-only table
+   - See property details, room count, submission dates
+   - Note: Demo-only, no email campaigns or status updates
 
 ---
 

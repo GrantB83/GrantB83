@@ -35,6 +35,9 @@ export default function Navigation() {
             <NavLink href="/waitlist" icon={<Users className="w-4 h-4" />} active={isActive('/waitlist')}>
               Waitlist
             </NavLink>
+            <NavLink href="/crm" icon={<FileText className="w-4 h-4" />} active={isActive('/crm')}>
+              CRM
+            </NavLink>
           </div>
 
           <div className="flex items-center">
