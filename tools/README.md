@@ -14,6 +14,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
+| [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
@@ -439,6 +440,69 @@ npm run queue -- --dir /vault/documents --outdir reports/
 - `manifest.json` - Run metadata
 
 [→ Full README](./vault-filename-due-queue/README.md)
+
+---
+
+## vault-entity-due-pack
+
+**One-line:** Group filename-due-queue items (or raw filename lists) into per-entity research packs for Vault weekday ops.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-entity-due-pack/`
+
+### Install and Run
+
+```bash
+cd tools/vault-entity-due-pack
+npm install
+npm run build
+
+# Queue JSON mode (preferred)
+npm run pack -- --queue ../vault-filename-due-queue/out/queue.json --outdir out/
+
+# Filename list mode
+npm run pack -- --filenames filenames.txt --outdir out/
+
+# With custom entity mappings
+npm run pack -- --queue queue.json --entities entities.json --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Filename heuristics only** - No file bodies opened
+- ✅ **No invented dates** - Date tokens from source queue only
+- ✅ **No invented amounts** - Never handles monetary values
+- ✅ **No legal positions** - Entity classification is heuristic guidance only
+- ⚠️ **Vault owns research** - All CIPC/SARS filings require human approval (N2 gate)
+- ⚠️ **Never post figures in chat** - Amounts stay in files, never in prose
+
+### Default Entity Heuristics
+
+7 entities: gab-trust (GAB, Trust), b-group (BVR, Holdings), cipc, sars (Tax), plimmer, charisse, unknown.
+
+### Output Structure
+
+- `by-entity/<slug>/pack.md` - Entity-specific research pack with numbered items
+- `by-entity/<slug>/items.json` - Structured item data
+- `master.md` - Overview with counts per entity
+- `unknown.md` - Unmatched basenames
+- `APPROVAL.md` - H-gate safety rules and Vault ownership
+- `manifest.json` - Run metadata
+
+### Integration with vault-filename-due-queue
+
+```bash
+# Step 1: Generate due queue from filenames
+cd tools/vault-filename-due-queue
+npm run queue -- --files vault-filenames.txt --outdir due-queue/
+
+# Step 2: Group by entity
+cd ../vault-entity-due-pack
+npm run pack -- --queue ../vault-filename-due-queue/due-queue/queue.json --outdir entity-packs/
+```
+
+[→ Full README](./vault-entity-due-pack/README.md)
 
 ---
 
