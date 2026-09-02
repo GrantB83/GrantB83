@@ -1,5 +1,0 @@
-Customer: Pine Lake Estate
-Material: River stone (decorative)
-Volume: 5 tons
-Delivery: Lydenburg
-Status: Pending volume confirmation

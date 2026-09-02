@@ -1,6 +1,0 @@
-node_modules/
-dist/
-test-out/
-out/
-*.log
-.DS_Store

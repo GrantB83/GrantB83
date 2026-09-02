@@ -1,8 +1,0 @@
-pattern,category,notes,isRegex
-acme,Grocery,Major grocery chain,false
-megamart,Grocery,Warehouse store,false
-quickfuel,Fuel,Gas stations,false
-streamflix,Streaming,Video streaming service,false
-cloudhost,Utilities,Cloud hosting,false
-electropay,Utilities,Electric utility,false
-^stream,Streaming,Any streaming service starting with 'stream',true

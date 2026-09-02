@@ -1,7 +1,0 @@
-Date,Payee,Total,Notes,MatchStatus
-2024-02-01,ABC Corp Payment,500.00,Invoice #123,unmatched
-2024-02-02,XYZ Services Ltd,350.00,Monthly fee,unmatched
-2024-02-03,ABC Corp - Payment,480.00,Invoice #124,unmatched
-2024-02-04,Random Vendor,120.00,Purchase,unmatched
-2024-02-05,Mystery Shop 789,90.00,Unknown,unmatched
-2024-02-06,ABC CORP,510.00,Invoice #125,unmatched
