@@ -22,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+| [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
@@ -693,6 +694,83 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 - ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
 
 [→ Full README](./browns-ota-rate-worksheet/README.md)
+
+---
+
+## browns-ct-pack-assemble
+
+**One-line:** Assemble CoS Browns CT timed packs from sibling tool outputs (CT = America/Chicago timezone).
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ct-pack-assemble/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ct-pack-assemble
+npm install
+npm run build
+
+# Prebuilt inputs only (recommended)
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --before before.json \
+  --after after.json
+
+# Run sibling tools during assembly
+npm run assemble -- \
+  --day 2026-09-20 \
+  --outdir out/ct-2026-09-20/ \
+  --bookings bookings.json \
+  --run-daily-ops \
+  --run-guest-comms \
+  --guest-booking guest.json
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Calls sibling tools via npm run child processes
+- ✅ **Prebuilt inputs preferred** - Accept JSON outputs from tools already run
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email automatically
+- ✅ **Timed checklist** - PACK.md includes 20:00 / 09:00 / 21:00 CT workflow
+- ✅ **CoS owns WhatsApp** - Coexistence of Service required for all sends
+- ⚠️ **Never auto-send** - Manual copy/paste to WhatsApp Admin - The Browns only
+- ⚠️ **Never invents data** - Passes through from sibling tools only
+- ⚠️ **Dullstroom / The Browns only** - Not for other properties
+
+### Output Files
+
+- `PACK.md` - Pack index with timed checklist (20:00 / 09:00 / 21:00 CT)
+- `APPROVAL.md` - Safety gates and never auto-send reminder
+- `changes.md` - Booking change check output (if run or provided)
+- `daily-ops.md` - Daily ops brief (copied from browns-daily-ops-brief)
+- `guest-*.md` - Guest welcome drafts (copied from browns-guest-comms-draft)
+- `manifest.json` - Machine-readable pack inventory
+
+### Sibling Tools Integration
+
+Calls or accepts outputs from:
+- `browns-nightsbridge-bookings-adapter` - Transform Nightsbridge day sheets
+- `browns-booking-change-check` - Detect booking changes (not yet implemented)
+- `browns-daily-ops-brief` - Generate team ops brief
+- `browns-guest-comms-draft` - Generate guest welcome messages
+
+### CoS CT Pack Workflow
+
+CoS runs timed Browns CT packs:
+- **20:00 CT**: Same-day morning guest drafts (welcome messages for arrivals)
+- **09:00 CT (next morning)**: After-hours check-ins review
+- **21:00 CT**: Staff ops brief for team WhatsApp
+
+This orchestrator assembles all outputs into one dated pack folder ready for Liana vet / Grant approval.
+
+[→ Full README](./browns-ct-pack-assemble/README.md)
 
 ---
 
