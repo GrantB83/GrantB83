@@ -1,0 +1,33 @@
+{
+  "name": "career-application-packet-assemble",
+  "version": "1.0.0",
+  "description": "Offline CLI assembler for Career / CoS application packets: score report, cover lint report, facts snapshot, APPROVAL checklist",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "assemble": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "assemble": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --outdir test-out/packet-YYYYMMDD/ --score fixtures/score-report.md --cover-lint fixtures/lint-report.md --facts fixtures/facts.json --jd fixtures/jd.txt && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "career",
+    "application",
+    "packet",
+    "cos",
+    "operations"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
