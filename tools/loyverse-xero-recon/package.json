@@ -11,8 +11,10 @@
     "build": "tsc",
     "test": "node --test dist/**/*.test.js",
     "recon": "node dist/index.js",
-    "test:fixtures": "npm run build && node dist/index.js --loyverse fixtures/loyverse-sales.csv --xero fixtures/xero-sales.csv --output test-out && echo 'Fixture test completed successfully'",
-    "clean": "rm -rf dist test-out"
+    "recon:summary": "node dist/index.js --mode summary",
+    "test:fixtures": "npm run build && node dist/index.js --mode receipt --loyverse fixtures/loyverse-sales.csv --xero fixtures/xero-sales.csv --output test-out && echo 'Receipt mode fixture test completed successfully'",
+    "test:summary": "npm run build && node dist/index.js --mode summary --loyverse fixtures/summary/ --xero fixtures/summary/ --output test-summary-out && echo 'Summary mode fixture test completed successfully'",
+    "clean": "rm -rf dist test-out test-summary-out"
   },
   "keywords": ["loyverse", "xero", "reconciliation", "accounting"],
   "author": "Grant Brown",
