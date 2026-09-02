@@ -1,0 +1,16 @@
+{
+  "guestName": "Michael Chen",
+  "email": "m.chen@example.com",
+  "phone": "+27 83 444 9876",
+  "checkIn": "2027-01-20",
+  "checkOut": "2027-01-23",
+  "nights": 3,
+  "adults": 2,
+  "children": 1,
+  "pets": false,
+  "property": "Mountain View Suites",
+  "room": "Family Suite",
+  "specialRequests": ["late check-in", "extra bed for child", "quiet room"],
+  "occasion": "family vacation",
+  "confidence": 0.88
+}

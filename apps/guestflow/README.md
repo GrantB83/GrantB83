@@ -1,8 +1,68 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 22 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 23 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 22 — Demo inquiry intake with heuristic extraction (DRAFT/fixtures only)
+**Current Phase:** Phase 23 — Demo quote/invoice draft from inquiry JSON (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 23)
+
+### ✅ Phase 23 Additions (Demo Quote/Invoice Draft from Inquiry JSON)
+
+1. **Quote Draft from Inquiry JSON** (`/demo/quote-draft`)
+   - Accept inquiry/quote JSON from Phase 22 output, paste, or fixtures
+   - Three input modes: Sample Data, Paste JSON, or Load Fixtures
+   - If amounts present in JSON → DRAFT quote/proforma text with those amounts only
+   - If amounts missing → availability-only draft with `[RATE CARD REQUIRED]` placeholders
+   - Never invents rates — strict adherence to embedded amounts or rate card data only
+
+2. **Fixture Loading**
+   - Load fixture with amounts: complete quote generation demo
+   - Load fixture without amounts: availability-only confirmation demo
+   - Fixtures located in `fixtures/` directory (inquiry-with-amounts.json, inquiry-without-amounts.json)
+   - Demonstrates both quote generation scenarios: complete pricing vs. placeholder-only
+
+3. **JSON Input Parsing**
+   - Paste inquiry JSON directly into text area
+   - Automatic validation of required fields (guestName, checkIn, checkOut, property, room)
+   - Automatic calculation of nights if not provided
+   - Clear error messages for invalid JSON or missing required fields
+   - Preview parsed data before generating quote
+
+4. **Smart Rate Handling**
+   - Checks for embedded amounts in inquiry JSON first (Phase 23)
+   - Falls back to rate card lookup if no embedded amounts
+   - Clearly labels rate source: "quoted amount from inquiry" vs "rate card"
+   - Respects same [RATE CARD REQUIRED] placeholder rules when rates missing
+   - Never invents pricing—mirrors tools/browns-quote-invoice-draft semantics
+
+5. **Export & Integration**
+   - Same export functionality as Phase 8 (markdown, HTML, print-to-PDF)
+   - Preserves all placeholders when rates missing
+   - Link from inquiry-intake page (Phase 22) to quote-draft with instructions
+   - Phase 23 badge on demo hub with prominent card
+   - Export includes draft status and H7 approval gate reminder
+
+6. **Mirrors tools/browns-quote-invoice-draft**
+   - Same fixture structure and semantics
+   - Same placeholder rules: never invents amounts
+   - Same approval gate requirements (H7 before send)
+   - Tenant-scoped rate card integration maintained
+   - Compatible with Phase 22 inquiry-intake JSON output
+
+**What Works vs. Stubbed:**
+- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation, availability-only mode, export (markdown/HTML/PDF), [RATE CARD REQUIRED] placeholders
+- 🚧 Stubbed: Same as Phase 22 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations, CRM note attachment)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — quotes are DRAFT ONLY with local-only export
+- Never invents amounts (uses embedded JSON amounts or rate card only)
+- Missing amounts → availability-only confirmation with `[RATE CARD REQUIRED]` placeholders
+- Quotes require H7 approval gate before sending to guest
+- All data persists to local SQLite only (no live NB API or WhatsApp sends)
+- Fixtures and DEMO data only—no production rate publishing
 
 ---
 
@@ -57,6 +117,34 @@
 - Never invents contact info, dates, or guest details (uses `[PLACEHOLDER]` syntax in draft reply)
 - All data persists to local SQLite only with DRAFT labels
 - Pure TS heuristics — NO LLM API calls
+
+5. **Export & Integration**
+   - Same export functionality as Phase 8 (markdown, HTML, print-to-PDF)
+   - Preserves all placeholders when rates missing
+   - Link from inquiry-intake page (Phase 22) to quote-draft with instructions
+   - Phase 23 badge on demo hub with prominent card
+   - Export includes draft status and H7 approval gate reminder
+
+6. **Mirrors tools/browns-quote-invoice-draft**
+   - Same fixture structure and semantics
+   - Same placeholder rules: never invents amounts
+   - Same approval gate requirements (H7 before send)
+   - Tenant-scoped rate card integration maintained
+   - Compatible with Phase 22 inquiry-intake JSON output
+
+**What Works vs. Stubbed:**
+- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation, availability-only mode, export (markdown/HTML/PDF), [RATE CARD REQUIRED] placeholders
+- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations, CRM note attachment)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — quotes are DRAFT ONLY with local-only export
+- Never invents amounts (uses embedded JSON amounts or rate card only)
+- Missing amounts → availability-only confirmation with `[RATE CARD REQUIRED]` placeholders
+- Quotes require H7 approval gate before sending to guest
+- All data persists to local SQLite only (no live NB API or WhatsApp sends)
+- Fixtures and DEMO data only—no production rate publishing
+>>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
 
 ---
 
@@ -1298,6 +1386,7 @@ Verify tables:
 
 ---
 
+<<<<<<< HEAD
 ## Phase 21 Summary
 
 **What Changed:**
@@ -1324,6 +1413,39 @@ Verify tables:
 ---
 
 ## Phase 3 Summary
+=======
+## Phase 23 Summary
+
+**What Changed:**
+- Quote draft page now accepts inquiry/quote JSON from Phase 22 output, paste, or fixtures
+- Three input modes: Sample Data (existing), Paste JSON (new), Load Fixtures (new)
+- Created fixtures directory with inquiry-with-amounts.json and inquiry-without-amounts.json
+- Smart rate handling: checks for embedded amounts in inquiry JSON first, falls back to rate card
+- If amounts present in JSON → generates DRAFT quote/proforma with those amounts only
+- If amounts missing → generates availability-only draft with `[RATE CARD REQUIRED]` placeholders
+- JSON input parsing with validation and clear error messages
+- Rate source clearly labeled: "quoted amount from inquiry" vs "from rate card"
+- Link from inquiry-intake page to quote-draft with Phase 22→23 instructions
+- Demo hub updated with prominent Phase 23 card (teal)
+- README updated with Phase 23 section and hard gates reminder
+- Mirrors tools/browns-quote-invoice-draft semantics (never invents rates)
+
+**What Works vs. Stubbed:**
+- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation with/without amounts, validation, export (markdown/HTML/PDF)
+- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, CRM note attachment)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — quotes are DRAFT ONLY requiring H7 approval before send
+- Never invents amounts—uses embedded JSON amounts or rate card only, never fabricates
+- Missing amounts → availability-only confirmation with clear `[RATE CARD REQUIRED]` placeholders
+- All export operations remain local-only (no external sends or storage)
+- Fixtures and DEMO data only—no production rate publishing
+
+---
+
+## Phase 19 Summary
+>>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
 
 **What Changed:**
 - CRM now exports leads as CSV (tenant-scoped)

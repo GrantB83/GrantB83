@@ -289,6 +289,22 @@ export default function InquiryIntakePage() {
         </div>
       )}
 
+      {/* Phase 22 → 23 Flow */}
+      {extracted && (
+        <div className="mb-8 bg-teal-50 border-2 border-teal-200 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-teal-900 mb-3">Next: Generate Quote (Phase 23)</h3>
+          <p className="text-sm text-teal-800 mb-4">
+            Copy this JSON output and paste into the Quote Draft page to generate a complete quote or availability confirmation.
+          </p>
+          <Link
+            href="/demo/quote-draft"
+            className="inline-flex items-center px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition"
+          >
+            Generate Quote from This →
+          </Link>
+        </div>
+      )}
+
       {/* Hard Gates */}
       <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
         <h3 className="font-semibold text-red-900 mb-3 flex items-center gap-2">

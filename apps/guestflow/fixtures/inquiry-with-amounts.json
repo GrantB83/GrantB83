@@ -1,0 +1,21 @@
+{
+  "guestName": "Sarah & John Miller",
+  "email": "sarah.miller@email.com",
+  "phone": "+27 82 555 1234",
+  "checkIn": "2026-12-15",
+  "checkOut": "2026-12-17",
+  "nights": 2,
+  "adults": 2,
+  "children": 0,
+  "pets": true,
+  "property": "Riverside Lodge",
+  "room": "Deluxe Suite with Valley View",
+  "specialRequests": ["room with a view", "breakfast options", "pet-friendly"],
+  "occasion": "anniversary",
+  "confidence": 0.95,
+  "amounts": {
+    "ratePerNight": 1850,
+    "currency": "ZAR",
+    "season": "peak"
+  }
+}
