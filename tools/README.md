@@ -35,6 +35,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
+| [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -1557,6 +1558,69 @@ npm test
 - **1** - Bad input or strict mode violations
 
 [→ Full README](./career-cover-letter-facts-lint/README.md)
+
+---
+
+## career-application-packet-assemble
+
+**One-line:** Assemble dated application packet with score report, cover lint report, facts snapshot, and APPROVAL checklist.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-application-packet-assemble/`
+
+### Install and Run
+
+```bash
+cd tools/career-application-packet-assemble
+npm install
+npm run build
+
+# Use prebuilt reports
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --score path/to/score-outdir/scorecard.md \\
+  --cover-lint path/to/lint-outdir/report.md \\
+  --facts facts.json \\
+  --jd jd.txt
+
+# Run scoring tool during assembly
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --run-score --jd jd.txt \\
+  --cover-lint lint-outdir/report.md \\
+  --facts facts.json
+
+# Run both tools during assembly
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --run-score --jd jd.txt \\
+  --run-cover-lint --draft cover.md --facts facts.json
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Calls sibling tools via npm run or accepts prebuilt reports
+- ✅ **Never invents data** - Only packages existing reports
+- ✅ **Facts-only reminder** - APPROVAL.md checks Career uses career-os claims only
+- ✅ **Score floor enforced** - APPROVAL.md verifies score ≥8
+- ✅ **Career bot owns apply** - This is packaging aid, not auto-apply
+- ⚠️ **No LinkedIn send** - Career bot handles all application sends
+
+### Output Files
+
+- `PACK.md` - Packet index with score/lint summaries, contents, warnings, next steps
+- `APPROVAL.md` - Checklist with hard gates (score ≥8, gates pass, verdict apply, lint safe)
+- `score-report.md` - Copy of scorecard from score tool (if provided)
+- `cover-lint-report.md` - Copy of report from lint tool (if provided)
+- `facts.json` - Copy of career-os facts (if provided)
+- `jd.txt` - Copy of job description (if provided)
+- `manifest.json` - Machine-readable packet metadata
+
+### Integration with Sibling Tools
+
+Can copy prebuilt reports OR shell out to:
+- `career-jd-hard-gates-score` via `--run-score --jd <path>`
+- `career-cover-letter-facts-lint` via `--run-cover-lint --draft <path> --facts <path>`
+
+[→ Full README](./career-application-packet-assemble/README.md)
 
 ---
 
