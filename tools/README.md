@@ -9,6 +9,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
+| [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -178,6 +179,55 @@ npm run recon:summary -- \
 - ✅ **Read-only** - No write-back to Loyverse or Xero
 
 [→ Full README](./loyverse-xero-recon/README.md)
+
+---
+
+## pw-loyverse-daily-sales-digest
+
+**One-line:** Generate Perfect Water daily sales digest from Loyverse CSV exports for ops review.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-loyverse-daily-sales-digest/`
+
+### Install and Run
+
+```bash
+cd tools/pw-loyverse-daily-sales-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --csv loyverse-day.csv --outdir out/
+
+# Custom column names
+npm run digest -- \
+  --csv exports/sales.csv \
+  --outdir reports/ \
+  --store-col "Location" \
+  --item-col "Product" \
+  --qty-col "Qty" \
+  --amount-col "Total"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Loyverse API
+- ✅ **No invented amounts** - Pass-through from CSV only
+- ✅ **Read-only** - Never modifies source CSV
+- ✅ **File-based** - All amounts stay in files
+- ⚠️ **Amounts stay in files** - Remind bots not to paste amounts into chat
+- ⚠️ **PW owns ops decisions** - Perfect Water owns all pricing/sales actions
+
+### Output Files
+
+- `digest.json` - Structured rollup data (stores, items, totals)
+- `digest.md` - Human-readable digest with store/item breakdowns
+- `missing-fields.md` - Data quality report
+- `APPROVAL.md` - Safety gates and ownership
+- `manifest.json` - Run metadata
+
+[→ Full README](./pw-loyverse-daily-sales-digest/README.md)
 
 ---
 
@@ -1093,8 +1143,6 @@ CoS runs timed Browns CT packs:
 This orchestrator assembles all outputs into one dated pack folder ready for Liana vet / Grant approval.
 
 [→ Full README](./browns-ct-pack-assemble/README.md)
-
----
 
 ---
 
