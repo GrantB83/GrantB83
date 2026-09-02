@@ -21,6 +21,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
+| [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 
 ---
 
@@ -620,6 +621,43 @@ npm test
 - ⚠️ **No LinkedIn send** - Career bot handles all application sends
 
 [→ Full README](./career-jd-hard-gates-score/README.md)
+
+---
+
+## tools-catalog-doctor
+
+**One-line:** Validate tools/README.md catalog integrity: discover tool directories, check index completeness, detect duplicate sections.
+
+**Owning desk(s):** CoS / Repository Maintenance
+
+**Location:** `tools/tools-catalog-doctor/`
+
+### Install and Run
+
+```bash
+cd tools/tools-catalog-doctor
+npm install
+npm run build
+
+# Default: assume cwd is tools/tools-catalog-doctor, repo root is ../..
+npm run doctor
+
+# Explicit root path
+npm run doctor -- --root ../..
+
+# Custom paths
+npm run doctor -- --catalog tools/README.md --toolsDir tools
+```
+
+### Critical Safety Note
+
+- ✅ **Read-only** - Never modifies catalog or tool directories
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Structural checks only** - Does not validate tool descriptions
+- ✅ **CI-friendly** - Exit codes suitable for CI pipelines (0 = healthy, 1 = issues)
+- ⚠️ **Catches catalog corruption** - Detects missing tools, duplicates, and structural errors
+
+[→ Full README](./tools-catalog-doctor/README.md)
 
 ---
 
