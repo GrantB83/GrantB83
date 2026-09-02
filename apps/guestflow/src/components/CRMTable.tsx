@@ -10,6 +10,7 @@ const STATUS_COLORS = {
   qualified: 'bg-purple-100 text-purple-800',
   won: 'bg-green-100 text-green-800',
   lost: 'bg-red-100 text-red-800',
+  converted: 'bg-teal-100 text-teal-800',
 }
 
 const STATUS_LABELS = {
@@ -18,6 +19,7 @@ const STATUS_LABELS = {
   qualified: 'Qualified',
   won: 'Won',
   lost: 'Lost',
+  converted: 'Converted',
 }
 
 type Lead = {

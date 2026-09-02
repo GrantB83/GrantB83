@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 9 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 11 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 10 — Demo tenant switcher (sticky multi-tenant selection)
+**Current Phase:** Phase 11 — Waitlist to CRM lead conversion (one-click convert with tenant scoping)
 
 ---
 
@@ -66,6 +66,55 @@ Open [http://localhost:3100](http://localhost:3100)
 npm run build
 npm start
 ```
+
+---
+
+## What Works (Phase 11)
+
+### ✅ Phase 11 Additions (Waitlist to CRM Lead Conversion)
+
+1. **Waitlist Management UI** (`/demo/waitlist-manage`)
+   - Protected admin view showing unconverted waitlist entries
+   - Filters to active tenant via tenant context
+   - Table displays contact info, property details, room count, current system
+   - One-click "Convert to CRM" button per row
+   - Removes entry from waitlist view after successful conversion
+   - Protected by DemoAuthGuard (password: demo2026)
+
+2. **Convert API Endpoint** (`POST /api/waitlist/convert`)
+   - Accepts `waitlistId` and `tenantId` in request body
+   - Validates entry exists and belongs to specified tenant
+   - Updates waitlist entry status to "converted"
+   - Returns success with lead summary (id, name, email, property, status)
+   - Protected by demo auth, tenant-scoped validation
+   - Never invents contact details—only updates existing records
+
+3. **CRM Status Expansion**
+   - Added "converted" as valid lead status (teal badge)
+   - CRMTable component now displays converted leads with teal highlight
+   - Status dropdown includes converted option for manual status management
+   - Converted leads visible in main CRM view alongside other statuses
+
+4. **Demo Hub Phase 11 Integration**
+   - Prominent cyan card at top linking to waitlist management page (Phase 11 badge)
+   - Positioned above Phase 9 demo seed for visibility
+   - Completes sales workflow: waitlist → convert → CRM → follow-up
+
+5. **Extended Smoke Test Coverage**
+   - Auth check for `/demo/waitlist-manage` route
+   - API test for `/api/waitlist/convert` endpoint with tenant validation
+   - Validates conversion updates status correctly
+
+**What Works vs. Stubbed:**
+- ✅ Works: One-click conversion, tenant-scoped validation, status tracking, demo auth protection
+- 🚧 Stubbed: Same as Phase 10 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — waitlist conversion is local demo feature with demo auth stub
+- Never invents contact details—only copies existing name/email/property/notes from waitlist entry
+- Conversion just updates status field; all data remains in same tenant-scoped SQLite table
+- All data persists to local SQLite only
 
 ---
 
@@ -557,6 +606,29 @@ Verify tables:
 
 ---
 
+## Phase 11 Summary
+
+**What Changed:**
+- Waitlist management UI at `/demo/waitlist-manage` with one-click convert buttons
+- POST API endpoint `/api/waitlist/convert` for tenant-scoped conversion
+- Updated CRM status options to include "converted" (teal badge)
+- Converted leads now visible in main CRM view with teal status indicator
+- Demo hub updated with prominent Phase 11 cyan card linking waitlist management
+- Extended smoke test script to cover waitlist management and convert API
+- README updated with Phase 11 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: One-click conversion, tenant-scoped validation, status tracking, demo auth protection
+- 🚧 Stubbed: Same as Phase 10 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — waitlist conversion with demo auth stub (password: demo2026)
+- Never invents contact details—only updates status of existing waitlist entries
+- All data persists to local SQLite only
+
+---
+
 ## Phase 10 Summary
 
 **What Changed:**
@@ -701,7 +773,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 10)
+## Hard Gates Reminder (Phase 11)
 
 **GuestFlow respects these safety constraints:**
 
@@ -710,12 +782,12 @@ Verify tables:
 3. ❌ **NO public signup** — Waitlist only, demo auth stub is NOT production-ready
 4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
 5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
-6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly.
+6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly. Conversion copies existing contact data only.
 7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 9. Phase 10 adds demo tenant switcher on `/demo` hub (DEMO labeled, local demo only)—maintains all safety constraints. Tenant selection is sticky via localStorage for demo purposes only. In production, tenants will be authenticated via NextAuth.js with proper row-level security and data isolation. The tenant switcher is NOT production authentication—it's purely for local demo navigation.**
+**These gates are unchanged from Phase 10. Phase 11 adds waitlist-to-CRM conversion at `/demo/waitlist-manage` (DEMO labeled, local demo only)—maintains all safety constraints. Conversion updates status field in tenant-scoped SQLite; never invents contact details. Protected by demo auth stub. In production, this feature would require proper multi-tenant authentication and row-level security.**
 
 ---
 

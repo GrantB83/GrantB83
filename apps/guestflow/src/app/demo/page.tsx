@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 11: Waitlist to CRM Convert */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/waitlist-manage"
+          className="block bg-gradient-to-r from-cyan-600 to-cyan-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Waitlist to CRM Conversion</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 11</span>
+          </div>
+          <p className="text-cyan-100">
+            One-click convert waitlist entries to CRM leads—tenant-scoped, copies contact/property/notes, marks status converted (demo only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 9: One-Click Demo Seed */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
