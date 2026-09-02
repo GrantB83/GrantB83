@@ -11,7 +11,9 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
+| [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
+| [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
@@ -20,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
+| [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 
 ---
 
@@ -239,6 +242,68 @@ npm run match -- \
 
 ---
 
+## ledger-unmatched-merchant-queue
+
+**One-line:** Build an offline research queue for unmatched merchants from budget CSV exports.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-unmatched-merchant-queue/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-unmatched-merchant-queue
+npm install
+npm run build
+
+# Basic usage
+npm run queue -- --input transactions.csv --outdir out/
+
+# With status column
+npm run queue -- \
+  --input transactions.csv \
+  --outdir out/ \
+  --status-col MatchStatus \
+  --unmatched-values "unmatched,unknown"
+
+# Custom merchant column and limit
+npm run queue -- \
+  --input transactions.csv \
+  --outdir out/ \
+  --merchant-col Payee \
+  --limit 50
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Read-only** - Never modifies input files
+- ✅ **No invented amounts or merchant identities** - Only processes existing data
+- ✅ **Amounts stay in files** - Not printed in digest prose (refer to queue.json)
+- ⚠️ **Research aid only** - Ledger owns manual Google Sheet updates
+- ⚠️ **H2 approval required** - Before any sheet writes or merchant rule changes
+
+### Output Files
+
+- `queue.json` - Structured merchant data with sample row references, counts, date ranges
+- `queue.md` - Human-readable numbered research list (merchant name + count only, NO amounts)
+- `missing-fields.md` - Data quality report
+- `APPROVAL.md` - Safety gates and workflow guidance
+- `manifest.json` - Run metadata and statistics
+
+### Integration with budget-merchant-matcher
+
+1. Export budget transactions to CSV
+2. Run `budget-merchant-matcher` to apply known rules
+3. Run `ledger-unmatched-merchant-queue` on matcher output to research remaining unknowns
+4. Update merchant rules based on research findings
+5. Re-run matcher with updated rules
+
+[→ Full README](./ledger-unmatched-merchant-queue/README.md)
+
+---
+
 ## suno-package-prep
 
 **One-line:** Prepare Suno job packages from kid lyrics and metadata for manual Chrome paste workflow.
@@ -268,6 +333,45 @@ npm run prep -- \
 - ⚠️ **Manual step required** - Follow the generated `checklist.md` for Chrome workflow
 
 [→ Full README](./suno-package-prep/README.md)
+
+---
+
+## family-school-subject-digest
+
+**One-line:** Generate family school/admin morning digest from email subject lines.
+
+**Owning desk(s):** Family Command Center
+
+**Location:** `tools/family-school-subject-digest/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-subject-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --input subjects.txt --outdir out/
+
+# With custom date and timezone
+npm run digest -- --input subjects.txt --date 2026-09-15 --timezone America/Chicago
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **No LLM** - Keyword classification heuristics only
+- ✅ **No invented data** - Due dates and amounts only extracted if explicitly present
+- ✅ **DRAFT ONLY** - Never sends WhatsApp or email
+- ✅ **No school facts** - Never invents teacher names, school policies, or deadlines
+- ⚠️ **Family bot owns send path** - WhatsApp digest sending via Family bot / CoS only
+- ⚠️ **For Grant/Liana only** - Not for automated client/school communication
+
+[→ Full README](./family-school-subject-digest/README.md)
 
 ---
 
@@ -580,6 +684,43 @@ npm test
 - ⚠️ **No LinkedIn send** - Career bot handles all application sends
 
 [→ Full README](./career-jd-hard-gates-score/README.md)
+
+---
+
+## tools-catalog-doctor
+
+**One-line:** Validate tools/README.md catalog integrity: discover tool directories, check index completeness, detect duplicate sections.
+
+**Owning desk(s):** CoS / Repository Maintenance
+
+**Location:** `tools/tools-catalog-doctor/`
+
+### Install and Run
+
+```bash
+cd tools/tools-catalog-doctor
+npm install
+npm run build
+
+# Default: assume cwd is tools/tools-catalog-doctor, repo root is ../..
+npm run doctor
+
+# Explicit root path
+npm run doctor -- --root ../..
+
+# Custom paths
+npm run doctor -- --catalog tools/README.md --toolsDir tools
+```
+
+### Critical Safety Note
+
+- ✅ **Read-only** - Never modifies catalog or tool directories
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Structural checks only** - Does not validate tool descriptions
+- ✅ **CI-friendly** - Exit codes suitable for CI pipelines (0 = healthy, 1 = issues)
+- ⚠️ **Catches catalog corruption** - Detects missing tools, duplicates, and structural errors
+
+[→ Full README](./tools-catalog-doctor/README.md)
 
 ---
 
