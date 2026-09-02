@@ -1,0 +1,30 @@
+{
+  "name": "career-live-improve-digest",
+  "version": "1.0.0",
+  "description": "Offline CLI to generate live-improve digest from career-hunt-run-log output for Career learning.md",
+  "main": "dist/cli.js",
+  "bin": {
+    "career-live-improve-digest": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "digest": "node dist/cli.js",
+    "test": "echo 'Run npm run test:fixtures for integration tests'",
+    "test:fixtures": "./test-fixtures.sh",
+    "clean": "rm -rf dist/ out/ test-output/"
+  },
+  "keywords": [
+    "career",
+    "hunt",
+    "learning",
+    "digest",
+    "offline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,33 @@
+{
+  "tool": "career-live-improve-digest",
+  "version": "1.0.0",
+  "timestamp": "2026-09-02T15:45:50.714Z",
+  "inputs": {
+    "logPath": "fixtures/runs.jsonl",
+    "since": "2026-08-20"
+  },
+  "outputs": {
+    "learningDraftPath": "test-output-filtered/LEARNING-DRAFT.md",
+    "statsPath": "test-output-filtered/stats.json",
+    "approvalPath": "test-output-filtered/APPROVAL.md",
+    "manifestPath": "test-output-filtered/manifest.json"
+  },
+  "summary": {
+    "period": {
+      "since": "2026-08-20",
+      "until": "2026-09-01",
+      "totalDays": 13
+    },
+    "totals": {
+      "entries": 9,
+      "scored": 4,
+      "applied": 2,
+      "skipped": 1,
+      "rejected": 2
+    },
+    "skipPatternsCount": 1,
+    "rejectPatternsCount": 2,
+    "gateFailsCount": 3,
+    "sourcesCount": 4
+  }
+}

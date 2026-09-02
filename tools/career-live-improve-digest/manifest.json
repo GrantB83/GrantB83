@@ -1,0 +1,27 @@
+## Owning Desk
+
+**Career / CoS**
+
+## Scope
+
+- Read career-hunt-run-log output (runs.jsonl and/or runs.md)
+- Extract patterns: skip reasons, score bands, gate fails
+- Generate learning digest for Career to review
+- Never invents employers, scores, or gate outcomes
+- Career owns apply; never auto-updates learning.md
+
+## Safety
+
+- Offline only
+- No invented data
+- Career bot owns apply
+- Never writes to learning.md without Career review
+
+## Workflow
+
+1. Run `career-hunt-run-log` to build runs.jsonl
+2. Run `career-live-improve-digest` on runs.jsonl
+3. Career reviews LEARNING-DRAFT.md
+4. Career folds insights into learning.md manually
+5. Career bot uses updated learning.md for decisions
+```

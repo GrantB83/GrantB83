@@ -47,6 +47,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
 | [career-hunt-run-log](#career-hunt-run-log) | Append career hunt runs into durable offline log for live-improve tracking | Career / CoS | **Offline only**. Append-only (never rewrites prior lines). Never invents scores or employers. Career bot owns apply. |
+| [career-live-improve-digest](#career-live-improve-digest) | Generate live-improve digest from career-hunt-run-log output for Career learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -2458,6 +2459,114 @@ cat hunt-log/runs.md
 ```
 
 [→ Full README](./career-hunt-run-log/README.md)
+
+---
+
+## career-live-improve-digest
+
+**One-line:** Generate live-improve digest from career-hunt-run-log output for Career learning.md with skip/reject patterns and score bands.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-live-improve-digest/`
+
+### Install and Run
+
+```bash
+cd tools/career-live-improve-digest
+npm install
+npm run build
+
+# From runs.jsonl (preferred)
+npm run digest -- --log path/to/runs.jsonl --outdir out/
+
+# From runs.md summary
+npm run digest -- --summary path/to/runs.md --outdir out/
+
+# With time filter
+npm run digest -- --log runs.jsonl --since 2026-08-01 --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No job board APIs or network calls
+- ✅ **Never invents data** - Only quotes from runs.jsonl
+- ✅ **Never invents scores** - Only processes provided scores
+- ✅ **Never invents employers** - Only lists companies from log
+- ✅ **Career bot owns apply** - This digest is for learning only
+- ✅ **Exit 1 on bad input** - Malformed jsonl or missing files
+- ⚠️ **Never auto-updates learning.md** - Career reviews and folds in manually
+
+### Input Formats
+
+**runs.jsonl (Preferred):**
+```jsonl
+{"company":"Tesla","title":"Operations Manager","score":9,"gatePass":true,"action":"scored","source":"LinkedIn","date":"2026-09-02"}
+{"company":"SpaceX","title":"Director","action":"applied","source":"Indeed","date":"2026-09-02"}
+{"company":"BadCo","title":"IC","action":"skipped","reason":"Too junior","source":"LinkedIn","date":"2026-09-02"}
+```
+
+**runs.md (Optional):** Human-readable summary with counts
+
+### Behavior
+
+1. **Parse** runs.jsonl line by line
+2. **Filter** with optional `--since YYYY-MM-DD`
+3. **Analyze** patterns:
+   - Skip reasons with counts
+   - Score bands: 0-4 (low), 5-6 (medium), 7-8 (good), 9-10 (excellent)
+   - Gate fails: scored but gatePass=false
+   - Source distribution
+4. **Generate** LEARNING-DRAFT.md, stats.json, APPROVAL.md, manifest.json
+
+### Output Files
+
+**LEARNING-DRAFT.md:** Numbered patterns for Career to fold into learning.md
+
+**stats.json:** Machine-readable statistics
+```json
+{
+  "period": { "since": "2026-08-01", "until": "2026-09-02", "totalDays": 32 },
+  "totals": { "entries": 23, "scored": 12, "applied": 5, "skipped": 4, "rejected": 2 },
+  "scoreBands": { "excellent_9_10": 4, "good_7_8": 5, "medium_5_6": 2, "low_0_4": 1 },
+  "gateFails": { "total": 3, "patterns": {...} },
+  "skipReasons": { "Too junior": 3, "DNC list": 2 },
+  "sources": { "LinkedIn": 15, "Indeed": 5 }
+}
+```
+
+**APPROVAL.md:** Safety gates and Career ownership notice
+
+**manifest.json:** Tool metadata
+
+### Integration with career-hunt-run-log
+
+```bash
+# Step 1: Build runs log
+cd tools/career-hunt-run-log
+npm run log -- --run run-2026-09-02.json --outdir hunt-log/
+
+# Step 2: Generate learning digest
+cd ../career-live-improve-digest
+npm run digest -- --log ../career-hunt-run-log/hunt-log/runs.jsonl --outdir digest/
+
+# Step 3: Review LEARNING-DRAFT.md
+cat digest/LEARNING-DRAFT.md
+
+# Step 4: Career manually folds insights into career-os learning.md
+```
+
+### Use Cases
+
+- **Pattern discovery** - Identify common skip/reject reasons
+- **Score calibration** - Track score band distribution over time
+- **Gate tuning** - Find roles that score high but fail gates
+- **Source optimization** - Track which sources yield best roles
+
+[→ Full README](./career-live-improve-digest/README.md)
 
 ---
 

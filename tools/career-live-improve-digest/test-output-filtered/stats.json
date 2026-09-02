@@ -1,0 +1,41 @@
+{
+  "period": {
+    "since": "2026-08-20",
+    "until": "2026-09-01",
+    "totalDays": 13
+  },
+  "totals": {
+    "entries": 9,
+    "scored": 4,
+    "applied": 2,
+    "skipped": 1,
+    "rejected": 2
+  },
+  "scoreBands": {
+    "excellent_9_10": 3,
+    "good_7_8": 3,
+    "medium_5_6": 1,
+    "low_0_4": 0
+  },
+  "gateFails": {
+    "total": 3,
+    "patterns": {
+      "Comp below floor": 1,
+      "Remote/location mismatch": 1,
+      "Team size gate": 1
+    }
+  },
+  "skipReasons": {
+    "Remote/location mismatch": 1
+  },
+  "rejectReasons": {
+    "Comp below floor": 1,
+    "Team size gate": 1
+  },
+  "sources": {
+    "LinkedIn": 5,
+    "Indeed": 2,
+    "Recruiter": 1,
+    "Direct": 1
+  }
+}
