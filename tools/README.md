@@ -21,6 +21,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS 09:00 CT pack | SA Ops / CoS | **Offline only**. Never invents times/phones. Heuristic only. Manual CoS WhatsApp send. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
@@ -607,6 +608,82 @@ npm run brief -- \
 - ⚠️ **CoS only for WhatsApp** - Team sends must use Coexistence of Service
 
 [→ Full README](./browns-daily-ops-brief/README.md)
+
+---
+
+## browns-late-checkin-queue
+
+**One-line:** Generate late/after-hours check-in queue for CoS 09:00 CT after-hours check-in pack.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-late-checkin-queue/`
+
+### Install and Run
+
+```bash
+cd tools/browns-late-checkin-queue
+npm install
+npm run build
+
+# Basic usage
+npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir out/
+
+# With custom after-hour threshold
+npm run queue -- --bookings bookings.json --day 2026-09-20 --after-hour 17
+
+# With timezone
+npm run queue -- \
+  --bookings bookings.json \
+  --day 2026-09-20 \
+  --after-hour 15 \
+  --timezone Africa/Johannesburg
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Never invents times** - Missing check-in time stays missing
+- ✅ **Never invents phone numbers** - Missing phone stays missing
+- ✅ **Heuristic only** - Keyword patterns, no LLM
+- ✅ **DRAFT ONLY** - Never sends WhatsApp automatically
+- ⚠️ **Manual CoS WhatsApp send required** - Copy/paste after approval
+- ⚠️ **Dullstroom only** - The Browns Luxury Guest Suites Dullstroom
+
+### Queue Inclusion Rules
+
+A booking is included if **arriving on target day** AND:
+1. Check-in time at/after threshold hour (default 15:00), OR
+2. Late/after-hours/ETA keywords in notes, OR
+3. Check-in time missing → goes to `unknown-time.md`
+
+### Output Files
+
+- `queue.json` - Structured queue data
+- `queue.md` - Human-readable numbered list (guest/suite/ETA/phone)
+- `unknown-time.md` - Arrivals without check-in times (flag for ETA confirmation)
+- `missing-fields.md` - Data quality report
+- `APPROVAL.md` - DRAFT checklist for CoS WhatsApp send
+- `manifest.json` - Run metadata
+
+### Integration with Other Tools
+
+Consumes bookings.json from `browns-nightsbridge-bookings-adapter`:
+
+```bash
+# Step 1: Adapt Nightsbridge day sheet
+cd tools/browns-nightsbridge-bookings-adapter
+npm run adapt -- --day 2026-09-20 --input nightsbridge.csv
+
+# Step 2: Generate late check-in queue
+cd ../browns-late-checkin-queue
+npm run queue -- --bookings ../browns-nightsbridge-bookings-adapter/out/bookings.json --day 2026-09-20
+```
+
+[→ Full README](./browns-late-checkin-queue/README.md)
 
 ---
 
