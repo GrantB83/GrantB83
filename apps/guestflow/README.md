@@ -1,248 +1,66 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 26 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 27 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 26 — Sales leave-behind pack export (DRAFT/fixtures only)
+**Current Phase:** Phase 27 — Waitlist capture polish (DRAFT/fixtures only; NO paid signup)
 
 ---
 
-## What Works (Phase 26)
+## What Works (Phase 27)
 
-### ✅ Phase 26 Additions (Sales Leave-Behind Pack Export)
+### ✅ Phase 27 Additions (Waitlist Capture Polish for Sales Demos)
 
-1. **Sales Leave-Behind Page** (`/demo/sales-leavebehind`)
-   - Complete sales leave-behind pack for prospects after Phase 25 walkthrough demo
-   - Product one-pager: what GuestFlow is, current status, multi-property value prop
-   - 11-step demo path summary: landing → pricing → waitlist → CRM → rate cards → inquiry → quote → NB import → welcome → ops → CT-pack
-   - Sample fixture excerpts (inquiry→quote) with/without amounts—never invents rates
-   - Hard gates reminder: NO live payments, NO auto-send, NO invented rates, DEMO labeling
-   - DEMO PLACEHOLDER pricing note with beta access messaging
-   - Next steps for prospect: waitlist, interactive demo, walkthrough script, contact
-   - Uses tenant name from active demo tenant
+1. **Polished Waitlist Form** (`/waitlist`)
+   - Clear field organization with visual sections: Contact Info, Property Information, Additional Details
+   - Required fields clearly marked with red asterisks (Name, Email, Property Name, Room Count)
+   - Optional fields explicitly labeled (Phone, Current System, Notes)
+   - Improved field labels with better descriptions (e.g., "Property / Business Name", "Number of Rooms / Units")
+   - Better placeholder text guiding input (e.g., notes field suggests operational challenges)
+   - Larger, clearer submit button: "Join Waitlist (Free, No Payment)"
 
-2. **Export Options** (`POST /api/sales-leavebehind/export`)
-   - Download as Markdown (.md) file with complete sales pack content
-   - Download as HTML (.html) file with print-optimized styling
-   - Print to PDF via browser print dialog (opens HTML in new window)
-   - Download as ZIP (.zip) with multiple files:
-     - LEAVE-BEHIND.md (main sales pack)
-     - WALKTHROUGH-SUMMARY.md (11-step demo guide)
-     - CT-PACK-REMINDER.md (dated pack communication guide)
-     - OTA-WORKSHEET-SAMPLE.md (inquiry pipeline tracking)
-     - INQUIRY-SAMPLE-WITH-AMOUNTS.md (fixture with rates)
-     - INQUIRY-SAMPLE-WITHOUT-AMOUNTS.md (fixture without rates)
-   - Mirrors Phase 13 leave-behind export UX for consistency
-   - All exports include tenant name and fixture data only
+2. **Crystal-Clear Confirmation Copy**
+   - Success page prominently states: "This is demo/waitlist interest only — NOT a paid account or subscription"
+   - Amber warning banner explaining no payment, no signup, no subscription was created
+   - Updated "What Happens Next?" section with explicit "No payment, subscription, or account has been created" line
+   - Removed "lifetime pricing discounts" promise (replaced with "may receive special pricing (to be announced)")
+   - Benefits cards emphasize: "Early Access (Future)", "No Payment Required", "Shape the Product"
 
-3. **Demo Hub Integration**
-   - Prominent Phase 26 teal card at top of demo hub linking to sales-leavebehind page
-   - Positioned above Phase 25 sales walkthrough for visibility
-   - Phase 26 badge with 🎯 emoji
+3. **Waitlist-Only Messaging Throughout**
+   - Page header includes Phase 27 badge and "demo/waitlist interest only" subtitle
+   - Amber banner at top of form: "This form does NOT create a paid account or charge you anything"
+   - Bottom disclaimer reinforces: "This does NOT create a paid account, subscription, or charge you anything"
+   - All copy consistently emphasizes free waitlist status (no payment, no automatic account creation)
 
-4. **Sales Walkthrough Integration**
-   - Updated Step 9 in sales walkthrough script (/demo/walkthrough) to reference sales-leavebehind pack
-   - Complete talking points: product overview, demo path, fixtures, hard gates, next steps
-   - Demo actions: show pack, explain ZIP contents, download options
-   - Emphasizes post-demo follow-up material for prospects
+4. **Seamless CRM Integration** (from Phase 11)
+   - Waitlist entries persist to tenant-scoped SQLite with DRAFT/demo labeling via `tenant_id`
+   - `/demo/waitlist-manage` page lists unconverted entries with one-click "Convert to CRM" button
+   - Convert API marks status as "converted" and creates CRM lead with existing contact data
+   - CRM at `/crm` shows all leads with status tracking (new/contacted/qualified/won/lost/converted)
+   - Never invents contact info—only stores user-provided data with timestamps
 
-5. **Fixture Integration**
-   - Loads inquiry-with-amounts.json and inquiry-without-amounts.json from /fixtures/
-   - Displays extracted inquiry details: guest, dates, party size, property, room, special requests
-   - Shows quote draft with amounts (when present) or [RATE CARD REQUIRED] placeholder (when missing)
-   - Never invents rates—strict adherence to fixture amounts only
-   - Calculates totals (subtotal + 15% tax) only when amounts are present in fixture
+5. **Demo Fixtures & Seed** (from Phase 9)
+   - Demo seed (`/api/demo/seed`) creates at least 3 sample waitlist entries for demo tenant
+   - Sample leads include diverse scenarios: weekend getaway, family vacation, business traveler
+   - All seed data clearly labeled "DEMO LEAD" with demo contact info (demo@example.com)
+   - Idempotent seed safe to run multiple times
 
-6. **Mirrors Phase 25 Walkthrough Semantics**
-   - Same 11-step demo path structure
-   - Same hard gates messaging (NO payments, NO auto-send, NO invented rates)
-   - Same DEMO PLACEHOLDER pricing warnings
-   - Same next steps for prospects (waitlist, contact, no paid signup)
-   - Compatible with tenant-scoped demo environment
+6. **Quality Gates Respected**
+   - NO live payments, NO paid ads, NO public paid signup
+   - NO WhatsApp/email auto-send—all communication is DRAFT only
+   - Waitlist capture persists to local SQLite only with demo tenant scoping
+   - All data labeled DRAFT/demo—suitable for sales walkthrough demos only
+   - Never invents rates, contact info, or other details not provided by user
 
 **What Works vs. Stubbed:**
-- ✅ Works: Sales leave-behind generation, multi-format export (md/html/zip), fixture integration, tenant-scoped, never invents rates
-- 🚧 Stubbed: Same as Phase 25 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
+- ✅ Works: Polished waitlist form, clear no-payment messaging, tenant-scoped persistence, CRM integration, fixtures/seed
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns
 
 **Hard Gates (UNCHANGED):**
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — sales leave-behind is DRAFT ONLY for local/demo use
-- Never invents amounts—uses fixture amounts only or shows [RATE CARD REQUIRED]
-- All exports are local-only operations (no external sends or tracking)
-- Fixtures and DEMO data only—no production rate publishing
-
----
-
-## What Works (Phase 25)
-
-### ✅ Phase 25 Additions (Guided Sales Demo Walkthrough)
-
-1. **Sales Walkthrough Page** (`/demo/sales-walkthrough`)
-   - Ordered walkthrough chaining existing demo capabilities into coherent SaaS pitch
-   - 11 numbered steps: Seed → Tenant Switcher → Inquiry → Quote → NightsBridge → Bookings → Welcome → Late Check-In → CT-Pack → Change Check → OTA Worksheet
-   - One-liner pitch copy per step explaining value proposition
-   - Hard gates callout banner (NO live payments, NO auto-send, NO OTA publishing, etc.)
-   - Progress persists across sessions via browser localStorage
-
-2. **Checklist UI for Salesperson Progress**
-   - Click checkbox to mark steps complete/incomplete
-   - Real-time progress bar showing completion percentage (e.g., "5/11 steps (45%)")
-   - Completed steps highlighted with green border and checkmark
-   - Local-only tracking (no server auth or sync)—purely client-side for demo convenience
-   - Reset progress button with confirmation prompt
-
-3. **Printable Markdown Export**
-   - "Export Walkthrough (Markdown)" button generates downloadable `.md` file
-   - Includes progress summary (X/11 steps completed with percentage)
-   - Lists all 11 steps with completion status (✅ Completed / ⬜ Pending)
-   - Each step shows route, pitch copy, and completion status
-   - Embedded hard gates reminder section (NO payments, NO ads, etc.)
-   - Timestamped filename: `guestflow-sales-walkthrough-YYYY-MM-DD.md`
-
-4. **Demo Hub Integration**
-   - Prominent Phase 25 emerald card at top of demo hub linking to sales walkthrough
-   - Badge: "Phase 25 🎯"
-   - Positioned above Phase 24 OTA worksheet for visibility
-   - Description: "Ordered walkthrough chaining existing demo capabilities: inquiry→quote→CRM/bookings→ops→OTA"
-
-5. **Extended Smoke Test Coverage**
-   - Route test for `/demo/sales-walkthrough` accessibility
-   - Content checks: "Guided Sales Demo Walkthrough", "Hard Gates", "Progress"
-   - Validates page renders correctly with expected sections
-
-6. **Mirrors Guided Demo Best Practices**
-   - Linear progression: Inquiry → Quote → Operations → OTA
-   - Each step links to existing phase route (no new integrations)
-   - Never invents rates, contact info, or data—uses existing fixtures only
-   - Clear "DEMO PLACEHOLDER reminder" on all steps
-   - Hard gates held: NO live payments, NO WhatsApp/email auto-send, NO live NB API, NO OTA publishing
-
-**What Works vs. Stubbed:**
-- ✅ Works: 11-step walkthrough, checklist UI, localStorage progress, markdown export, hard gates callout
-- 🚧 Stubbed: Same as Phase 24 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — walkthrough is DRAFT ONLY with local-only progress tracking
-- Never invents rates, contact info, guest phone, ETAs, or Wi-Fi codes
-- All data persists to local SQLite only (no live NB API or WhatsApp sends)
-- Fixtures and DEMO data only—no production rate publishing or OTA live integrations
-- Checklist progress stored in browser localStorage only (no server sync)
-
----
-
-## What Works (Phase 24)
-
-### ✅ Phase 24 Additions (OTA Rate Worksheet from Rate Cards)
-
-1. **OTA Rate Worksheet Page** (`/demo/ota-rate-worksheet`)
-   - Load tenant rate cards from existing SQLite database or fixtures
-   - Render worksheet table with all rate card fields for manual OTA/Nightsbridge entry
-   - Clearly flag missing rates as [RATE BLANK]—never invents pricing
-   - Configurable promotional rate example (optional demo fixture)
-   - Uses active demo tenant from tenant context
-
-2. **Smart Never-Invent Behavior**
-   - Automatically includes at least one blank rate row in fixtures to prove never-invent principle
-   - Missing rates displayed as [RATE BLANK] in red with warnings
-   - Warning banner: "Missing Rates Detected" when blank rates present
-   - All blanks stay blank—no fabricated pricing ever
-
-3. **Export Options** (`POST /api/ota-worksheet/export`)
-   - Download as Markdown (.md), CSV (.csv), or HTML (.html) file
-   - Print to PDF via browser print dialog (opens HTML in new window)
-   - Mirrors Phase 8 quote export and Phase 13 leave-behind UX
-   - Export includes APPROVAL REMINDER and manual entry instructions
-   - Local-only operations with no external storage or API calls
-
-4. **Demo Hub Integration**
-   - Prominent Phase 24 fuchsia card at top of demo hub linking to OTA worksheet page
-   - Positioned below Phase 25 sales walkthrough
-   - Integration with tenant switcher for multi-tenant demo
-   - Link from rate card upload page to OTA worksheet ("Generate OTA Rate Worksheet" button)
-
-5. **Extended Fixtures & Hard Gates**
-   - Fixtures include at least one blank rate row to demonstrate never-invent behavior
-   - Optional promotional rate example (demo fixture only)
-   - APPROVAL REMINDER banner: Grant/tenant approval required before live OTA changes
-   - Manual entry instructions included in all exports
-   - Never auto-applies to Nightsbridge or OTA APIs
-
-6. **Mirrors tools/browns-ota-rate-worksheet Semantics**
-   - Same rate card fields: room_type, season, rate_per_night, currency, min_nights, valid dates, notes
-   - Same placeholder rules: missing rates stay blank, never invents
-   - Same export formats: markdown, CSV, HTML with print-to-PDF
-   - Same APPROVAL reminder and manual-entry-only workflow
-   - Tenant-scoped SQLite queries with fixture fallback
-
-**What Works vs. Stubbed:**
-- ✅ Works: Rate card loading, blank rate detection, markdown/CSV/HTML export, print-to-PDF, approval reminders, never-invent behavior
-- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA/NB API integration)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — OTA worksheet is DRAFT ONLY with local-only export for leave-behind
-- Never invents rates (blank rates clearly flagged with [RATE BLANK] placeholder)
-- Never auto-applies to Nightsbridge or OTA APIs (manual entry only)
-- APPROVAL REMINDER: Grant/tenant approval required before any live OTA changes
-- All data from local SQLite only with fixture fallback for blank rate demonstration
-
----
-
-## What Works (Phase 25)
-
-### ✅ Phase 25 Additions (Guided Sales Demo Walkthrough)
-
-1. **Sales Walkthrough Page** (`/demo/sales-walkthrough`)
-   - Ordered walkthrough chaining existing demo capabilities into coherent SaaS pitch
-   - 11 numbered steps: Seed → Tenant Switcher → Inquiry → Quote → NightsBridge → Bookings → Welcome → Late Check-In → CT-Pack → Change Check → OTA Worksheet
-   - One-liner pitch copy per step explaining value proposition
-   - Hard gates callout banner (NO live payments, NO auto-send, NO OTA publishing, etc.)
-   - Progress persists across sessions via browser localStorage
-
-2. **Checklist UI for Salesperson Progress**
-   - Click checkbox to mark steps complete/incomplete
-   - Real-time progress bar showing completion percentage (e.g., "5/11 steps (45%)")
-   - Completed steps highlighted with green border and checkmark
-   - Local-only tracking (no server auth or sync)—purely client-side for demo convenience
-   - Reset progress button with confirmation prompt
-
-3. **Printable Markdown Export**
-   - "Export Walkthrough (Markdown)" button generates downloadable `.md` file
-   - Includes progress summary (X/11 steps completed with percentage)
-   - Lists all 11 steps with completion status (✅ Completed / ⬜ Pending)
-   - Each step shows route, pitch copy, and completion status
-   - Embedded hard gates reminder section (NO payments, NO ads, etc.)
-   - Timestamped filename: `guestflow-sales-walkthrough-YYYY-MM-DD.md`
-
-4. **Demo Hub Integration**
-   - Prominent Phase 25 emerald card at top of demo hub linking to sales walkthrough
-   - Badge: "Phase 25 🎯"
-   - Positioned above Phase 23 quote draft for visibility
-   - Description: "Ordered walkthrough chaining existing demo capabilities: inquiry→quote→CRM/bookings→ops→OTA"
-
-5. **Extended Smoke Test Coverage**
-   - Route test for `/demo/sales-walkthrough` accessibility
-   - Content checks: "Guided Sales Demo Walkthrough", "Hard Gates", "Progress"
-   - Validates page renders correctly with expected sections
-
-6. **Mirrors Guided Demo Best Practices**
-   - Linear progression: Inquiry → Quote → Operations → OTA
-   - Each step links to existing phase route (no new integrations)
-   - Never invents rates, contact info, or data—uses existing fixtures only
-   - Clear "DEMO PLACEHOLDER reminder" on all steps
-   - Hard gates held: NO live payments, NO WhatsApp/email auto-send, NO live NB API, NO OTA publishing
-
-**What Works vs. Stubbed:**
-- ✅ Works: 11-step walkthrough, checklist UI, localStorage progress, markdown export, hard gates callout
-- 🚧 Stubbed: Same as Phase 23 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — walkthrough is DRAFT ONLY with local-only progress tracking
-- Never invents rates, contact info, guest phone, ETAs, or Wi-Fi codes
-- All data persists to local SQLite only (no live NB API or WhatsApp sends)
-- Fixtures and DEMO data only—no production rate publishing or OTA live integrations
-- Checklist progress stored in browser localStorage only (no server sync)
+- Demo environment only—waitlist capture for sales demos with clearly labeled DRAFT/demo data
+- Confirmation copy explicitly states: NOT a paid account, NOT a subscription
+- All data persists to local SQLite only with tenant scoping
+- Never invents contact details—only stores user-provided name/email/property/notes
 
 ---
 
@@ -384,7 +202,6 @@
 - Quotes require H7 approval gate before sending to guest
 - All data persists to local SQLite only (no live NB API or WhatsApp sends)
 - Fixtures and DEMO data only—no production rate publishing
->>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
 
 ---
 
@@ -1626,7 +1443,6 @@ Verify tables:
 
 ---
 
-<<<<<<< HEAD
 ## Phase 21 Summary
 
 **What Changed:**
@@ -1653,7 +1469,6 @@ Verify tables:
 ---
 
 ## Phase 3 Summary
-=======
 ## Phase 23 Summary
 
 **What Changed:**
@@ -1685,7 +1500,6 @@ Verify tables:
 ---
 
 ## Phase 19 Summary
->>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
 
 **What Changed:**
 - CRM now exports leads as CSV (tenant-scoped)
