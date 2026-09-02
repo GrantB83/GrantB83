@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 22: Demo Inquiry Intake (mirrors tools/browns-inquiry-intake) */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/inquiry-intake"
+          className="block bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Demo Inquiry Intake (Heuristic Extraction)</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 22</span>
+          </div>
+          <p className="text-purple-100">
+            Paste inquiry (email/WhatsApp-ish text) and get structured booking/quote fields for active demo tenant — mirrors tools/browns-inquiry-intake heuristics. Never invents rates; missing amounts → availability-only. (DRAFT/fixtures only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 20: Demo CT-Pack Assembly */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
