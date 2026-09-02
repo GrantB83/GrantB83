@@ -1,0 +1,27 @@
+{
+  "name": "suno-package-prep",
+  "version": "1.0.0",
+  "description": "Offline CLI to prepare Suno job packages from kid lyrics + metadata",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "prep": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "prep": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --lyrics fixtures/sample-lyrics.txt --meta fixtures/sample-meta.json --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out suno-jobs"
+  },
+  "keywords": ["suno", "lyrics", "music", "studio", "brownie-tunez"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
