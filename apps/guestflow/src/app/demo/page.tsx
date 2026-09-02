@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 19: Late Check-In Queue */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/late-checkin-queue"
+          className="block bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Late / After-Hours Check-In Queue</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 19</span>
+          </div>
+          <p className="text-orange-100">
+            Track arriving guests with late check-ins, after-hours arrivals, or unknown ETAs—mirrors tools/browns-late-checkin-queue (DRAFT/fixtures only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 18: Welcome Message Drafts */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
