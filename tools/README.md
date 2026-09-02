@@ -17,6 +17,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
+| [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
@@ -601,6 +602,91 @@ npm run queue -- \
 5. Re-run matcher with updated rules
 
 [→ Full README](./ledger-unmatched-merchant-queue/README.md)
+
+---
+
+## ledger-merchant-alias-suggest
+
+**One-line:** Suggest merchant→alias mappings from unmatched merchant queue against known aliases file using heuristic token overlap (Jaccard similarity).
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-merchant-alias-suggest/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-merchant-alias-suggest
+npm install
+npm run build
+
+# From unmatched queue JSON
+npm run suggest -- \
+  --unmatched path/to/queue.json \
+  --aliases known-aliases.json \
+  --outdir out/
+
+# From plain text merchant list
+npm run suggest -- \
+  --merchants merchants.txt \
+  --aliases known-aliases.json \
+  --outdir out/
+
+# Custom minimum score
+npm run suggest -- \
+  --unmatched queue.json \
+  --aliases aliases.json \
+  --min-score 0.5 \
+  --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **Read-only** - Never modifies input files
+- ✅ **Heuristic scoring only** - Token overlap (Jaccard similarity), not AI/LLM
+- ✅ **No invented amounts** - Tool never handles transaction amounts
+- ✅ **No auto-apply** - Never writes to live Budget sheet
+- ⚠️ **Research aid only** - Human review required for every suggestion
+- ⚠️ **H2 approval required** - Before any Google Sheet writes or alias rule changes
+
+### Scoring Algorithm
+
+Uses Jaccard similarity: tokenize merchant name and alias pattern (normalize case, remove punctuation), then calculate intersection / union of token sets.
+
+**Confidence levels:**
+- High: score ≥ 0.7
+- Medium: score 0.5–0.7
+- Low: score 0.4–0.5 (below `--min-score` defaults to no match)
+
+### Output Files
+
+- `suggestions.json` - Structured suggestion data
+- `suggestions.md` - Human-readable ranked suggestions by confidence
+- `no-match.md` - Merchants with no matches above threshold
+- `APPROVAL.md` - Safety gates and next steps
+- `manifest.json` - Run metadata
+
+### Integration with ledger-unmatched-merchant-queue
+
+```bash
+# Step 1: Build unmatched queue
+cd tools/ledger-unmatched-merchant-queue
+npm run queue -- --input transactions.csv --outdir queue-out/
+
+# Step 2: Suggest aliases
+cd ../ledger-merchant-alias-suggest
+npm run suggest -- \
+  --unmatched ../ledger-unmatched-merchant-queue/queue-out/queue.json \
+  --aliases known-aliases.json \
+  --outdir suggestions/
+
+# Step 3: Review suggestions.md and no-match.md
+# Step 4: Update aliases.json with new patterns
+# Step 5: Get H2 approval before applying to Budget sheet
+```
+
+[→ Full README](./ledger-merchant-alias-suggest/README.md)
 
 ---
 
