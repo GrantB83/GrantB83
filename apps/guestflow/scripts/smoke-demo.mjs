@@ -341,6 +341,33 @@ async function runTests() {
   } else {
     fail(`Waitlist convert API not found: Expected 404, got ${convertTestNotFound.status}`);
   }
+
+  // Test Phase 12 notes API (GET with validation)
+  const notesTestMissingParams = await fetch(`${BASE_URL}/api/leads/notes?lead_id=1`);
+  if (notesTestMissingParams.status === 400) {
+    pass('Lead notes API validation (missing tenant_id)');
+  } else {
+    fail(`Lead notes API validation: Expected 400, got ${notesTestMissingParams.status}`);
+  }
+
+  const notesTestNotFound = await fetch(`${BASE_URL}/api/leads/notes?lead_id=999999&tenant_id=1`);
+  if (notesTestNotFound.status === 404) {
+    pass('Lead notes API not found handling');
+  } else {
+    fail(`Lead notes API not found: Expected 404, got ${notesTestNotFound.status}`);
+  }
+
+  // Test Phase 12 notes API (POST with validation)
+  const notesPostMissingFields = await fetch(`${BASE_URL}/api/leads/notes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lead_id: 1, tenant_id: 1 })
+  });
+  if (notesPostMissingFields.status === 400) {
+    pass('Lead notes POST API validation (missing note_text)');
+  } else {
+    fail(`Lead notes POST API validation: Expected 400, got ${notesPostMissingFields.status}`);
+  }
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });

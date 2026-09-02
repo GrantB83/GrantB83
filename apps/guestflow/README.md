@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 11 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 12 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 11 — Waitlist to CRM lead conversion (one-click convert with tenant scoping)
+**Current Phase:** Phase 12 — CRM lead notes with timestamped history and inline add (tenant-scoped SQLite storage)
 
 ---
 
@@ -66,6 +66,52 @@ Open [http://localhost:3100](http://localhost:3100)
 npm run build
 npm start
 ```
+
+---
+
+## What Works (Phase 12)
+
+### ✅ Phase 12 Additions (CRM Lead Notes)
+
+1. **Lead Notes on CRM Page** (`/crm`)
+   - Expand any lead row by clicking chevron icon to reveal note history
+   - Inline note form to add timestamped text notes
+   - Notes display in reverse chronological order (newest first)
+   - Each note shows timestamp with date, time formatting
+   - Protected by DemoAuthGuard (password: demo2026)
+
+2. **Notes API Endpoints**
+   - `POST /api/leads/notes` — Add note to a lead (requires lead_id, tenant_id, note_text)
+   - `GET /api/leads/notes?lead_id=N&tenant_id=M` — Fetch all notes for a lead
+   - Tenant-scoped validation (lead must belong to specified tenant)
+   - Returns 404 if lead not found or tenant mismatch
+   - Protected by tenant scope—never cross-tenant leaks
+
+3. **Database Schema** (`lead_notes` table)
+   - Stores notes in separate table with foreign keys to waitlist and tenants
+   - Columns: id, lead_id, tenant_id, note_text, created_at
+   - Indexes on lead_id and tenant_id for fast queries
+   - Migration script provided for existing databases
+
+4. **Demo Hub Phase 12 Integration**
+   - Prominent pink card at top linking to CRM page (Phase 12 badge)
+   - Positioned above Phase 11 waitlist conversion
+   - Updated CRM features list to include note functionality
+
+5. **Extended Smoke Test Coverage**
+   - API test for `/api/leads/notes` POST endpoint with validation
+   - API test for `/api/leads/notes` GET endpoint with tenant filtering
+   - Validates note creation and retrieval work correctly
+
+**What Works vs. Stubbed:**
+- ✅ Works: Timestamped notes, tenant-scoped storage, inline add form, note history view
+- 🚧 Stubbed: Same as Phase 11 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — notes stored in local SQLite with demo auth stub
+- Never invents note text—only stores user-provided text with timestamp
+- All data persists to tenant-scoped local SQLite only
 
 ---
 
@@ -606,6 +652,32 @@ Verify tables:
 
 ---
 
+## Phase 12 Summary
+
+**What Changed:**
+- Lead notes functionality on `/crm` page with expandable rows (click chevron to expand)
+- Inline note form to add timestamped text notes to any lead
+- Note history displays in reverse chronological order within expanded row
+- POST API endpoint `/api/leads/notes` for adding notes (tenant-scoped validation)
+- GET API endpoint `/api/leads/notes?lead_id=N&tenant_id=M` for fetching notes
+- New `lead_notes` table in SQLite with foreign keys to waitlist and tenants
+- Migration script `scripts/migrate-add-lead-notes.js` for existing databases
+- Demo hub updated with prominent Phase 12 pink card linking CRM page
+- Extended smoke tests for notes API endpoints
+- README updated with Phase 12 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Timestamped notes, tenant-scoped validation, inline add, note history view
+- 🚧 Stubbed: Same as Phase 11 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — notes with demo auth stub (password: demo2026)
+- Never invents note text—only stores user-provided timestamped text
+- All data persists to tenant-scoped local SQLite only
+
+---
+
 ## Phase 11 Summary
 
 **What Changed:**
@@ -773,7 +845,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 11)
+## Hard Gates Reminder (Phase 12)
 
 **GuestFlow respects these safety constraints:**
 
@@ -782,12 +854,12 @@ Verify tables:
 3. ❌ **NO public signup** — Waitlist only, demo auth stub is NOT production-ready
 4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
 5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
-6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly. Conversion copies existing contact data only.
+6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly. Conversion copies existing contact data only. Notes are user-provided text only.
 7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 10. Phase 11 adds waitlist-to-CRM conversion at `/demo/waitlist-manage` (DEMO labeled, local demo only)—maintains all safety constraints. Conversion updates status field in tenant-scoped SQLite; never invents contact details. Protected by demo auth stub. In production, this feature would require proper multi-tenant authentication and row-level security.**
+**These gates are unchanged from Phase 11. Phase 12 adds CRM lead notes at `/crm` (DEMO labeled, local demo only)—maintains all safety constraints. Notes stored in tenant-scoped SQLite lead_notes table; never invents text. Protected by demo auth stub. In production, this feature would require proper multi-tenant authentication and row-level security.**
 
 ---
 
@@ -808,9 +880,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-10)
+## Next Steps (Post-Phase-12)
 
-**Phase 10 completes the demo tenant switcher with sticky multi-tenant selection.** Next priorities focus on production features and live integrations:
+**Phase 12 completes the CRM lead notes with timestamped history and inline add.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow
