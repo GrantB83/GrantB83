@@ -1,24 +1,23 @@
-# Browns Late Check-In Queue
+# Browns Late Check-In Queue CLI
 
-Offline CLI that generates late check-in coordination queue from bookings JSON for **The Browns Luxury Guest Suites** in Dullstroom.
+An offline command-line tool that generates a queue of late/after-hours check-in arrivals for the CoS (Chief of Staff) 09:00 CT after-hours check-in pack. **DRAFT ONLY** - never sends messages automatically.
 
-**⚠️ CRITICAL: DRAFT ONLY. Never sends WhatsApp/email. Never invents times/phones.**
+Part of the Browns guest-flow automation for **Dullstroom The Browns Luxury Guest Suites**.
 
 ## Purpose
 
-Generate late check-in coordination queue for CoS SA Ops timed CT-pack workflow. Identifies bookings with late check-in flags or unknown arrival times, producing structured queue files for manual review and WhatsApp coordination.
-
-Scope: **Dullstroom only** (Rivendell sold).
+SA Ops needs to coordinate late arrivals (typically after 15:00 SAST) for guest access, key handover, and welcome preparation. This tool processes the daily bookings feed and creates a structured queue specifically for late/after-hours check-ins.
 
 ## Features
 
-- 📝 **Offline-only** - No Gmail/WhatsApp/NightsBridge APIs; no browser
-- 🕐 **Late check-in detection** - Flags bookings with late arrival indicators
-- 📋 **Structured queue** - Numbered list format ready for CoS review
-- ⚠️ **Unknown time tracking** - Separate file for bookings without confirmed times
-- ✅ **Approval gates** - APPROVAL.md in every job folder
-- 🧪 **Fully tested** - TypeScript tests for queue generation, filtering, validation
-- 🔒 **No secrets** - Synthetic fixtures only in git; safe for public repo
+- 🕐 **Time-based filtering** - Flags check-ins at/after configurable threshold (default 15:00)
+- 🔍 **Keyword detection** - Identifies late/after-hours/ETA keywords in notes
+- ⚠️ **Unknown time handling** - Separate queue for arrivals without check-in times
+- 📝 **Guest details** - Name, suite, ETA, phone (when available), notes
+- 📋 **Data quality tracking** - Reports missing fields without inventing data
+- ✅ **Approval workflow** - Every output includes APPROVAL.md with safety checklist
+- 🚀 **Zero dependencies** - Pure TypeScript, no external libraries
+- 🔒 **Offline & safe** - No auto-send, no APIs, no invented times/phones/rates
 
 ## Installation
 
@@ -49,235 +48,457 @@ Scope: **Dullstroom only** (Rivendell sold).
 ### Basic Command
 
 ```bash
-npm run queue -- --bookings <bookings-json> --day YYYY-MM-DD [--outdir <dir>]
+npm run queue -- --bookings <file> --day YYYY-MM-DD [options]
 ```
-
-### Required Arguments
-
-- `--bookings, -b` - Path to bookings JSON file
-- `--day, -d` - Target date in YYYY-MM-DD format
-
-### Optional Arguments
-
-- `--outdir, -o` - Output directory for queue files (default: `./out`)
 
 ### Examples
 
-**Basic usage with fixtures:**
+**Minimum required:**
+```bash
+npm run queue -- --bookings bookings.json --day 2026-09-20
+```
 
+**With custom after-hours threshold:**
+```bash
+npm run queue -- --bookings bookings.json --day 2026-09-20 --after-hour 17
+```
+
+**With custom output directory:**
+```bash
+npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir reports/sep-20/
+```
+
+**Using test fixtures:**
 ```bash
 npm run queue -- --bookings fixtures/sample-bookings.json --day 2026-09-20 --outdir out/
 ```
 
-**Production usage (SA Ops box):**
+### CLI Options
 
-```bash
-npm run queue -- \
-  --bookings /workspace/bookings/2026-09-20.json \
-  --day 2026-09-20 \
-  --outdir /workspace/ct-packs/2026-09-20/
-```
+| Option | Required | Description | Default |
+|--------|----------|-------------|---------|
+| `--bookings` | ✅ Yes | Path to bookings JSON file | - |
+| `--day` | ✅ Yes | Target check-in date (YYYY-MM-DD) | - |
+| `--outdir` | No | Output directory | `./out` |
+| `--after-hour` | No | Late check-in threshold hour (0-23) | `15` |
+| `--timezone` | No | Timezone for interpretation | `Africa/Johannesburg` |
+| `--help` | No | Show help message | - |
 
-## Bookings JSON Schema
+## Input File
 
-Required fields:
+### Bookings JSON Format
 
-```json
-[
-  {
-    "guestName": "string (required)",
-    "checkInDate": "YYYY-MM-DD (required)",
-    "suiteOrUnit": "string (required)",
-    "lateCheckIn": "boolean (optional, default: false)",
-    "checkInTime": "HH:MM (optional)",
-    "adults": "number (required)",
-    "notes": "string (optional)"
-  }
-]
-```
-
-**Example:**
+**Source:** Output from `browns-nightsbridge-bookings-adapter`
 
 ```json
 [
   {
-    "guestName": "Alex Johnson",
+    "guestName": "Sarah & Tom Henderson",
+    "suiteOrUnit": "Luxury Suite 1",
+    "status": "arriving",
     "checkInDate": "2026-09-20",
-    "suiteOrUnit": "The Browns Suite",
-    "lateCheckIn": true,
-    "checkInTime": "21:30",
-    "adults": 2
-  },
-  {
-    "guestName": "Sarah Miller",
-    "checkInDate": "2026-09-20",
-    "suiteOrUnit": "Garden Suite",
-    "lateCheckIn": true,
+    "checkInTime": "16:30",
+    "checkOutDate": "2026-09-22",
+    "lateCheckIn": false,
     "adults": 2,
-    "notes": "Arriving late, no specific time confirmed"
+    "children": 0,
+    "guestPhone": "+27 82 123 4567",
+    "notes": "Anniversary celebration"
   }
 ]
 ```
 
-### Late Check-In Detection
+**Required fields:**
+- `guestName` (string)
+- `suiteOrUnit` (string)
+- `status` (string: `arriving`, `inhouse`, or `departing`)
 
-Bookings are flagged as late check-in when:
-- `lateCheckIn: true` is explicitly set, OR
-- `checkInTime` is after 18:00, OR
-- Notes contain keywords: "late", "after hours", "evening arrival"
+**Optional fields:**
+- `checkInDate` (string, YYYY-MM-DD)
+- `checkInTime` (string, HH:MM or HHMM)
+- `checkOutDate` (string, YYYY-MM-DD)
+- `lateCheckIn` (boolean)
+- `adults` (number)
+- `children` (number)
+- `guestPhone` (string)
+- `notes` (string)
 
-Bookings with late check-in but no confirmed `checkInTime` are separated into `unknown-time.md`.
+## Queue Inclusion Rules
+
+A booking is included in the late check-in queue if **arriving on the target day** AND meets **any** of:
+
+1. **Check-in time at/after threshold** - `checkInTime` is at or after `--after-hour` (default 15:00)
+2. **Late keyword flag** - `notes` contains late/after-hours/ETA keywords
+3. **Missing check-in time** - `checkInTime` is absent (→ `unknown-time.md`)
+
+**Late keywords detected:**
+- "late arrival"
+- "late check-in" / "late checkin"
+- "after hours" / "after-hours"
+- "eta"
+- "arriving late"
+- "evening arrival"
+
+**Never invented:**
+- Check-in times
+- Phone numbers
+- Rates or amounts
 
 ## Output Files
 
-Each run creates outputs in the specified directory:
+The CLI generates outputs in the specified directory (default: `./out`):
 
-| File | Description |
-|------|-------------|
-| `queue.md` | Late check-in queue with confirmed times |
-| `unknown-time.md` | Late check-ins with unknown/unconfirmed times |
-| `APPROVAL.md` | Approval gate reminder (never auto-send) |
-| `manifest.json` | Job metadata |
+### 1. `queue.json`
+
+**Machine-readable structured queue.**
+
+```json
+{
+  "targetDay": "2026-09-20",
+  "afterHourThreshold": 15,
+  "timezone": "Africa/Johannesburg",
+  "generatedAt": "2026-09-02T08:00:00.000Z",
+  "lateCheckins": [
+    {
+      "guestName": "Sarah & Tom Henderson",
+      "suiteOrUnit": "Luxury Suite 1",
+      "checkInDate": "2026-09-20",
+      "checkInTime": "16:30",
+      "guestPhone": "+27 82 123 4567",
+      "notes": "Anniversary celebration",
+      "reason": "after-hours-time"
+    }
+  ],
+  "unknownTimeCheckins": []
+}
+```
+
+### 2. `queue.md`
+
+**Human-readable numbered list for the CoS pack.**
+
+```markdown
+# Late Check-In Queue
+
+**Target Day:** 2026-09-20
+**After-Hours Threshold:** 15:00 Africa/Johannesburg
+
+## Late Check-Ins (2)
+
+### 1. Sarah & Tom Henderson
+- **Suite:** Luxury Suite 1
+- **Check-In Date:** 2026-09-20
+- **ETA:** 16:30
+- **Phone:** +27 82 123 4567
+- **Notes:** Anniversary celebration
+
+### 2. Patricia van der Merwe
+...
+```
+
+### 3. `unknown-time.md` (if applicable)
+
+**Bookings without check-in times that need ETA confirmation.**
+
+```markdown
+# Unknown Check-In Time Queue
+
+**Target Day:** 2026-09-20
+
+⚠️ **These bookings are missing check-in times. Confirm ETA before CoS WhatsApp pack.**
+
+### 1. The Mbeki Family
+- **Suite:** Family Suite 3
+- **Check-In Date:** 2026-09-20
+- **ETA:** ⚠️ MISSING
+- **Notes:** After-hours check-in expected
+```
+
+### 4. `missing-fields.md`
+
+**Data quality report.**
+
+```markdown
+# Missing Fields Report
+
+**Target Day:** 2026-09-20
+
+⚠️ **2 booking(s) have missing fields:**
+
+1. **The Mbeki Family**
+   - Missing: checkInTime, guestPhone
+
+**Note:** This tool never invents times, phone numbers, or rates.
+Resolve missing fields before including entries in the CoS WhatsApp pack.
+```
+
+### 5. `APPROVAL.md`
+
+**Human-readable approval checklist.**
+
+Includes:
+- Summary (counts)
+- File inventory
+- Pre-send checklist
+- Safety rules
+- Approval phrase template
+
+**Example approval phrase:**
+```
+APPROVE LATE CHECKIN QUEUE 2026-09-20
+```
+
+### 6. `manifest.json`
+
+**Run metadata and file inventory.**
+
+```json
+{
+  "generatedAt": "2026-09-02T08:00:00.000Z",
+  "targetDay": "2026-09-20",
+  "afterHourThreshold": 15,
+  "timezone": "Africa/Johannesburg",
+  "counts": {
+    "lateCheckins": 2,
+    "unknownTimeCheckins": 1,
+    "missingFields": 2
+  },
+  "files": [
+    { "name": "queue.json", "type": "structured-queue" },
+    { "name": "queue.md", "type": "human-readable-queue" },
+    { "name": "unknown-time.md", "type": "unknown-time-queue" },
+    { "name": "missing-fields.md", "type": "data-quality" },
+    { "name": "APPROVAL.md", "type": "approval-checklist" }
+  ]
+}
+```
+
+## Workflow: From Bookings to CoS Pack
+
+### Step 1: Get Bookings Feed
+
+Use `browns-nightsbridge-bookings-adapter` to transform the Nightsbridge day sheet:
+
+```bash
+cd tools/browns-nightsbridge-bookings-adapter
+npm run adapt -- --day 2026-09-20 --input nightsbridge.csv --outdir feeds/
+```
+
+This produces `feeds/bookings.json`.
+
+### Step 2: Generate Late Check-In Queue
+
+```bash
+cd tools/browns-late-checkin-queue
+npm run queue -- --bookings ../browns-nightsbridge-bookings-adapter/feeds/bookings.json --day 2026-09-20
+```
+
+### Step 3: Review Outputs
+
+1. Open `out/queue.md` - Primary late check-in list
+2. Review `out/unknown-time.md` - Resolve missing ETAs
+3. Check `out/missing-fields.md` - Data quality issues
+4. Read `out/APPROVAL.md` - Safety checklist
+
+### Step 4: Resolve Unknowns
+
+For entries in `unknown-time.md`:
+- Confirm ETA with guest or team
+- Update source bookings if needed
+- Re-run queue generator
+- Do NOT invent times
+
+### Step 5: Manual CoS WhatsApp Send
+
+After approval:
+- Copy content from `queue.md`
+- Paste into CoS WhatsApp group
+- Use Coexistence of Service platform
+
+**Never auto-send** - human approval required every time.
+
+## Example Daily Routine (SA Ops)
+
+**Texas Morning (09:00 CT / 16:00-17:00 SAST):**
+
+1. Export Nightsbridge day sheet for today
+2. Run `browns-nightsbridge-bookings-adapter`
+3. Run `browns-late-checkin-queue`
+4. Review `queue.md` and `unknown-time.md`
+5. Confirm missing ETAs with team or guests
+6. Approve and send to CoS WhatsApp
+
+**Why this helps:**
+- Proactive coordination for late arrivals
+- No missed after-hours check-ins
+- Structured handover to on-site team
+- Audit trail (files saved with dates)
 
 ## Testing
 
-### Run automated tests:
+### Run Automated Tests
 
 ```bash
 npm run build
 npm test
 ```
 
-Tests cover:
-- Late check-in detection logic
-- Queue generation and ordering
-- Unknown time separation
-- Missing field validation
-
-### Test with fixtures:
+### Test with Fixtures
 
 ```bash
 npm run test:fixtures
 ```
 
-This will:
-1. Build the CLI
-2. Generate queue from `fixtures/sample-bookings.json`
-3. Output to `out/` directory
-4. Exit with success code
+Uses `fixtures/sample-bookings.json` (6 bookings: 4 arrivals on 2026-09-20).
 
-Inspect the `out/` folder to review generated queue files.
+**Expected output:**
+- `test-out/queue.json` - 2 late check-ins
+- `test-out/queue.md` - Numbered list
+- `test-out/unknown-time.md` - 1 unknown-time entry
+- `test-out/missing-fields.md` - 2 entries with missing fields
+- `test-out/APPROVAL.md` - Approval checklist
+- `test-out/manifest.json` - Run metadata
 
-### Clean up:
+### Clean Up Test Artifacts
 
 ```bash
 npm run clean
 ```
+
+Removes `dist/`, `test-out/`, and `out/` directories.
 
 ## Project Structure
 
 ```
 tools/browns-late-checkin-queue/
 ├── src/
-│   ├── index.ts              # CLI entry point
-│   ├── types.ts              # TypeScript type definitions
-│   ├── queue-generator.ts    # Generate queue files
-│   ├── output-writer.ts      # Write job folder outputs
-│   └── queue-generator.test.ts # Automated tests
+│   ├── index.ts                # CLI entry point
+│   ├── types.ts                # TypeScript type definitions
+│   ├── parser.ts               # JSON parsing and validation
+│   ├── queue-builder.ts        # Late check-in queue logic
+│   └── output-writer.ts        # File writing (JSON, MD, manifest)
 ├── fixtures/
-│   ├── sample-bookings.json  # Example bookings with late check-ins
-│   └── README.md
-├── dist/                     # Compiled JavaScript (generated)
-├── out/                      # Default output directory (generated)
+│   ├── sample-bookings.json    # Sample day with 6 bookings
+│   └── README.md               # Fixture documentation
+├── dist/                       # Compiled JavaScript (generated)
+├── out/                        # Default output directory (generated)
 ├── package.json
 ├── tsconfig.json
-└── README.md                 # This file
+├── .gitignore
+└── README.md                   # This file
 ```
 
 ## Safety & Constraints
 
-### ✅ What this tool DOES:
+### What This Tool Never Does
 
-- Reads bookings JSON
-- Detects late check-in indicators
-- Generates DRAFT queue files
-- Creates approval reminder
-- Runs 100% offline
+- ❌ **No auto-send** - All outputs are drafts for manual review
+- ❌ **No WhatsApp API** - Does not connect to WhatsApp Business API
+- ❌ **No time invention** - Missing ETA stays missing
+- ❌ **No phone invention** - Missing phone stays missing
+- ❌ **No rate/amount handling** - Not in scope
+- ❌ **No guest data invention** - Only formats what you provide
 
-### ❌ What this tool NEVER does:
+### What This Tool Does
 
-- Send WhatsApp messages
-- Send emails
-- Access Gmail/WhatsApp/NightsBridge APIs
-- Invent check-in times or phone numbers
-- Confirm availability
-- Access live booking systems
-- Store secrets in git
+- ✅ **Filters arrivals** by date and time threshold
+- ✅ **Detects late keywords** in notes and status
+- ✅ **Tracks unknowns** separately for ETA confirmation
+- ✅ **Reports data quality** without fabricating
+- ✅ **Generates draft queue** for human approval
 
-### Approval gates:
+### Hard Constraints
 
-All late check-in coordination requires:
-- Manual review of queue files
-- CoS WhatsApp coordination (Coexistence of Service)
-- Never auto-send
+1. **Dullstroom only** - The Browns Luxury Guest Suites Dullstroom (v1)
+2. **Offline only** - No APIs, no network calls
+3. **Heuristic only** - No LLM, no AI, keyword patterns only
+4. **Source-faithful** - Never invents times, phones, or rates
+5. **Draft outputs** - Manual CoS WhatsApp send required
 
-See: `docs/automation/approval-gates.md`
+## Integration with Other Tools
 
-## For SA Ops / CoS
+### browns-nightsbridge-bookings-adapter
 
-### How to run:
-
-1. Export bookings from NightsBridge or adapter
-2. Run CLI:
-   ```bash
-   cd /workspace/GrantB83/tools/browns-late-checkin-queue
-   npm run queue -- \
-     --bookings /path/to/bookings.json \
-     --day 2026-09-20 \
-     --outdir /workspace/ct-packs/2026-09-20/
-   ```
-3. Review queue.md and unknown-time.md
-4. Coordinate via WhatsApp Admin - The Browns (manual paste)
-5. Never auto-send
-
-### Integration with browns-ct-pack-assemble
-
-This tool is designed to be called by `browns-ct-pack-assemble`:
+**Upstream dependency** - Provides the bookings.json feed:
 
 ```bash
-npm run assemble -- \
-  --day 2026-09-20 \
-  --bookings bookings.json \
-  --run-late-checkin \
-  --outdir out/ct-2026-09-20/
+browns-nightsbridge-bookings-adapter → bookings.json
+                                          ↓
+                              browns-late-checkin-queue
 ```
 
-The assembler will:
-1. Invoke this tool with `--bookings` and `--day`
-2. Copy `queue.md` and `unknown-time.md` into the pack
-3. Include late check-in files in the 20:00 CT checklist
+### browns-daily-ops-brief
+
+**Parallel tool** - General daily ops brief for all arrivals/in-house/departures:
+
+```bash
+bookings.json → browns-daily-ops-brief (full team brief)
+             ↘
+              browns-late-checkin-queue (late check-ins only)
+```
+
+Both tools can run on the same `bookings.json` feed for different audiences.
 
 ## Troubleshooting
 
-### "Missing required bookings fields" error
+### "Bookings file not found"
 
-Check that bookings JSON has all required fields per booking:
-- guestName
-- checkInDate (YYYY-MM-DD)
-- suiteOrUnit
-- adults (number >= 1)
+Check the path:
+```bash
+ls -l bookings.json
+npm run queue -- --bookings ./bookings.json --day 2026-09-20
+```
 
-### "No late check-ins found"
+### "Booking status must be one of: arriving, inhouse, departing"
 
-This is informational. The tool will generate placeholder files when no late check-ins are detected for the target date.
+Fix typos in your bookings file. Valid statuses (case-sensitive):
+- `arriving`
+- `inhouse`
+- `departing`
+
+### Date format error
+
+Use `YYYY-MM-DD` format for `--day`:
+```bash
+# Correct
+--day 2026-09-20
+
+# Incorrect
+--day 20/09/2026
+--day Sep 20 2026
+```
+
+### Empty queue
+
+If `queue.md` says "No late check-ins", verify:
+1. Bookings file has arrivals on the target day
+2. Check-in times are at/after threshold (default 15:00)
+3. Or notes contain late/after-hours keywords
+
+### All arrivals in unknown-time.md
+
+If all arrivals appear in `unknown-time.md`:
+- Bookings are missing `checkInTime` field
+- Add check-in times to source data
+- Or confirm ETAs manually before CoS send
 
 ## Future Enhancements (Not in v1)
 
-- Direct NightsBridge integration (requires G2 approval)
-- Automated guest phone extraction
-- Multi-property support
+Possible future work (requires approval and API access):
 
-For now: **offline, draft-only, approval-gated.**
+- **Multi-property support** - Rivendell, other Browns properties
+- **WhatsApp integration** - Post drafts to approval channel
+- **Calendar sync** - Cross-check bookings against calendar
+- **SMS alerts** - Auto-notify team of late arrivals (after approval)
+- **ETA update workflow** - Structured process for resolving unknown times
+
+**For now:** v1 is offline, manual CoS send, draft-only. Ship the labor reduction first.
+
+## Related Tools
+
+- **browns-nightsbridge-bookings-adapter** - Transform day sheets into bookings.json
+- **browns-daily-ops-brief** - Full team brief (all arrivals/in-house/departures)
+- **browns-guest-comms-draft** - Guest welcome messages
 
 ## License
 
@@ -288,3 +509,7 @@ MIT
 Grant Brown  
 Email: grant@thebrowns.co.za  
 GitHub: [@GrantB83](https://github.com/GrantB83)
+
+---
+
+**Remember:** All outputs are **DRAFTS ONLY**. Review `APPROVAL.md` before every CoS WhatsApp send. Never invent times, phones, or rates.
