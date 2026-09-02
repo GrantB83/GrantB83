@@ -8,7 +8,7 @@
     "doctor": "dist/index.js"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "tsc",
     "test": "node --test dist/**/*.test.js",
     "doctor": "node dist/index.js",
     "test:fixtures": "npm run build && npm run test:fixtures:healthy && npm run test:fixtures:gutted && npm run test:fixtures:dup",
