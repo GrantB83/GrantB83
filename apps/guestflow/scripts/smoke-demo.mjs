@@ -476,6 +476,21 @@ async function runTests() {
   // Test Phase 20 CT-pack assembly page
   await testRoute('/demo/ct-pack', 'CT-pack assembly page (Phase 20)', { checkContent: 'Demo CT-Pack Assembly' });
   
+  // Test Phase 23 quote-draft page with JSON input support
+  await testRoute('/demo/quote-draft', 'Quote draft page with JSON input (Phase 23)', { checkContent: 'Quote & Invoice Packager' });
+  
+  // Test Phase 23 fixture files exist
+  try {
+    const withAmounts = await fs.promises.readFile('./fixtures/inquiry-with-amounts.json', 'utf8');
+    const withoutAmounts = await fs.promises.readFile('./fixtures/inquiry-without-amounts.json', 'utf8');
+    JSON.parse(withAmounts);
+    JSON.parse(withoutAmounts);
+    console.log('✅ Phase 23 fixture files exist and are valid JSON');
+  } catch (error) {
+    console.error('❌ Phase 23 fixture files test failed:', error.message);
+    process.exit(1);
+  }
+  
   // Test Phase 19 late check-in queue page
   await testRoute('/demo/late-checkin-queue', 'Late check-in queue page (Phase 19)', { checkContent: 'Late / After-Hours Check-In Queue' });
   
