@@ -25,7 +25,8 @@ export function parseCSV(filePath: string): { rows: RawRow[]; delimiter: string 
     throw new Error('CSV file must have at least a header row and one data row');
   }
 
-  const headers = lines[0].split(delimiter).map(h => h.trim());
+  // Strip leading * characters (Xero required-field markers) and trim
+  const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^\*+/, ''));
   const rows: RawRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {

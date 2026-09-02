@@ -11,8 +11,8 @@
     "build": "npx tsc",
     "test": "node --test dist/**/*.test.js",
     "normalize": "node dist/index.js",
-    "test:fixtures": "npm run build && node dist/index.js --input fixtures/generic-good.csv --outdir test-out && node dist/index.js --input fixtures/fnb-like.csv --outdir test-out-fnb --profile fnb && node dist/index.js --input fixtures/xero-import.csv --outdir test-out-xero --profile xero-import && echo 'Fixture tests completed successfully'",
-    "clean": "rm -rf dist test-out test-out-fnb test-out-xero"
+    "test:fixtures": "npm run build && node dist/index.js --input fixtures/generic-good.csv --outdir test-out && node dist/index.js --input fixtures/fnb-like.csv --outdir test-out-fnb --profile fnb && node dist/index.js --input fixtures/xero-import.csv --outdir test-out-xero --profile xero-import && node dist/index.js --input fixtures/xero-import-starred.csv --outdir test-out-xero-starred --profile xero-import && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out test-out-fnb test-out-xero test-out-xero-starred"
   },
   "keywords": ["bank", "csv", "normalize", "xero", "reconciliation", "perfect-water"],
   "author": "Grant Brown",

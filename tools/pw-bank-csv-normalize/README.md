@@ -87,7 +87,7 @@ npm run normalize -- --input xero-bank-import.csv --outdir out/ --profile xero-i
 | `payfast` | PayFast settlement export | Date, Payment Reference, Amount, Merchant |
 | `yoco` | Yoco settlement export | Date, Receipt Number, Amount, Merchant |
 | `generic` | Generic bank CSV | Date, Reference, Amount, Description |
-| `xero-import` | Existing Xero import format | Date, Amount, Payee, Description, Reference |
+| `xero-import` | Existing Xero import format (strips Xero `*` required-field markers) | Date, Amount, Payee, Description, Reference |
 
 ## Amount Sign Convention
 
