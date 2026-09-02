@@ -40,6 +40,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
+| [career-hunt-run-log](#career-hunt-run-log) | Append career hunt runs into durable offline log for live-improve tracking | Career / CoS | **Offline only**. Append-only (never rewrites prior lines). Never invents scores or employers. Career bot owns apply. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -1898,6 +1899,98 @@ Can copy prebuilt reports OR shell out to:
 - `career-cover-letter-facts-lint` via `--run-cover-lint --draft <path> --facts <path>`
 
 [→ Full README](./career-application-packet-assemble/README.md)
+
+---
+
+## career-hunt-run-log
+
+**One-line:** Append career hunt runs into durable offline log for live-improve tracking with scored roles, applications, and skips/rejects.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-hunt-run-log/`
+
+### Install and Run
+
+```bash
+cd tools/career-hunt-run-log
+npm install
+npm run build
+
+# Mode 1: Structured run.json
+npm run log -- --run path/to/run.json --outdir out/
+
+# Mode 2: Individual flag files
+npm run log -- \
+  --date 2026-09-02 \
+  --scored path/to/scores.json \
+  --applied path/to/applied.json \
+  --skipped path/to/skipped.json \
+  --outdir out/
+
+# With notes
+npm run log -- --run run.json --outdir out/ --notes notes.md
+
+# Test with fixtures
+npm run test:fixtures
+
+# Run unit tests
+npm test
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No job board APIs or network calls
+- ✅ **Append-only** - Never rewrites prior lines in runs.jsonl
+- ✅ **Never invents scores** - Only logs provided scores from career-jd-hard-gates-score
+- ✅ **Never invents employers** - Only logs provided company names
+- ✅ **Exit 1 on bad input** - Malformed JSON or missing company/title rejected
+- ✅ **Career bot owns apply** - This tool does not apply to jobs
+- ⚠️ **Facts-only tracking** - All data from provided inputs
+
+### Behavior
+
+1. **Normalize** each entry: company, title, score?, gatePass?, action, reason?, source?
+2. **Validate** all entries: exit 1 on missing required fields (company, title, action, date)
+3. **Append** to runs.jsonl (creates if missing). Never rewrites prior lines.
+4. **Regenerate** runs.md summary from full jsonl (counts by action; latest run detail)
+5. **Generate** APPROVAL.md and manifest.json
+
+### Output Files
+
+- `runs.jsonl` - Append-only log (one JSON object per line)
+- `runs.md` - Regenerated summary with counts and latest run detail
+- `APPROVAL.md` - Safety gates and Career ownership notice
+- `manifest.json` - This invocation metadata
+
+### Required Fields
+
+- company [REQUIRED]
+- title [REQUIRED]
+- action: scored|applied|skipped|rejected [REQUIRED]
+- date: YYYY-MM-DD [REQUIRED]
+
+Optional: score (0-10), gatePass (true/false), reason, source
+
+### Integration with Career Tools
+
+```bash
+# Step 1: Score a JD
+cd tools/career-jd-hard-gates-score
+npm run score -- --jd tesla-ops.txt --outdir score-out/
+
+# Step 2: Log the run
+cd ../career-hunt-run-log
+npm run log -- \
+  --date 2026-09-02 \
+  --scored ../career-jd-hard-gates-score/score-out/scorecard.json \
+  --outdir hunt-log/
+
+# Step 3: Review summary
+cat hunt-log/runs.md
+```
+
+[→ Full README](./career-hunt-run-log/README.md)
 
 ---
 

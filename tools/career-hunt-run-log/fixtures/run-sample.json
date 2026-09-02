@@ -1,0 +1,48 @@
+{
+  "date": "2026-09-02",
+  "scored": [
+    {
+      "company": "Tesla",
+      "title": "Operations Manager",
+      "score": 9,
+      "gatePass": true,
+      "source": "LinkedIn"
+    },
+    {
+      "company": "SpaceX",
+      "title": "Director of Operations",
+      "score": 8,
+      "gatePass": true,
+      "source": "Indeed"
+    }
+  ],
+  "applied": [
+    {
+      "company": "Rivian",
+      "title": "Senior Operations Manager",
+      "source": "Direct"
+    }
+  ],
+  "skipped": [
+    {
+      "company": "J.D. Abrams",
+      "title": "Operations Lead",
+      "reason": "DNC list company",
+      "source": "LinkedIn"
+    },
+    {
+      "company": "Generic Corp",
+      "title": "Junior Associate",
+      "reason": "Too junior",
+      "source": "Indeed"
+    }
+  ],
+  "rejected": [
+    {
+      "company": "LowPay Inc",
+      "title": "Manager",
+      "reason": "Comp below floor",
+      "source": "LinkedIn"
+    }
+  ]
+}
