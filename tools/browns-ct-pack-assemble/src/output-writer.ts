@@ -14,12 +14,14 @@ export async function writeOutputs(
     dailyOpsOutput: string | null;
     guestCommsOutputs: string[];
     lateCheckinOutput: string | null;
+    welcomeOutput: string | null;
     ranFlags: {
       ranAdapter: boolean;
       ranChangeCheck: boolean;
       ranDailyOps: boolean;
       ranGuestComms: boolean;
       ranLateCheckin: boolean;
+      ranWelcome: boolean;
     };
   }
 ): Promise<void> {
@@ -142,7 +144,38 @@ export async function writeOutputs(
     }
   }
   
-  // 7. Write manifest.json
+  // 7. Copy welcome pack files if welcome was run
+  if (packResults.welcomeOutput && existsSync(packResults.welcomeOutput)) {
+    const welcomeQueuePath = join(packResults.welcomeOutput, 'queue.md');
+    const welcomeDraftsDir = join(packResults.welcomeOutput, 'drafts');
+    
+    if (existsSync(welcomeQueuePath)) {
+      copyFileSync(welcomeQueuePath, join(options.outdir, 'welcome-queue.md'));
+      files.push({
+        filename: 'welcome-queue.md',
+        type: 'guest-draft',
+        description: 'Welcome message queue',
+      });
+      console.log('  ✓ Copied welcome-queue.md from welcome-draft-pack');
+    }
+    
+    if (existsSync(welcomeDraftsDir)) {
+      const welcomeDrafts = readdirSync(welcomeDraftsDir).filter(f => f.endsWith('.md'));
+      for (const draftFile of welcomeDrafts) {
+        const sourcePath = join(welcomeDraftsDir, draftFile);
+        const destPath = join(options.outdir, `welcome-${draftFile}`);
+        copyFileSync(sourcePath, destPath);
+        files.push({
+          filename: `welcome-${draftFile}`,
+          type: 'guest-draft',
+          description: `Welcome draft: ${basename(draftFile, '.md')}`,
+        });
+      }
+      console.log(`  ✓ Copied ${welcomeDrafts.length} welcome draft(s)`);
+    }
+  }
+  
+  // 8. Write manifest.json
   const manifest: PackManifest = {
     day: options.day,
     generatedAt: new Date().toISOString(),
@@ -221,7 +254,7 @@ function generateApproval(day: string): string {
   lines.push('');
   lines.push('### 20:00 CT - Guest Drafts');
   lines.push('');
-  lines.push('- [ ] Liana reviewed guest-*.md files');
+  lines.push('- [ ] Liana reviewed guest-*.md and welcome-*.md files');
   lines.push('- [ ] Grant approved final versions');
   lines.push('- [ ] Last-minute change check completed');
   lines.push('- [ ] Copy/paste to WhatsApp Admin - The Browns');
