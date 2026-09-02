@@ -1,0 +1,16 @@
+[
+  {
+    "company": "Amazon",
+    "title": "Principal Program Manager",
+    "score": 9,
+    "gatePass": true,
+    "source": "LinkedIn"
+  },
+  {
+    "company": "Apple",
+    "title": "Senior Operations Manager",
+    "score": 7,
+    "gatePass": true,
+    "source": "Indeed"
+  }
+]

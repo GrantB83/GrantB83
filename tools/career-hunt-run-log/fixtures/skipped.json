@@ -1,0 +1,14 @@
+[
+  {
+    "company": "Slow Corp",
+    "title": "Manager",
+    "reason": "Long commute",
+    "source": "LinkedIn"
+  },
+  {
+    "company": "No Remote Inc",
+    "title": "Senior Manager",
+    "reason": "No WFH option",
+    "source": "Indeed"
+  }
+]
