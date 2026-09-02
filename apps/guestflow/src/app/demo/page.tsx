@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown } from 'lucide-react'
 
 export default function DemoPage() {
   return (
@@ -15,6 +15,37 @@ export default function DemoPage() {
           Explore GuestFlow with sample properties and mock bookings. 
           No real data, no live sends—just see how it works.
         </p>
+      </div>
+
+      {/* Phase 5: Sales Demo Tools */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/walkthrough"
+          className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <Presentation className="w-8 h-8" />
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 5</span>
+          </div>
+          <h3 className="text-xl font-bold mb-2">Demo Walkthrough Script</h3>
+          <p className="text-purple-100 text-sm">
+            Step-by-step sales demo guide for Grant/CoS presentations (landing → CRM → ops)
+          </p>
+        </Link>
+
+        <Link 
+          href="/demo/leavebehind"
+          className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <FileDown className="w-8 h-8" />
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 5</span>
+          </div>
+          <h3 className="text-xl font-bold mb-2">Sales Leave-Behind</h3>
+          <p className="text-purple-100 text-sm">
+            Printable one-pager + markdown export for post-demo follow-up
+          </p>
+        </Link>
       </div>
 
       {/* Phase 3: Quick Nav to Key Features */}
