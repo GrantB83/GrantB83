@@ -6,6 +6,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 
 | Tool | Purpose | Desk(s) | Safety Note |
 |------|---------|---------|-------------|
+| [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -15,6 +16,64 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+
+---
+
+## pw-bank-csv-normalize
+
+**One-line:** Normalize SA bank statement CSVs into Xero-shaped format for Perfect Water receipt reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-bank-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-bank-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --input bank-statement.csv --outdir out/
+
+# Specific bank profile
+npm run normalize -- --input fnb-export.csv --outdir out/ --profile fnb
+
+# Xero import format (with Payee)
+npm run normalize -- --input xero-import.csv --outdir out/ --profile xero-import
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented amounts** - Blank/unparseable → rejected.csv
+- ✅ **No invented references** - Missing reference → rejected.csv (unless fallback possible)
+- ✅ **Read-only** - No write-back to bank systems
+- ✅ **File-based** - All amounts stay in files
+
+### Integration with loyverse-xero-recon
+
+This tool normalizes bank CSVs into the format that `loyverse-xero-recon` receipt mode expects:
+
+```bash
+# Step 1: Normalize bank CSV
+cd tools/pw-bank-csv-normalize
+npm run normalize -- --input bank-jan.csv --outdir normalized/
+
+# Step 2: Feed into receipt recon
+cd ../loyverse-xero-recon
+npm run recon -- --mode receipt \
+  --loyverse exports/loyverse-jan.csv \
+  --xero ../pw-bank-csv-normalize/normalized/xero-bank-normalized.csv \
+  --output recon-reports/
+```
+
+**Supported profiles:** auto (default), fnb, standard, absa, nedbank, payfast, yoco, generic, xero-import
+
+**Output:** `xero-bank-normalized.csv` with headers exactly: `Date,Reference,Amount,Description`
+
+[→ Full README](./pw-bank-csv-normalize/README.md)
 
 ---
 

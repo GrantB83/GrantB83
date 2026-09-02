@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-out/
+test-out-fnb/
+test-out-xero/
+*.log
+.DS_Store
