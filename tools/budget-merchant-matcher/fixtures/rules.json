@@ -1,0 +1,38 @@
+[
+  {
+    "pattern": "acme",
+    "category": "Grocery",
+    "notes": "Major grocery chain"
+  },
+  {
+    "pattern": "megamart",
+    "category": "Grocery",
+    "notes": "Warehouse store"
+  },
+  {
+    "pattern": "quickfuel",
+    "category": "Fuel",
+    "notes": "Gas stations"
+  },
+  {
+    "pattern": "streamflix",
+    "category": "Streaming",
+    "notes": "Video streaming service"
+  },
+  {
+    "pattern": "cloudhost",
+    "category": "Utilities",
+    "notes": "Cloud hosting"
+  },
+  {
+    "pattern": "electropay",
+    "category": "Utilities",
+    "notes": "Electric utility"
+  },
+  {
+    "pattern": "^stream",
+    "category": "Streaming",
+    "notes": "Any streaming service starting with 'stream'",
+    "isRegex": true
+  }
+]
