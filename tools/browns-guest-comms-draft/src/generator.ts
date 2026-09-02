@@ -37,27 +37,24 @@ function generateWelcomeWhatsApp(
   facts: BrandFacts,
   tone: ReturnType<typeof analyzeTone>
 ): string {
-  const greeting = tone.warmGreeting ? 'We\'re delighted' : 'Thank you';
-  const pronoun = tone.firstPersonPlural ? 'we' : 'the team';
+  return `Good morning ${booking.guestName},
 
-  return `Hi ${booking.guestName},
+Thank you for your booking at The Browns Luxury Guest Suites Dullstroom.
 
-${greeting} to confirm your reservation at ${facts.address}!
+Your reservation is confirmed:
 
-📅 Check-in: ${booking.checkInDate}
-📅 Check-out: ${booking.checkOutDate}
-🏠 Suite: ${booking.suiteOrUnit}
-👥 Guests: ${booking.adults} adult(s)${booking.children ? ` + ${booking.children} child(ren)` : ''}
+Dates: ${booking.checkInDate} to ${booking.checkOutDate}
+Suite: ${booking.suiteOrUnit}
+Guests: ${booking.adults} adult(s)${booking.children ? ` + ${booking.children} child(ren)` : ''}
+${booking.lateCheckIn ? '\nLate check-in: Noted - we\'ll coordinate timing with you' : ''}
+${booking.notes ? `\nNote: ${booking.notes}` : ''}
 
-${facts.wifi ? `📶 WiFi: ${facts.wifi}\n` : ''}${facts.parking ? `🅿️ Parking: ${facts.parking}\n` : ''}
-Your exact check-in time will be confirmed closer to your arrival${booking.lateCheckIn ? ' (late check-in noted)' : ''}.
+Check-in details and WiFi info will be sent closer to your arrival. Team will confirm timing.
 
-${booking.notes ? `\nNote: ${booking.notes}\n` : ''}
-Looking forward to hosting you!
+Looking forward to hosting you${tone.includesEmoji ? ' :)' : '!'}
 
-The Browns Team
-${facts.contactWhatsApp}
-${facts.contactEmail}`;
+Kind regards,
+Grant Brown`;
 }
 
 function generateWelcomeEmail(
@@ -65,44 +62,41 @@ function generateWelcomeEmail(
   facts: BrandFacts,
   tone: ReturnType<typeof analyzeTone>
 ): { subject: string; body: string } {
-  const subject = `Welcome to The Browns - Reservation Confirmed (${booking.checkInDate})`;
+  const subject = `The Browns Dullstroom - Booking Confirmed`;
 
-  const greeting = tone.warmGreeting ? 'We\'re thrilled' : 'Thank you';
+  const body = `Good ${getTimeOfDay()} ${booking.guestName},
 
-  const body = `Dear ${booking.guestName},
+Thank you for your booking at The Browns Luxury Guest Suites Dullstroom.
 
-${greeting} to confirm your upcoming stay at The Browns Luxury Guest Suites in Dullstroom.
+Your reservation is confirmed for ${booking.checkInDate} to ${booking.checkOutDate}.
 
-RESERVATION DETAILS
-
-Check-in: ${booking.checkInDate}
-Check-out: ${booking.checkOutDate}
-Accommodation: ${booking.suiteOrUnit}
+Suite: ${booking.suiteOrUnit}
 Guests: ${booking.adults} adult(s)${booking.children ? ` and ${booking.children} child(ren)` : ''}
+${booking.lateCheckIn ? '\nLate check-in: Noted - we\'ll coordinate timing with you\n' : ''}
+${booking.notes ? `Note: ${booking.notes}\n` : ''}
+We'll send full check-in details closer to your arrival date.
 
-PROPERTY INFORMATION
+Property address: ${facts.address}
+Contact: ${facts.contactEmail} | ${facts.contactWhatsApp}
 
-Address: ${facts.address}
-${facts.wifi ? `WiFi: ${facts.wifi}\n` : ''}${facts.parking ? `Parking: ${facts.parking}\n` : ''}
-${booking.lateCheckIn ? '\nLate Check-In: We have noted your late arrival and will coordinate timing with you closer to your stay.\n' : ''}
-${booking.notes ? `\nSpecial Notes: ${booking.notes}\n` : ''}
-Check-in and check-out times will be confirmed by our team as your arrival date approaches.
+Looking forward to hosting you${tone.includesEmoji ? ' :)' : '!'}
 
-CONTACT
-
-For any questions or changes to your reservation, please reach out:
-Email: ${facts.contactEmail}
-WhatsApp: ${facts.contactWhatsApp}
-
-We look forward to welcoming you to Dullstroom!
-
-Warm regards,
-The Browns Team
+Kindest regards,
+Grant Brown
+The Browns Luxury Guest Suites
+Dullstroom
 
 ---
-This is a DRAFT communication. Do not send without approval.`;
+DRAFT - Do not send without Grant's approval.`;
 
   return { subject, body };
+}
+
+function getTimeOfDay(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
 }
 
 function generateLateCheckInDraft(
@@ -117,68 +111,55 @@ If guest later requests late arrival, use this template:
 
 Hi ${booking.guestName},
 
-We've noted you'll be arriving after hours. To ensure a smooth check-in:
+Thank you for letting me know about your late arrival.
 
-1. Please confirm your estimated arrival time
-2. We'll arrange secure key access
-3. Full property details will be sent 24h before arrival
+We'll arrange secure key access and send full entry instructions.
 
-Please WhatsApp us your ETA when you're on the way.
+Please confirm your estimated arrival time when you're closer.
 
-The Browns Team
-${facts.contactWhatsApp}`;
+Kind regards,
+Grant`;
   }
 
   return `Hi ${booking.guestName},
 
-We understand you'll be arriving after hours for your ${booking.checkInDate} check-in.
+I've noted your late arrival on ${booking.checkInDate}.
 
-To coordinate your late arrival:
+We'll arrange everything for a smooth after-hours check-in.
 
-1. Please confirm your estimated arrival time
-2. We'll arrange secure key access and detailed property entry instructions
-3. All access codes and directions will be sent 24 hours before your arrival
+Please WhatsApp me your estimated arrival time when you're on the way.
 
-Please message us your estimated time of arrival when you're en route.
+Full entry instructions will be sent closer to your date.
 
-Safe travels!
-
-The Browns Team
+Kind regards,
+Grant Brown
 ${facts.contactWhatsApp}
-${facts.contactEmail}
 
 ---
-DRAFT ONLY - Do not send without approval.`;
+DRAFT ONLY - Do not send without Grant's approval.`;
 }
 
 function generateTeamCheckIn(booking: BookingData, facts: BrandFacts): string {
   const dateStr = new Date(booking.checkInDate).toLocaleDateString('en-ZA', {
     weekday: 'short',
-    year: 'numeric',
     month: 'short',
     day: 'numeric'
   });
 
-  return `📋 Daily Team Check-In - ${dateStr}
+  return `Team Check-In - ${dateStr}
 
-ARRIVAL TODAY:
-• Guest: ${booking.guestName}
-• Suite: ${booking.suiteOrUnit}
-• Guests: ${booking.adults} adult(s)${booking.children ? ` + ${booking.children} child(ren)` : ''}
-• Late check-in: ${booking.lateCheckIn ? 'YES - coordinate timing' : 'No'}
-${booking.notes ? `• Notes: ${booking.notes}` : ''}
-
-PRE-ARRIVAL CHECKLIST:
-☐ Suite prepared and inspected
-☐ Welcome amenities in place
-☐ WiFi tested
-☐ Keys/access ready
-${booking.lateCheckIn ? '☐ Late check-in instructions prepared' : ''}
-
-Contact: ${facts.contactWhatsApp}
-
+ARRIVAL:
+Guest: ${booking.guestName}
+Suite: ${booking.suiteOrUnit}
+Guests: ${booking.adults} adult(s)${booking.children ? ` + ${booking.children} child(ren)` : ''}
+${booking.lateCheckIn ? 'Late check-in: YES - coordinate timing\n' : ''}${booking.notes ? `Notes: ${booking.notes}\n` : ''}
+PREP:
+☐ Suite ready and inspected
+☐ Amenities in place
+☐ Access/keys ready
+${booking.lateCheckIn ? '☐ After-hours instructions prepared\n' : ''}
 ---
-DRAFT - For internal team use only.`;
+DRAFT - Internal use only.`;
 }
 
 function generateApprovalNotice(): string {
@@ -186,37 +167,51 @@ function generateApprovalNotice(): string {
 
 **CRITICAL:** These are DRAFT communications only.
 
-## Actions Required Before Sending
+## Grant Must Approve Before ANY Send
 
-1. ✅ Review all guest-facing content for accuracy
-2. ✅ Verify booking details against source of truth (NightsBridge/calendar)
-3. ✅ Confirm check-in/check-out times with team
-4. ✅ Validate any special requests or notes
-5. ✅ Get explicit approval from Grant or Liana before sending
+All guest-facing communications require explicit approval from Grant before sending.
+
+**NO AUTO-SEND.** Human approval required for every message.
+
+## Actions Required
+
+1. ✅ Review all draft content for accuracy
+2. ✅ Verify booking details against NightsBridge/calendar
+3. ✅ Validate special requests and notes
+4. ✅ Get Grant's approval before sending (H1/H2 gate)
 
 ## What This Tool Does NOT Do
 
 ❌ Send WhatsApp messages
-❌ Send emails
-❌ Make payment requests
-❌ Invent rates, deposits, or pricing
-❌ Confirm availability
+❌ Send emails  
+❌ Make payment requests (use [PAYMENT_LINK] placeholder only)
+❌ Invent rates, deposits, or amounts
+❌ Invent check-in/check-out times
 ❌ Access live booking systems
+
+## Tone Rules Applied
+
+✅ Short warm sentences from real stay@ tone seeds
+✅ Sign-off: "Kind regards," / "Kindest regards," + Grant Brown or Grant
+✅ Smileys sparingly
+✅ Never invents rates/amounts
+✅ Property: The Browns Luxury Guest Suites Dullstroom only
+✅ Directions/WiFi/times: "Team will confirm" (never invented)
 
 ## Approval Gates
 
-- Guest communications: Requires \`H1\` (APPROVE SEND) or \`H2\` (APPROVE SEQUENCE)
+- Guest communications: \`H1\` (APPROVE SEND) or \`H2\` (APPROVE SEQUENCE)
 - See: \`docs/automation/approval-gates.md\`
 
 ## Next Steps
 
-1. Review all draft files in this output directory
-2. Make any necessary edits
-3. Obtain approval using established workflow
+1. Review drafts in this folder
+2. Edit if needed
+3. Get Grant's approval
 4. Send manually or via approved automation
 
 ---
 
-**Remember:** Draft only. No auto-send. Human approval required.
+**Remember:** DRAFT ONLY. Grant must approve before ANY send. No auto-send.
 `;
 }

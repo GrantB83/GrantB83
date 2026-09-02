@@ -1,0 +1,12 @@
+Good afternoon Sarah,
+
+Thank you for your booking at The Browns Luxury Guest Suites Dullstroom.
+
+Your reservation is confirmed for 15-17 September.
+
+Please complete payment via [PAYMENT_LINK] to secure your dates.
+
+Looking forward to hosting you!
+
+Kind regards,
+Grant Brown

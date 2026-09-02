@@ -4,7 +4,7 @@ import type { SeedSamples } from './types.js';
 
 /**
  * Loads seed tone samples from a directory structure
- * Expects files like: welcome-1.txt, directions-2.txt, late-checkin-1.txt, etc.
+ * Loads ALL .txt files in the directory to learn tone patterns
  */
 export function loadSeeds(seedsDir: string): SeedSamples {
   if (!existsSync(seedsDir)) {
@@ -31,14 +31,18 @@ export function loadSeeds(seedsDir: string): SeedSamples {
 
     const content = readFileSync(join(seedsDir, file), 'utf-8').trim();
 
-    if (file.startsWith('welcome-')) {
+    // Categorize by filename patterns, but also add to welcome as catch-all
+    if (file.includes('booking') || file.includes('confirm')) {
       seeds.welcome!.push(content);
-    } else if (file.startsWith('directions-')) {
+    } else if (file.includes('directions') || file.includes('address')) {
       seeds.directions!.push(content);
-    } else if (file.startsWith('late-checkin-')) {
+    } else if (file.includes('late') || file.includes('after-hours')) {
       seeds.lateCheckIn!.push(content);
-    } else if (file.startsWith('quote-followup-')) {
+    } else if (file.includes('quote') || file.includes('followup') || file.includes('availability')) {
       seeds.quoteFollowUp!.push(content);
+    } else {
+      // Catch-all: add to welcome for general tone learning
+      seeds.welcome!.push(content);
     }
   }
 

@@ -1,6 +1,6 @@
 # Fixtures
 
-Synthetic test data for the Browns guest communications draft tool.
+Test data for the Browns guest communications draft tool.
 
 ## sample-booking.json
 
@@ -19,24 +19,45 @@ Example booking data with all fields populated, including optional late check-in
 
 ## seeds/
 
-Synthetic anonymized seed samples that mimic warm, concise hospitality tone.
+**Real redacted stay@ tone samples** from Grant's actual guest communications.
 
-**No real guest PII.** These are fictional examples created to demonstrate the tone and structure of guest communications.
+No real guest PII. Names and identifying details anonymized. Tone and structure preserved.
 
-### Seed files:
+### Seed themes (19 samples):
 
-- `welcome-*.txt` - Welcome message samples
-- `late-checkin-*.txt` - Late check-in coordination samples
-- `quote-followup-*.txt` - Follow-up inquiry samples
+| Theme | Files | Purpose |
+|-------|-------|---------|
+| Booking confirm + deposit | 2 | Standard booking confirmation with payment link |
+| Booking.com proforma | 1 | OTA booking acknowledgment |
+| Afrikaans handoff | 2 | Quick Afrikaans responses before full details |
+| Failed deposit / WhatsApp check | 2 | Payment follow-up |
+| Soft calendar confirm | 1 | Penciled dates / soft hold |
+| Invoice handoffs | 2 | Invoice delivery |
+| Availability quote | 1 | Initial availability response |
+| Availability follow-up | 1 | Quote follow-up |
+| Hold dates | 2 | Temporary date hold |
+| Guest count check | 2 | Guest number confirmation |
+| Payment watch | 1 | Deposit reminder |
+| Travel desk invoice | 2 | Corporate/travel agent invoices |
 
-### Tone characteristics:
+### Mandatory tone rules from corpus:
 
-✅ Warm and welcoming ("We're delighted", "Looking forward")
-✅ First-person plural ("we", "our team")
-✅ Concise (3-4 short paragraphs)
-✅ Professional but friendly
-✅ No invented rates, times, or availability
-✅ Clear next steps
+✅ **Short warm sentences** - Concise, friendly, professional
+✅ **Sign-off:** "Kind regards," / "Kindest regards," + Grant Brown or Grant
+✅ **Smileys sparingly** - Only occasional :) in appropriate contexts
+✅ **Never invent rates/amounts** - Use [PAYMENT_LINK] placeholders when booking says payment needed
+✅ **Live property:** The Browns Luxury Guest Suites Dullstroom ONLY
+✅ **Address:** 279 Blue Crane Drive, Dullstroom
+✅ **Contact:** stay@hospitality.partners | WhatsApp +27 83 645 8313
+✅ **Gaps:** Few real direction/late-check-in/WiFi bodies in corpus - use warm tone + facts without inventing clock details or road specifics beyond "team will confirm"
+
+### Excluded from corpus (tone-only):
+
+Manor House, Paardeplaats, Rivendell samples used for tone learning only. Current live property is The Browns Dullstroom exclusively.
+
+### APPROVAL.md mandate:
+
+Grant must approve before ANY send. No auto-send. See approval gates H1/H2 in `docs/automation/approval-gates.md`.
 
 ## Usage
 
@@ -46,4 +67,4 @@ Run the test with fixtures:
 npm run test:fixtures
 ```
 
-This will generate draft communications in the `out/` directory using the sample booking and seed samples.
+This generates draft communications in `out/` using the sample booking and real tone seeds.

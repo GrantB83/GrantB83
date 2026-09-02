@@ -51,9 +51,9 @@ function parseMarkdownFacts(markdown: string): BrandFacts {
  */
 export function getDefaultFacts(): BrandFacts {
   return {
-    address: 'The Browns Luxury Guest Suites, Dullstroom',
+    address: '279 Blue Crane Drive, Dullstroom',
     suites: ['The Browns Suite', 'Garden Suite'],
-    wifi: 'Available (details provided at check-in)',
+    wifi: 'Details will be provided',
     parking: 'On-site parking available',
     contactEmail: 'stay@hospitality.partners',
     contactWhatsApp: '+27 83 645 8313',
