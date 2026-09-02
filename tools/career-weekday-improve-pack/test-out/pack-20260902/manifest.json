@@ -1,0 +1,19 @@
+{
+  "tool": "career-weekday-improve-pack",
+  "version": "1.0.0",
+  "timestamp": "2026-09-02T18:29:22.464Z",
+  "inputs": {
+    "digestOutdir": "fixtures/digest-out"
+  },
+  "outputs": [
+    "LEARNING-DRAFT.md",
+    "stats.json",
+    "PACK.md",
+    "APPROVAL.md"
+  ],
+  "checks": {
+    "hasLearningDraft": true,
+    "hasStats": true,
+    "hasRunsSummary": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "period": {
+    "since": "2026-08-01",
+    "until": "2026-09-02",
+    "totalDays": 32
+  },
+  "totals": {
+    "entries": 23,
+    "scored": 12,
+    "applied": 5,
+    "skipped": 4,
+    "rejected": 2
+  },
+  "scoreBands": {
+    "excellent_9_10": 4,
+    "good_7_8": 5,
+    "medium_5_6": 2,
+    "low_0_4": 1
+  },
+  "gateFails": {
+    "total": 3,
+    "patterns": {
+      "remote_policy": 2,
+      "team_size": 1
+    }
+  },
+  "skipReasons": {
+    "too_junior": 3,
+    "dnc_list": 2,
+    "comp_below_floor": 2
+  },
+  "sources": {
+    "LinkedIn": 15,
+    "Indeed": 5,
+    "Direct": 3
+  }
+}
