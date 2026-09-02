@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 16: Nightsbridge-style Bookings Board */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/bookings-board"
+          className="block bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Same-Day Bookings Board</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 16 🎯</span>
+          </div>
+          <p className="text-purple-100">
+            View arrivals / in-house / departing guests for any selected day—tenant-scoped, flags missing fields, never invents data (fixtures + demo import)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 13: Printable Leave-Behind Export */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -211,11 +230,11 @@ export default function DemoPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <Upload className="w-8 h-8" />
-            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 2</span>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 2 → 16</span>
           </div>
-          <h3 className="text-xl font-bold mb-2">NightsBridge CSV Import</h3>
+          <h3 className="text-xl font-bold mb-2">NightsBridge CSV Import + Save</h3>
           <p className="text-primary-100 text-sm">
-            Parse bookings, detect gaps, and identify late check-ins from your OTA exports
+            Parse bookings, detect gaps, identify late check-ins, save to tenant database—never invents missing fields
           </p>
         </Link>
 
