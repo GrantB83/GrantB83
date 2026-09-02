@@ -1,8 +1,48 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 12 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 13 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 12 — CRM lead notes with timestamped history and inline add (tenant-scoped SQLite storage)
+**Current Phase:** Phase 13 — Printable leave-behind export (markdown/HTML download + print-to-PDF)
+
+---
+
+## What Works (Phase 13)
+
+### ✅ Phase 13 Additions (Printable Leave-Behind Export)
+
+1. **Leave-Behind Export on `/demo/leavebehind`**
+   - Download leave-behind as Markdown (.md) or HTML (.html) file
+   - Print-to-PDF functionality via browser print dialog (opens HTML in new window)
+   - Three export modes: Download Markdown, Download HTML, Print to PDF
+   - Mirrors Phase 8 quote export UX for consistency
+   - Updated UI with orange Phase 13 badge
+
+2. **Export API Endpoint** (`POST /api/leavebehind/export`)
+   - Accepts `format` parameter ('markdown' or 'html')
+   - Returns text/markdown or text/html with proper Content-Disposition headers
+   - Markdown-to-HTML conversion with print-optimized CSS
+   - Automatic filename generation (guestflow-platform-overview.md/html)
+   - Consistent with Phase 8 quote export API pattern
+
+3. **Demo Hub Phase 13 Integration**
+   - Prominent orange card at top linking to leave-behind page (Phase 13 badge)
+   - Positioned above Phase 11 waitlist conversion
+   - Phase 5 leave-behind card updated to show "Phase 5 → 13" evolution
+
+4. **Extended Smoke Test Coverage**
+   - Route test for `/demo/leavebehind` accessibility
+   - API test for `/api/leavebehind/export` POST endpoint with format validation
+   - Validates markdown and HTML export generation work correctly
+
+**What Works vs. Stubbed:**
+- ✅ Works: Markdown export, HTML export, print-to-PDF, API endpoint with Content-Disposition headers
+- 🚧 Stubbed: Same as Phase 12 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — leave-behind export is local demo feature only
+- Never invents rates/pricing beyond what's already on the leavebehind page
+- All export operations are local-only (no external storage or tracking)
 
 ---
 
@@ -649,6 +689,30 @@ Verify tables:
 - properties (3 sample rows)
 - inquiries
 - bookings
+
+---
+
+## Phase 13 Summary
+
+**What Changed:**
+- Leave-behind export functionality on `/demo/leavebehind` with markdown and HTML download options
+- Print-to-PDF via browser print dialog (opens HTML export in new window)
+- Export API endpoint (`/api/leavebehind/export`) returning markdown or HTML with proper Content-Disposition headers
+- Mirrors Phase 8 quote export UX for consistent user experience across export features
+- Demo hub updated with prominent Phase 13 orange card linking leave-behind page
+- Phase 5 leave-behind card updated to show "Phase 5 → 13" evolution
+- Extended smoke test script to cover leave-behind export route and API endpoint
+- README updated with Phase 13 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Markdown export, HTML export, print-to-PDF, API endpoint, no invented content
+- 🚧 Stubbed: Same as Phase 12 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — leave-behind export with local-only operations (no external storage/tracking)
+- Never invents rates/pricing beyond what's already on the leavebehind page content
+- All export operations remain local-only with no data persistence beyond download
 
 ---
 
