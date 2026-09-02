@@ -1,0 +1,29 @@
+{
+  "name": "vault-due-digest-post-checklist",
+  "version": "1.0.0",
+  "description": "Offline CLI to generate pre-action checklist from vault-due-digest-pack output before CIPC/SARS/trust research",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "checklist": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "checklist": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run test:fixture:healthy && npm run test:fixture:missing-approval",
+    "test:fixture:healthy": "node dist/index.js --pack fixtures/healthy-pack --outdir test-out/healthy && echo '✓ Healthy pack test passed'",
+    "test:fixture:missing-approval": "node dist/index.js --pack fixtures/missing-approval --outdir test-out/missing-approval 2>&1 | grep -q 'APPROVAL.md' && echo '✓ Missing approval test passed' || (echo '✗ Missing approval test failed' && exit 1)",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["vault", "cos", "cipc", "sars", "trust", "checklist", "approval"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

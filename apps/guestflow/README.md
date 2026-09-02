@@ -48,7 +48,7 @@
 
 **What Works vs. Stubbed:**
 - ✅ Works: Heuristic extraction, rate detection, draft reply generation, markdown export, CRM save (DRAFT), fixture loading
-- 🚧 Stubbed: Same as Phase 20 (production auth, live payments, email/WhatsApp auto-send, public signup, live NB API)
+- 🚧 Stubbed: Same as Phase 21 (production auth, live payments, email/WhatsApp auto-send, public signup, live NB API)
 
 **Hard Gates (UNCHANGED):**
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
@@ -113,6 +113,60 @@
 - Never invents ETAs (uses `[ETA UNKNOWN]` placeholder when check-in time not specified)
 - All data persists to local SQLite only with no external sends
 - Fixtures only — no live NB API or OTA integrations
+
+---
+
+## What Works (Phase 21)
+
+### ✅ Phase 21 Additions (Booking Change Check for Last-Minute Verification)
+
+1. **Booking Change Check Page** (`/demo/booking-change-check`)
+   - Compare two booking snapshots (before vs after) to detect changes
+   - Uses active demo tenant from tenant context
+   - Two input modes: (a) demo fixtures with pre-populated changes, or (b) paste/upload JSON snapshots
+   - Reports additions (new bookings), removals (cancellations), and field-level updates
+   - Never invents missing fields - shows [EMPTY] or [NOT ASSIGNED] for missing data
+   - Markdown export for leave-behind/verification documentation
+
+2. **Smart Change Detection**
+   - Detects new bookings added to the after snapshot
+   - Identifies removed/cancelled bookings (present in before, absent in after)
+   - Tracks field-level updates: guest name, suite, dates, notes, late check-in flag, etc.
+   - Groups updates by booking for clear reporting
+   - Visual color-coding: green for additions, red for removals, amber for modifications
+
+3. **Demo Fixtures Included**
+   - Pre-populated before/after snapshots with representative changes
+   - Examples: suite reassignment, checkout date extension, booking cancellation, new booking
+   - Mirrors real-world last-minute change scenarios (tools/browns-booking-change-check semantics)
+   - Safe to toggle between fixture mode and manual JSON input
+
+4. **Export Options**
+   - Download change report as Markdown (.md) file
+   - Structured format with summary stats + detailed change breakdown
+   - Suitable for leave-behind documentation or verification before CT-pack communications
+   - Local-only operations with no external storage
+
+5. **Demo Hub Integration**
+   - Prominent Phase 21 amber card at top of demo hub linking to booking change check
+   - Positioned above Phase 20 CT-pack for visibility
+   - Integration with tenant switcher for multi-tenant demo
+
+6. **Mirrors tools/browns-booking-change-check Semantics**
+   - Same comparison logic: diff two snapshots by booking ID
+   - Same placeholder rules: never invents missing fields
+   - Same reporting structure: additions, removals, field updates
+   - Suitable for last-minute verification before sending guest communications
+
+**What Works vs. Stubbed:**
+- ✅ Works: Snapshot comparison, change detection, markdown export, fixture mode, manual JSON input
+- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — change check is DRAFT ONLY with local-only export
+- Never invents guest names, suites, dates, or other fields
+- All data comparisons are local-only (no external API calls or storage)
 
 ---
 
@@ -1171,7 +1225,6 @@ Verify tables:
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
 - Demo environment only — onboarding wizard is DEMO labeled, NOT production signup flow
 - All data persists to local SQLite only
->>>>>>> origin/main
 
 ---
 
@@ -1242,6 +1295,31 @@ Verify tables:
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
 **These gates are unchanged from Phase 13. Phase 14 adds sales funnel polish for demo walkthroughs—polished landing page with explicit Inquiry→Quote→Welcome→Operations flow, pricing page with prominent "DEMO PLACEHOLDER PRICING" warning banners and "EXAMPLE" labels on all tiers, and verified waitlist→CRM integration. All safety constraints maintained.**
+
+---
+
+## Phase 21 Summary
+
+**What Changed:**
+- Booking change check page at `/demo/booking-change-check` with before/after snapshot comparison
+- Two input modes: (a) demo fixtures with pre-populated realistic changes, (b) manual JSON paste/upload
+- Smart change detection: additions (new bookings), removals (cancellations), field-level updates
+- Change report with visual color-coding: green for additions, red for removals, amber for modifications
+- Markdown export for leave-behind/verification documentation (local-only operations)
+- Demo hub updated with prominent Phase 21 amber card linking booking change check
+- Extended smoke tests for Phase 21 route
+- README updated with Phase 21 section documenting change check features
+
+**What Works vs. Stubbed:**
+- ✅ Works: Snapshot comparison, change detection (additions/removals/updates), markdown export, fixture mode, manual JSON input
+- 🚧 Stubbed: Same as Phase 18 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — change check is DRAFT ONLY with local-only export
+- Never invents guest names, suites, dates, or other fields
+- Mirrors tools/browns-booking-change-check semantics for last-minute verification before CT-pack communications
+- All data comparisons are local-only (no external API calls or storage)
 
 ---
 

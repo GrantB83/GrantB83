@@ -470,6 +470,9 @@ async function runTests() {
     { expectedStatus: 200 }
   );
 
+  // Test Phase 21 booking change check page
+  await testRoute('/demo/booking-change-check', 'Booking change check page (Phase 21)', { checkContent: 'Booking Change Check' });
+
   // Test Phase 20 CT-pack assembly page
   await testRoute('/demo/ct-pack', 'CT-pack assembly page (Phase 20)', { checkContent: 'Demo CT-Pack Assembly' });
   

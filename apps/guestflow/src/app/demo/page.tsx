@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote, RefreshCw } from 'lucide-react'
 import TenantSwitcher from '@/components/TenantSwitcher'
 
 export default function DemoPage() {
@@ -25,6 +25,7 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+<<<<<<< HEAD
       {/* Phase 22: Demo Inquiry Intake (mirrors tools/browns-inquiry-intake) */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -40,6 +41,23 @@ export default function DemoPage() {
           </div>
           <p className="text-purple-100">
             Paste inquiry (email/WhatsApp-ish text) and get structured booking/quote fields for active demo tenant — mirrors tools/browns-inquiry-intake heuristics. Never invents rates; missing amounts → availability-only. (DRAFT/fixtures only)
+=======
+      {/* Phase 21: Booking Change Check */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link
+          href="/demo/booking-change-check"
+          className="block bg-gradient-to-r from-amber-600 to-amber-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Booking Change Check</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 21 🎯</span>
+          </div>
+          <p className="text-amber-100">
+            Diff two booking snapshots (before vs after) to catch last-minute changes before CT-pack communications—mirrors tools/browns-booking-change-check (DRAFT/fixtures only)
+>>>>>>> origin/main
           </p>
         </Link>
       </div>
