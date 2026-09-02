@@ -249,6 +249,11 @@ async function runTests() {
   await testRoute('/demo/inquiry-intake', 'Inquiry intake - fixtures mention', { checkContent: 'Load Sample Fixtures' });
   await testRoute('/demo/inquiry-intake', 'Inquiry intake - hard gates', { checkContent: 'DRAFT/fixtures only' });
   
+  // Phase 26 page
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind pack (Phase 26)', { checkContent: 'Sales Leave-Behind Pack' });
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - 11-step path', { checkContent: '11-Step Demo Walkthrough Path' });
+  await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - hard gates', { checkContent: 'Hard Gates' });
+  
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
   await testRoute('/demo/quote-draft', 'Quote draft demo', { checkContent: 'Quote' });
@@ -317,6 +322,42 @@ async function runTests() {
   await testRoute('/api/quotes/export', 'Quote export API (POST html)', { 
     method: 'POST', 
     body: { ...sampleQuoteExport, format: 'html' },
+    expectedStatus: 200
+  });
+
+  // Test Phase 26 sales leave-behind export API (POST)
+  const sampleSalesLeaveBehind = {
+    format: 'markdown',
+    tenantName: 'Test Tenant',
+    inquiryWithAmounts: {
+      guestName: 'Test Guest',
+      email: 'test@example.com',
+      phone: '+27 82 555 1234',
+      checkIn: '2026-12-15',
+      checkOut: '2026-12-17',
+      nights: 2,
+      adults: 2,
+      children: 0,
+      property: 'Test Property',
+      room: 'Test Room',
+      specialRequests: [],
+      occasion: 'test',
+      amounts: {
+        ratePerNight: 1000,
+        currency: 'ZAR',
+        season: 'test'
+      }
+    },
+    inquiryWithoutAmounts: null
+  };
+  await testRoute('/api/sales-leavebehind/export', 'Sales leave-behind export API (POST markdown - Phase 26)', { 
+    method: 'POST', 
+    body: sampleSalesLeaveBehind,
+    expectedStatus: 200
+  });
+  await testRoute('/api/sales-leavebehind/export', 'Sales leave-behind export API (POST html - Phase 26)', { 
+    method: 'POST', 
+    body: { ...sampleSalesLeaveBehind, format: 'html' },
     expectedStatus: 200
   });
 

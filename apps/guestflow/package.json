@@ -19,7 +19,8 @@
     "better-sqlite3": "^11.0.0",
     "zod": "^3.23.0",
     "date-fns": "^3.6.0",
-    "lucide-react": "^0.436.0"
+    "lucide-react": "^0.436.0",
+    "jszip": "^3.10.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

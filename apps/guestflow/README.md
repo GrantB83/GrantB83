@@ -1,8 +1,74 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 25 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 26 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 25 — Guided sales demo walkthrough (DRAFT/fixtures only)
+**Current Phase:** Phase 26 — Sales leave-behind pack export (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 26)
+
+### ✅ Phase 26 Additions (Sales Leave-Behind Pack Export)
+
+1. **Sales Leave-Behind Page** (`/demo/sales-leavebehind`)
+   - Complete sales leave-behind pack for prospects after Phase 25 walkthrough demo
+   - Product one-pager: what GuestFlow is, current status, multi-property value prop
+   - 11-step demo path summary: landing → pricing → waitlist → CRM → rate cards → inquiry → quote → NB import → welcome → ops → CT-pack
+   - Sample fixture excerpts (inquiry→quote) with/without amounts—never invents rates
+   - Hard gates reminder: NO live payments, NO auto-send, NO invented rates, DEMO labeling
+   - DEMO PLACEHOLDER pricing note with beta access messaging
+   - Next steps for prospect: waitlist, interactive demo, walkthrough script, contact
+   - Uses tenant name from active demo tenant
+
+2. **Export Options** (`POST /api/sales-leavebehind/export`)
+   - Download as Markdown (.md) file with complete sales pack content
+   - Download as HTML (.html) file with print-optimized styling
+   - Print to PDF via browser print dialog (opens HTML in new window)
+   - Download as ZIP (.zip) with multiple files:
+     - LEAVE-BEHIND.md (main sales pack)
+     - WALKTHROUGH-SUMMARY.md (11-step demo guide)
+     - CT-PACK-REMINDER.md (dated pack communication guide)
+     - OTA-WORKSHEET-SAMPLE.md (inquiry pipeline tracking)
+     - INQUIRY-SAMPLE-WITH-AMOUNTS.md (fixture with rates)
+     - INQUIRY-SAMPLE-WITHOUT-AMOUNTS.md (fixture without rates)
+   - Mirrors Phase 13 leave-behind export UX for consistency
+   - All exports include tenant name and fixture data only
+
+3. **Demo Hub Integration**
+   - Prominent Phase 26 teal card at top of demo hub linking to sales-leavebehind page
+   - Positioned above Phase 25 sales walkthrough for visibility
+   - Phase 26 badge with 🎯 emoji
+
+4. **Sales Walkthrough Integration**
+   - Updated Step 9 in sales walkthrough script (/demo/walkthrough) to reference sales-leavebehind pack
+   - Complete talking points: product overview, demo path, fixtures, hard gates, next steps
+   - Demo actions: show pack, explain ZIP contents, download options
+   - Emphasizes post-demo follow-up material for prospects
+
+5. **Fixture Integration**
+   - Loads inquiry-with-amounts.json and inquiry-without-amounts.json from /fixtures/
+   - Displays extracted inquiry details: guest, dates, party size, property, room, special requests
+   - Shows quote draft with amounts (when present) or [RATE CARD REQUIRED] placeholder (when missing)
+   - Never invents rates—strict adherence to fixture amounts only
+   - Calculates totals (subtotal + 15% tax) only when amounts are present in fixture
+
+6. **Mirrors Phase 25 Walkthrough Semantics**
+   - Same 11-step demo path structure
+   - Same hard gates messaging (NO payments, NO auto-send, NO invented rates)
+   - Same DEMO PLACEHOLDER pricing warnings
+   - Same next steps for prospects (waitlist, contact, no paid signup)
+   - Compatible with tenant-scoped demo environment
+
+**What Works vs. Stubbed:**
+- ✅ Works: Sales leave-behind generation, multi-format export (md/html/zip), fixture integration, tenant-scoped, never invents rates
+- 🚧 Stubbed: Same as Phase 25 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — sales leave-behind is DRAFT ONLY for local/demo use
+- Never invents amounts—uses fixture amounts only or shows [RATE CARD REQUIRED]
+- All exports are local-only operations (no external sends or tracking)
+- Fixtures and DEMO data only—no production rate publishing
 
 ---
 

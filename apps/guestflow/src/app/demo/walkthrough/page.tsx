@@ -193,23 +193,26 @@ export default function WalkthroughPage() {
           ]}
         />
 
-        {/* Step 9: Leave-Behind */}
+        {/* Step 9: Sales Leave-Behind Pack */}
         <ScriptStep
           number={9}
           icon={<FileText className="w-6 h-6" />}
-          title="Leave-Behind → Sales Follow-Up Material"
+          title="Sales Leave-Behind Pack → Post-Demo Follow-Up"
           duration="1 min"
-          route="/demo/leavebehind"
+          route="/demo/sales-leavebehind"
           talking_points={[
-            "Printable one-pager summarizing platform value",
-            "Markdown export for email follow-up",
-            "No invented rates or promises—uses waitlist/pricing copy",
-            "COMING SOON messaging preserved"
+            "Complete sales leave-behind with product overview",
+            "11-step demo path summary for reference",
+            "Sample inquiry/quote fixtures (never invents rates)",
+            "Hard gates and DEMO pricing reminders",
+            "Next steps: waitlist, contact, demo links"
           ]}
           demo_actions={[
-            "Show generated leave-behind on screen",
-            "Click 'Download Markdown' to export",
-            "Explain: 'Send this after demo to keep conversation warm'"
+            "Show generated sales pack with tenant name",
+            "Point out fixture excerpts (with/without amounts)",
+            "Explain ZIP export includes walkthrough, CT-pack, OTA worksheet reminders",
+            "Click 'Download Markdown' or 'Download ZIP'",
+            "Explain: 'Send this after demo to keep conversation warm and provide reference materials'"
           ]}
         />
 
