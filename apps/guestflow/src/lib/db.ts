@@ -113,6 +113,19 @@ function initializeDb(database: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_rate_cards_tenant ON rate_cards(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_rate_cards_property ON rate_cards(property_id);
     CREATE INDEX IF NOT EXISTS idx_rate_cards_dates ON rate_cards(valid_from, valid_to);
+
+    CREATE TABLE IF NOT EXISTS lead_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lead_id INTEGER NOT NULL,
+      tenant_id INTEGER NOT NULL,
+      note_text TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lead_id) REFERENCES waitlist(id),
+      FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lead_notes_lead ON lead_notes(lead_id);
+    CREATE INDEX IF NOT EXISTS idx_lead_notes_tenant ON lead_notes(tenant_id);
   `)
   
   const tenantCount = database.prepare('SELECT COUNT(*) as count FROM tenants').get() as { count: number }

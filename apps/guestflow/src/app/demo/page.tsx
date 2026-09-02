@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload, CheckCircle, CreditCard, Presentation, FileDown, Database, StickyNote } from 'lucide-react'
 import TenantSwitcher from '@/components/TenantSwitcher'
 
 export default function DemoPage() {
@@ -40,6 +40,25 @@ export default function DemoPage() {
           </div>
           <p className="text-cyan-100">
             One-click convert waitlist entries to CRM leads—tenant-scoped, copies contact/property/notes, marks status converted (demo only)
+          </p>
+        </Link>
+      </div>
+
+      {/* Phase 12: CRM Lead Notes */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/crm"
+          className="block bg-gradient-to-r from-pink-600 to-pink-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <StickyNote className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">CRM Lead Notes</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 12</span>
+          </div>
+          <p className="text-pink-100">
+            Add timestamped notes to CRM leads—expand rows to see note history, add new notes inline, tenant-scoped SQLite storage (demo only)
           </p>
         </Link>
       </div>

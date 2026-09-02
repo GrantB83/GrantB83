@@ -56,14 +56,15 @@ export default function CRMPage() {
         )}
 
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="font-semibold text-gray-900 mb-2">CRM Features (Phase 10)</h3>
+          <h3 className="font-semibold text-gray-900 mb-2">CRM Features (Phase 12)</h3>
           <ul className="space-y-2 text-sm text-gray-700">
             <li>✅ View all waitlist submissions with property details and notes</li>
             <li>✅ Lead status tracking (New → Contacted → Qualified → Won/Lost)</li>
             <li>✅ CSV export of leads (tenant-scoped, local SQLite only)</li>
             <li>✅ Current system tracking (NightsBridge, Google Calendar, etc.)</li>
             <li>✅ Submission timestamp for follow-up prioritization</li>
-            <li>✅ <strong>NEW:</strong> Multi-tenant switcher—scoped to selected tenant ({selectedTenant?.name || 'N/A'})</li>
+            <li>✅ Multi-tenant switcher—scoped to selected tenant ({selectedTenant?.name || 'N/A'})</li>
+            <li>✅ <strong>NEW Phase 12:</strong> Add timestamped notes to leads—expand rows to view history and add notes</li>
             <li>⚠️ Demo only: No email sending, no automated campaigns, no live payments</li>
           </ul>
         </div>
