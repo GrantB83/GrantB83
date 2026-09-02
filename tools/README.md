@@ -7,6 +7,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | Tool | Purpose | Desk(s) | Safety Note |
 |------|---------|---------|-------------|
 | [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
+| [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
