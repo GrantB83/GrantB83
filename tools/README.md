@@ -8,6 +8,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 |------|---------|---------|-------------|
 | [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
+| [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
@@ -141,6 +142,58 @@ npm run recon -- --mode receipt \
 **Output:** `xero-bank-normalized.csv` with headers exactly: `Date,Reference,Amount,Description`
 
 [→ Full README](./pw-bank-csv-normalize/README.md)
+
+---
+
+## pw-stocktake-csv-normalize
+
+**One-line:** Normalize store stocktake CSVs into a standard schema for Perfect Water / CoS reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-stocktake-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-stocktake-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --input stocktake.csv --outdir out/
+
+# Specific profile
+npm run normalize -- --input loyverse-export.csv --outdir out/ --profile loyverse
+
+# Generic stocktake
+npm run normalize -- --input manual-count.csv --outdir out/ --profile generic
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - Blank/unparseable → rejected.csv
+- ✅ **Read-only** - No write-back to Loyverse or inventory systems
+- ✅ **File-based** - All quantities stay in files
+- ⚠️ **Never invents items or stores** - Missing SKU/Item or Store → rejected.csv
+
+### Standard Schema
+
+Outputs `stocktake-normalized.csv` with headers:
+
+- **Store** - Store/location name (required)
+- **SKU/Item** - SKU or item name (required)
+- **CountedQty** - Counted quantity (required, must be parseable number)
+- **Unit** - Unit of measure (required)
+- **CountedAt** - Date counted (optional, YYYY-MM-DD)
+- **Notes** - Additional notes (optional)
+
+**Supported profiles:** auto (default), generic, loyverse
+
+**Output files:** `stocktake-normalized.csv`, `rejected.csv`, `missing-fields.md`, `APPROVAL.md`, `manifest.json`, `report.md` (row counts only)
+
+[→ Full README](./pw-stocktake-csv-normalize/README.md)
 
 ---
 
