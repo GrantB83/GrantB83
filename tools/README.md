@@ -10,6 +10,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
 | [pw-grv-csv-normalize](#pw-grv-csv-normalize) | Normalize messy GRV / goods-received CSVs to standard schema for inventory ops | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
+| [pw-grv-vs-stocktake-diff](#pw-grv-vs-stocktake-diff) | Compare normalized GRV vs stocktake CSV by Store+SKU for inventory recon | Perfect Water / CoS | **Offline**. No invented quantities. Amounts stay in files. Delta = counted - received. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
@@ -273,6 +274,94 @@ Outputs `stocktake-normalized.csv` with headers:
 **Output files:** `stocktake-normalized.csv`, `rejected.csv`, `missing-fields.md`, `APPROVAL.md`, `manifest.json`, `report.md` (row counts only)
 
 [→ Full README](./pw-stocktake-csv-normalize/README.md)
+
+---
+
+## pw-grv-vs-stocktake-diff
+
+**One-line:** Compare normalized GRV (goods-received) CSV against normalized stocktake CSV by Store + SKU/Item for Perfect Water / CoS inventory reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-grv-vs-stocktake-diff/`
+
+### Install and Run
+
+```bash
+cd tools/pw-grv-vs-stocktake-diff
+npm install
+npm run build
+
+# Basic usage with pre-normalized CSVs
+npm run diff -- --grv grv-normalized.csv --stocktake stocktake-normalized.csv --outdir out/
+
+# Orchestrator mode (run sibling tools first)
+npm run diff -- \
+  --run-grv-normalize --grv-raw raw-grv.csv \
+  --run-stocktake-normalize --stock-raw raw-stocktake.csv \
+  --outdir out/
+
+# Custom column names
+npm run diff -- \
+  --grv grv.csv \
+  --stocktake stock.csv \
+  --outdir out/ \
+  --store-col "Location" \
+  --key-col "Product"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - All amounts from source CSVs only
+- ✅ **Read-only** - Never modifies source CSV files
+- ✅ **File-based** - All amounts stay in files
+- ✅ **Blank/unparseable qty → rejected** - Invalid rows reported in missing-keys.md
+- ✅ **Exit 1 on bad input** - Malformed CSVs caught early
+- ✅ **Orchestrator support** - Can shell out to sibling normalizer tools via npm run
+- ⚠️ **Amounts stay in files** - Bots must not paste quantities into chat
+- ⚠️ **Perfect Water owns ops** - PW owns all inventory adjustment decisions
+
+### Comparison Logic
+
+Compares by **Store|SKU/Item** key:
+- **Delta = Counted - Received**
+- Positive delta → More counted than received (possible GRV undercount or stocktake overcount)
+- Negative delta → Less counted than received (possible shrinkage or stocktake error)
+- Missing in stocktake → Received but not counted
+- Missing in GRV → Counted but no GRV record
+
+### Output Files
+
+- `diff.json` - Structured diff data (Store, Item, Received, Counted, Delta, Unit)
+- `diff.md` - Human-readable diff table sorted by absolute delta
+- `missing-keys.md` - Items missing in one side or rejected rows
+- `APPROVAL.md` - Safety gates and approval workflow (H3 gate)
+- `manifest.json` - Run metadata
+
+### Use Cases
+
+1. **Monthly inventory reconciliation** - Compare month's GRV vs month-end stocktake
+2. **Shrinkage detection** - Identify items with negative deltas
+3. **Stocktake error detection** - Large deltas may indicate counting mistakes
+4. **GRV discrepancy investigation** - Items counted but no GRV → unrecorded receipts?
+5. **Cost-of-sales verification** - Validate stock movements match receipts
+
+### Integration with Sibling Tools
+
+Preferred inputs from:
+- `pw-grv-csv-normalize` → `grv-normalized.csv`
+- `pw-stocktake-csv-normalize` → `stocktake-normalized.csv`
+
+Or use orchestrator flags to run normalizers first:
+```bash
+npm run diff -- \
+  --run-grv-normalize --grv-raw loyverse-grv.csv \
+  --run-stocktake-normalize --stock-raw loyverse-stocktake.csv \
+  --outdir out/
+```
+
+[→ Full README](./pw-grv-vs-stocktake-diff/README.md)
 
 ---
 
