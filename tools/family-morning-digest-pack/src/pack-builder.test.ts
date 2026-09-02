@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { splitSections, formatItem, generateSchoolMarkdown, generateFamilyMarkdown } from './pack-builder.js';
+import { splitSections, formatItem, generateSchoolMarkdown, generateFamilyMarkdown, generatePackIndex } from './pack-builder.js';
 import { DigestItem } from './types.js';
 
 test('splitSections separates school and family items', () => {
@@ -105,4 +105,28 @@ test('generateSchoolMarkdown handles empty list', () => {
 test('generateFamilyMarkdown handles empty list', () => {
   const markdown = generateFamilyMarkdown([], '2026-09-02');
   assert.ok(markdown.includes('No family admin items'));
+});
+
+test('generatePackIndex includes calendar when calendarEventCount provided', () => {
+  const packMd = generatePackIndex('2026-09-02', 2, 3, 4);
+  
+  assert.ok(packMd.includes('# Family Morning Digest Pack — 2026-09-02'));
+  assert.ok(packMd.includes('Kids School items (2 items)'));
+  assert.ok(packMd.includes('Family Admin items (3 items'));
+  assert.ok(packMd.includes('Calendar events from ICS digest (4 events)'));
+  assert.ok(packMd.includes('calendar-events.json'));
+  assert.ok(packMd.includes('Review calendar.md for accuracy'));
+  assert.ok(packMd.includes('No invented events or times in calendar digest'));
+  assert.ok(packMd.includes('Calendar events are pass-through from ICS file only'));
+});
+
+test('generatePackIndex excludes calendar when calendarEventCount not provided', () => {
+  const packMd = generatePackIndex('2026-09-02', 2, 3);
+  
+  assert.ok(packMd.includes('# Family Morning Digest Pack — 2026-09-02'));
+  assert.ok(packMd.includes('Kids School items (2 items)'));
+  assert.ok(packMd.includes('Family Admin items (3 items'));
+  assert.ok(!packMd.includes('Calendar events'));
+  assert.ok(!packMd.includes('calendar-events.json'));
+  assert.ok(!packMd.includes('Review calendar.md'));
 });
