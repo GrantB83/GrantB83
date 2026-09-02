@@ -1,0 +1,10 @@
+{
+  "customerName": "Pieter van der Merwe",
+  "customerPhone": "+27823456789",
+  "materials": ["Sand"],
+  "volume": 12,
+  "volumeUnit": "m³",
+  "deliveryLocation": "123 Main Road, Dullstroom",
+  "dateNeeded": "2026-09-20",
+  "notes": "Customer prefers morning delivery"
+}

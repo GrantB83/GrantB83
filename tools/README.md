@@ -38,6 +38,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [hm-quote-to-pod](#hm-quote-to-pod) | Map quote.json into pod.json stub for hm-delivery-pod-draft field bridge | SA Ops / Heavy Metal | **Offline**. No LLM. Never invents volume/signature/price. Field bridge only. |
 | [hm-delivery-pod-draft](#hm-delivery-pod-draft) | Generate DRAFT proof-of-delivery notes from Heavy Metal delivery data | SA Ops / Heavy Metal | **Offline**. No auto-send. Never invents volumes/signatures. JSON or paste text input. |
+| [hm-quote-pipeline-pack](#hm-quote-pipeline-pack) | Orchestrate Heavy Metal quote pipeline into one pack for single inquiry | SA Ops / Heavy Metal | **Offline orchestrator**. Never invents volume/price/location/signature. Never sends WhatsApp. H1 gate reminder. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
@@ -2123,6 +2124,94 @@ Signed by: J. Botha
 - **Automation Target:** delivery-day-and-pod
 
 [→ Full README](./hm-delivery-pod-draft/README.md)
+
+---
+
+## hm-quote-pipeline-pack
+
+**One-line:** Offline CLI orchestrator for Heavy Metal quote pipeline: hm-quote-intake → hm-quote-to-pod → optional hm-delivery-pod-draft for single inquiry.
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-quote-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/hm-quote-pipeline-pack
+npm install
+npm run build
+
+# Use prebuilt outputs (recommended)
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --quote-outdir ../hm-quote-intake/out/intake-20260902/ \
+  --pod-outdir ../hm-quote-to-pod/out/map-20260902/
+
+# Run intake and map tools
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --run-intake --text inquiry.txt \
+  --run-map
+
+# Full pipeline
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --run-intake --text inquiry.txt \
+  --run-map \
+  --run-pod
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Shells out to sibling tools or copies prebuilt outputs
+- ✅ **Never invents volume/price/location/signature** - Only packages existing data
+- ✅ **Never sends WhatsApp** - Pack assembly only, no sends
+- ✅ **Missing fields tracked** - No invented rates/volumes in prose
+- ✅ **H1 gate reminder** - APPROVAL.md includes `APPROVE SEND <whatsapp-id>` requirement
+- ⚠️ **Approval required** - Review APPROVAL.md before every quote send
+- ⚠️ **Confirm volume + location** - Before any quote per lane:heavy-metal rules
+
+### Output Files
+
+- `PACK.md` - Pack index with quote/pod summary and missing fields list
+- `APPROVAL.md` - Approval checklist with H1 gate reminder and safety checks
+- `quote.json` - Copy of quote (if provided)
+- `pod.json` - Copy of pod (if provided)
+- `pod.md` - Copy of pod draft (if provided)
+- `manifest.json` - Pack metadata
+
+### Integration
+
+**Workflow position:**
+
+```
+hm-quote-intake → quote.json
+       ↓
+ hm-quote-to-pod → pod.json
+       ↓
+hm-delivery-pod-draft → pod.md (optional)
+       ↓
+hm-quote-pipeline-pack → PACK + APPROVAL
+       ↓
+   Manual review + H1 approval
+       ↓
+   Send via CoS WhatsApp
+```
+
+**Orchestration modes:**
+1. **Prebuilt** (recommended): Copy existing outputs via `--quote-outdir`, `--pod-outdir`
+2. **Shell out**: Run sibling tools via `--run-intake`, `--run-map`, `--run-pod`
+
+**Approval gates:**
+- **H1**: `APPROVE SEND <whatsapp-id>` required for every quote
+- **lane:heavy-metal**: Confirm volume + location before any quote
+- **N7**: Never invent rates, volumes, locations, signatures
+
+[→ Full README](./hm-quote-pipeline-pack/README.md)
 
 ---
 
