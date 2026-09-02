@@ -18,6 +18,7 @@ test('generatePackIndex creates valid pack index', () => {
     ranChangeCheck: false,
     ranDailyOps: true,
     ranGuestComms: true,
+    ranLateCheckin: false,
   };
   
   const sourcesProvided = {
@@ -49,6 +50,7 @@ test('generatePackIndex includes correct sections based on flags', () => {
     ranChangeCheck: true,
     ranDailyOps: true,
     ranGuestComms: false,
+    ranLateCheckin: false,
   };
   
   const sourcesProvided = {
@@ -78,6 +80,7 @@ test('generatePackIndex handles minimal pack', () => {
     ranChangeCheck: false,
     ranDailyOps: false,
     ranGuestComms: false,
+    ranLateCheckin: false,
   };
   
   const sourcesProvided = {
@@ -93,4 +96,32 @@ test('generatePackIndex handles minimal pack', () => {
   assert.ok(result.includes('(No guest drafts in this pack)'));
   assert.ok(result.includes('(No change check in this pack)'));
   assert.ok(result.includes('(No daily ops brief in this pack)'));
+});
+
+test('generatePackIndex includes late-checkin files when flag is set', () => {
+  const options: CliOptions = {
+    day: '2026-09-20',
+    outdir: './test-out',
+  };
+  
+  const ranFlags = {
+    ranAdapter: false,
+    ranChangeCheck: false,
+    ranDailyOps: false,
+    ranGuestComms: false,
+    ranLateCheckin: true,
+  };
+  
+  const sourcesProvided = {
+    bookings: true,
+    beforeAfter: false,
+    facts: false,
+    guestBooking: false,
+  };
+  
+  const result = generatePackIndex(options, ranFlags, sourcesProvided);
+  
+  assert.ok(result.includes('queue.md'));
+  assert.ok(result.includes('unknown-time.md'));
+  assert.ok(result.includes('Ran late-checkin: Yes'));
 });

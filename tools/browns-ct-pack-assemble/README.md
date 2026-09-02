@@ -34,6 +34,7 @@ This orchestrator calls existing offline tools (or accepts already-built JSON in
   - `browns-booking-change-check` (not yet implemented)
   - `browns-daily-ops-brief`
   - `browns-guest-comms-draft`
+  - `browns-late-checkin-queue`
 
 ### Setup
 
@@ -80,7 +81,8 @@ npm run assemble -- \\
   --bookings bookings.json \\
   --run-daily-ops \\
   --run-guest-comms \\
-  --guest-booking guest.json
+  --guest-booking guest.json \\
+  --run-late-checkin
 ```
 
 **Minimal pack (index and approval only):**
@@ -105,6 +107,7 @@ npm run assemble -- \\
 | `--run-change-check` | No | Run browns-booking-change-check (needs before+after) | false |
 | `--run-daily-ops` | No | Run browns-daily-ops-brief (needs bookings) | false |
 | `--run-guest-comms` | No | Run browns-guest-comms-draft (needs guest-booking) | false |
+| `--run-late-checkin` | No | Run browns-late-checkin-queue (needs bookings+day) | false |
 | `--help` | No | Show help message | - |
 
 ## Input Files
@@ -240,7 +243,15 @@ Guest welcome draft files copied from `browns-guest-comms-draft` output.
 
 Renamed from `draft-*.md` to `guest-*.md` for clarity in the pack.
 
-### 6. `manifest.json`
+### 6. `queue.md` and `unknown-time.md` (if `--run-late-checkin`)
+
+Late check-in queue files copied from `browns-late-checkin-queue` output.
+
+Contains:
+- `queue.md`: Late check-in coordination queue
+- `unknown-time.md`: Late check-ins with unknown arrival times
+
+### 7. `manifest.json`
 
 **Machine-readable pack inventory**
 
@@ -265,7 +276,8 @@ Renamed from `draft-*.md` to `guest-*.md` for clarity in the pack.
     "ranAdapter": false,
     "ranChangeCheck": false,
     "ranDailyOps": true,
-    "ranGuestComms": true
+    "ranGuestComms": true,
+    "ranLateCheckin": false
   }
 }
 ```
@@ -312,7 +324,8 @@ npm run assemble -- \\
   --bookings bookings.json \\
   --run-daily-ops \\
   --run-guest-comms \\
-  --guest-booking arriving-guest.json
+  --guest-booking arriving-guest.json \\
+  --run-late-checkin
 ```
 
 This invokes tools as child processes. Less reliable if tools fail, but faster for simple packs.
@@ -449,6 +462,14 @@ tools/browns-ct-pack-assemble/
 
 **Output copied:** `draft-*.md` files → `guest-*.md` files
 
+### browns-late-checkin-queue
+
+**Purpose:** Generate late check-in coordination queue from bookings
+
+**Invoked with:** `--run-late-checkin` flag (requires `--bookings` and `--day`)
+
+**Output copied:** `queue.md` and `unknown-time.md` → pack outdir
+
 ## Troubleshooting
 
 ### "Error: --day is required"
@@ -501,6 +522,7 @@ Ensure sibling tools exist in `tools/` directory and have `npm run <script>` com
 - **browns-nightsbridge-bookings-adapter** - Transform Nightsbridge exports to bookings.json
 - **browns-daily-ops-brief** - Daily team ops brief
 - **browns-guest-comms-draft** - Guest welcome messages
+- **browns-late-checkin-queue** - Late check-in coordination queue
 - **browns-guest-facts-pack** - Extract brand facts from knowledge files
 - **browns-quote-invoice-draft** - Quote and invoice communications
 
@@ -517,7 +539,8 @@ browns-ct-pack-assemble (THIS TOOL)
     ↓ (optionally invokes)
     ├── browns-booking-change-check (not yet implemented)
     ├── browns-daily-ops-brief
-    └── browns-guest-comms-draft
+    ├── browns-guest-comms-draft
+    └── browns-late-checkin-queue
     ↓
 out/ct-YYYY-MM-DD/
     ├── PACK.md (timed checklist)
@@ -525,6 +548,8 @@ out/ct-YYYY-MM-DD/
     ├── changes.md
     ├── daily-ops.md
     ├── guest-*.md
+    ├── queue.md
+    ├── unknown-time.md
     └── manifest.json
     ↓
 Manual review by Liana / Grant

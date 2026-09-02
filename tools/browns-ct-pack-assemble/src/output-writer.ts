@@ -13,11 +13,13 @@ export async function writeOutputs(
     changeCheckOutput: string | null;
     dailyOpsOutput: string | null;
     guestCommsOutputs: string[];
+    lateCheckinOutput: string | null;
     ranFlags: {
       ranAdapter: boolean;
       ranChangeCheck: boolean;
       ranDailyOps: boolean;
       ranGuestComms: boolean;
+      ranLateCheckin: boolean;
     };
   }
 ): Promise<void> {
@@ -114,7 +116,33 @@ export async function writeOutputs(
     }
   }
   
-  // 6. Write manifest.json
+  // 6. Copy late-checkin files if late-checkin was run
+  if (packResults.lateCheckinOutput && existsSync(packResults.lateCheckinOutput)) {
+    const queueMdPath = join(packResults.lateCheckinOutput, 'queue.md');
+    const unknownTimeMdPath = join(packResults.lateCheckinOutput, 'unknown-time.md');
+    
+    if (existsSync(queueMdPath)) {
+      copyFileSync(queueMdPath, join(options.outdir, 'queue.md'));
+      files.push({
+        filename: 'queue.md',
+        type: 'guest-draft',
+        description: 'Late check-in queue',
+      });
+      console.log('  ✓ Copied queue.md from late-checkin-queue');
+    }
+    
+    if (existsSync(unknownTimeMdPath)) {
+      copyFileSync(unknownTimeMdPath, join(options.outdir, 'unknown-time.md'));
+      files.push({
+        filename: 'unknown-time.md',
+        type: 'guest-draft',
+        description: 'Late check-in unknown times',
+      });
+      console.log('  ✓ Copied unknown-time.md from late-checkin-queue');
+    }
+  }
+  
+  // 7. Write manifest.json
   const manifest: PackManifest = {
     day: options.day,
     generatedAt: new Date().toISOString(),

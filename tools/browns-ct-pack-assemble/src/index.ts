@@ -40,6 +40,7 @@ RUN FLAGS (invoke sibling tools):
   --run-change-check Run browns-booking-change-check (needs before+after OR run-adapter)
   --run-daily-ops    Run browns-daily-ops-brief (needs bookings)
   --run-guest-comms  Run browns-guest-comms-draft (needs guest-booking)
+  --run-late-checkin Run browns-late-checkin-queue (needs bookings+day)
 
 OPTIONS:
   --help        Show this help message
@@ -94,6 +95,7 @@ function parseCliArgs(): CliOptions | null {
         'run-change-check': { type: 'boolean' },
         'run-daily-ops': { type: 'boolean' },
         'run-guest-comms': { type: 'boolean' },
+        'run-late-checkin': { type: 'boolean' },
         help: { type: 'boolean' },
       },
       strict: true,
@@ -133,6 +135,7 @@ function parseCliArgs(): CliOptions | null {
       'run-change-check': values['run-change-check'] || false,
       'run-daily-ops': values['run-daily-ops'] || false,
       'run-guest-comms': values['run-guest-comms'] || false,
+      'run-late-checkin': values['run-late-checkin'] || false,
     };
   } catch (err: any) {
     console.error(`❌ Error parsing arguments: ${err.message}`);
@@ -191,15 +194,22 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   
+  if (options['run-late-checkin'] && !options.bookings) {
+    console.error('❌ Error: --run-late-checkin requires --bookings');
+    process.exit(1);
+  }
+  
   const packResults = {
     changeCheckOutput: null as string | null,
     dailyOpsOutput: null as string | null,
     guestCommsOutputs: [] as string[],
+    lateCheckinOutput: null as string | null,
     ranFlags: {
       ranAdapter: false,
       ranChangeCheck: false,
       ranDailyOps: false,
       ranGuestComms: false,
+      ranLateCheckin: false,
     }
   };
   
@@ -270,6 +280,21 @@ async function main(): Promise<void> {
       packResults.ranFlags.ranGuestComms = true;
     } catch (err: any) {
       console.error(`❌ Guest comms draft failed: ${err.message}`);
+      process.exit(1);
+    }
+  }
+  
+  if (options['run-late-checkin'] && options.bookings) {
+    console.log('\\n🔧 Running browns-late-checkin-queue...');
+    try {
+      const lateCheckinOutput = join(options.outdir, 'late-checkin-temp');
+      const args = ['--bookings', resolve(options.bookings), '--day', options.day, '--outdir', lateCheckinOutput];
+      await runSiblingTool('browns-late-checkin-queue', args, toolsDir);
+      packResults.lateCheckinOutput = lateCheckinOutput;
+      console.log('✓ Late checkin queue completed');
+      packResults.ranFlags.ranLateCheckin = true;
+    } catch (err: any) {
+      console.error(`❌ Late checkin queue failed: ${err.message}`);
       process.exit(1);
     }
   }

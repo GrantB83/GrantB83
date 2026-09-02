@@ -42,6 +42,7 @@ function getScriptName(toolName: string): string {
     'browns-booking-change-check': 'check',
     'browns-daily-ops-brief': 'brief',
     'browns-guest-comms-draft': 'draft',
+    'browns-late-checkin-queue': 'queue',
   };
   
   return scriptMap[toolName] || 'run';
