@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
@@ -294,6 +294,20 @@ export default function DailyBriefPage() {
           <li>✅ Never invents guest data—blanks stay flagged</li>
           <li>⚠️ Draft-only: team WhatsApp send requires H11 approval</li>
         </ul>
+      </div>
+
+      <div className="mt-6 bg-rose-50 border border-rose-200 rounded-xl p-6">
+        <h3 className="font-semibold text-gray-900 mb-3">🎯 Phase 18: Welcome Message Drafts</h3>
+        <p className="text-sm text-gray-700 mb-4">
+          Generate welcome message stubs for today's and upcoming arrivals from your bookings board.
+        </p>
+        <Link
+          href="/demo/welcome-drafts"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition"
+        >
+          <Mail className="w-4 h-4" />
+          View Welcome Drafts
+        </Link>
       </div>
 
       <div className="mt-8 flex gap-4 justify-center">

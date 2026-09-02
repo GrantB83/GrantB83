@@ -456,6 +456,15 @@ async function runTests() {
     fail(`Leave-behind export API (HTML): Expected 200, got ${leaveBehindHtmlResponse.status}`);
   }
   
+  // Test Phase 18 welcome drafts page
+  await testRoute('/demo/welcome-drafts', 'Welcome drafts page (Phase 18)', { checkContent: 'Welcome Message Drafts' });
+  
+  // Test Phase 18 welcome drafts API (GET with tenant filter)
+  await testRoute('/api/welcome-drafts?tenant_id=1&as_of=2026-09-02&window_days=1', 
+    'Welcome drafts API with tenant filter (Phase 18)', 
+    { expectedStatus: 200 }
+  );
+  
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });
   
