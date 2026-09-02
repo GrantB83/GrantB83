@@ -27,6 +27,8 @@ OPTIONS:
   --pack, -p                  Path to existing family-morning-digest-pack output [preferred]
   --run-morning-pack          Run family-morning-digest-pack first
   --run-post-checklist        Run family-digest-post-checklist [default: true]
+                              Accepts: --run-post-checklist, --run-post-checklist=true/false,
+                              --run-post-checklist true/false, --no-run-post-checklist
   --date, -d                  Date label (YYYY-MM-DD) [required for --run-morning-pack]
   --outdir, -o                Output directory [default: ./out]
   --help, -h                  Show this help message
@@ -84,8 +86,14 @@ EXAMPLES:
   # Generate morning pack first
   npm run pipeline -- --run-morning-pack --date 2026-09-02 --subjects subjects.txt --run-subject-digest
 
-  # Skip post-checklist
+  # Skip post-checklist (using equals sign)
   npm run pipeline -- --pack path/to/pack --run-post-checklist=false
+
+  # Skip post-checklist (using space)
+  npm run pipeline -- --pack path/to/pack --run-post-checklist false
+
+  # Skip post-checklist (using negative flag)
+  npm run pipeline -- --pack path/to/pack --no-run-post-checklist
 
   # Test with fixtures
   npm run test:fixtures
@@ -109,13 +117,28 @@ function parseArgs(args: string[]): CliOptions {
       options.pack = args[++i];
     } else if (arg === '--run-morning-pack') {
       options.runMorningPack = true;
-    } else if (arg === '--run-post-checklist') {
-      const nextArg = args[i + 1];
-      if (nextArg && (nextArg === 'false' || nextArg === '0')) {
-        options.runPostChecklist = false;
-        i++;
+    } else if (arg === '--no-run-post-checklist') {
+      // Handle negative flag: --no-run-post-checklist
+      options.runPostChecklist = false;
+    } else if (arg === '--run-post-checklist' || arg.startsWith('--run-post-checklist=')) {
+      // Handle --run-post-checklist[=value]
+      if (arg.includes('=')) {
+        // Parse --run-post-checklist=false or --run-post-checklist=true
+        const value = arg.split('=')[1].toLowerCase();
+        options.runPostChecklist = !(value === 'false' || value === '0' || value === 'no');
       } else {
-        options.runPostChecklist = true;
+        // Check next argument for false/0/no
+        const nextArg = args[i + 1];
+        if (nextArg && (nextArg === 'false' || nextArg === '0' || nextArg === 'no')) {
+          options.runPostChecklist = false;
+          i++;
+        } else if (nextArg && (nextArg === 'true' || nextArg === '1' || nextArg === 'yes')) {
+          options.runPostChecklist = true;
+          i++;
+        } else {
+          // Bare --run-post-checklist means true
+          options.runPostChecklist = true;
+        }
       }
     } else if (arg === '--date' || arg === '-d') {
       options.date = args[++i];
