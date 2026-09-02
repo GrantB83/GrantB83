@@ -5,6 +5,9 @@ An offline command-line tool that reconciles Loyverse POS sales data with Xero a
 ## Features
 
 - 📊 **CSV-based reconciliation** - No API keys or OAuth required
+- 🔍 **Two reconciliation modes**:
+  - **Receipt mode** - Matches individual Loyverse receipts with Xero bank transactions
+  - **Summary mode** - Reconciles Loyverse Sales Summary (daily aggregates) with Xero P&L reports
 - 🔍 **Gap detection** - Finds unmatched records, date mismatches, amount discrepancies, and duplicates
 - 📝 **Dual output** - Generates both CSV (for spreadsheets) and Markdown (for readable reports)
 - ✅ **Fully tested** - Includes automated tests and synthetic fixtures
@@ -36,7 +39,7 @@ An offline command-line tool that reconciles Loyverse POS sales data with Xero a
 
 ## Exporting Data
 
-### From Loyverse
+### Receipt Mode: From Loyverse
 
 1. Log in to your **Loyverse Back Office** (https://backend.loyverse.com)
 2. Navigate to **Reports** → **Sales**
@@ -50,7 +53,7 @@ An offline command-line tool that reconciles Loyverse POS sales data with Xero a
 - Total Amount
 - Payment Type
 
-### From Xero
+### Receipt Mode: From Xero
 
 1. Log in to **Xero** (https://login.xero.com)
 2. Go to **Accounting** → **Bank Accounts**
@@ -64,28 +67,83 @@ An offline command-line tool that reconciles Loyverse POS sales data with Xero a
 - Amount
 - Description
 
+### Summary Mode: From Loyverse
+
+1. Log in to your **Loyverse Back Office**
+2. Navigate to **Reports** → **Sales Summary**
+3. Select your date range (typically one month)
+4. Click **Export** → **CSV**
+5. Save one file per store (e.g., `ltt-sales-summary.csv`)
+
+**Required columns:**
+- Date (format: M/D/YY)
+- Gross sales
+- Refunds
+- Discounts
+- Net sales
+- Cost of goods
+- Gross profit
+- Margin
+- Taxes
+
+### Summary Mode: From Xero
+
+1. Log in to **Xero**
+2. Navigate to **Reports** → **Profit and Loss**
+3. Select your store and date range (monthly)
+4. Export or copy the P&L report to CSV
+5. Save one file per store (e.g., `ltt-pl.csv`)
+
+**Required structure:**
+- Line 2: Store name (e.g., "Perfect Water Louis Trichardt")
+- Lines with labels: "Sales", "Total Trading Income", "Cost of Goods Sold", "Total Cost of Sales", "Gross Profit", "Total Operating Expenses", "Net Profit"
+
+**Note:** When bank statement exports or receipt-level data are unavailable, use Summary mode with Sales Summary and P&L reports instead.
+
 ## Usage
 
-### Basic Command
+### Receipt Mode (Individual Transactions)
+
+Reconcile individual Loyverse receipts with Xero bank transactions:
 
 ```bash
-npm run recon -- --loyverse <loyverse-file> --xero <xero-file> --output <output-dir>
+npm run recon -- --mode receipt --loyverse <loyverse-file> --xero <xero-file> --output <output-dir>
 ```
 
-### Example
+**Example:**
 
 ```bash
-npm run recon -- --loyverse exports/loyverse-jan.csv --xero exports/xero-jan.csv --output reports/
+npm run recon -- --mode receipt --loyverse exports/loyverse-jan.csv --xero exports/xero-jan.csv --output reports/
 ```
+
+### Summary Mode (Monthly Aggregates)
+
+Reconcile Loyverse Sales Summary with Xero Profit & Loss reports:
+
+**Single store:**
+
+```bash
+npm run recon:summary -- --loyverse exports/ltt-summary.csv --xero exports/ltt-pl.csv --output reports/
+```
+
+**Multiple stores (three-store batch):**
+
+```bash
+npm run recon:summary -- --loyverse exports/summaries/ --xero exports/p-and-l/ --output reports/
+```
+
+This will automatically pair files by store name (LTT, Technical, Thohoyandou).
 
 ### CLI Options
 
-| Option | Shorthand | Description | Required |
-|--------|-----------|-------------|----------|
-| `--loyverse` | `-l` | Path to Loyverse CSV file | ✅ Yes |
-| `--xero` | `-x` | Path to Xero CSV file | ✅ Yes |
-| `--output` | `-o` | Output directory for reports | No (default: `./out`) |
-| `--help` | `-h` | Show help message | No |
+| Option | Shorthand | Description | Required | Default |
+|--------|-----------|-------------|----------|---------|
+| `--mode` | `-m` | Mode: `receipt` or `summary` | No | `receipt` |
+| `--loyverse` | `-l` | Path to Loyverse CSV file or directory | ✅ Yes | - |
+| `--xero` | `-x` | Path to Xero CSV file or directory | ✅ Yes | - |
+| `--output` | `-o` | Output directory for reports | No | `./out` |
+| `--threshold` | `-t` | Difference threshold for summary mode | No | `1.00` |
+| `--help` | `-h` | Show help message | No | - |
 
 ### Output Files
 
@@ -101,6 +159,8 @@ The CLI generates two files in the specified output directory:
 
 ## Gap Types Detected
 
+### Receipt Mode
+
 | Gap Type | Description |
 |----------|-------------|
 | **Unmatched Loyverse** | Transaction in Loyverse but not in Xero |
@@ -108,6 +168,15 @@ The CLI generates two files in the specified output directory:
 | **Date Mismatch** | Matched transaction with different dates |
 | **Amount Mismatch** | Matched transaction with different amounts |
 | **Duplicate** | Same receipt/reference number appears multiple times |
+
+### Summary Mode
+
+| Gap Type | Description |
+|----------|-------------|
+| **Net Sales Mismatch** | Loyverse Net Sales ≠ Xero Total Trading Income (exceeds threshold) |
+| **Gross Profit Mismatch** | Loyverse Gross Profit ≠ Xero Gross Profit (exceeds threshold) |
+| **COGS Mismatch** | Loyverse Cost of Goods ≠ Xero Cost of Goods Sold (exceeds threshold) |
+| **Store Mismatch** | Store exists in one system but not the other |
 
 ## Testing
 
@@ -120,7 +189,9 @@ npm test
 
 ### Test with Fixtures
 
-The tool includes synthetic test fixtures that demonstrate known gaps:
+The tool includes synthetic test fixtures for both modes:
+
+**Receipt mode:**
 
 ```bash
 npm run test:fixtures
@@ -128,11 +199,25 @@ npm run test:fixtures
 
 This will:
 1. Build the CLI
-2. Run reconciliation on test fixtures
+2. Run receipt mode reconciliation on test fixtures
 3. Generate reports in `test-out/`
 4. Exit with code 0 (success)
 
 The fixtures contain 10 Loyverse and 10 Xero records with 4 intentional gaps. See `fixtures/README.md` for details.
+
+**Summary mode:**
+
+```bash
+npm run test:summary
+```
+
+This will:
+1. Build the CLI
+2. Run summary mode reconciliation on three-store fixtures
+3. Generate reports in `test-summary-out/`
+4. Exit with code 0 (success)
+
+The summary fixtures contain three stores (LTT, Technical, Thohoyandou) with matching totals. See `fixtures/summary/README.md` for details.
 
 ### Clean Up Test Artifacts
 
@@ -145,33 +230,56 @@ npm run clean
 ```
 tools/loyverse-xero-recon/
 ├── src/
-│   ├── index.ts              # CLI entry point
-│   ├── types.ts              # TypeScript type definitions
-│   ├── csv-parser.ts         # CSV parsing logic
-│   ├── reconciliation.ts     # Matching and gap detection
-│   ├── report-generator.ts   # CSV and Markdown output
-│   ├── csv-parser.test.ts    # CSV parser tests
-│   └── reconciliation.test.ts # Reconciliation tests
+│   ├── index.ts                        # CLI entry point
+│   ├── types.ts                        # TypeScript type definitions
+│   ├── csv-parser.ts                   # Receipt mode CSV parsing
+│   ├── reconciliation.ts               # Receipt mode matching logic
+│   ├── report-generator.ts             # Receipt mode reports
+│   ├── summary-parser.ts               # Summary mode CSV parsing
+│   ├── summary-reconciliation.ts       # Summary mode matching logic
+│   ├── summary-report-generator.ts     # Summary mode reports
+│   ├── csv-parser.test.ts              # CSV parser tests
+│   ├── reconciliation.test.ts          # Receipt reconciliation tests
+│   ├── summary-parser.test.ts          # Summary parser tests
+│   └── summary-reconciliation.test.ts  # Summary reconciliation tests
 ├── fixtures/
-│   ├── loyverse-sales.csv    # Synthetic Loyverse data
-│   ├── xero-sales.csv        # Synthetic Xero data
-│   └── README.md             # Fixture documentation
-├── dist/                     # Compiled JavaScript (generated)
-├── out/                      # Default report output (generated)
+│   ├── loyverse-sales.csv              # Receipt mode: Loyverse receipts
+│   ├── xero-sales.csv                  # Receipt mode: Xero bank transactions
+│   ├── README.md                       # Receipt mode fixture docs
+│   └── summary/
+│       ├── loyverse-*-sales-summary.csv # Summary mode: Loyverse daily aggregates
+│       ├── xero-*-pl.csv                # Summary mode: Xero P&L reports
+│       └── README.md                    # Summary mode fixture docs
+├── dist/                               # Compiled JavaScript (generated)
+├── out/                                # Default report output (generated)
 ├── package.json
 ├── tsconfig.json
-└── README.md                 # This file
+└── README.md                           # This file
 ```
 
 ## Matching Logic
 
-The reconciliation engine matches records using:
+### Receipt Mode
+
+The reconciliation engine matches individual transactions using:
 
 1. **Receipt/Reference matching** - Xero reference or description contains Loyverse receipt number
 2. **Amount matching** - Amounts must match within 1 cent (0.01)
 3. **Date proximity** - Dates must be within 7 days of each other
 
 This allows for slight timing differences between POS recording and bank clearing.
+
+### Summary Mode
+
+The reconciliation engine compares monthly aggregates:
+
+1. **Store name matching** - Normalizes store names (e.g., "Louis Trichardt" matches "LTT")
+2. **Net Sales vs Trading Income** - Compares Loyverse Net Sales with Xero Total Trading Income
+3. **Gross Profit matching** - Compares Loyverse Gross Profit with Xero Gross Profit
+4. **COGS matching** - Compares Loyverse Cost of Goods with Xero Cost of Goods Sold
+5. **Threshold-based gaps** - Only reports differences exceeding the threshold (default: 1.00)
+
+Supports three-store batch matching for Perfect Water stores: LTT, Technical, and Thohoyandou.
 
 ## Limitations & Constraints
 
@@ -199,10 +307,15 @@ Supported formats:
 
 ### No matches found (high gap count)
 
-Check:
+**Receipt mode:** Check:
 - Date ranges overlap between exports
 - Receipt numbers are consistent (case-sensitive)
 - CSV files have correct column headers
+
+**Summary mode:** Check:
+- Store names in both files (Loyverse filename/path and Xero line 2)
+- CSV files have correct column headers and structure
+- Amounts are in the correct columns (not swapped or shifted)
 
 ## Example Output
 

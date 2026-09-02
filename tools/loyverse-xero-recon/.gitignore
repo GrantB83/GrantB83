@@ -1,6 +1,7 @@
 node_modules/
 dist/
 test-out/
+test-summary-out/
 out/
 *.log
 .env
