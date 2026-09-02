@@ -1,8 +1,73 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 31 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 32 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 31 — CRM invite code filter + attribution (DEMO ACCESS ONLY; NO live payments)
+**Current Phase:** Phase 32 — Post-demo sales handoff pack (DRAFT/fixtures only; DEMO ACCESS ONLY)
+
+---
+
+## What Works (Phase 32)
+
+### ✅ Phase 32 Additions (Post-Demo Sales Handoff Pack)
+
+1. **Sales Handoff Page** (`/demo/sales-handoff`)
+   - Downloadable handoff pack for prospects after demo walkthrough
+   - Customizable fields: prospect name, invite code, demo date
+   - Includes thank-you message, next steps, and key demo links
+   - Redemption instructions (if invite code provided) or generation steps
+   - Links to: redeem, waitlist, invite-usage, CRM, key features
+   - Copy of leave-behind summary via deep link
+   - Hard gates banner: DEMO ACCESS ONLY—not a paid account
+   - Public-accessible (no DemoAuthGuard required for post-demo handoff)
+   - Preview mode to see content before export
+
+2. **Export API Endpoint** (`/api/sales-handoff/export`)
+   - POST endpoint accepting prospect name, invite code, demo date, tenant name
+   - Three export formats: Markdown (.md), HTML (.html), ZIP (.zip)
+   - ZIP includes: SALES-HANDOFF.md, QUICK-LINKS.md, HARD-GATES.md
+   - Print-to-PDF via HTML export and browser print dialog
+   - Automatic filename generation with demo date suffix
+   - Markdown-to-HTML conversion with print-optimized CSS
+
+3. **Handoff Content**
+   - Personalized thank-you greeting (uses prospect name if provided)
+   - 13-step demo flow summary (seed → tenant → invite → inquiry → quote → ops → OTA)
+   - Key feature links organized by category (Core Automation, Sales & CRM, Platform Overview)
+   - DEMO ACCESS ONLY explanation (what it IS vs what it IS NOT)
+   - Hard gates reminder (NO payments, NO auto-send, NO invented data)
+   - Pricing disclaimer (PLACEHOLDER only, no live offers)
+   - Contact information and follow-up guidance
+
+4. **Demo Hub Integration** (Phase 32 card)
+   - Prominent Phase 32 sky-blue card at top of demo hub
+   - Links to `/demo/sales-handoff` with clear description
+   - Positioned above Phase 30 (Invite Code Usage Report)
+   - Icon: FileDown (package/download symbol)
+
+5. **Sales Walkthrough Integration** (Step 15)
+   - Added as Step 15 in sales walkthrough checklist
+   - After Step 14 (Invite Code Usage Report)
+   - Pitch: "Generate downloadable handoff pack for prospects"
+   - Tracks completion in localStorage for salesperson progress
+
+6. **Quality Gates Respected**
+   - NO live payments, NO paid ads, NO public paid signup
+   - NO WhatsApp/email auto-send—all content is DRAFT only
+   - Never invents contact info, rates, or pricing
+   - All data labeled DRAFT/demo—suitable for post-demo handoff only
+   - Clear "DEMO ACCESS ONLY" messaging throughout
+   - Hard gates banner in every export format
+
+**What Works vs. Stubbed:**
+- ✅ Works: Handoff pack generation, markdown/HTML/ZIP export, customizable fields, preview mode, Phase 32 demo hub card, sales walkthrough step
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—handoff pack for post-demo follow-up with DEMO ACCESS ONLY messaging
+- Invite codes unlock demo tenant context only—NOT a paid account, NOT a subscription
+- All data persists to local SQLite only with tenant scoping
+- Never invents contact details, pricing, or rates
 
 ---
 

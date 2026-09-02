@@ -457,7 +457,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Step 7: Return summary (invite codes created in Step 3a)
+    // Step 7: Return summary (invite codes already created in Step 3a)
     return NextResponse.json({
       success: true,
       message: 'Demo seed complete',
@@ -465,7 +465,7 @@ export async function POST(request: Request) {
         tenant: 'Dullstroom Demo Guesthouse',
         tenantId: demoTenantId,
         properties: 2,
-        inviteCodes: inviteCodeIds.length,
+        inviteCodes: inviteCodes.length,
         rateCards: rateCards.length,
         leads: leads.length,
         inquiries: leads.length,

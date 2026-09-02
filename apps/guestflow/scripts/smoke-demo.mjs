@@ -255,6 +255,13 @@ async function runTests() {
   await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - invite codes section', { checkContent: 'Demo Invite Codes' });
   await testRoute('/demo/sales-leavebehind', 'Sales leave-behind - hard gates', { checkContent: 'Hard Gates' });
   
+  // Phase 32 page (Post-Demo Sales Handoff Pack)
+  await testRoute('/demo/sales-handoff', 'Post-demo sales handoff page (Phase 32)', { checkContent: 'Post-Demo Sales Handoff Pack' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - customizable fields', { checkContent: 'Customize Handoff Pack' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - DEMO ACCESS ONLY banner', { checkContent: 'DEMO ACCESS ONLY' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - export buttons', { checkContent: 'Download Markdown' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - quick reference', { checkContent: 'Quick Reference' });
+  
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
   await testRoute('/demo/quote-draft', 'Quote draft demo', { checkContent: 'Quote' });
@@ -359,6 +366,30 @@ async function runTests() {
   await testRoute('/api/sales-leavebehind/export', 'Sales leave-behind export API (POST html - Phase 26)', { 
     method: 'POST', 
     body: { ...sampleSalesLeaveBehind, format: 'html' },
+    expectedStatus: 200
+  });
+
+  // Test Phase 32 sales handoff export API (POST)
+  const sampleSalesHandoff = {
+    format: 'markdown',
+    tenantName: 'Test Tenant',
+    prospectName: 'Test Prospect',
+    inviteCode: 'DEMO2026',
+    demoDate: '2026-12-01'
+  };
+  await testRoute('/api/sales-handoff/export', 'Sales handoff export API (POST markdown - Phase 32)', { 
+    method: 'POST', 
+    body: sampleSalesHandoff,
+    expectedStatus: 200
+  });
+  await testRoute('/api/sales-handoff/export', 'Sales handoff export API (POST html - Phase 32)', { 
+    method: 'POST', 
+    body: { ...sampleSalesHandoff, format: 'html' },
+    expectedStatus: 200
+  });
+  await testRoute('/api/sales-handoff/export', 'Sales handoff export API (POST zip - Phase 32)', { 
+    method: 'POST', 
+    body: { ...sampleSalesHandoff, format: 'zip' },
     expectedStatus: 200
   });
 
