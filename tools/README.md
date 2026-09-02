@@ -26,6 +26,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
 | [ledger-alias-apply-checklist](#ledger-alias-apply-checklist) | Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before Budget sheet writes | Ledger / CoS | **Offline**. Never writes sheet. Never invents amounts/aliases. Names/patterns only. H2 approval required. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
+| [ledger-month-close-pipeline-pack](#ledger-month-close-pipeline-pack) | Assemble month-close pipeline pack from unmatched-queue → alias-suggest → alias-checklist → close-pack | Ledger / CoS | **Offline**. No amounts in PACK.md prose. H2 before sheet writes. Never writes Budget. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [studio-lyric-package-stub](#studio-lyric-package-stub) | Create stub package folders from lyric text for Studio validation | Studio / BrownieTunez | **Offline only**. Never uploads. Never invents lyrics. Exact copy only. |
@@ -1245,6 +1246,108 @@ npm run pack -- \
 4. Run `ledger-month-close-pack` to assemble the final close pack with all reports
 
 [→ Full README](./ledger-month-close-pack/README.md)
+
+---
+
+## ledger-month-close-pipeline-pack
+
+**One-line:** Offline CLI tool assembling unmatched-merchant-queue → merchant-alias-suggest → alias-apply-checklist → month-close-pack artifacts into one pipeline pack.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-month-close-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-month-close-pipeline-pack
+npm install
+npm run build
+
+# Assemble from prebuilt stage outputs (preferred)
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/out/ \
+  --suggest-outdir ../ledger-merchant-alias-suggest/out/ \
+  --alias-checklist-outdir ../ledger-alias-apply-checklist/out/ \
+  --close-outdir ../ledger-month-close-pack/out/ \
+  --outdir pipeline-pack/
+
+# With partial stages (not all stages required)
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/out/ \
+  --close-outdir ../ledger-month-close-pack/out/ \
+  --outdir pipeline-pack/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Sheets API or network calls
+- ✅ **Read-only** - Never modifies stage output files
+- ✅ **No amounts in PACK.md** - Amounts stay in stage output files only
+- ✅ **H2 approval required** - Before any Google Sheet writes
+- ✅ **Exit 1 on zero stages** - At least one stage input must be present
+- ⚠️ **Ledger owns sheet writes** - Coding/CoS never writes Budget directly
+- ⚠️ **Never writes Budget sheet** - Google Sheets API is never called
+
+### Pipeline Flow
+
+```
+ledger-unmatched-merchant-queue → ledger-merchant-alias-suggest → 
+ledger-alias-apply-checklist → ledger-month-close-pack → 
+ledger-month-close-pipeline-pack (this tool)
+```
+
+### Output Files
+
+- `PACK.md` - Pipeline pack index with stage presence summary (NO amount tables)
+- `APPROVAL.md` - H2 gate workflow guidance
+- `manifest.json` - Machine-readable metadata with stage presence flags
+- `queue.md` - Unmatched merchant research queue (if stage present)
+- `suggestions.md` - Alias suggestions (if stage present)
+- `APPLY-CHECKLIST.md` - Human tick-off checklist (if stage present)
+- `CLOSE.md` - Month-close sanity checks (if stage present)
+- `CLOSE-APPROVAL.md` - Month-close approval gates (if stage present)
+
+### Integration with Pipeline Tools
+
+Full pipeline example:
+
+```bash
+# Step 1: Build unmatched merchant queue
+cd tools/ledger-unmatched-merchant-queue
+npm run queue -- --input exports/jan-2024.csv --outdir unmatched-out/
+
+# Step 2: Suggest aliases
+cd ../ledger-merchant-alias-suggest
+npm run suggest -- --unmatched ../ledger-unmatched-merchant-queue/unmatched-out/queue.json --aliases aliases.json --outdir suggest-out/
+
+# Step 3: Generate apply checklist
+cd ../ledger-alias-apply-checklist
+npm run apply -- --suggestions ../ledger-merchant-alias-suggest/suggest-out/suggestions.json --month 2024-01 --outdir checklist-out/
+
+# Step 4: Build month-close pack
+cd ../ledger-month-close-pack
+npm run pack -- --month 2024-01 --exports-dir ~/exports/january/ --outdir close-out/
+
+# Step 5: Assemble pipeline pack
+cd ../ledger-month-close-pipeline-pack
+npm run pack -- \
+  --month 2024-01 \
+  --unmatched-outdir ../ledger-unmatched-merchant-queue/unmatched-out/ \
+  --suggest-outdir ../ledger-merchant-alias-suggest/suggest-out/ \
+  --alias-checklist-outdir ../ledger-alias-apply-checklist/checklist-out/ \
+  --close-outdir ../ledger-month-close-pack/close-out/ \
+  --outdir pipeline-pack-jan-2024/
+
+# Step 6: Review PACK.md and follow APPROVAL.md workflow
+```
+
+[→ Full README](./ledger-month-close-pipeline-pack/README.md)
 
 ---
 

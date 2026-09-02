@@ -1,0 +1,27 @@
+{
+  "name": "ledger-month-close-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline month-close pipeline pack assembler for unmatched-merchant-queue → merchant-alias-suggest → alias-apply-checklist → month-close-pack",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack-pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/src/*.test.js",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pack -- --month 2024-01 --unmatched-outdir fixtures/stage-outputs/unmatched --suggest-outdir fixtures/stage-outputs/suggest --alias-checklist-outdir fixtures/stage-outputs/alias-checklist --close-outdir fixtures/stage-outputs/close --outdir test-out && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": ["ledger", "budget", "month-close", "pipeline", "cost-of-sales"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
