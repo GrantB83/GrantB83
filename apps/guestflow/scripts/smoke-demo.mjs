@@ -191,6 +191,18 @@ async function runTests() {
   // Phase 6 page
   await testRoute('/demo/hosting-readiness', 'Hosting readiness page', { checkContent: 'Hosting' });
   
+  // Phase 7 page
+  try {
+    const response = await fetch(`${BASE_URL}/demo/onboard`);
+    if ([200, 401, 403].includes(response.status)) {
+      pass('Tenant onboarding wizard (auth check)');
+    } else {
+      fail(`Tenant onboarding wizard: Unexpected status ${response.status}`);
+    }
+  } catch (err) {
+    fail(`Tenant onboarding wizard: ${err.message}`);
+  }
+  
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
   await testRoute('/demo/quote-draft', 'Quote draft demo', { checkContent: 'Quote' });
@@ -227,6 +239,7 @@ async function runTests() {
   
   await testRoute('/api/waitlist', 'Waitlist API (GET)', { expectedStatus: 200 });
   await testRoute('/api/tenants', 'Tenants API (GET)', { expectedStatus: 200 });
+  await testRoute('/api/properties', 'Properties API (GET)', { expectedStatus: 200 });
   await testRoute('/api/rate-cards', 'Rate cards API (GET)', { expectedStatus: 200 });
   
   // Test Phase 8 quote export API (POST)

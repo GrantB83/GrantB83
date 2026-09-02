@@ -11,6 +11,9 @@ export interface CliOptions {
   outdir?: string;
   runSubjectDigest?: boolean;
   schoolSubjects?: string;
+  ics?: string;
+  timezone?: string;
+  runIcsDigest?: boolean;
   help?: boolean;
 }
 
@@ -47,6 +50,7 @@ export interface PackManifest {
   schoolItemCount: number;
   familyItemCount: number;
   totalItemCount: number;
+  calendarEventCount?: number;
   files: string[];
 }
 

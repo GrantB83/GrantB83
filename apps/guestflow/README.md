@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 4 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 7 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 4 — Rate card upload, demo auth stub, and funnel polish
+**Current Phase:** Phase 7 — Tenant onboarding wizard (local demo only)
 
 ---
 
@@ -89,8 +89,48 @@ npm start
 
 3. **Demo Hub Phase 8 Integration**
    - Prominent teal card linking quote export feature (Phase 8 badge)
-   - Positioned above Phase 6 hosting readiness for visibility
+   - Positioned above Phase 7 onboarding wizard for visibility
    - Quote draft page now includes three export buttons below generated quote
+
+## What Works (Phase 7)
+
+### ✅ Phase 7 Additions (Tenant Onboarding Wizard)
+
+1. **Tenant Onboarding Wizard** (`/demo/onboard`)
+   - Multi-step DEMO flow with progress indicator
+   - Step 1: Create tenant (name, location, timezone)
+   - Step 2: Add property (name, location, room count)
+   - Step 3: Optional rate card upload link
+   - Step 4: Completion screen with links to CRM and demo hub
+   - Persist tenant and property data to SQLite
+   - Protected by DemoAuthGuard (password: demo2026)
+   - Clearly labeled as DEMO only (not public signup)
+
+2. **New API Routes**
+   - POST `/api/tenants` — Create new tenant with validation
+   - POST `/api/properties` — Create new property linked to tenant
+   - Extended GET routes for properties API
+
+3. **Demo Hub Phase 7 Integration**
+   - Prominent emerald card linking tenant onboarding wizard (Phase 7 badge)
+   - Positioned above Phase 6 hosting readiness for visibility
+   - Multi-step wizard icon and clear description
+
+4. **Extended Smoke Test Coverage**
+   - Auth check for `/demo/onboard` route
+   - API test for `/api/properties` endpoint
+   - Validates full onboarding flow is accessible
+
+**What Works vs. Stubbed:**
+- ✅ Works: Multi-step wizard, tenant/property creation, SQLite persistence, demo auth protection
+- 🚧 Stubbed: Same as Phase 6 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — clearly labeled DEMO onboarding wizard, NOT production signup
+- All data persists to local SQLite only
+
+---
 
 ## What Works (Phase 6)
 
@@ -436,12 +476,35 @@ Verify tables:
 
 **What Works vs. Stubbed:**
 - ✅ Works: Quote export (markdown/HTML), print functionality, no invented rates
-- 🚧 Stubbed: Same as Phase 6 (production auth, live payments, email/WhatsApp auto-send)
+- 🚧 Stubbed: Same as Phase 7 (production auth, live payments, email/WhatsApp auto-send)
 
 **Hard Gates (UNCHANGED):**
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
 - Quotes remain DRAFT until H7 approval
 - Missing rates stay as [RATE CARD REQUIRED]—never fabricated
+
+---
+
+## Phase 7 Summary
+
+**What Changed:**
+- Tenant onboarding wizard at `/demo/onboard` with multi-step flow (tenant → property → rates → complete)
+- POST API routes for tenant and property creation (`/api/tenants`, `/api/properties`)
+- Protected by DemoAuthGuard (password: demo2026)
+- SQLite persistence for tenant and property data
+- Demo hub updated with prominent Phase 7 emerald card linking onboarding wizard
+- Extended smoke test script to cover onboarding route and properties API
+- README updated with Phase 7 section and hard gates reminder
+
+**What Works vs. Stubbed:**
+- ✅ Works: Multi-step wizard, tenant/property creation, SQLite persistence, demo auth protection
+- 🚧 Stubbed: Same as Phase 6 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — onboarding wizard is DEMO labeled, NOT production signup flow
+- All data persists to local SQLite only
+>>>>>>> origin/main
 
 ---
 
@@ -511,7 +574,7 @@ Verify tables:
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 6. Phase 8 adds printable quote export (markdown/HTML) but maintains all safety constraints—exported quotes preserve [RATE CARD REQUIRED] placeholders and include H7 approval reminders.**
+**These gates are unchanged from Phase 6. Phase 7 adds tenant onboarding wizard (DEMO labeled, local SQLite only), and Phase 8 adds printable quote export (markdown/HTML)—both maintain all safety constraints. Exported quotes preserve [RATE CARD REQUIRED] placeholders and include H7 approval reminders. The onboarding flow is NOT a public signup — it's a protected demo feature for testing multi-tenant data flows.**
 
 ---
 
@@ -532,7 +595,7 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-6)
+## Next Steps (Post-Phase-8)
 
 **Phase 8 completes the quote workflow with printable exports.** Next priorities focus on production features and live integrations:
 

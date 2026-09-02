@@ -1,0 +1,27 @@
+{
+  "name": "pw-stocktake-csv-normalize",
+  "version": "1.0.0",
+  "description": "Offline stocktake CSV normalizer for Perfect Water / CoS store reconciliation",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "normalize": "dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "test": "node --test dist/**/*.test.js",
+    "normalize": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --input fixtures/generic-good.csv --outdir test-out && node dist/index.js --input fixtures/loyverse-like.csv --outdir test-out-loyverse --profile loyverse && node dist/index.js --input fixtures/sparse-bad.csv --outdir test-out-bad && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out test-out-loyverse test-out-bad"
+  },
+  "keywords": ["stocktake", "csv", "normalize", "inventory", "reconciliation", "perfect-water"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

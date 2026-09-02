@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CliOptions, DigestItem, PackManifest } from './types.js';
-import { runSubjectDigest, loadDigestItems } from './digest-runner.js';
+import { runSubjectDigest, runIcsDigest, loadDigestItems } from './digest-runner.js';
 import {
   splitSections,
   generateSchoolMarkdown,
@@ -32,6 +32,9 @@ OPTIONS:
   --outdir, -o          Output directory [default: ./out]
   --run-subject-digest  Shell out to ../family-school-subject-digest
   --school-subjects     Optional pre-split school subjects file
+  --ics                 Path to .ics calendar file (for ICS digest)
+  --timezone            Timezone for calendar digest [default: America/Chicago]
+  --run-ics-digest      Shell out to ../family-calendar-ics-digest
   --help, -h            Show this help message
 
 WORKFLOW:
@@ -44,11 +47,16 @@ WORKFLOW:
   Option 3: Provide separate school subjects file
     npm run pack -- --date 2026-09-02 --school-subjects school.txt
 
+  Option 4: Add calendar events from ICS file
+    npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --ics calendar.ics --run-ics-digest
+
 OUTPUT:
   Creates pack folder: <outdir>/pack-YYYY-MM-DD/
     - PACK.md           (index + checklist)
     - school.md         (Kids School items)
     - family.md         (Family Admin items, no school repeats)
+    - calendar.md       (Calendar events, if --run-ics-digest provided)
+    - calendar-events.json  (Calendar event data, if --run-ics-digest provided)
     - APPROVAL.md       (review document)
     - manifest.json     (metadata)
 
@@ -65,6 +73,9 @@ EXAMPLES:
 
   # Use pre-generated items.json
   npm run pack -- --date 2026-09-02 --subjects digest-output/items.json
+
+  # With calendar events
+  npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --ics calendar.ics --run-ics-digest
 
   # Test with fixtures
   npm run test:fixtures
@@ -92,6 +103,12 @@ function parseArgs(args: string[]): CliOptions {
       options.runSubjectDigest = true;
     } else if (arg === '--school-subjects') {
       options.schoolSubjects = args[++i];
+    } else if (arg === '--ics') {
+      options.ics = args[++i];
+    } else if (arg === '--timezone') {
+      options.timezone = args[++i];
+    } else if (arg === '--run-ics-digest') {
+      options.runIcsDigest = true;
     }
   }
   
@@ -118,7 +135,9 @@ function writePackOutputs(
   packDir: string,
   date: string,
   schoolItems: DigestItem[],
-  familyItems: DigestItem[]
+  familyItems: DigestItem[],
+  calendarDigestMd?: string,
+  calendarEventsJson?: any[]
 ): void {
   const timezone = 'America/Chicago';
   
@@ -130,8 +149,20 @@ function writePackOutputs(
   const familyMd = generateFamilyMarkdown(familyItems, date);
   fs.writeFileSync(path.join(packDir, 'family.md'), familyMd);
   
+  // calendar.md and calendar-events.json (if provided)
+  const files = ['PACK.md', 'school.md', 'family.md', 'APPROVAL.md', 'manifest.json'];
+  if (calendarDigestMd && calendarEventsJson) {
+    fs.writeFileSync(path.join(packDir, 'calendar.md'), calendarDigestMd);
+    fs.writeFileSync(
+      path.join(packDir, 'calendar-events.json'),
+      JSON.stringify(calendarEventsJson, null, 2)
+    );
+    files.splice(3, 0, 'calendar.md', 'calendar-events.json');
+  }
+  
   // PACK.md
-  const packMd = generatePackIndex(date, schoolItems.length, familyItems.length);
+  const calendarEventCount = calendarEventsJson ? calendarEventsJson.length : undefined;
+  const packMd = generatePackIndex(date, schoolItems.length, familyItems.length, calendarEventCount);
   fs.writeFileSync(path.join(packDir, 'PACK.md'), packMd);
   
   // APPROVAL.md
@@ -148,8 +179,12 @@ function writePackOutputs(
     schoolItemCount: schoolItems.length,
     familyItemCount: familyItems.length,
     totalItemCount: schoolItems.length + familyItems.length,
-    files: ['PACK.md', 'school.md', 'family.md', 'APPROVAL.md', 'manifest.json']
+    files
   };
+  
+  if (calendarEventCount !== undefined) {
+    manifest.calendarEventCount = calendarEventCount;
+  }
   
   fs.writeFileSync(
     path.join(packDir, 'manifest.json'),
@@ -191,7 +226,7 @@ async function main(): Promise<void> {
     
     const date = options.date;
     const outdir = options.outdir || './out';
-    const timezone = 'America/Chicago';
+    const timezone = options.timezone || 'America/Chicago';
     
     let items: DigestItem[] = [];
     
@@ -236,6 +271,39 @@ async function main(): Promise<void> {
       throw new Error('No items to process');
     }
     
+    // Run ICS digest if requested
+    let calendarDigestMd: string | undefined;
+    let calendarEventsJson: any[] | undefined;
+    
+    if (options.runIcsDigest && options.ics) {
+      console.log('Running family-calendar-ics-digest...\n');
+      
+      const icsTempDir = path.join(outdir, '.ics-digest-temp');
+      if (!fs.existsSync(icsTempDir)) {
+        fs.mkdirSync(icsTempDir, { recursive: true });
+      }
+      
+      const icsDigestOutputDir = await runIcsDigest(
+        options.ics,
+        date,
+        timezone,
+        icsTempDir
+      );
+      
+      // Load digest.md and events.json
+      const digestMdPath = path.join(icsDigestOutputDir, 'digest.md');
+      const eventsJsonPath = path.join(icsDigestOutputDir, 'events.json');
+      
+      if (fs.existsSync(digestMdPath) && fs.existsSync(eventsJsonPath)) {
+        calendarDigestMd = fs.readFileSync(digestMdPath, 'utf-8');
+        const eventsData = JSON.parse(fs.readFileSync(eventsJsonPath, 'utf-8'));
+        calendarEventsJson = eventsData;
+        console.log(`  ✓ Loaded ${eventsData.length} calendar events from ICS digest\n`);
+      } else {
+        throw new Error('ICS digest did not produce expected outputs (digest.md, events.json)');
+      }
+    }
+    
     // Split into school and family sections
     console.log('Building pack sections...');
     const { school, family } = splitSections(items);
@@ -255,7 +323,7 @@ async function main(): Promise<void> {
     // Create pack directory and write outputs
     console.log('Writing pack outputs...');
     const packDir = createPackDirectory(outdir, date);
-    writePackOutputs(packDir, date, school, family);
+    writePackOutputs(packDir, date, school, family, calendarDigestMd, calendarEventsJson);
     console.log(`  ✓ Pack directory: ${packDir}\n`);
     
     // Print summary
@@ -264,6 +332,10 @@ async function main(): Promise<void> {
     console.log('  - PACK.md');
     console.log('  - school.md');
     console.log('  - family.md');
+    if (calendarDigestMd && calendarEventsJson) {
+      console.log('  - calendar.md');
+      console.log('  - calendar-events.json');
+    }
     console.log('  - APPROVAL.md');
     console.log('  - manifest.json');
     console.log('');
@@ -273,7 +345,12 @@ async function main(): Promise<void> {
     console.log('  2. cat APPROVAL.md');
     console.log('  3. Review PACK.md checklist');
     console.log('  4. Verify school.md and family.md for accuracy');
-    console.log('  5. Family / CoS owns WhatsApp send workflow\n');
+    if (calendarDigestMd && calendarEventsJson) {
+      console.log('  5. Verify calendar.md for accuracy (no invented events)');
+      console.log('  6. Family / CoS owns WhatsApp send workflow\n');
+    } else {
+      console.log('  5. Family / CoS owns WhatsApp send workflow\n');
+    }
     
   } catch (error) {
     console.error(`\n❌ Error: ${error instanceof Error ? error.message : String(error)}\n`);

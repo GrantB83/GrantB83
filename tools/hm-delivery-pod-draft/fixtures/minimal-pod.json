@@ -1,0 +1,8 @@
+{
+  "customer": "Sarah Johnson",
+  "material": "Crusher dust",
+  "volume": 8,
+  "unit": "ton",
+  "deliveryLocation": "Farm Road, Belfast",
+  "deliveredAt": "2026-09-01"
+}

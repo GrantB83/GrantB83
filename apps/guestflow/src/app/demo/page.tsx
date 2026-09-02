@@ -17,6 +17,7 @@ export default function DemoPage() {
         </p>
       </div>
 
+<<<<<<< HEAD
       {/* Phase 8: Printable Quote Export */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -32,6 +33,23 @@ export default function DemoPage() {
           </div>
           <p className="text-teal-100">
             Download/print quotes in markdown or HTML format—preserves [RATE CARD REQUIRED] when rates missing (never invents)
+=======
+      {/* Phase 7: Tenant Onboarding Wizard */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/onboard"
+          className="block bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Tenant Onboarding Wizard</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 7</span>
+          </div>
+          <p className="text-emerald-100">
+            Multi-step DEMO flow: create tenant → add property → optional rate card upload → complete with links to CRM/demo hub
+>>>>>>> origin/main
           </p>
         </Link>
       </div>

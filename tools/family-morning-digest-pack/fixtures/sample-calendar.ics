@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Family Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Family Events
+X-WR-TIMEZONE:America/Chicago
+BEGIN:VEVENT
+UID:event1@family.example.com
+DTSTART;VALUE=DATE:20260902
+SUMMARY:First Day of School
+LOCATION:Elementary School
+DESCRIPTION:Welcome back students!
+END:VEVENT
+BEGIN:VEVENT
+UID:event2@family.example.com
+DTSTART;VALUE=DATE:20260902
+DTEND;VALUE=DATE:20260902
+SUMMARY:Parent Meeting
+LOCATION:School Cafeteria
+DESCRIPTION:Mandatory parent orientation meeting
+END:VEVENT
+END:VCALENDAR

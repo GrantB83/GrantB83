@@ -8,8 +8,10 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 |------|---------|---------|-------------|
 | [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
+| [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
+| [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
@@ -18,9 +20,11 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
-| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. |
+| [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar pass-through only. |
+| [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
+| [hm-delivery-pod-draft](#hm-delivery-pod-draft) | Generate DRAFT proof-of-delivery notes from Heavy Metal delivery data | SA Ops / Heavy Metal | **Offline**. No auto-send. Never invents volumes/signatures. JSON or paste text input. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
@@ -33,6 +37,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
+| [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -144,6 +149,58 @@ npm run recon -- --mode receipt \
 
 ---
 
+## pw-stocktake-csv-normalize
+
+**One-line:** Normalize store stocktake CSVs into a standard schema for Perfect Water / CoS reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-stocktake-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-stocktake-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --input stocktake.csv --outdir out/
+
+# Specific profile
+npm run normalize -- --input loyverse-export.csv --outdir out/ --profile loyverse
+
+# Generic stocktake
+npm run normalize -- --input manual-count.csv --outdir out/ --profile generic
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - Blank/unparseable → rejected.csv
+- ✅ **Read-only** - No write-back to Loyverse or inventory systems
+- ✅ **File-based** - All quantities stay in files
+- ⚠️ **Never invents items or stores** - Missing SKU/Item or Store → rejected.csv
+
+### Standard Schema
+
+Outputs `stocktake-normalized.csv` with headers:
+
+- **Store** - Store/location name (required)
+- **SKU/Item** - SKU or item name (required)
+- **CountedQty** - Counted quantity (required, must be parseable number)
+- **Unit** - Unit of measure (required)
+- **CountedAt** - Date counted (optional, YYYY-MM-DD)
+- **Notes** - Additional notes (optional)
+
+**Supported profiles:** auto (default), generic, loyverse
+
+**Output files:** `stocktake-normalized.csv`, `rejected.csv`, `missing-fields.md`, `APPROVAL.md`, `manifest.json`, `report.md` (row counts only)
+
+[→ Full README](./pw-stocktake-csv-normalize/README.md)
+
+---
+
 ## loyverse-xero-recon
 
 **One-line:** Reconcile Loyverse POS sales data with Xero accounting records, identifying gaps and mismatches.
@@ -229,6 +286,72 @@ npm run digest -- \
 - `manifest.json` - Run metadata
 
 [→ Full README](./pw-loyverse-daily-sales-digest/README.md)
+
+---
+
+## pw-ordered-vs-sold-diff
+
+**One-line:** Compare ordered exports vs sold/Loyverse exports by SKU/Item (+ optional Store) for Perfect Water / CoS cost-of-sales reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-ordered-vs-sold-diff/`
+
+### Install and Run
+
+```bash
+cd tools/pw-ordered-vs-sold-diff
+npm install
+npm run build
+
+# Basic usage (no Store)
+npm run diff -- --ordered ordered.csv --sold sold.csv --outdir out/
+
+# With Store column for per-store comparison
+npm run diff -- \
+  --ordered ordered.csv \
+  --sold sold.csv \
+  --outdir out/ \
+  --store-col Store
+
+# Custom column names
+npm run diff -- \
+  --ordered ordered.csv \
+  --sold sold.csv \
+  --outdir out/ \
+  --key-col "Product" \
+  --qty-col "Qty"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Loyverse API or network calls
+- ✅ **No invented quantities** - All amounts from source CSVs only
+- ✅ **Read-only** - Never modifies source CSV files
+- ✅ **File-based** - All amounts stay in files
+- ✅ **Blank/unparseable qty → rejected** - Invalid rows reported in missing-keys.md
+- ✅ **Exit 1 on bad input** - Malformed CSVs caught early
+- ⚠️ **Helps catch CoS discrepancies** - Flags items ordered but not sold, or sold but not ordered
+- ⚠️ **Amounts stay in files** - Bots must not paste quantities into chat
+
+### Output Files
+
+- `diff.json` - Structured diff data (machine-readable)
+- `diff.md` - Human-readable diff with ordered/sold/delta
+- `missing-keys.md` - Items present in one CSV but not the other, plus rejected rows
+- `APPROVAL.md` - Safety gates and approval workflow
+- `manifest.json` - Run metadata
+
+### Use Case
+
+Perfect Water maintains ordered-vs-sold comparisons on Drive. This tool provides offline CSV diff: ordered export vs sold/Loyverse export by SKU/Item (+ optional Store). Useful for:
+
+- Cost-of-sales reconciliation
+- Stock discrepancy investigation
+- Detecting unrecorded orders
+- Identifying unsold stock
+
+[→ Full README](./pw-ordered-vs-sold-diff/README.md)
 
 ---
 
@@ -635,6 +758,9 @@ npm run pack -- --date 2026-09-02 --subjects subjects.txt --outdir out/ --run-su
 # Option 2: Use pre-generated items.json from family-school-subject-digest
 npm run pack -- --date 2026-09-02 --subjects digest-output/items.json --outdir out/
 
+# Option 3: Include calendar events from ICS file
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --ics calendar.ics --outdir out/ --run-subject-digest --run-ics-digest
+
 # Test with fixtures
 npm run test:fixtures
 ```
@@ -648,6 +774,7 @@ npm run test:fixtures
 - ✅ **No duplication** - Each item appears exactly once
 - ✅ **Full sentences** - Per Family skill tone
 - ✅ **No invented data** - Never fabricates school facts or due dates
+- ✅ **Calendar pass-through only** - ICS events copied verbatim, never invented
 - ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
 - ⚠️ **Manual review required** - Review APPROVAL.md before every post
 
@@ -658,28 +785,89 @@ Creates pack folder: `<outdir>/pack-YYYY-MM-DD/`
 - **PACK.md** - Index and checklist with item counts and review steps
 - **school.md** - Kids School items only (numbered 1-N)
 - **family.md** - Family Admin items only (numbered N+1 onward, no school repeats)
+- **calendar.md** - Calendar events from ICS digest (if `--run-ics-digest` provided)
+- **calendar-events.json** - Structured calendar event data (if `--run-ics-digest` provided)
 - **APPROVAL.md** - Review document with safety gates
 - **manifest.json** - Machine-readable pack metadata
 
-### Integration with family-school-subject-digest
+### Integration with family-school-subject-digest and family-calendar-ics-digest
 
-This tool preferably consumes outputs from `family-school-subject-digest`:
+This tool preferably consumes outputs from `family-school-subject-digest` and optionally from `family-calendar-ics-digest`:
 
 ```bash
 # Step 1: Run subject digest
 cd tools/family-school-subject-digest
 npm run digest -- --input subjects.txt --outdir digest-out/
 
-# Step 2: Assemble morning pack
+# Step 2: Assemble morning pack (with subjects only)
 cd ../family-morning-digest-pack
 npm run pack -- \
   --date 2026-09-02 \
   --subjects ../family-school-subject-digest/digest-out/digest-TIMESTAMP/items.json
+
+# Or with calendar events from ICS file
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects subjects.txt \
+  --ics calendar.ics \
+  --run-subject-digest \
+  --run-ics-digest
 ```
 
-Or use `--run-subject-digest` to do both in one command.
+Or use `--run-subject-digest` and/or `--run-ics-digest` to call sibling tools in one command.
 
 [→ Full README](./family-morning-digest-pack/README.md)
+
+---
+
+## family-calendar-ics-digest
+
+**One-line:** Offline CLI to parse .ics calendar exports and generate Family / CoS morning digest.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-calendar-ics-digest/`
+
+### Install and Run
+
+```bash
+cd tools/family-calendar-ics-digest
+npm install
+npm run build
+
+# Basic usage
+npm run digest -- --ics calendar.ics --from 2026-09-02 --to 2026-09-05 --outdir out/
+
+# With custom timezone
+npm run digest -- --ics calendar.ics --from 2026-09-01 --to 2026-09-30 --timezone America/New_York
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No calendar API calls
+- ✅ **Read-only** - Never modifies .ics files or live calendars
+- ✅ **Pass-through only** - Never invents events, times, or locations
+- ✅ **Date filtering** - Only includes VEVENT entries within specified date range
+- ✅ **DRAFT ONLY** - Output is for review; does not send notifications
+- ⚠️ **Family bot / CoS owns WhatsApp** - Manual approval required before posting digest
+- ⚠️ **Not a calendar sync** - This is a one-time export parser, not a live calendar integration
+
+### Output Files
+
+- `events.json` - Structured event data array with uid, summary, dtstart, dtend, location, description
+- `digest.md` - Numbered digest with full sentences, grouped by date
+- `missing-fields.md` - Events with incomplete data (missing SUMMARY/DTSTART/LOCATION)
+- `APPROVAL.md` - Safety gates and ownership notice
+- `manifest.json` - Run metadata and statistics
+
+### Why This Tool Exists
+
+Family morning digest sometimes needs calendar events from an exported .ics file (school/admin calendars). This offline parser extracts events in a date window and generates a numbered digest. Never invents events or times.
+
+[→ Full README](./family-calendar-ics-digest/README.md)
 
 ---
 
@@ -825,6 +1013,110 @@ npm run test:fixtures
 - **Automation Target:** structured-whatsapp-quotes
 
 [→ Full README](./hm-quote-intake/README.md)
+
+---
+
+## hm-delivery-pod-draft
+
+**One-line:** Generate DRAFT proof-of-delivery notes from Heavy Metal Sand & Stone delivery data (structured JSON or paste text).
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-delivery-pod-draft/`
+
+### Install and Run
+
+```bash
+cd tools/hm-delivery-pod-draft
+npm install
+npm run build
+
+# From structured JSON
+npm run draft -- --pod pod.json --outdir out/
+
+# From paste text (driver notes, WhatsApp)
+npm run draft -- --text paste.txt --outdir out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No WhatsApp Cloud API** - WhatsApp stays on CoS
+- ✅ **No auto-send** - DRAFT outputs only
+- ✅ **Never invents volumes** - Only extracts if explicitly present
+- ✅ **Never invents signatures** - signedBy field ONLY if actually present; unsigned deliveries are valid
+- ⚠️ **Human approval required** - Always review APPROVAL.md before using outputs
+- ⚠️ **Confirm volume + location** - Before any communication per lane:heavy-metal rules
+
+### Input Modes
+
+**Structured JSON (`--pod`):**
+```json
+{
+  "customer": "Pieter van der Merwe",
+  "phone": "+27823456789",
+  "material": "Sand",
+  "volume": 12,
+  "unit": "m³",
+  "deliveryLocation": "123 Main Road, Dullstroom",
+  "deliveredAt": "2026-09-02 14:30",
+  "vehicle": "GP 123 ABC",
+  "driver": "Johannes Malema",
+  "notes": "Delivered to side gate.",
+  "signedBy": "P. van der Merwe"
+}
+```
+
+**Paste Text (`--text`):**
+```
+Customer: Johan Botha
+Phone: 0827654321
+
+Material: Stone
+Volume: 15 m³
+Location: 45 Industrial Drive, Dullstroom
+Date: 2026-09-02 10:15
+
+Vehicle: MP 456 XYZ
+Driver: Thabo Mbeki
+
+Signed by: J. Botha
+```
+
+### Output Files
+
+- `pod.json` - Normalized POD data
+- `pod.md` - DRAFT proof-of-delivery note (marked as DRAFT)
+- `missing-fields.md` - Checklist of fields to fill manually
+- `APPROVAL.md` - Review document with safety checklist
+- `manifest.json` - Generation metadata
+
+### Field Extraction
+
+**Required (flagged if missing):** customer, material, volume, unit, deliveryLocation, deliveredAt  
+**Optional (tracked):** phone, vehicle, driver, notes, **signedBy** (NEVER invented)
+
+### Signature Handling
+
+**CRITICAL:** The tool NEVER invents the `signedBy` field.
+- If delivery was signed for → record it
+- If delivery was NOT signed for → field stays `undefined`
+- Unsigned deliveries are valid
+- Tool explicitly flags unsigned status in pod.md
+- APPROVAL.md emphasizes never inventing signatures
+
+### Entity Context
+
+- **Lane:** heavy-metal
+- **Trading Name:** Heavy Metal Sand & Stone
+- **Location:** Dullstroom (yard)
+- **Emails:** grant@hmsand.co.za, mail@hmsand.co.za
+- **Automation Target:** delivery-day-and-pod
+
+[→ Full README](./hm-delivery-pod-draft/README.md)
 
 ---
 
@@ -1399,6 +1691,69 @@ npm test
 - **1** - Bad input or strict mode violations
 
 [→ Full README](./career-cover-letter-facts-lint/README.md)
+
+---
+
+## career-application-packet-assemble
+
+**One-line:** Assemble dated application packet with score report, cover lint report, facts snapshot, and APPROVAL checklist.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-application-packet-assemble/`
+
+### Install and Run
+
+```bash
+cd tools/career-application-packet-assemble
+npm install
+npm run build
+
+# Use prebuilt reports
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --score path/to/score-outdir/scorecard.md \\
+  --cover-lint path/to/lint-outdir/report.md \\
+  --facts facts.json \\
+  --jd jd.txt
+
+# Run scoring tool during assembly
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --run-score --jd jd.txt \\
+  --cover-lint lint-outdir/report.md \\
+  --facts facts.json
+
+# Run both tools during assembly
+npm run assemble -- --outdir out/packet-20260902/ \\
+  --run-score --jd jd.txt \\
+  --run-cover-lint --draft cover.md --facts facts.json
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Calls sibling tools via npm run or accepts prebuilt reports
+- ✅ **Never invents data** - Only packages existing reports
+- ✅ **Facts-only reminder** - APPROVAL.md checks Career uses career-os claims only
+- ✅ **Score floor enforced** - APPROVAL.md verifies score ≥8
+- ✅ **Career bot owns apply** - This is packaging aid, not auto-apply
+- ⚠️ **No LinkedIn send** - Career bot handles all application sends
+
+### Output Files
+
+- `PACK.md` - Packet index with score/lint summaries, contents, warnings, next steps
+- `APPROVAL.md` - Checklist with hard gates (score ≥8, gates pass, verdict apply, lint safe)
+- `score-report.md` - Copy of scorecard from score tool (if provided)
+- `cover-lint-report.md` - Copy of report from lint tool (if provided)
+- `facts.json` - Copy of career-os facts (if provided)
+- `jd.txt` - Copy of job description (if provided)
+- `manifest.json` - Machine-readable packet metadata
+
+### Integration with Sibling Tools
+
+Can copy prebuilt reports OR shell out to:
+- `career-jd-hard-gates-score` via `--run-score --jd <path>`
+- `career-cover-letter-facts-lint` via `--run-cover-lint --draft <path> --facts <path>`
+
+[→ Full README](./career-application-packet-assemble/README.md)
 
 ---
 

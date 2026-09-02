@@ -1,0 +1,30 @@
+{
+  "tool": "career-application-packet-assemble",
+  "version": "1.0.0",
+  "timestamp": "2026-09-02T10:58:26.867Z",
+  "packetDate": "20260902",
+  "inputs": {
+    "scoreReportPath": "fixtures/score-report.md",
+    "coverLintReportPath": "fixtures/lint-report.md",
+    "factsPath": "fixtures/facts.json",
+    "jdPath": "fixtures/jd.txt"
+  },
+  "runOptions": {
+    "ranScore": false,
+    "ranCoverLint": false
+  },
+  "outputs": [
+    "score-report.md",
+    "cover-lint-report.md",
+    "facts.json",
+    "jd.txt",
+    "PACK.md",
+    "APPROVAL.md"
+  ],
+  "checks": {
+    "hasScoreReport": true,
+    "hasCoverLintReport": true,
+    "hasFacts": true,
+    "hasApproval": true
+  }
+}
