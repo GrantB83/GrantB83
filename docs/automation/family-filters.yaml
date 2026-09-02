@@ -1,0 +1,51 @@
+# Zero-token Gmail routing for the Family Command Center.
+# Agents create these labels/filters; they do not LLM-classify every school email.
+# Do not add Trash or Spam actions.
+schema_version: 1
+updated: 2026-08-22
+skip_inbox_default: false   # flip to true only after APPROVE FAMILY FILE (S10)
+
+labels:
+  - Family/School
+  - Family/Medical
+  - Family/Finance
+  - Family/Budget
+  - Family/Calendar
+  - Family/FileOnly
+  - Family/Action
+
+filters:
+  - id: school-aisd
+    criteria:
+      from: austinisd.org
+    action:
+      add_labels: [Family/School]
+    notes: Mills and other AISD campuses observed in Drive shares. Create this filter on thebrownsusa@gmail.com (and Liana if separate) — not only on grant830318@gmail.com. Hub has zero austinisd.org in 90d.
+
+  - id: school-action-words
+    criteria:
+      from: austinisd.org
+      containWords: [permission, volunteer, due, signup, sign-up, conference, IEP]
+    action:
+      add_labels: [Family/School, Family/Action]
+    notes: Keep in inbox. False positives are acceptable.
+
+  - id: household-wesbank
+    criteria:
+      from: wesbank.co.za
+    action:
+      add_labels: [Family/Finance]
+    notes: Vehicle finance already arriving on grant@thebrowns.co.za.
+
+  - id: household-budget-sheet
+    criteria:
+      containWords: ["Budget"]
+    action:
+      add_labels: [Family/Budget]
+    notes: Do not enable until reviewed — too broad. Leave disabled.
+
+disabled:
+  - household-budget-sheet
+
+standing_approval_to_skip_inbox:
+  - school-aisd   # only the FYI filter, never school-action-words

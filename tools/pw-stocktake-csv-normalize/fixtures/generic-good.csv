@@ -1,0 +1,6 @@
+Store,Item,Qty,Unit,Date,Notes
+Main Store,Water 500ml,100,bottles,01/09/2026,Checked twice
+Main Store,Juice 1L,50,bottles,01/09/2026,
+Branch A,Water 500ml,75,bottles,01/09/2026,Low stock
+Branch A,Soda Cans,200,cans,01/09/2026,
+Branch B,Water 500ml,120,bottles,01/09/2026,

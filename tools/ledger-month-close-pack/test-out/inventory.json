@@ -1,0 +1,26 @@
+[
+  {
+    "basename": "bank-statement-jan.csv",
+    "path": "fixtures/exports/bank-statement-jan.csv",
+    "size": 189,
+    "mtime": "2026-09-02T09:29:33.287Z",
+    "headerRow": "Date,Description,Amount,Balance",
+    "missingHeaders": []
+  },
+  {
+    "basename": "budget-jan-2024.csv",
+    "path": "fixtures/exports/budget-jan-2024.csv",
+    "size": 249,
+    "mtime": "2026-09-02T09:29:33.287Z",
+    "headerRow": "Date,Merchant,Amount,Category",
+    "missingHeaders": []
+  },
+  {
+    "basename": "receipts.csv",
+    "path": "fixtures/exports/receipts.csv",
+    "size": 98,
+    "mtime": "2026-09-02T09:29:33.287Z",
+    "headerRow": "Date,Vendor,Total",
+    "missingHeaders": []
+  }
+]

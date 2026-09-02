@@ -1,0 +1,10 @@
+{
+  "customerName": "Johan Botha",
+  "customerPhone": "0827654321",
+  "materials": ["Sand", "Stone", "Gravel"],
+  "volume": 20,
+  "volumeUnit": "m³",
+  "deliveryLocation": "Industrial Park, Lydenburg",
+  "dateNeeded": "2026-09-22",
+  "notes": "Mix of materials"
+}

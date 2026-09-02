@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-out/
+test-out-loyverse/
+test-out-bad/
+*.log
+.DS_Store

@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-09-02T10:00:00.000Z",
+  "title": "Twinkle Star Dreams",
+  "artist": "BrownieTunez",
+  "lyrics_file": "lyrics.cleaned.txt",
+  "prompt_file": "suno-prompt.txt",
+  "style_file": "style.txt",
+  "title_file": "title.txt",
+  "checklist_file": "checklist.md",
+  "metadata": {
+    "title": "Twinkle Star Dreams",
+    "kids": ["Emma", "Liam"],
+    "artist": "BrownieTunez",
+    "style": "children's music, lullaby, gentle, acoustic",
+    "mood": "Calm and soothing bedtime vibe",
+    "duration_hint": "2 minutes",
+    "negative_prompts": ["loud", "aggressive", "fast-paced"]
+  }
+}
