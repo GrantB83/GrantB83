@@ -296,7 +296,6 @@ export default function DailyBriefPage() {
         </ul>
       </div>
 
-<<<<<<< HEAD
       <div className="mt-6 bg-indigo-50 border border-indigo-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-900 mb-3">📦 Phase 20: Demo CT-Pack Assembly</h3>
         <p className="text-sm text-gray-700 mb-4">
