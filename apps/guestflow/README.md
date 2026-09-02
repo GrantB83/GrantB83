@@ -1,8 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 28 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 29 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 28 — Demo invite / access codes (DRAFT/fixtures only; NO paid signup)
+**Current Phase:** Phase 29 — Invite codes in sales walkthrough & leave-behind (DRAFT/fixtures only; NO paid signup)
 
 ---
 
@@ -61,6 +61,53 @@
 - Never invents contact details—only stores code metadata (note, max uses, expiry)
 - All data persists to local SQLite only with tenant scoping
 - Clear messaging: "This is demo/preview access only — NOT a paid account"
+
+---
+
+## What Works (Phase 29)
+
+### ✅ Phase 29 Additions (Invite Codes in Sales Walkthrough & Leave-Behind)
+
+1. **Sales Walkthrough with Invite Codes** (`/demo/sales-walkthrough`)
+   - Added Step 3: Generate Demo Invite Code with "DEMO ACCESS ONLY" messaging
+   - Added Step 4: Redeem Demo Invite Code with clear non-payment, non-signup copy
+   - Updated walkthrough to 13 steps (previously 11) with invite code generate→redeem flow
+   - Checklist UI tracks progress through full path: invite codes → demo access → inquiry → quote → ops
+   - Export markdown includes invite code steps and hard gates reminder
+   - Never creates paid accounts—invite codes are fixtures for local SQLite demo only
+
+2. **Sales Leave-Behind with Invite Codes** (`/demo/sales-leavebehind`)
+   - Added "Demo Invite Codes (Phase 28→29 Integration)" section to leave-behind pack
+   - Explains 5-step invite code flow: Generate → Share → Redeem → Access → Track
+   - Updated demo path from 11 to 13 steps with invite code steps included
+   - Clear messaging: "DEMO ACCESS ONLY—not a paid account, not a signup, no subscription"
+   - Export (markdown/HTML/ZIP) includes invite code usage instructions
+   - Leave-behind now references `/demo/invite-codes` and `/demo/redeem` pages
+
+3. **Seamless Phase 28 Integration**
+   - Wires existing Phase 28 invite code generation and redemption into sales pitch path
+   - Salespeople can now demo: generate code → share with prospect → prospect redeems → walkthrough
+   - All Phase 28 hard gates respected: DEMO ACCESS ONLY, no payments, no signup, local SQLite only
+   - Invite codes track usage count, expiry, and notes for demo purposes
+   - Never invents PII or contact info—codes are fixtures for sales walkthroughs only
+
+4. **Quality Gates Respected**
+   - NO live payments, NO paid ads, NO public paid signup
+   - NO WhatsApp/email auto-send—all communication is DRAFT only
+   - Invite codes are DEMO ACCESS ONLY—not a paid account, no subscription created
+   - All data labeled DRAFT/demo—suitable for sales walkthrough demos only
+   - Never invents rates, contact info, or other details not provided by user
+
+**What Works vs. Stubbed:**
+- ✅ Works: Invite code generation/redemption wired into sales walkthrough and leave-behind, 13-step demo path, export with invite code instructions
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—invite codes unlock demo tenant access for sales walkthroughs with clearly labeled DRAFT/demo data
+- Invite codes are NOT a paid account, NOT a signup, do NOT create subscriptions
+- All data persists to local SQLite only with tenant scoping
+- Never invents contact details—only stores user-provided name/email/property/notes
 
 ---
 
