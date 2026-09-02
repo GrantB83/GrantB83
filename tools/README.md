@@ -30,6 +30,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events and school due queue | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar and due queue pass-through only. |
+| [family-digest-post-checklist](#family-digest-post-checklist) | Validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Pre-WhatsApp validation. Exit 1 if checks fail. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
@@ -1497,6 +1498,85 @@ npm run pack -- \
 Or use `--run-subject-digest` and/or `--run-ics-digest` to call sibling tools in one command.
 
 [→ Full README](./family-morning-digest-pack/README.md)
+
+---
+
+## family-digest-post-checklist
+
+**One-line:** Offline CLI to validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-digest-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/family-digest-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run check -- --pack path/to/pack-2026-09-02
+
+# With explicit date and output directory
+npm run check -- --pack path/to/pack --date 2026-09-02 --outdir reports/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Read-only checks** - Never modifies pack files
+- ✅ **No invented data** - Never fabricates school facts or due dates
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review POST-CHECKLIST.md and APPROVAL.md before every post
+
+### Behavior
+
+**Input:** `--pack` path to a pack folder produced by family-morning-digest-pack
+
+**Checks (heuristic, read-only):**
+1. Required files present (PACK.md, school.md, family.md)
+2. school.md and family.md both exist and are non-empty OR explicitly empty-with-header
+3. No obvious duplicate line items between school.md and family.md
+4. APPROVAL.md present in pack
+5. Warn if calendar/due sections referenced in PACK.md but files missing
+
+**Outputs in `--outdir`:**
+- POST-CHECKLIST.md — Numbered go/no-go ticks for Family
+- ISSUES.md — Failures/warnings only
+- APPROVAL.md — Family/CoS owns send; full sentences; offline only
+- manifest.json — Metadata
+
+**Exit codes:**
+- 0 — All checks passed
+- 1 — Pack path missing, required files absent, or checks failed
+
+### Integration with family-morning-digest-pack
+
+Run immediately after `family-morning-digest-pack`:
+
+```bash
+# Step 1: Generate morning digest pack
+cd tools/family-morning-digest-pack
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest
+
+# Step 2: Validate pack before posting
+cd ../family-digest-post-checklist
+npm run check -- --pack ../family-morning-digest-pack/out/pack-2026-09-02
+
+# Step 3: Review outputs and post (manual)
+cat out/POST-CHECKLIST.md
+cat out/APPROVAL.md
+# Family / CoS posts to WhatsApp Admin - Grant & Liana Private
+```
+
+[→ Full README](./family-digest-post-checklist/README.md)
 
 ---
 
