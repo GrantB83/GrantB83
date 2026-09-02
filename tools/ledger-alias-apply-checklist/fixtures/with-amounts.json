@@ -1,0 +1,37 @@
+{
+  "suggestions": [
+    {
+      "merchant": "AMAZON.COM*XX1234567",
+      "topMatch": {
+        "alias": "Amazon",
+        "score": 0.789,
+        "matchedPattern": "Amazon.com"
+      },
+      "confidence": "high",
+      "extraData": {
+        "amount": 125.50,
+        "currency": "USD",
+        "description": "Order total $125.50 for transaction #ABC123"
+      }
+    },
+    {
+      "merchant": "WALMART #2345",
+      "topMatch": {
+        "alias": "Walmart",
+        "score": 0.667,
+        "matchedPattern": "Walmart"
+      },
+      "confidence": "medium",
+      "extraData": {
+        "amount": 89.99,
+        "currency": "USD",
+        "description": "Purchase amount R1234.56 ZAR"
+      }
+    }
+  ],
+  "noMatches": [],
+  "generatedAt": "2026-09-02T10:00:00.000Z",
+  "minScore": 0.4,
+  "totalMerchants": 2,
+  "note": "This fixture tests that amount/currency tokens in extra JSON fields do NOT leak into APPLY-CHECKLIST.md prose"
+}

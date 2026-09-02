@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft } from 'lucide-react'
+import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
 
@@ -321,6 +321,21 @@ export default function WelcomeDraftsPage() {
           </div>
         )
       )}
+
+      {/* Phase 19 Link */}
+      <div className="mt-12 bg-orange-50 border border-orange-200 rounded-xl p-6">
+        <h3 className="font-semibold text-gray-900 mb-3">🎯 Phase 19: Late Check-In Queue</h3>
+        <p className="text-sm text-gray-700 mb-4">
+          Track arriving guests with late check-ins, after-hours arrivals, or unknown ETAs from your bookings.
+        </p>
+        <Link
+          href="/demo/late-checkin-queue"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
+        >
+          <AlertCircle className="w-4 h-4" />
+          View Late Check-In Queue
+        </Link>
+      </div>
 
       {/* Hard Gates Warning */}
       <div className="mt-12 bg-indigo-50 border border-indigo-200 rounded-xl p-6 mb-6">

@@ -22,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
+| [ledger-alias-apply-checklist](#ledger-alias-apply-checklist) | Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before Budget sheet writes | Ledger / CoS | **Offline**. Never writes sheet. Never invents amounts/aliases. Names/patterns only. H2 approval required. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [studio-suno-package-validate](#studio-suno-package-validate) | Validate Suno job packages before Studio spends browser time | Studio / BrownieTunez | **Offline only**. Read-only. No Suno/YouTube APIs. Preflight validator. |
@@ -30,6 +31,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [family-school-due-queue](#family-school-due-queue) | Extract due/deadline signals from school email subjects or filename lists | Family Command Center / CoS | **Offline only**. Never opens bodies/attachments. Never invents dates. Heuristic extraction. DRAFT ONLY. |
 | [family-morning-digest-pack](#family-morning-digest-pack) | Assemble morning digest pack with clear Kids School / Family separation, optional ICS calendar events and school due queue | Family Command Center / CoS | **Offline**. DRAFT ONLY. Never sends. Clear section separation. No duplicate items. Calendar and due queue pass-through only. |
+| [family-digest-post-checklist](#family-digest-post-checklist) | Validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Pre-WhatsApp validation. Exit 1 if checks fail. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
@@ -972,6 +974,83 @@ npm run suggest -- \
 
 ---
 
+## ledger-alias-apply-checklist
+
+**One-line:** Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before any USA Budget sheet write.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-alias-apply-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-alias-apply-checklist
+npm install
+npm run build
+
+# From JSON output
+npm run apply -- \
+  --suggestions path/to/suggestions.json \
+  --outdir out/
+
+# From markdown outputs
+npm run apply -- \
+  --suggestions-md path/to/suggestions.md \
+  --no-match path/to/no-match.md \
+  --outdir out/
+
+# With month label
+npm run apply -- \
+  --suggestions suggestions.json \
+  --month 2026-09 \
+  --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Sheets API or network calls
+- ✅ **Read-only** - Never modifies input files
+- ✅ **H2 approval required** - Never writes to Budget sheet; Ledger owns sheet writes
+- ✅ **No invented amounts or aliases** - Pass-through from suggestion tool only
+- ✅ **Names/patterns only** - No transaction amounts in prose
+- ⚠️ **Approval gate enforced** - Coding/CoS never write Budget directly
+
+### Behavior
+
+1. Parse suggestions from JSON or markdown (ledger-merchant-alias-suggest output)
+2. Group by confidence (high/medium/low) using score thresholds
+3. Generate `APPLY-CHECKLIST.md` - numbered merchant→alias mappings for human tick-off
+4. Generate `SKIPPED.md` - low-confidence / no-match items for manual research
+5. Generate `APPROVAL.md` - H2 gate workflow guidance
+6. Exit 1 on missing/malformed suggestions
+
+### Example Workflow
+
+```bash
+# Step 1: Generate suggestions (previous tool)
+cd tools/ledger-merchant-alias-suggest
+npm run suggest -- \
+  --unmatched queue.json \
+  --aliases aliases.json \
+  --outdir suggestions/
+
+# Step 2: Generate apply checklist
+cd ../ledger-alias-apply-checklist
+npm run apply -- \
+  --suggestions ../ledger-merchant-alias-suggest/suggestions/suggestions.json \
+  --no-match ../ledger-merchant-alias-suggest/suggestions/no-match.md \
+  --month 2026-09 \
+  --outdir checklist/
+
+# Step 3: Review APPLY-CHECKLIST.md and get H2 approval
+# Step 4: Ledger applies approved aliases to Budget sheet manually
+```
+
+[→ Full README](./ledger-alias-apply-checklist/README.md)
+
+---
+
 ## ledger-month-close-pack
 
 **One-line:** Build offline USA Budget month-end close pack: CSV inventory, header sanity, unmatched-merchant queue pointer, APPROVAL checklist.
@@ -1497,6 +1576,85 @@ npm run pack -- \
 Or use `--run-subject-digest` and/or `--run-ics-digest` to call sibling tools in one command.
 
 [→ Full README](./family-morning-digest-pack/README.md)
+
+---
+
+## family-digest-post-checklist
+
+**One-line:** Offline CLI to validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-digest-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/family-digest-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run check -- --pack path/to/pack-2026-09-02
+
+# With explicit date and output directory
+npm run check -- --pack path/to/pack --date 2026-09-02 --outdir reports/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Read-only checks** - Never modifies pack files
+- ✅ **No invented data** - Never fabricates school facts or due dates
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review POST-CHECKLIST.md and APPROVAL.md before every post
+
+### Behavior
+
+**Input:** `--pack` path to a pack folder produced by family-morning-digest-pack
+
+**Checks (heuristic, read-only):**
+1. Required files present (PACK.md, school.md, family.md)
+2. school.md and family.md both exist and are non-empty OR explicitly empty-with-header
+3. No obvious duplicate line items between school.md and family.md
+4. APPROVAL.md present in pack
+5. Warn if calendar/due sections referenced in PACK.md but files missing
+
+**Outputs in `--outdir`:**
+- POST-CHECKLIST.md — Numbered go/no-go ticks for Family
+- ISSUES.md — Failures/warnings only
+- APPROVAL.md — Family/CoS owns send; full sentences; offline only
+- manifest.json — Metadata
+
+**Exit codes:**
+- 0 — All checks passed
+- 1 — Pack path missing, required files absent, or checks failed
+
+### Integration with family-morning-digest-pack
+
+Run immediately after `family-morning-digest-pack`:
+
+```bash
+# Step 1: Generate morning digest pack
+cd tools/family-morning-digest-pack
+npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest
+
+# Step 2: Validate pack before posting
+cd ../family-digest-post-checklist
+npm run check -- --pack ../family-morning-digest-pack/out/pack-2026-09-02
+
+# Step 3: Review outputs and post (manual)
+cat out/POST-CHECKLIST.md
+cat out/APPROVAL.md
+# Family / CoS posts to WhatsApp Admin - Grant & Liana Private
+```
+
+[→ Full README](./family-digest-post-checklist/README.md)
 
 ---
 

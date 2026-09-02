@@ -1,0 +1,27 @@
+{
+  "name": "family-digest-post-checklist",
+  "version": "1.0.0",
+  "description": "Offline CLI to validate family-morning-digest-pack output before WhatsApp Admin posting",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "check": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test dist/checker.test.js",
+    "check": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run check -- --pack fixtures/healthy-pack --outdir test-out-healthy && npm run check -- --pack fixtures/missing-school-pack --outdir test-out-missing-school; exit 0 && npm run check -- --pack fixtures/duplicate-item-pack --outdir test-out-duplicate --outdir test-out-duplicate; exit 0 && echo 'All fixture tests completed'",
+    "clean": "rm -rf dist test-out* out*"
+  },
+  "keywords": ["family", "digest", "checklist", "post-validation"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

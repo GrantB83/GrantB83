@@ -231,7 +231,7 @@ export async function POST(request: Request) {
       inquiryIds.push(Number(inquiryResult.lastInsertRowid))
     }
 
-    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos + Phase 18 welcome drafts)
+    // Step 6: Create sample bookings with Nightsbridge-style fields (for daily brief / ops demos + Phase 18 welcome drafts + Phase 19 late checkin queue)
     // Include today and tomorrow for Phase 18 welcome drafts testing
     const today = new Date().toISOString().split('T')[0]
     const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
@@ -244,7 +244,9 @@ export async function POST(request: Request) {
         tenantId: demoTenantId,
         inquiryId: null,
         propertyId: property1Id,
+        propertyName: 'Riverside Suite',
         guestName: 'Emma Wilson',
+        guestPhone: '+27 82 555 1111',
         checkIn: today,
         checkOut: dayAfter,
         roomNumber: 'Suite 3',
@@ -260,7 +262,9 @@ export async function POST(request: Request) {
         tenantId: demoTenantId,
         inquiryId: null,
         propertyId: property2Id,
+        propertyName: 'Mountain View Cottage',
         guestName: 'David Chen',
+        guestPhone: '+27 83 555 2222',
         checkIn: tomorrow,
         checkOut: todayPlusThree,
         roomNumber: 'Cottage B',
@@ -271,12 +275,68 @@ export async function POST(request: Request) {
         lateCheckIn: false,
         status: 'confirmed'
       },
+      // Phase 19: Late check-in with phone
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property1Id,
+        propertyName: 'Riverside Suite',
+        guestName: 'Michael Patterson',
+        guestPhone: '+27 84 555 3333',
+        checkIn: today,
+        checkOut: dayAfter,
+        roomNumber: 'Suite 5',
+        suiteOrUnit: 'Riverside Suite 5',
+        adults: 2,
+        children: 1,
+        notes: 'DEMO - Late arrival ETA 20:00, after-hours check-in required',
+        lateCheckIn: true,
+        status: 'confirmed'
+      },
+      // Phase 19: Unknown check-in time, missing phone
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property2Id,
+        propertyName: 'Mountain View Cottage',
+        guestName: 'Susan Richards',
+        guestPhone: null,
+        checkIn: today,
+        checkOut: tomorrow,
+        roomNumber: 'Cottage C',
+        suiteOrUnit: 'Mountain View Cottage C',
+        adults: 1,
+        children: 0,
+        notes: 'DEMO - Arriving today but no check-in time specified',
+        lateCheckIn: false,
+        status: 'confirmed'
+      },
+      // Phase 19: Note keyword "late" without late_check_in flag
+      {
+        tenantId: demoTenantId,
+        inquiryId: null,
+        propertyId: property1Id,
+        propertyName: 'Riverside Suite',
+        guestName: 'Robert & Jane Smith',
+        guestPhone: '+27 85 555 4444',
+        checkIn: today,
+        checkOut: dayAfter,
+        roomNumber: 'Suite 6',
+        suiteOrUnit: 'Riverside Suite 6',
+        adults: 2,
+        children: 0,
+        notes: 'DEMO - Flight delayed, will be arriving late this evening',
+        lateCheckIn: false,
+        status: 'confirmed'
+      },
       // Booking without guest name (should be skipped in welcome drafts)
       {
         tenantId: demoTenantId,
         inquiryId: null,
         propertyId: property1Id,
+        propertyName: 'Riverside Suite',
         guestName: '',
+        guestPhone: null,
         checkIn: tomorrow,
         checkOut: dayAfter,
         roomNumber: 'Suite 4',
@@ -292,7 +352,9 @@ export async function POST(request: Request) {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[0],
         propertyId: property1Id,
+        propertyName: 'Riverside Suite',
         guestName: 'Sarah Johnson',
+        guestPhone: '+27 82 555 1234',
         checkIn: '2026-12-20',
         checkOut: '2026-12-22',
         roomNumber: 'Suite 1',
@@ -307,7 +369,9 @@ export async function POST(request: Request) {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[1],
         propertyId: property2Id,
+        propertyName: 'Mountain View Cottage',
         guestName: 'Mark Thompson',
+        guestPhone: '+27 83 555 5678',
         checkIn: '2027-01-05',
         checkOut: '2027-01-09',
         roomNumber: 'Cottage A',
@@ -322,7 +386,9 @@ export async function POST(request: Request) {
         tenantId: demoTenantId,
         inquiryId: inquiryIds[2],
         propertyId: property1Id,
+        propertyName: 'Riverside Suite',
         guestName: 'Jennifer Williams',
+        guestPhone: '+27 84 555 9012',
         checkIn: '2027-02-10',
         checkOut: '2027-02-13',
         roomNumber: 'Suite 2',
@@ -338,12 +404,12 @@ export async function POST(request: Request) {
     for (const booking of bookings) {
       db.prepare(`
         INSERT INTO bookings (
-          tenant_id, inquiry_id, property_id, guest_name, 
+          tenant_id, inquiry_id, property_id, property_name, guest_name, guest_phone,
           check_in, check_out, room_number, suite_or_unit,
           adults, children, notes, late_check_in, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        booking.tenantId, booking.inquiryId, booking.propertyId, booking.guestName,
+        booking.tenantId, booking.inquiryId, booking.propertyId, booking.propertyName, booking.guestName, booking.guestPhone,
         booking.checkIn, booking.checkOut, booking.roomNumber, booking.suiteOrUnit,
         booking.adults, booking.children, booking.notes, booking.lateCheckIn ? 1 : 0, booking.status
       )

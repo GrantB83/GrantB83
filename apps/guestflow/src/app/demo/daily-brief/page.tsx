@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail, StickyNote } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail, StickyNote, MessageSquare } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
@@ -296,6 +296,7 @@ export default function DailyBriefPage() {
         </ul>
       </div>
 
+<<<<<<< HEAD
       <div className="mt-6 bg-indigo-50 border border-indigo-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-900 mb-3">📦 Phase 20: Demo CT-Pack Assembly</h3>
         <p className="text-sm text-gray-700 mb-4">
@@ -307,6 +308,20 @@ export default function DailyBriefPage() {
         >
           <StickyNote className="w-4 h-4" />
           Assemble CT Pack
+        </Link>
+      </div>
+
+      <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-6">
+        <h3 className="font-semibold text-gray-900 mb-3">🚨 Phase 19: Late / After-Hours Check-In Queue</h3>
+        <p className="text-sm text-gray-700 mb-4">
+          View late check-ins and after-hours arrivals from today's bookings board (mirrors tools/browns-late-checkin-queue).
+        </p>
+        <Link
+          href="/demo/late-checkin-queue"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
+        >
+          <MessageSquare className="w-4 h-4" />
+          View Late Check-In Queue
         </Link>
       </div>
 
