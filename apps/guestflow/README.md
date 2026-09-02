@@ -1,75 +1,8 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 16 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 17 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 16 — Nightsbridge-style demo bookings intake for multi-tenant GuestFlow SaaS
-
----
-
-## What Works (Phase 16)
-
-### ✅ Phase 16 Additions (Nightsbridge-style Demo Bookings Intake)
-
-1. **Enhanced Nightsbridge Import** (`/demo/nightsbridge-import`)
-   - Extends Phase 2 CSV parser with tenant-scoped database persistence
-   - Parse CSV/TSV with flexible header aliases (same spirit as browns-nightsbridge-bookings-adapter)
-   - Save parsed bookings to tenant-scoped SQLite database via POST `/api/bookings`
-   - Track and surface missing-fields warnings (never invents guest names, phones, rates, or suite assignments)
-   - Automatically derive booking status (arriving/inhouse/departing) from target date
-   - Detect late check-ins from explicit column or notes keywords
-   - Display prominent missing-fields table when data is incomplete
-
-2. **Same-Day Bookings Board** (`/demo/bookings-board`)
-   - NEW operational view showing arrivals / in-house / departing guests for any selected day
-   - Date navigator with previous/next day buttons and date picker
-   - Three-column layout: green (arriving), purple (in-house), blue (departing)
-   - Automatic status derivation based on check-in/check-out dates vs. selected day
-   - Late check-in badges highlighted in amber with clock icon
-   - Missing-fields warnings at top (red alerts for missing guest names or suite assignments)
-   - Tenant-scoped: only shows bookings for active demo tenant
-   - Each booking card displays: guest name, suite/unit, dates, adults/children count, notes, late flag
-   - Link to import page when no bookings exist for selected day
-
-3. **Bookings API** (`/api/bookings`)
-   - GET endpoint: fetch bookings for specific tenant and optional day filter
-   - POST endpoint: bulk import bookings from CSV parse (tenant-scoped validation)
-   - Tracks: guest_name, suite_or_unit, check_in, check_out, adults, children, notes, late_check_in, status
-   - Validates required fields (guest_name, check_in, check_out) and reports errors for missing data
-   - Never invents missing data—flags incomplete records in response
-
-4. **Database Schema Extensions**
-   - Migration script: `scripts/migrate-phase16-bookings.js`
-   - Adds to bookings table: adults, children, notes, late_check_in, suite_or_unit
-   - Preserves existing Phase 2-15 database structure
-   - Idempotent migration checks for existing columns before adding
-
-5. **Demo Seed Updates** (`/api/demo/seed`)
-   - Creates 3 sample bookings with Nightsbridge-style fields (adults, children, notes, late_check_in)
-   - Includes one late check-in example (Jennifer Williams with remote work notes)
-   - Provides realistic family and anniversary booking scenarios
-   - All bookings clearly labeled DEMO with fixture data
-
-6. **Demo Hub Phase 16 Integration**
-   - Prominent purple card at top linking to bookings board (Phase 16 🎯 badge)
-   - Updated nightsbridge-import card shows "Phase 2 → 16" evolution
-   - Clear navigation path: Import CSV → View Bookings Board → Select Day
-
-7. **Extended Smoke Test Coverage** (to be added)
-   - Route test for `/demo/bookings-board` accessibility
-   - API test for `/api/bookings` GET and POST endpoints with tenant validation
-   - Migration test for Phase 16 database columns
-
-**What Works vs. Stubbed:**
-- ✅ Works: CSV/TSV parsing, tenant-scoped persistence, day-view board, missing-fields tracking, late check-in detection, demo fixtures
-- 🚧 Stubbed: Same as Phase 14 (production auth, live payments, email/WhatsApp auto-send, live OTA integrations, public signup)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- NO live OTA API calls (Nightsbridge, Booking.com, Airbnb)
-- Demo environment only — fixtures and manual CSV import for demo purposes
-- Never invents guest PII, rates, amounts, phone numbers, or suite assignments
-- Missing fields stay blank/flagged, never fabricated
-- All data persists to local SQLite only
+**Current Phase:** Phase 17 — Demo daily ops brief generated from tenant bookings (fixtures/UI only)
 
 ---
 
