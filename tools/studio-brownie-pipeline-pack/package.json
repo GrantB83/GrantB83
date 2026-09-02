@@ -1,0 +1,30 @@
+{
+  "name": "studio-brownie-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator for BrownieTunez pipeline: lyric-package-stub → suno-validate → youtube-preflight",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "brownie-pipeline": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "pipeline": "npm run build && node dist/index.js",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && node dist/index.js --pack fixtures/valid-package --outdir test-out",
+    "clean": "rm -rf dist/ test-out/ out/"
+  },
+  "keywords": [
+    "studio",
+    "brownie",
+    "pipeline",
+    "orchestrator",
+    "offline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}

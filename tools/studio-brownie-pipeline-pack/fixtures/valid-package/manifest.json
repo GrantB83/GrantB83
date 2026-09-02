@@ -1,0 +1,19 @@
+{
+  "tool": "studio-lyric-package-stub",
+  "version": "1.0.0",
+  "generatedAt": "2026-09-02T12:00:00.000Z",
+  "lyricsPath": "/workspace/fixtures/twinkle-star.txt",
+  "outputDir": "/workspace/tools/studio-brownie-pipeline-pack/fixtures/valid-package",
+  "metadata": {
+    "title": "Twinkle Star",
+    "artist": "Emma",
+    "mood": "Gentle and dreamy"
+  },
+  "files": {
+    "lyrics": "lyrics.cleaned.txt",
+    "meta": "meta.json",
+    "checklist": "checklist.md",
+    "approval": "APPROVAL.md",
+    "manifest": "manifest.json"
+  }
+}
