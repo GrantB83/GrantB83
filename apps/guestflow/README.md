@@ -1,150 +1,66 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 23 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 24 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 23 — Demo quote/invoice draft from inquiry JSON (DRAFT/fixtures only)
+**Current Phase:** Phase 24 — OTA rate worksheet from tenant rate cards (DRAFT/fixtures only)
 
 ---
 
-## What Works (Phase 23)
+## What Works (Phase 24)
 
-### ✅ Phase 23 Additions (Demo Quote/Invoice Draft from Inquiry JSON)
+### ✅ Phase 24 Additions (OTA Rate Worksheet from Rate Cards)
 
-1. **Quote Draft from Inquiry JSON** (`/demo/quote-draft`)
-   - Accept inquiry/quote JSON from Phase 22 output, paste, or fixtures
-   - Three input modes: Sample Data, Paste JSON, or Load Fixtures
-   - If amounts present in JSON → DRAFT quote/proforma text with those amounts only
-   - If amounts missing → availability-only draft with `[RATE CARD REQUIRED]` placeholders
-   - Never invents rates — strict adherence to embedded amounts or rate card data only
-
-2. **Fixture Loading**
-   - Load fixture with amounts: complete quote generation demo
-   - Load fixture without amounts: availability-only confirmation demo
-   - Fixtures located in `fixtures/` directory (inquiry-with-amounts.json, inquiry-without-amounts.json)
-   - Demonstrates both quote generation scenarios: complete pricing vs. placeholder-only
-
-3. **JSON Input Parsing**
-   - Paste inquiry JSON directly into text area
-   - Automatic validation of required fields (guestName, checkIn, checkOut, property, room)
-   - Automatic calculation of nights if not provided
-   - Clear error messages for invalid JSON or missing required fields
-   - Preview parsed data before generating quote
-
-4. **Smart Rate Handling**
-   - Checks for embedded amounts in inquiry JSON first (Phase 23)
-   - Falls back to rate card lookup if no embedded amounts
-   - Clearly labels rate source: "quoted amount from inquiry" vs "rate card"
-   - Respects same [RATE CARD REQUIRED] placeholder rules when rates missing
-   - Never invents pricing—mirrors tools/browns-quote-invoice-draft semantics
-
-5. **Export & Integration**
-   - Same export functionality as Phase 8 (markdown, HTML, print-to-PDF)
-   - Preserves all placeholders when rates missing
-   - Link from inquiry-intake page (Phase 22) to quote-draft with instructions
-   - Phase 23 badge on demo hub with prominent card
-   - Export includes draft status and H7 approval gate reminder
-
-6. **Mirrors tools/browns-quote-invoice-draft**
-   - Same fixture structure and semantics
-   - Same placeholder rules: never invents amounts
-   - Same approval gate requirements (H7 before send)
-   - Tenant-scoped rate card integration maintained
-   - Compatible with Phase 22 inquiry-intake JSON output
-
-**What Works vs. Stubbed:**
-- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation, availability-only mode, export (markdown/HTML/PDF), [RATE CARD REQUIRED] placeholders
-- 🚧 Stubbed: Same as Phase 22 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations, CRM note attachment)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — quotes are DRAFT ONLY with local-only export
-- Never invents amounts (uses embedded JSON amounts or rate card only)
-- Missing amounts → availability-only confirmation with `[RATE CARD REQUIRED]` placeholders
-- Quotes require H7 approval gate before sending to guest
-- All data persists to local SQLite only (no live NB API or WhatsApp sends)
-- Fixtures and DEMO data only—no production rate publishing
-
----
-
-## What Works (Phase 22)
-
-### ✅ Phase 22 Additions (Demo Inquiry Intake — Heuristic Extraction)
-
-1. **Inquiry Intake Page** (`/demo/inquiry-intake`)
-   - Paste inquiry text (email/WhatsApp-style) or load sample fixtures
-   - Extracts structured booking/quote fields: guest name, dates, party size, contact, suite prefs, special requests
-   - Pure TypeScript heuristics — NO LLM, mirrors tools/browns-inquiry-intake semantics
+1. **OTA Rate Worksheet Page** (`/demo/ota-rate-worksheet`)
+   - Load tenant rate cards from existing SQLite database or fixtures
+   - Render worksheet table with all rate card fields for manual OTA/Nightsbridge entry
+   - Clearly flag missing rates as [RATE BLANK]—never invents pricing
+   - Configurable promotional rate example (optional demo fixture)
    - Uses active demo tenant from tenant context
-   - Three sample fixtures: with-amounts, without-amounts, whatsapp-style
 
-2. **Smart Rate Handling**
-   - Rates/amounts ONLY if explicitly present with currency in inquiry text
-   - Missing amounts → availability-only inquiry (flags "No Rates Found" in blue alert)
-   - Never invents pricing — hard gate respected
-   - Currency detection: ZAR (R/rand) or USD ($)
+2. **Smart Never-Invent Behavior**
+   - Automatically includes at least one blank rate row in fixtures to prove never-invent principle
+   - Missing rates displayed as [RATE BLANK] in red with warnings
+   - Warning banner: "Missing Rates Detected" when blank rates present
+   - All blanks stay blank—no fabricated pricing ever
 
-3. **Draft Reply Generation**
-   - Auto-generates draft reply stub with placeholders for missing fields
-   - Preserves extracted amounts when present, uses `[RATE CARD REQUIRED]` when missing
-   - Includes `[DRAFT - REQUIRES H1/H2 APPROVAL BEFORE SEND]` footer
-   - Export as markdown (.md) file for local save (no live send)
+3. **Export Options** (`POST /api/ota-worksheet/export`)
+   - Download as Markdown (.md), CSV (.csv), or HTML (.html) file
+   - Print to PDF via browser print dialog (opens HTML in new window)
+   - Mirrors Phase 8 quote export and Phase 13 leave-behind UX
+   - Export includes APPROVAL REMINDER and manual entry instructions
+   - Local-only operations with no external storage or API calls
 
-4. **CRM Save Option** (`POST /api/leads`)
-   - Save extracted inquiry as DRAFT lead in tenant-scoped CRM
-   - Stores guest name, contact, check-in/out dates, suite, adults/children, channel
-   - Status: 'new' with `[DRAFT INQUIRY]` prefix in notes
-   - Uses existing leads API with tenant_id validation
+4. **Demo Hub Integration**
+   - Prominent Phase 24 fuchsia card at top of demo hub linking to OTA worksheet page
+   - Positioned above Phase 20 CT-Pack Assembly
+   - Integration with tenant switcher for multi-tenant demo
+   - Link from rate card upload page to OTA worksheet ("Generate OTA Rate Worksheet" button)
 
-5. **Missing Field Tracking**
-   - Amber warnings for missing required fields (guestName, contact, dates, adults)
-   - Lists missing fields explicitly in UI and draft reply
-   - Never silently invents contact info or dates
+5. **Extended Fixtures & Hard Gates**
+   - Fixtures include at least one blank rate row to demonstrate never-invent behavior
+   - Optional promotional rate example (demo fixture only)
+   - APPROVAL REMINDER banner: Grant/tenant approval required before live OTA changes
+   - Manual entry instructions included in all exports
+   - Never auto-applies to Nightsbridge or OTA APIs
 
-6. **Fixture Loading**
-   - `inquiry-with-amounts.txt` — includes quote (R4500/night), total (R13500), deposit (R6750)
-   - `inquiry-without-amounts.txt` — availability check only, no rates mentioned
-   - `inquiry-whatsapp-style.txt` — casual tone with phone, emojis, questions
-   - One-click fixture loading from amber banner UI
+6. **Mirrors tools/browns-ota-rate-worksheet Semantics**
+   - Same rate card fields: room_type, season, rate_per_night, currency, min_nights, valid dates, notes
+   - Same placeholder rules: missing rates stay blank, never invents
+   - Same export formats: markdown, CSV, HTML with print-to-PDF
+   - Same APPROVAL reminder and manual-entry-only workflow
+   - Tenant-scoped SQLite queries with fixture fallback
 
 **What Works vs. Stubbed:**
-- ✅ Works: Heuristic extraction, rate detection, draft reply generation, markdown export, CRM save (DRAFT), fixture loading
-- 🚧 Stubbed: Same as Phase 21 (production auth, live payments, email/WhatsApp auto-send, public signup, live NB API)
+- ✅ Works: Rate card loading, blank rate detection, markdown/CSV/HTML export, print-to-PDF, approval reminders, never-invent behavior
+- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA/NB API integration)
 
 **Hard Gates (UNCHANGED):**
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — inquiry intake is DRAFT ONLY with local-only markdown export
-- Never invents rates — missing amounts flagged as "No Rates Found" (availability-only)
-- Never invents contact info, dates, or guest details (uses `[PLACEHOLDER]` syntax in draft reply)
-- All data persists to local SQLite only with DRAFT labels
-- Pure TS heuristics — NO LLM API calls
-
-5. **Export & Integration**
-   - Same export functionality as Phase 8 (markdown, HTML, print-to-PDF)
-   - Preserves all placeholders when rates missing
-   - Link from inquiry-intake page (Phase 22) to quote-draft with instructions
-   - Phase 23 badge on demo hub with prominent card
-   - Export includes draft status and H7 approval gate reminder
-
-6. **Mirrors tools/browns-quote-invoice-draft**
-   - Same fixture structure and semantics
-   - Same placeholder rules: never invents amounts
-   - Same approval gate requirements (H7 before send)
-   - Tenant-scoped rate card integration maintained
-   - Compatible with Phase 22 inquiry-intake JSON output
-
-**What Works vs. Stubbed:**
-- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation, availability-only mode, export (markdown/HTML/PDF), [RATE CARD REQUIRED] placeholders
-- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup, live OTA integrations, CRM note attachment)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — quotes are DRAFT ONLY with local-only export
-- Never invents amounts (uses embedded JSON amounts or rate card only)
-- Missing amounts → availability-only confirmation with `[RATE CARD REQUIRED]` placeholders
-- Quotes require H7 approval gate before sending to guest
-- All data persists to local SQLite only (no live NB API or WhatsApp sends)
-- Fixtures and DEMO data only—no production rate publishing
->>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
+- Demo environment only — OTA worksheet is DRAFT ONLY with local-only export for leave-behind
+- Never invents rates (blank rates clearly flagged with [RATE BLANK] placeholder)
+- Never auto-applies to Nightsbridge or OTA APIs (manual entry only)
+- APPROVAL REMINDER: Grant/tenant approval required before any live OTA changes
+- All data from local SQLite only with fixture fallback for blank rate demonstration
 
 ---
 
@@ -201,60 +117,6 @@
 - Never invents ETAs (uses `[ETA UNKNOWN]` placeholder when check-in time not specified)
 - All data persists to local SQLite only with no external sends
 - Fixtures only — no live NB API or OTA integrations
-
----
-
-## What Works (Phase 21)
-
-### ✅ Phase 21 Additions (Booking Change Check for Last-Minute Verification)
-
-1. **Booking Change Check Page** (`/demo/booking-change-check`)
-   - Compare two booking snapshots (before vs after) to detect changes
-   - Uses active demo tenant from tenant context
-   - Two input modes: (a) demo fixtures with pre-populated changes, or (b) paste/upload JSON snapshots
-   - Reports additions (new bookings), removals (cancellations), and field-level updates
-   - Never invents missing fields - shows [EMPTY] or [NOT ASSIGNED] for missing data
-   - Markdown export for leave-behind/verification documentation
-
-2. **Smart Change Detection**
-   - Detects new bookings added to the after snapshot
-   - Identifies removed/cancelled bookings (present in before, absent in after)
-   - Tracks field-level updates: guest name, suite, dates, notes, late check-in flag, etc.
-   - Groups updates by booking for clear reporting
-   - Visual color-coding: green for additions, red for removals, amber for modifications
-
-3. **Demo Fixtures Included**
-   - Pre-populated before/after snapshots with representative changes
-   - Examples: suite reassignment, checkout date extension, booking cancellation, new booking
-   - Mirrors real-world last-minute change scenarios (tools/browns-booking-change-check semantics)
-   - Safe to toggle between fixture mode and manual JSON input
-
-4. **Export Options**
-   - Download change report as Markdown (.md) file
-   - Structured format with summary stats + detailed change breakdown
-   - Suitable for leave-behind documentation or verification before CT-pack communications
-   - Local-only operations with no external storage
-
-5. **Demo Hub Integration**
-   - Prominent Phase 21 amber card at top of demo hub linking to booking change check
-   - Positioned above Phase 20 CT-pack for visibility
-   - Integration with tenant switcher for multi-tenant demo
-
-6. **Mirrors tools/browns-booking-change-check Semantics**
-   - Same comparison logic: diff two snapshots by booking ID
-   - Same placeholder rules: never invents missing fields
-   - Same reporting structure: additions, removals, field updates
-   - Suitable for last-minute verification before sending guest communications
-
-**What Works vs. Stubbed:**
-- ✅ Works: Snapshot comparison, change detection, markdown export, fixture mode, manual JSON input
-- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, public signup)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — change check is DRAFT ONLY with local-only export
-- Never invents guest names, suites, dates, or other fields
-- All data comparisons are local-only (no external API calls or storage)
 
 ---
 
@@ -1313,6 +1175,7 @@ Verify tables:
 - NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
 - Demo environment only — onboarding wizard is DEMO labeled, NOT production signup flow
 - All data persists to local SQLite only
+>>>>>>> origin/main
 
 ---
 
@@ -1386,66 +1249,7 @@ Verify tables:
 
 ---
 
-<<<<<<< HEAD
-## Phase 21 Summary
-
-**What Changed:**
-- Booking change check page at `/demo/booking-change-check` with before/after snapshot comparison
-- Two input modes: (a) demo fixtures with pre-populated realistic changes, (b) manual JSON paste/upload
-- Smart change detection: additions (new bookings), removals (cancellations), field-level updates
-- Change report with visual color-coding: green for additions, red for removals, amber for modifications
-- Markdown export for leave-behind/verification documentation (local-only operations)
-- Demo hub updated with prominent Phase 21 amber card linking booking change check
-- Extended smoke tests for Phase 21 route
-- README updated with Phase 21 section documenting change check features
-
-**What Works vs. Stubbed:**
-- ✅ Works: Snapshot comparison, change detection (additions/removals/updates), markdown export, fixture mode, manual JSON input
-- 🚧 Stubbed: Same as Phase 18 (production auth, live payments, email/WhatsApp auto-send, public signup)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — change check is DRAFT ONLY with local-only export
-- Never invents guest names, suites, dates, or other fields
-- Mirrors tools/browns-booking-change-check semantics for last-minute verification before CT-pack communications
-- All data comparisons are local-only (no external API calls or storage)
-
----
-
 ## Phase 3 Summary
-=======
-## Phase 23 Summary
-
-**What Changed:**
-- Quote draft page now accepts inquiry/quote JSON from Phase 22 output, paste, or fixtures
-- Three input modes: Sample Data (existing), Paste JSON (new), Load Fixtures (new)
-- Created fixtures directory with inquiry-with-amounts.json and inquiry-without-amounts.json
-- Smart rate handling: checks for embedded amounts in inquiry JSON first, falls back to rate card
-- If amounts present in JSON → generates DRAFT quote/proforma with those amounts only
-- If amounts missing → generates availability-only draft with `[RATE CARD REQUIRED]` placeholders
-- JSON input parsing with validation and clear error messages
-- Rate source clearly labeled: "quoted amount from inquiry" vs "from rate card"
-- Link from inquiry-intake page to quote-draft with Phase 22→23 instructions
-- Demo hub updated with prominent Phase 23 card (teal)
-- README updated with Phase 23 section and hard gates reminder
-- Mirrors tools/browns-quote-invoice-draft semantics (never invents rates)
-
-**What Works vs. Stubbed:**
-- ✅ Works: JSON input (paste/fixtures), embedded amounts detection, quote generation with/without amounts, validation, export (markdown/HTML/PDF)
-- 🚧 Stubbed: Same as Phase 19 (production auth, live payments, email/WhatsApp auto-send, CRM note attachment)
-
-**Hard Gates (UNCHANGED):**
-- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
-- Demo environment only — quotes are DRAFT ONLY requiring H7 approval before send
-- Never invents amounts—uses embedded JSON amounts or rate card only, never fabricates
-- Missing amounts → availability-only confirmation with clear `[RATE CARD REQUIRED]` placeholders
-- All export operations remain local-only (no external sends or storage)
-- Fixtures and DEMO data only—no production rate publishing
-
----
-
-## Phase 19 Summary
->>>>>>> de6ed99 (feat(guestflow): add Phase 23 quote draft from inquiry JSON)
 
 **What Changed:**
 - CRM now exports leads as CSV (tenant-scoped)

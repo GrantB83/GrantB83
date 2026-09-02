@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 24: OTA Rate Worksheet */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/ota-rate-worksheet"
+          className="block bg-gradient-to-r from-fuchsia-600 to-fuchsia-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">OTA Rate Worksheet</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 24</span>
+          </div>
+          <p className="text-fuchsia-100">
+            Generate OTA promotional rate worksheet from tenant rate cards—mirrors tools/browns-ota-rate-worksheet, never invents rates, DRAFT/fixtures only for manual entry
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 23: Quote/Invoice Draft from Inquiry JSON */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
