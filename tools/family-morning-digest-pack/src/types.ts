@@ -14,6 +14,9 @@ export interface CliOptions {
   ics?: string;
   timezone?: string;
   runIcsDigest?: boolean;
+  schoolDueSubjects?: string;
+  schoolDueFiles?: string;
+  runSchoolDue?: boolean;
   help?: boolean;
 }
 
@@ -51,6 +54,7 @@ export interface PackManifest {
   familyItemCount: number;
   totalItemCount: number;
   calendarEventCount?: number;
+  schoolDueItemCount?: number;
   files: string[];
 }
 

@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CliOptions, DigestItem, PackManifest } from './types.js';
-import { runSubjectDigest, runIcsDigest, loadDigestItems } from './digest-runner.js';
+import { runSubjectDigest, runIcsDigest, runSchoolDue, loadDigestItems } from './digest-runner.js';
 import {
   splitSections,
   generateSchoolMarkdown,
@@ -35,6 +35,9 @@ OPTIONS:
   --ics                 Path to .ics calendar file (for ICS digest)
   --timezone            Timezone for calendar digest [default: America/Chicago]
   --run-ics-digest      Shell out to ../family-calendar-ics-digest
+  --school-due-subjects Path to school subjects file (for school due queue)
+  --school-due-files    Path to school filenames file (for school due queue)
+  --run-school-due      Shell out to ../family-school-due-queue
   --help, -h            Show this help message
 
 WORKFLOW:
@@ -49,6 +52,9 @@ WORKFLOW:
 
   Option 4: Add calendar events from ICS file
     npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --ics calendar.ics --run-ics-digest
+  
+  Option 5: Add school due queue from subjects/filenames
+    npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --school-due-subjects school-subjects.txt --run-school-due
 
 OUTPUT:
   Creates pack folder: <outdir>/pack-YYYY-MM-DD/
@@ -57,6 +63,7 @@ OUTPUT:
     - family.md         (Family Admin items, no school repeats)
     - calendar.md       (Calendar events, if --run-ics-digest provided)
     - calendar-events.json  (Calendar event data, if --run-ics-digest provided)
+    - school-due-queue.md   (School due queue excerpt, if --run-school-due provided)
     - APPROVAL.md       (review document)
     - manifest.json     (metadata)
 
@@ -76,6 +83,9 @@ EXAMPLES:
 
   # With calendar events
   npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --ics calendar.ics --run-ics-digest
+
+  # With school due queue
+  npm run pack -- --date 2026-09-02 --subjects subjects.txt --run-subject-digest --school-due-subjects school-subjects.txt --run-school-due
 
   # Test with fixtures
   npm run test:fixtures
@@ -109,6 +119,12 @@ function parseArgs(args: string[]): CliOptions {
       options.timezone = args[++i];
     } else if (arg === '--run-ics-digest') {
       options.runIcsDigest = true;
+    } else if (arg === '--school-due-subjects') {
+      options.schoolDueSubjects = args[++i];
+    } else if (arg === '--school-due-files') {
+      options.schoolDueFiles = args[++i];
+    } else if (arg === '--run-school-due') {
+      options.runSchoolDue = true;
     }
   }
   
@@ -137,7 +153,9 @@ function writePackOutputs(
   schoolItems: DigestItem[],
   familyItems: DigestItem[],
   calendarDigestMd?: string,
-  calendarEventsJson?: any[]
+  calendarEventsJson?: any[],
+  schoolDueQueueMd?: string,
+  schoolDueQueueJson?: any
 ): void {
   const timezone = 'America/Chicago';
   
@@ -160,9 +178,18 @@ function writePackOutputs(
     files.splice(3, 0, 'calendar.md', 'calendar-events.json');
   }
   
+  // school-due-queue.md (if provided)
+  let schoolDueItemCount: number | undefined;
+  if (schoolDueQueueMd && schoolDueQueueJson) {
+    fs.writeFileSync(path.join(packDir, 'school-due-queue.md'), schoolDueQueueMd);
+    const insertIndex = files.indexOf('APPROVAL.md');
+    files.splice(insertIndex, 0, 'school-due-queue.md');
+    schoolDueItemCount = schoolDueQueueJson.entries ? schoolDueQueueJson.entries.length : 0;
+  }
+  
   // PACK.md
   const calendarEventCount = calendarEventsJson ? calendarEventsJson.length : undefined;
-  const packMd = generatePackIndex(date, schoolItems.length, familyItems.length, calendarEventCount);
+  const packMd = generatePackIndex(date, schoolItems.length, familyItems.length, calendarEventCount, schoolDueItemCount);
   fs.writeFileSync(path.join(packDir, 'PACK.md'), packMd);
   
   // APPROVAL.md
@@ -184,6 +211,10 @@ function writePackOutputs(
   
   if (calendarEventCount !== undefined) {
     manifest.calendarEventCount = calendarEventCount;
+  }
+  
+  if (schoolDueItemCount !== undefined) {
+    manifest.schoolDueItemCount = schoolDueItemCount;
   }
   
   fs.writeFileSync(
@@ -304,6 +335,39 @@ async function main(): Promise<void> {
       }
     }
     
+    // Run school due queue if requested
+    let schoolDueQueueMd: string | undefined;
+    let schoolDueQueueJson: any | undefined;
+    
+    if (options.runSchoolDue && (options.schoolDueSubjects || options.schoolDueFiles)) {
+      console.log('Running family-school-due-queue...\n');
+      
+      const schoolDueTempDir = path.join(outdir, '.school-due-temp');
+      if (!fs.existsSync(schoolDueTempDir)) {
+        fs.mkdirSync(schoolDueTempDir, { recursive: true });
+      }
+      
+      const schoolDueOutputDir = await runSchoolDue(
+        options.schoolDueSubjects || options.subjects,
+        options.schoolDueFiles,
+        date,
+        schoolDueTempDir
+      );
+      
+      // Load queue.md and queue.json
+      const queueMdPath = path.join(schoolDueOutputDir, 'queue.md');
+      const queueJsonPath = path.join(schoolDueOutputDir, 'queue.json');
+      
+      if (fs.existsSync(queueMdPath) && fs.existsSync(queueJsonPath)) {
+        schoolDueQueueMd = fs.readFileSync(queueMdPath, 'utf-8');
+        schoolDueQueueJson = JSON.parse(fs.readFileSync(queueJsonPath, 'utf-8'));
+        const itemCount = schoolDueQueueJson.entries ? schoolDueQueueJson.entries.length : 0;
+        console.log(`  ✓ Loaded ${itemCount} school due items from queue\n`);
+      } else {
+        throw new Error('School due queue did not produce expected outputs (queue.md, queue.json)');
+      }
+    }
+    
     // Split into school and family sections
     console.log('Building pack sections...');
     const { school, family } = splitSections(items);
@@ -323,7 +387,7 @@ async function main(): Promise<void> {
     // Create pack directory and write outputs
     console.log('Writing pack outputs...');
     const packDir = createPackDirectory(outdir, date);
-    writePackOutputs(packDir, date, school, family, calendarDigestMd, calendarEventsJson);
+    writePackOutputs(packDir, date, school, family, calendarDigestMd, calendarEventsJson, schoolDueQueueMd, schoolDueQueueJson);
     console.log(`  ✓ Pack directory: ${packDir}\n`);
     
     // Print summary
@@ -336,6 +400,9 @@ async function main(): Promise<void> {
       console.log('  - calendar.md');
       console.log('  - calendar-events.json');
     }
+    if (schoolDueQueueMd && schoolDueQueueJson) {
+      console.log('  - school-due-queue.md');
+    }
     console.log('  - APPROVAL.md');
     console.log('  - manifest.json');
     console.log('');
@@ -345,12 +412,16 @@ async function main(): Promise<void> {
     console.log('  2. cat APPROVAL.md');
     console.log('  3. Review PACK.md checklist');
     console.log('  4. Verify school.md and family.md for accuracy');
+    let stepNum = 5;
     if (calendarDigestMd && calendarEventsJson) {
-      console.log('  5. Verify calendar.md for accuracy (no invented events)');
-      console.log('  6. Family / CoS owns WhatsApp send workflow\n');
-    } else {
-      console.log('  5. Family / CoS owns WhatsApp send workflow\n');
+      console.log(`  ${stepNum}. Verify calendar.md for accuracy (no invented events)`);
+      stepNum++;
     }
+    if (schoolDueQueueMd && schoolDueQueueJson) {
+      console.log(`  ${stepNum}. Verify school-due-queue.md for accuracy (no invented dues)`);
+      stepNum++;
+    }
+    console.log(`  ${stepNum}. Family / CoS owns WhatsApp send workflow\n`);
     
   } catch (error) {
     console.error(`\n❌ Error: ${error instanceof Error ? error.message : String(error)}\n`);

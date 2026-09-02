@@ -44,6 +44,9 @@ OPTIONS:
   --ics                 Path to .ics calendar file (for ICS digest)
   --timezone            Timezone for calendar digest [default: America/Chicago]
   --run-ics-digest      Shell out to ../family-calendar-ics-digest
+  --school-due-subjects Path to school subjects file (for school due queue)
+  --school-due-files    Path to school filenames file (for school due queue)
+  --run-school-due      Shell out to ../family-school-due-queue
   --help, -h            Show this help message
 ```
 
@@ -112,6 +115,29 @@ This will:
 4. Copy `digest.md` → `calendar.md` and `events.json` → `calendar-events.json` into pack
 5. Update PACK.md checklist and manifest with calendar event count
 
+### Option 5: Include school due queue
+
+Provide school subjects and/or filenames and use `--run-school-due` to call the sibling tool:
+
+```bash
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects subjects.txt \
+  --school-due-subjects school-subjects.txt \
+  --outdir out/ \
+  --run-subject-digest \
+  --run-school-due
+```
+
+This will:
+1. Process subjects into school and family items (as in Option 1)
+2. Shell out to `../family-school-due-queue`
+3. Extract due date signals from school subjects/filenames (as-of date derived from `--date`)
+4. Copy `queue.md` → `school-due-queue.md` into pack
+5. Update PACK.md checklist and manifest with school due item count
+
+**Note:** `--school-due-subjects` and `--school-due-files` are optional. If not provided, the tool will reuse `--subjects` for the school due queue (or `--files` if that was provided). You can also provide both `--school-due-subjects` and `--school-due-files` to process both subjects and filenames together.
+
 ## Output Files
 
 All outputs are written to: `<outdir>/pack-YYYY-MM-DD/`
@@ -149,6 +175,13 @@ Structured calendar event data (if `--run-ics-digest` was used):
 - Array of event objects with uid, summary, dtstart, dtend, location, description
 - Machine-readable format for downstream tools
 
+### school-due-queue.md
+School due queue excerpt from `family-school-due-queue` (if `--run-school-due` was used):
+- Numbered list of school items with due date signals
+- Extracted from email subjects and/or attachment filenames only
+- **Never opens email bodies or attachments**
+- Pass-through from family-school-due-queue tool
+
 ### APPROVAL.md
 Review document with:
 - Accuracy checklist
@@ -169,7 +202,8 @@ Machine-readable metadata:
   "familyItemCount": 5,
   "totalItemCount": 10,
   "calendarEventCount": 2,
-  "files": ["PACK.md", "school.md", "family.md", "calendar.md", "calendar-events.json", "APPROVAL.md", "manifest.json"]
+  "schoolDueItemCount": 5,
+  "files": ["PACK.md", "school.md", "family.md", "calendar.md", "calendar-events.json", "school-due-queue.md", "APPROVAL.md", "manifest.json"]
 }
 ```
 
@@ -221,9 +255,13 @@ Open items from household, medical, finance, and other family administration:
 4. Medical Appointment — Checkup on 9/18 (Due: 9/18)
 ```
 
-## Integration with family-school-subject-digest and family-calendar-ics-digest
+## Integration with Sibling Tools
 
-This tool preferably consumes outputs from `family-school-subject-digest` and optionally from `family-calendar-ics-digest`:
+This tool integrates with multiple sibling tools in the `tools/` directory:
+
+### family-school-subject-digest
+
+Consumes outputs from `family-school-subject-digest` for subject classification:
 
 ```bash
 # Step 1: Run subject digest
@@ -239,7 +277,9 @@ npm run pack -- \
 
 Or use `--run-subject-digest` to do both in one command.
 
-### Adding Calendar Events
+### family-calendar-ics-digest
+
+Optionally integrates calendar events from ICS files:
 
 ```bash
 # With calendar events from ICS file
@@ -256,6 +296,28 @@ This will:
 2. Extract calendar events for the specified date via `family-calendar-ics-digest`
 3. Copy `digest.md` → `calendar.md` and `events.json` → `calendar-events.json`
 4. Include calendar event count in PACK.md and manifest.json
+
+### family-school-due-queue
+
+Optionally integrates school due queue from email subjects/filenames:
+
+```bash
+# With school due queue from subjects
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects subjects.txt \
+  --school-due-subjects school-subjects.txt \
+  --run-subject-digest \
+  --run-school-due
+```
+
+This will:
+1. Process subjects via `family-school-subject-digest`
+2. Extract due date signals via `family-school-due-queue`
+3. Copy `queue.md` → `school-due-queue.md` into pack
+4. Include school due item count in PACK.md and manifest.json
+
+**For more details on family-school-due-queue, see:** `tools/family-school-due-queue/README.md`
 
 ## Tests
 
@@ -292,6 +354,7 @@ Fixture tests generate complete pack outputs from:
 - ✅ **Full sentences** - Per Family skill tone
 - ✅ **No invented data** - Never fabricates school facts or due dates
 - ✅ **Calendar pass-through only** - ICS events copied verbatim, never invented
+- ✅ **School due queue pass-through** - Extracts due dates from subjects/filenames only (never opens email bodies)
 - ⚠️ **Family / CoS owns send** - WhatsApp Admin posting via Family bot or CoS workflow
 - ⚠️ **Manual review required** - Review APPROVAL.md before every post
 

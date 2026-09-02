@@ -90,7 +90,7 @@ export function generateFamilyMarkdown(items: DigestItem[], date: string): strin
 /**
  * Generate PACK.md index with checklist
  */
-export function generatePackIndex(date: string, schoolCount: number, familyCount: number, calendarEventCount?: number): string {
+export function generatePackIndex(date: string, schoolCount: number, familyCount: number, calendarEventCount?: number, schoolDueItemCount?: number): string {
   const lines: string[] = [];
   
   lines.push(`# Family Morning Digest Pack — ${date}`);
@@ -105,6 +105,10 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
   if (calendarEventCount !== undefined) {
     lines.push(`- **calendar.md** — Calendar events from ICS digest (${calendarEventCount} events)`);
     lines.push('- **calendar-events.json** — Structured calendar event data');
+  }
+  
+  if (schoolDueItemCount !== undefined) {
+    lines.push(`- **school-due-queue.md** — School due queue from family-school-due-queue (${schoolDueItemCount} items)`);
   }
   
   lines.push('- **APPROVAL.md** — Review document with safety gates');
@@ -122,6 +126,11 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
     lines.push('- [ ] No invented events or times in calendar digest');
   }
   
+  if (schoolDueItemCount !== undefined) {
+    lines.push('- [ ] Review school-due-queue.md for accuracy');
+    lines.push('- [ ] No invented due dates in school due queue');
+  }
+  
   lines.push('- [ ] Read APPROVAL.md before posting');
   lines.push('- [ ] Family / CoS owns WhatsApp send');
   lines.push('');
@@ -135,6 +144,10 @@ export function generatePackIndex(date: string, schoolCount: number, familyCount
   
   if (calendarEventCount !== undefined) {
     lines.push('- Calendar events are pass-through from ICS file only.');
+  }
+  
+  if (schoolDueItemCount !== undefined) {
+    lines.push('- School due queue extracted from subjects/filenames only (never opens email bodies).');
   }
   
   lines.push('');
@@ -159,6 +172,7 @@ export function generateApproval(date: string): string {
   lines.push('3. **No invented data** — Due dates and amounts only extracted if explicitly present');
   lines.push('4. **No school facts** — No teacher names, policies, or deadlines were fabricated');
   lines.push('5. **Full sentences** — Items are written in complete, readable sentences');
+  lines.push('6. **School due queue** — If included, verify due dates are from subjects/filenames only (never opens email bodies)');
   lines.push('');
   lines.push('## Safety Gates');
   lines.push('');

@@ -371,7 +371,11 @@ tools/family-school-due-queue/
 
 ## Integration with family-morning-digest-pack
 
-This tool is designed to feed into `family-morning-digest-pack` for automated morning digest assembly:
+This tool is designed to feed into `family-morning-digest-pack` for automated morning digest assembly.
+
+### Standalone Usage
+
+Run this tool first, then manually feed outputs to the morning digest pack:
 
 ```bash
 # Step 1: Extract due queue from subjects/filenames
@@ -380,12 +384,36 @@ npm run queue -- --subjects subjects.txt --outdir due-queue/
 
 # Step 2: Assemble morning digest pack
 cd ../family-morning-digest-pack
-npm run pack -- --date 2026-09-02 --subjects ../family-school-due-queue/due-queue/queue.json
+npm run pack -- --date 2026-09-02 --subjects subjects.txt
 
 # Step 3: Review and post to WhatsApp Admin
 ```
 
-**Note:** The wire into `family-morning-digest-pack` is optional. This tool can be used standalone for due date extraction without full digest assembly.
+### Integrated Usage (Recommended)
+
+Use the `--run-school-due` flag in `family-morning-digest-pack` to automatically invoke this tool:
+
+```bash
+cd tools/family-morning-digest-pack
+
+# With school due queue from subjects
+npm run pack -- \
+  --date 2026-09-02 \
+  --subjects subjects.txt \
+  --school-due-subjects school-subjects.txt \
+  --run-subject-digest \
+  --run-school-due
+```
+
+This will:
+1. Shell out to `../family-school-due-queue`
+2. Extract due date signals from school subjects/filenames
+3. Copy `queue.md` → `school-due-queue.md` into the pack
+4. Include school due item count in PACK.md and manifest.json
+
+**For more details on family-morning-digest-pack, see:** `tools/family-morning-digest-pack/README.md`
+
+**Note:** This tool can also be used standalone for due date extraction without full digest assembly.
 
 ## Use Cases
 
