@@ -1,0 +1,33 @@
+{
+  "name": "career-weekday-improve-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI to orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "weekday-pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "echo 'Run npm run test:fixtures for integration tests'",
+    "pack": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --digest-outdir fixtures/digest-out --outdir test-out/pack-20260902 && echo 'Fixture test completed successfully'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "career",
+    "hunt",
+    "learning",
+    "weekday",
+    "offline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

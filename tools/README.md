@@ -55,6 +55,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
 | [career-hunt-run-log](#career-hunt-run-log) | Append career hunt runs into durable offline log for live-improve tracking | Career / CoS | **Offline only**. Append-only (never rewrites prior lines). Never invents scores or employers. Career bot owns apply. |
 | [career-live-improve-digest](#career-live-improve-digest) | Generate live-improve digest from career-hunt-run-log output for Career learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
+| [career-weekday-improve-pack](#career-weekday-improve-pack) | Orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -3105,6 +3106,56 @@ cat digest/LEARNING-DRAFT.md
 - **Source optimization** - Track which sources yield best roles
 
 [→ Full README](./career-live-improve-digest/README.md)
+
+---
+
+## career-weekday-improve-pack
+
+**One-line:** Orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-weekday-improve-pack/`
+
+### Install and Run
+
+```bash
+cd tools/career-weekday-improve-pack
+npm install
+npm run build
+
+# Use prebuilt digest
+npm run pack -- --outdir pack-out/ --digest-outdir ../career-live-improve-digest/out/
+
+# Run digest tool during pack
+npm run pack -- --outdir pack-out/ --run-digest --log runs.jsonl
+
+# With time filter
+npm run pack -- --outdir pack-out/ --run-digest --log runs.jsonl --since 2026-08-01
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No job board APIs
+- ✅ **Never invents scores or employers** - Only packages existing digest outputs
+- ✅ **Career owns apply** - This tool does not apply to jobs
+- ✅ **Never auto-updates learning.md** - Manual fold-in required
+- ✅ **Exit 1 on missing inputs** - Validation failures are fatal
+- ⚠️ **Orchestrator** - Can run career-live-improve-digest via --run-digest
+
+### Pack Contents
+
+- `PACK.md` - Index with counts and summary (no invented employers)
+- `LEARNING-DRAFT.md` - Copy from digest (numbered patterns)
+- `stats.json` - Copy from digest (machine-readable)
+- `runs.md` - Hunt runs summary (if available)
+- `APPROVAL.md` - Safety gates and Career ownership
+- `manifest.json` - Tool metadata
+
+[→ Full README](./career-weekday-improve-pack/README.md)
 
 ---
 
