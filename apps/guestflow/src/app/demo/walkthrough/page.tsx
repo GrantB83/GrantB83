@@ -6,14 +6,17 @@ export default function WalkthroughPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
-          🎯 PHASE 5 · Sales Demo Script
+          🎯 PHASE 14 · Sales Funnel Demo Script
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          GuestFlow Demo Walkthrough
+          GuestFlow Sales Demo Walkthrough
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-4">
           Complete sales presentation script for Grant/CoS demos. 
-          Follow this sequence to showcase the full platform value.
+          Follow this sequence to showcase the full platform value and sales funnel.
+        </p>
+        <p className="text-base text-primary-600 font-semibold">
+          Inquiry → Quote → Welcome → Operations (Complete Guest Journey)
         </p>
       </div>
 
@@ -31,13 +34,14 @@ export default function WalkthroughPage() {
             "Multi-property guesthouse operations platform",
             "Built by actual guesthouse owners (The Browns portfolio)",
             "Demo/Waitlist stage — no live payments or auto-send",
+            "Complete guest journey: Inquiry → Quote → Welcome → Operations",
             "Proven workflows from real Dullstroom & portfolio operations"
           ]}
           demo_actions={[
             "Show hero with 'Multi-Property Guest Operations, Automated' headline",
-            "Scroll through features grid (intake, quotes, daily brief)",
-            "Point out 'Built from Real Multi-Property Operations' section",
-            "Emphasize multi-tenant ready architecture"
+            "Scroll through features grid (intake, quotes, welcome pack, daily brief)",
+            "Point out explicit 'Inquiry → Quote → Welcome → Operations' flow in How It Works section",
+            "Emphasize multi-tenant ready architecture for property portfolios"
           ]}
         />
 
@@ -52,12 +56,15 @@ export default function WalkthroughPage() {
             "Transparent three-tier structure planned",
             "Beta pricing will reward early adopters",
             "Current focus: building with real operator feedback",
+            "CLEARLY LABELED as demo placeholder pricing—not live offers",
             "Waitlist gives priority access to launch pricing"
           ]}
           demo_actions={[
-            "Show COMING SOON badges on all tiers",
+            "Point out amber 'DEMO PLACEHOLDER PRICING' banner at top",
+            "Show 'EXAMPLE' labels on all pricing tiers with disclaimer notes",
             "Scroll to FAQ section (addresses common objections)",
             "Highlight Beta Access Program callout",
+            "Explain: 'Final pricing announced at launch—these are structure examples only'",
             "Click 'Join Waitlist' CTA"
           ]}
         />

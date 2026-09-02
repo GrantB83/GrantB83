@@ -93,32 +93,40 @@ export default function HomePage() {
       <section className="bg-gray-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Built from Real Multi-Property Operations
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Built from Real Multi-Property Operations
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
               Proven workflows from The Browns portfolio: multiple properties, one streamlined system. 
               Tenant-scoped data keeps each property's operations separate and secure.
-            </p>
-          </div>
+          </p>
+          <p className="text-lg font-semibold text-primary-600 mb-6">
+            The Complete Guest Journey: Inquiry → Quote → Welcome → Operations
+          </p>
+        </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <StepCard
-              number="1"
-              title="Connect Your Email"
-              description="Forward inquiries or integrate your booking inbox"
-            />
-            <StepCard
-              number="2"
-              title="Set Your Rules"
-              description="Upload rate cards, property details, and operational preferences"
-            />
-            <StepCard
-              number="3"
-              title="Review & Approve"
-              description="All drafts require human approval—no auto-sends, ever"
-            />
-          </div>
+        <div className="grid md:grid-cols-4 gap-6">
+          <StepCard
+            number="1"
+            title="Inquiry Intake"
+            description="Extract guest details and dates from emails into structured data automatically"
+          />
+          <StepCard
+            number="2"
+            title="Quote & Invoice"
+            description="Generate professional quotes with your rate cards—never invent pricing"
+          />
+          <StepCard
+            number="3"
+            title="Welcome Pack"
+            description="Send personalized pre-arrival messages with property details and check-in info"
+          />
+          <StepCard
+            number="4"
+            title="Daily Operations"
+            description="Morning briefs with arrivals, departures, housekeeping, and coordination"
+          />
+        </div>
         </div>
       </section>
 
