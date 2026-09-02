@@ -25,7 +25,6 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
-<<<<<<< HEAD
       {/* Phase 22: Demo Inquiry Intake (mirrors tools/browns-inquiry-intake) */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -41,7 +40,10 @@ export default function DemoPage() {
           </div>
           <p className="text-purple-100">
             Paste inquiry (email/WhatsApp-ish text) and get structured booking/quote fields for active demo tenant — mirrors tools/browns-inquiry-intake heuristics. Never invents rates; missing amounts → availability-only. (DRAFT/fixtures only)
-=======
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 21: Booking Change Check */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link
@@ -57,7 +59,6 @@ export default function DemoPage() {
           </div>
           <p className="text-amber-100">
             Diff two booking snapshots (before vs after) to catch last-minute changes before CT-pack communications—mirrors tools/browns-booking-change-check (DRAFT/fixtures only)
->>>>>>> origin/main
           </p>
         </Link>
       </div>
