@@ -1,0 +1,7 @@
+suiteOrUnit,seasonOrLabel,currency,nightlyRate,minStay,occupancy,notes
+Luxury Suite 1,Summer Peak,ZAR,3200.00,2 nights,2 adults,Pool view with mountain backdrop
+Luxury Suite 1,Winter Off-Peak,ZAR,,1 night,2 adults,MISSING RATE - needs pricing
+Garden Suite,Summer Peak,ZAR,2800.00,2 nights,2 adults,Private garden access
+Garden Suite,Winter Off-Peak,ZAR,,1 night,2 adults,MISSING RATE - needs pricing
+Family Suite,Summer Peak,ZAR,4500.00,3 nights,4 adults,Two bedrooms plus lounge
+Family Suite,Winter Off-Peak,ZAR,3500.00,2 nights,4 adults,Ideal for families
