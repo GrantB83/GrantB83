@@ -122,3 +122,55 @@ export async function runIcsDigest(
     throw new Error(`Failed to run family-calendar-ics-digest: ${error}`);
   }
 }
+
+/**
+ * Run family-school-due-queue and return output directory
+ */
+export async function runSchoolDue(
+  subjectsPath: string | undefined,
+  filesPath: string | undefined,
+  date: string,
+  tempDir: string
+): Promise<string> {
+  const queueToolDir = path.resolve(process.cwd(), '..', 'family-school-due-queue');
+  
+  // Convert paths to absolute
+  const absoluteSubjectsPath = subjectsPath ? path.resolve(subjectsPath) : undefined;
+  const absoluteFilesPath = filesPath ? path.resolve(filesPath) : undefined;
+  const absoluteTempDir = path.resolve(tempDir);
+  
+  console.log(`  Running family-school-due-queue...`);
+  console.log(`    Tool directory: ${queueToolDir}`);
+  
+  // Ensure queue tool is built
+  if (!fs.existsSync(path.join(queueToolDir, 'dist', 'index.js'))) {
+    console.log(`    Building family-school-due-queue...`);
+    try {
+      await execAsync('npm run build', { cwd: queueToolDir });
+      console.log(`    ✓ Built family-school-due-queue`);
+    } catch (error) {
+      throw new Error(`Failed to build family-school-due-queue: ${error}`);
+    }
+  }
+  
+  // Build command with optional subjects and files
+  let cmdArgs = `npm run queue --`;
+  if (absoluteSubjectsPath) {
+    cmdArgs += ` --subjects "${absoluteSubjectsPath}"`;
+  }
+  if (absoluteFilesPath) {
+    cmdArgs += ` --files "${absoluteFilesPath}"`;
+  }
+  cmdArgs += ` --as-of "${date}" --outdir "${absoluteTempDir}"`;
+  
+  try {
+    const { stdout, stderr } = await execAsync(cmdArgs, { cwd: queueToolDir });
+    
+    // Output goes directly to the temp dir (no subdirectory like digest tools)
+    console.log(`    ✓ Completed: ${absoluteTempDir}`);
+    
+    return absoluteTempDir;
+  } catch (error) {
+    throw new Error(`Failed to run family-school-due-queue: ${error}`);
+  }
+}

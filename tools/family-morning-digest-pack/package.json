@@ -11,7 +11,7 @@
     "build": "tsc",
     "test": "npm run build && node --test dist/pack-builder.test.js",
     "pack": "node dist/index.js",
-    "test:fixtures": "npm run build && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --outdir test-out-basic --run-subject-digest && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --ics fixtures/sample-calendar.ics --outdir test-out-with-calendar --run-subject-digest --run-ics-digest && echo 'All fixture tests completed successfully'",
+    "test:fixtures": "npm run build && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --outdir test-out-basic --run-subject-digest && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --ics fixtures/sample-calendar.ics --outdir test-out-with-calendar --run-subject-digest --run-ics-digest && npm run pack -- --date 2026-09-02 --subjects fixtures/subjects-sample.txt --school-due-subjects fixtures/school-due-subjects-sample.txt --outdir test-out-with-school-due --run-subject-digest --run-school-due && echo 'All fixture tests completed successfully'",
     "clean": "rm -rf dist test-out* out*"
   },
   "keywords": ["family", "school", "digest", "morning-pack"],

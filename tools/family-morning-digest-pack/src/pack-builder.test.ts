@@ -130,3 +130,23 @@ test('generatePackIndex excludes calendar when calendarEventCount not provided',
   assert.ok(!packMd.includes('calendar-events.json'));
   assert.ok(!packMd.includes('Review calendar.md'));
 });
+
+test('generatePackIndex includes school due queue when schoolDueItemCount provided', () => {
+  const packMd = generatePackIndex('2026-09-02', 2, 3, undefined, 5);
+  
+  assert.ok(packMd.includes('# Family Morning Digest Pack — 2026-09-02'));
+  assert.ok(packMd.includes('School due queue from family-school-due-queue (5 items)'));
+  assert.ok(packMd.includes('school-due-queue.md'));
+  assert.ok(packMd.includes('Review school-due-queue.md for accuracy'));
+  assert.ok(packMd.includes('No invented due dates in school due queue'));
+  assert.ok(packMd.includes('School due queue extracted from subjects/filenames only (never opens email bodies)'));
+});
+
+test('generatePackIndex includes both calendar and school due queue', () => {
+  const packMd = generatePackIndex('2026-09-02', 2, 3, 4, 5);
+  
+  assert.ok(packMd.includes('Calendar events from ICS digest (4 events)'));
+  assert.ok(packMd.includes('School due queue from family-school-due-queue (5 items)'));
+  assert.ok(packMd.includes('Review calendar.md for accuracy'));
+  assert.ok(packMd.includes('Review school-due-queue.md for accuracy'));
+});
