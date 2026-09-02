@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MessageSquare, FileText, Calendar, Mail } from 'lucide-react'
+import { MessageSquare, FileText, Calendar, Mail, Building2, Upload } from 'lucide-react'
 
 export default function DemoPage() {
   return (
@@ -45,6 +45,20 @@ export default function DemoPage() {
           title="Daily Operations Brief"
           description="View a sample morning brief with arrivals, departures, and tasks"
           status="Interactive"
+        />
+        <DemoCard
+          href="/demo/nightsbridge-import"
+          icon={<Upload className="w-8 h-8 text-primary-600" />}
+          title="NightsBridge CSV Import"
+          description="Upload CSV to parse bookings and detect availability gaps"
+          status="Phase 2"
+        />
+        <DemoCard
+          href="/demo/tenant"
+          icon={<Building2 className="w-8 h-8 text-primary-600" />}
+          title="Tenant Switcher"
+          description="Switch between demo tenants (local development only)"
+          status="Phase 2"
         />
       </div>
 

@@ -25,8 +25,17 @@ export function getDb(): Database.Database {
 
 function initializeDb(database: Database.Database) {
   database.exec(`
+    CREATE TABLE IF NOT EXISTS tenants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      location TEXT,
+      timezone TEXT DEFAULT 'Africa/Johannesburg',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS waitlist (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id INTEGER,
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       property_name TEXT NOT NULL,
@@ -34,19 +43,23 @@ function initializeDb(database: Database.Database) {
       current_system TEXT,
       phone TEXT,
       notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tenant_id) REFERENCES tenants(id)
     );
 
     CREATE TABLE IF NOT EXISTS properties (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       location TEXT,
       room_count INTEGER NOT NULL DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tenant_id) REFERENCES tenants(id)
     );
 
     CREATE TABLE IF NOT EXISTS inquiries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id INTEGER NOT NULL,
       property_id INTEGER,
       guest_name TEXT NOT NULL,
       guest_email TEXT,
@@ -60,11 +73,13 @@ function initializeDb(database: Database.Database) {
       raw_inquiry TEXT,
       confidence REAL DEFAULT 1.0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tenant_id) REFERENCES tenants(id),
       FOREIGN KEY (property_id) REFERENCES properties(id)
     );
 
     CREATE TABLE IF NOT EXISTS bookings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id INTEGER NOT NULL,
       inquiry_id INTEGER,
       property_id INTEGER,
       guest_name TEXT NOT NULL,
@@ -73,17 +88,34 @@ function initializeDb(database: Database.Database) {
       room_number TEXT,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tenant_id) REFERENCES tenants(id),
       FOREIGN KEY (inquiry_id) REFERENCES inquiries(id),
       FOREIGN KEY (property_id) REFERENCES properties(id)
     );
   `)
   
+  const tenantCount = database.prepare('SELECT COUNT(*) as count FROM tenants').get() as { count: number }
+  
+  if (tenantCount.count === 0) {
+    const insertTenant = database.prepare('INSERT INTO tenants (name, location, timezone) VALUES (?, ?, ?)')
+    insertTenant.run('The Browns Luxury Guest Suites (Dullstroom)', 'Dullstroom, Mpumalanga, South Africa', 'Africa/Johannesburg')
+  }
+
+  const demoTenant = database.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
+  const demoTenantId = demoTenant?.id || 1
+  
   const propertyCount = database.prepare('SELECT COUNT(*) as count FROM properties').get() as { count: number }
   
   if (propertyCount.count === 0) {
-    const insert = database.prepare('INSERT INTO properties (name, location, room_count) VALUES (?, ?, ?)')
-    insert.run('Riverside Lodge', 'Dullstroom, SA', 5)
-    insert.run('Mountain View Suites', 'Clarens, SA', 3)
-    insert.run('Coastal Retreat', 'Hermanus, SA', 4)
+    const insert = database.prepare('INSERT INTO properties (tenant_id, name, location, room_count) VALUES (?, ?, ?, ?)')
+    insert.run(demoTenantId, 'Riverside Lodge', 'Dullstroom, SA', 5)
+    insert.run(demoTenantId, 'Mountain View Suites', 'Clarens, SA', 3)
+    insert.run(demoTenantId, 'Coastal Retreat', 'Hermanus, SA', 4)
   }
+}
+
+export function getDefaultTenantId(): number {
+  const db = getDb()
+  const tenant = db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
+  return tenant?.id || 1
 }
