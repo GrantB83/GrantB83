@@ -26,6 +26,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
+| [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS coordination | SA Ops / CoS | **DRAFT ONLY**. Never invents times/phones. Offline only. Manual CoS WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
@@ -977,6 +978,78 @@ npm run brief -- \
 - ⚠️ **CoS only for WhatsApp** - Team sends must use Coexistence of Service
 
 [→ Full README](./browns-daily-ops-brief/README.md)
+
+---
+
+## browns-late-checkin-queue
+
+**One-line:** Generate late/after-hours check-in queue for CoS 09:00 CT after-hours coordination pack.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-late-checkin-queue/`
+
+### Install and Run
+
+```bash
+cd tools/browns-late-checkin-queue
+npm install
+npm run build
+
+# Basic usage
+npm run queue -- --bookings bookings.json --day 2026-09-20
+
+# With custom after-hours threshold
+npm run queue -- --bookings bookings.json --day 2026-09-20 --after-hour 17
+
+# With custom output directory
+npm run queue -- --bookings bookings.json --day 2026-09-20 --outdir reports/
+```
+
+### Critical Safety Note
+
+- ✅ **DRAFT ONLY** - Never sends WhatsApp messages automatically
+- ✅ **Offline only** - No WhatsApp API or NightsBridge integration
+- ✅ **Never invents times** - Missing ETA stays missing and flagged
+- ✅ **Never invents phones** - Missing phone stays missing
+- ✅ **No rates or amounts** - Not in scope
+- ✅ **Time-based filtering** - Flags check-ins at/after threshold (default 15:00 SAST)
+- ✅ **Keyword detection** - Identifies late/after-hours/ETA keywords in notes
+- ⚠️ **Manual send required** - Copy/paste to CoS WhatsApp after approval
+- ⚠️ **CoS only for WhatsApp** - Sends must use Coexistence of Service
+
+### Queue Inclusion Rules
+
+A booking is included if **arriving on target day** AND meets **any** of:
+
+1. Check-in time at/after threshold (default 15:00)
+2. Notes contain late/after-hours/ETA keywords
+3. Missing check-in time (→ `unknown-time.md`)
+
+### Output Files
+
+- `queue.json` - Structured queue data with guest details
+- `queue.md` - Human-readable numbered list for CoS pack
+- `unknown-time.md` - Bookings without check-in times needing ETA confirmation
+- `missing-fields.md` - Data quality report
+- `APPROVAL.md` - Review checklist and approval workflow
+- `manifest.json` - Run metadata
+
+### Integration with browns-ct-pack-assemble
+
+This tool is called by `browns-ct-pack-assemble` for the 09:00 CT after-hours check-in coordination pack:
+
+```bash
+# Standalone usage
+cd tools/browns-late-checkin-queue
+npm run queue -- --bookings bookings.json --day 2026-09-20
+
+# Or via browns-ct-pack-assemble
+cd tools/browns-ct-pack-assemble
+npm run assemble -- --day 2026-09-20 --bookings bookings.json --run-late-checkin
+```
+
+[→ Full README](./browns-late-checkin-queue/README.md)
 
 ---
 
