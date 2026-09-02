@@ -259,8 +259,8 @@ async function runTests() {
   await testRoute('/demo/sales-handoff', 'Post-demo sales handoff page (Phase 32)', { checkContent: 'Post-Demo Sales Handoff Pack' });
   await testRoute('/demo/sales-handoff', 'Sales handoff - customizable fields', { checkContent: 'Customize Handoff Pack' });
   await testRoute('/demo/sales-handoff', 'Sales handoff - DEMO ACCESS ONLY banner', { checkContent: 'DEMO ACCESS ONLY' });
-  await testRoute('/demo/sales-handoff', 'Sales handoff - next steps section', { checkContent: 'Your Next Steps' });
-  await testRoute('/demo/sales-handoff', 'Sales handoff - hard gates reminder', { checkContent: 'Hard Gates' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - export buttons', { checkContent: 'Download Markdown' });
+  await testRoute('/demo/sales-handoff', 'Sales handoff - quick reference', { checkContent: 'Quick Reference' });
   
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
