@@ -1,8 +1,56 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 13 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 14 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 13 — Printable leave-behind export (markdown/HTML download + print-to-PDF)
+**Current Phase:** Phase 14 — Sales funnel polish for demo walkthrough (inquiry→quote→welcome→ops)
+
+---
+
+## What Works (Phase 14)
+
+### ✅ Phase 14 Additions (Sales Funnel Polish for Demo Walkthrough)
+
+1. **Enhanced Landing Page** (`/`)
+   - Explicit "Inquiry → Quote → Welcome → Operations" messaging in How It Works section
+   - Four-step guest journey visualization (Inquiry Intake → Quote & Invoice → Welcome Pack → Daily Operations)
+   - Clear multi-property operations pitch throughout
+   - Complete sales funnel entry point for demos
+
+2. **Polished Pricing Page** (`/pricing`)
+   - Prominent amber warning banner: "⚠️ DEMO PLACEHOLDER PRICING - NOT LIVE OFFERS"
+   - Each pricing tier labeled "EXAMPLE" with disclaimer: "(Demo placeholder - not a live offer)"
+   - Additional disclaimer: "The pricing tiers below are example structures only. Final pricing will be announced at launch."
+   - Clear distinction between demo and real pricing for sales demos
+
+3. **Verified Waitlist Integration**
+   - Waitlist form properly stores leads in tenant-scoped SQLite database
+   - Integration with CRM confirmed via Phase 11 convert functionality
+   - Lead capture includes property name, room count, current system, and operational notes
+   - Seamless flow from waitlist → CRM → qualification pipeline
+
+4. **Updated Demo Walkthrough** (`/demo/walkthrough`)
+   - Phase 14 badge and updated copy emphasizing sales funnel journey
+   - Enhanced Step 1 to highlight explicit Inquiry → Quote → Welcome → Operations flow
+   - Enhanced Step 2 with detailed demo placeholder pricing talking points
+   - Clear guidance on showcasing the complete guest journey during demos
+
+5. **Extended Smoke Test Coverage**
+   - Dedicated Phase 14 section testing sales funnel pages
+   - Landing page tests for "inquiry→quote→welcome→ops" and "Multi-Property" messaging
+   - Pricing page tests for "DEMO PLACEHOLDER" labels and "example structures only" disclaimer
+   - Waitlist form test for "Property Name" lead capture field
+   - Ensures sales funnel pages render correctly for demos
+
+**What Works vs. Stubbed:**
+- ✅ Works: Complete sales funnel (landing → pricing → waitlist → CRM), clear demo labeling, inquiry→quote→welcome→ops flow visualization
+- 🚧 Stubbed: Same as Phase 13 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — sales pages are for demo walkthroughs with clearly labeled placeholder pricing
+- All pricing labeled as "EXAMPLE" and "DEMO PLACEHOLDER" — not live offers
+- Waitlist capture only, no payment processing or automated campaigns
+- All data persists to local SQLite only
 
 ---
 
@@ -155,7 +203,55 @@ npm start
 
 ---
 
-## What Works (Phase 11)
+## What Works (Phase 14)
+
+### ✅ Phase 14 Additions (Sales Funnel Polish for Demo Walkthrough)
+
+1. **Enhanced Landing Page** (`/`)
+   - Explicit "Inquiry → Quote → Welcome → Operations" messaging in How It Works section
+   - Four-step guest journey visualization (Inquiry Intake → Quote & Invoice → Welcome Pack → Daily Operations)
+   - Clear multi-property operations pitch throughout
+   - Complete sales funnel entry point for demos
+
+2. **Polished Pricing Page** (`/pricing`)
+   - Prominent amber warning banner: "⚠️ DEMO PLACEHOLDER PRICING - NOT LIVE OFFERS"
+   - Each pricing tier labeled "EXAMPLE" with disclaimer: "(Demo placeholder - not a live offer)"
+   - Additional disclaimer: "The pricing tiers below are example structures only. Final pricing will be announced at launch."
+   - Clear distinction between demo and real pricing for sales demos
+
+3. **Verified Waitlist Integration**
+   - Waitlist form properly stores leads in tenant-scoped SQLite database
+   - Integration with CRM confirmed via Phase 11 convert functionality
+   - Lead capture includes property name, room count, current system, and operational notes
+   - Seamless flow from waitlist → CRM → qualification pipeline
+
+4. **Updated Demo Walkthrough** (`/demo/walkthrough`)
+   - Phase 14 badge and updated copy emphasizing sales funnel journey
+   - Enhanced Step 1 to highlight explicit Inquiry → Quote → Welcome → Operations flow
+   - Enhanced Step 2 with detailed demo placeholder pricing talking points
+   - Clear guidance on showcasing the complete guest journey during demos
+
+5. **Extended Smoke Test Coverage**
+   - Dedicated Phase 14 section testing sales funnel pages
+   - Landing page tests for "inquiry→quote→welcome→ops" and "Multi-Property" messaging
+   - Pricing page tests for "DEMO PLACEHOLDER" labels and "example structures only" disclaimer
+   - Waitlist form test for "Property Name" lead capture field
+   - Ensures sales funnel pages render correctly for demos
+
+**What Works vs. Stubbed:**
+- ✅ Works: Complete sales funnel (landing → pricing → waitlist → CRM), clear demo labeling, inquiry→quote→welcome→ops flow visualization
+- 🚧 Stubbed: Same as Phase 13 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — sales pages are for demo walkthroughs with clearly labeled placeholder pricing
+- All pricing labeled as "EXAMPLE" and "DEMO PLACEHOLDER" — not live offers
+- Waitlist capture only, no payment processing or automated campaigns
+- All data persists to local SQLite only
+
+---
+
+## What Works (Phase 13)
 
 ### ✅ Phase 11 Additions (Waitlist to CRM Lead Conversion)
 
@@ -692,6 +788,31 @@ Verify tables:
 
 ---
 
+## Phase 14 Summary
+
+**What Changed:**
+- Enhanced landing page with explicit "Inquiry → Quote → Welcome → Operations" guest journey flow
+- Four-step visualization on landing page (Inquiry Intake, Quote & Invoice, Welcome Pack, Daily Operations)
+- Polished pricing page with prominent "DEMO PLACEHOLDER PRICING" warning banners
+- Each pricing tier labeled "EXAMPLE" with disclaimers: "(Demo placeholder - not a live offer)"
+- Additional disclaimer text: "The pricing tiers below are example structures only"
+- Updated demo walkthrough script with Phase 14 badge and enhanced sales funnel talking points
+- Extended smoke tests with dedicated Phase 14 section for sales funnel validation
+- README updated with Phase 14 section documenting sales funnel polish
+
+**What Works vs. Stubbed:**
+- ✅ Works: Complete polished sales funnel for demos, clear placeholder labeling, verified waitlist→CRM integration
+- 🚧 Stubbed: Same as Phase 13 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — sales pages for walkthrough demos with clear "DEMO PLACEHOLDER" labels
+- All pricing marked as examples/placeholders, not live offers
+- Waitlist capture only, no payment processing
+- All data persists to local SQLite only
+
+---
+
 ## Phase 13 Summary
 
 **What Changed:**
@@ -742,7 +863,32 @@ Verify tables:
 
 ---
 
-## Phase 11 Summary
+## Phase 14 Summary
+
+**What Changed:**
+- Enhanced landing page with explicit "Inquiry → Quote → Welcome → Operations" guest journey flow
+- Four-step visualization on landing page (Inquiry Intake, Quote & Invoice, Welcome Pack, Daily Operations)
+- Polished pricing page with prominent "DEMO PLACEHOLDER PRICING" warning banners
+- Each pricing tier labeled "EXAMPLE" with disclaimers: "(Demo placeholder - not a live offer)"
+- Additional disclaimer text: "The pricing tiers below are example structures only"
+- Updated demo walkthrough script with Phase 14 badge and enhanced sales funnel talking points
+- Extended smoke tests with dedicated Phase 14 section for sales funnel validation
+- README updated with Phase 14 section documenting sales funnel polish
+
+**What Works vs. Stubbed:**
+- ✅ Works: Complete polished sales funnel for demos, clear placeholder labeling, verified waitlist→CRM integration
+- 🚧 Stubbed: Same as Phase 13 (production auth, live payments, email/WhatsApp auto-send, public signup)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — sales pages for walkthrough demos with clear "DEMO PLACEHOLDER" labels
+- All pricing marked as examples/placeholders, not live offers
+- Waitlist capture only, no payment processing
+- All data persists to local SQLite only
+
+---
+
+## Phase 13 Summary
 
 **What Changed:**
 - Waitlist management UI at `/demo/waitlist-manage` with one-click convert buttons
@@ -909,7 +1055,7 @@ Verify tables:
 
 ---
 
-## Hard Gates Reminder (Phase 12)
+## Hard Gates Reminder (Phase 14)
 
 **GuestFlow respects these safety constraints:**
 
@@ -917,13 +1063,13 @@ Verify tables:
 2. ❌ **NO paid ads** — No Google Ads pixels, no Meta conversion tracking
 3. ❌ **NO public signup** — Waitlist only, demo auth stub is NOT production-ready
 4. ❌ **NO WhatsApp/email auto-send** — All messaging is draft-only with approval banners
-5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON
-6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly. Conversion copies existing contact data only. Notes are user-provided text only.
+5. ✅ **Demo labeling** — All pages clearly marked DEMO / WAITLIST / COMING SOON / EXAMPLE PRICING
+6. ✅ **No invented data** — Rate cards uploaded only, never fabricated. Missing rates flagged clearly. Pricing labeled as demo placeholders. Conversion copies existing contact data only. Notes are user-provided text only.
 7. ✅ **Local demo only** — SQLite database, no cloud deployments without explicit approval
 8. ✅ **Strong .gitignore** — `node_modules`, `.next`, `*.db`, and data files excluded
 9. ✅ **Demo auth only** — Simple password stub (demo2026) for local testing, NOT production auth
 
-**These gates are unchanged from Phase 11. Phase 12 adds CRM lead notes at `/crm` (DEMO labeled, local demo only)—maintains all safety constraints. Notes stored in tenant-scoped SQLite lead_notes table; never invents text. Protected by demo auth stub. In production, this feature would require proper multi-tenant authentication and row-level security.**
+**These gates are unchanged from Phase 13. Phase 14 adds sales funnel polish for demo walkthroughs—polished landing page with explicit Inquiry→Quote→Welcome→Operations flow, pricing page with prominent "DEMO PLACEHOLDER PRICING" warning banners and "EXAMPLE" labels on all tiers, and verified waitlist→CRM integration. All safety constraints maintained.**
 
 ---
 
@@ -944,9 +1090,9 @@ Verify tables:
 
 ---
 
-## Next Steps (Post-Phase-12)
+## Next Steps (Post-Phase-14)
 
-**Phase 12 completes the CRM lead notes with timestamped history and inline add.** Next priorities focus on production features and live integrations:
+**Phase 14 completes the sales funnel polish with clear demo labeling and inquiry→quote→welcome→ops flow.** Next priorities focus on production features and live integrations:
 
 1. **Production Authentication:** NextAuth.js for multi-tenant operator accounts with proper isolation and OAuth providers
 2. **Advanced Rate Card Features:** Seasonal overrides, promotion codes, minimum stay enforcement in booking flow

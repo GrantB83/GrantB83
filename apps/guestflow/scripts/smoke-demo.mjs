@@ -181,6 +181,17 @@ async function runTests() {
   await testRoute('/pricing', 'Pricing page', { checkContent: 'COMING SOON' });
   await testRoute('/waitlist', 'Waitlist page', { checkContent: 'Join' });
   
+  // Phase 14: Sales Funnel Flow Tests
+  info('\nPhase 14: Testing sales funnel pages...\n');
+  
+  await testRoute('/', 'Landing page - Sales pitch', { checkContent: 'inquiry→quote→welcome→ops' });
+  await testRoute('/', 'Landing page - Multi-property messaging', { checkContent: 'Multi-Property' });
+  await testRoute('/pricing', 'Pricing page - Demo placeholder labels', { checkContent: 'DEMO PLACEHOLDER' });
+  await testRoute('/pricing', 'Pricing page - Example pricing note', { checkContent: 'example structures only' });
+  await testRoute('/waitlist', 'Waitlist form - Lead capture', { checkContent: 'Property Name' });
+  
+  info('\nContinuing with other route tests...\n');
+  
   // Demo hub
   await testRoute('/demo', 'Demo hub', { checkContent: 'Interactive Demo' });
   

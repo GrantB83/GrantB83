@@ -5,22 +5,29 @@ export default function PricingPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-16">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4">
+          ⚠️ DEMO PLACEHOLDER PRICING - NOT LIVE OFFERS
+        </div>
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium mb-6">
-          COMING SOON
+          COMING SOON - JOIN WAITLIST FOR ACTUAL PRICING
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
           Simple Pricing for Multi-Property Operators
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-4">
           One platform for all your guesthouses. Currently in private beta—join our waitlist 
           to be notified when we launch with early-access pricing.
+        </p>
+        <p className="text-base text-amber-600 font-semibold max-w-2xl mx-auto">
+          The pricing tiers below are example structures only. Final pricing will be announced at launch.
         </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
         <PricingCard
           name="Starter"
-          price="COMING SOON"
+          price="EXAMPLE"
+          priceNote="(Demo placeholder - not a live offer)"
           description="Perfect for single-property owners"
           features={[
             'Up to 5 rooms',
@@ -34,7 +41,8 @@ export default function PricingPage() {
         />
         <PricingCard
           name="Professional"
-          price="COMING SOON"
+          price="EXAMPLE"
+          priceNote="(Demo placeholder - not a live offer)"
           description="For growing guesthouse operations"
           features={[
             'Up to 15 rooms',
@@ -49,7 +57,8 @@ export default function PricingPage() {
         />
         <PricingCard
           name="Enterprise"
-          price="Custom"
+          price="EXAMPLE"
+          priceNote="(Demo placeholder - contact for actual pricing)"
           description="For hospitality groups"
           features={[
             'Unlimited rooms',
@@ -130,6 +139,7 @@ export default function PricingPage() {
 function PricingCard({ 
   name, 
   price, 
+  priceNote,
   description, 
   features, 
   cta, 
@@ -137,6 +147,7 @@ function PricingCard({
 }: { 
   name: string
   price: string
+  priceNote?: string
   description: string
   features: string[]
   cta: string
@@ -150,9 +161,12 @@ function PricingCard({
         </div>
       )}
       <h3 className="text-2xl font-bold text-gray-900 mb-2">{name}</h3>
-      <div className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-3xl font-bold text-gray-900 mb-1">
         {price}
       </div>
+      {priceNote && (
+        <p className="text-xs text-amber-600 font-medium mb-2">{priceNote}</p>
+      )}
       <p className="text-gray-600 mb-6">{description}</p>
       <ul className="space-y-3 mb-8">
         {features.map((feature, i) => (
