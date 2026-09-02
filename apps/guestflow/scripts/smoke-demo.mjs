@@ -244,6 +244,11 @@ async function runTests() {
   // Phase 16 page
   await testRoute('/demo/bookings-board', 'Bookings board page (Phase 16)', { checkContent: 'Same-Day Bookings Board' });
   
+  // Phase 22 page
+  await testRoute('/demo/inquiry-intake', 'Inquiry intake demo (Phase 22 heuristic extraction)', { checkContent: 'Demo Inquiry Intake' });
+  await testRoute('/demo/inquiry-intake', 'Inquiry intake - fixtures mention', { checkContent: 'Load Sample Fixtures' });
+  await testRoute('/demo/inquiry-intake', 'Inquiry intake - hard gates', { checkContent: 'DRAFT/fixtures only' });
+  
   // Demo pages
   await testRoute('/demo/inquiry-intake', 'Inquiry intake demo', { checkContent: 'Inquiry' });
   await testRoute('/demo/quote-draft', 'Quote draft demo', { checkContent: 'Quote' });

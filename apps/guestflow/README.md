@@ -1,8 +1,62 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 21 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 22 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 21 — Booking change check for last-minute verification (DRAFT/fixtures only)
+**Current Phase:** Phase 22 — Demo inquiry intake with heuristic extraction (DRAFT/fixtures only)
+
+---
+
+## What Works (Phase 22)
+
+### ✅ Phase 22 Additions (Demo Inquiry Intake — Heuristic Extraction)
+
+1. **Inquiry Intake Page** (`/demo/inquiry-intake`)
+   - Paste inquiry text (email/WhatsApp-style) or load sample fixtures
+   - Extracts structured booking/quote fields: guest name, dates, party size, contact, suite prefs, special requests
+   - Pure TypeScript heuristics — NO LLM, mirrors tools/browns-inquiry-intake semantics
+   - Uses active demo tenant from tenant context
+   - Three sample fixtures: with-amounts, without-amounts, whatsapp-style
+
+2. **Smart Rate Handling**
+   - Rates/amounts ONLY if explicitly present with currency in inquiry text
+   - Missing amounts → availability-only inquiry (flags "No Rates Found" in blue alert)
+   - Never invents pricing — hard gate respected
+   - Currency detection: ZAR (R/rand) or USD ($)
+
+3. **Draft Reply Generation**
+   - Auto-generates draft reply stub with placeholders for missing fields
+   - Preserves extracted amounts when present, uses `[RATE CARD REQUIRED]` when missing
+   - Includes `[DRAFT - REQUIRES H1/H2 APPROVAL BEFORE SEND]` footer
+   - Export as markdown (.md) file for local save (no live send)
+
+4. **CRM Save Option** (`POST /api/leads`)
+   - Save extracted inquiry as DRAFT lead in tenant-scoped CRM
+   - Stores guest name, contact, check-in/out dates, suite, adults/children, channel
+   - Status: 'new' with `[DRAFT INQUIRY]` prefix in notes
+   - Uses existing leads API with tenant_id validation
+
+5. **Missing Field Tracking**
+   - Amber warnings for missing required fields (guestName, contact, dates, adults)
+   - Lists missing fields explicitly in UI and draft reply
+   - Never silently invents contact info or dates
+
+6. **Fixture Loading**
+   - `inquiry-with-amounts.txt` — includes quote (R4500/night), total (R13500), deposit (R6750)
+   - `inquiry-without-amounts.txt` — availability check only, no rates mentioned
+   - `inquiry-whatsapp-style.txt` — casual tone with phone, emojis, questions
+   - One-click fixture loading from amber banner UI
+
+**What Works vs. Stubbed:**
+- ✅ Works: Heuristic extraction, rate detection, draft reply generation, markdown export, CRM save (DRAFT), fixture loading
+- 🚧 Stubbed: Same as Phase 21 (production auth, live payments, email/WhatsApp auto-send, public signup, live NB API)
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only — inquiry intake is DRAFT ONLY with local-only markdown export
+- Never invents rates — missing amounts flagged as "No Rates Found" (availability-only)
+- Never invents contact info, dates, or guest details (uses `[PLACEHOLDER]` syntax in draft reply)
+- All data persists to local SQLite only with DRAFT labels
+- Pure TS heuristics — NO LLM API calls
 
 ---
 
