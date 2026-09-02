@@ -40,7 +40,7 @@ export function parseMarkdown(markdown: string): Section[] {
   return sections;
 }
 
-export function extractFacts(sections: Section[]): GuestFacts {
+export function extractFacts(sections: Section[], fullMarkdown: string): GuestFacts {
   const facts: GuestFacts = {};
 
   for (const section of sections) {
@@ -116,6 +116,9 @@ export function extractFacts(sections: Section[]): GuestFacts {
       facts.breakfast = extractCleanText(content);
     }
   }
+
+  // Prose extraction pass for missing fields
+  extractFromProse(facts, fullMarkdown);
 
   return facts;
 }
@@ -203,4 +206,105 @@ function extractContact(text: string): string | undefined {
   }
   
   return contacts.length > 0 ? contacts.join(', ') : undefined;
+}
+
+function extractFromProse(facts: GuestFacts, markdown: string): void {
+  const lines = markdown.split('\n').map(l => l.trim()).filter(l => l);
+  const lowerMarkdown = markdown.toLowerCase();
+
+  // Address - look for Dullstroom or street patterns
+  if (!facts.address) {
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      if ((lowerLine.includes('dullstroom') && !lowerLine.startsWith('#')) ||
+          (lowerLine.match(/address\s*:/i) && line.length < 150)) {
+        const cleaned = line.replace(/^address\s*:/i, '').replace(/^[-*•]\s*/, '').trim();
+        if (cleaned && cleaned.length > 10) {
+          facts.address = cleaned;
+          break;
+        }
+      }
+    }
+  }
+
+  // Contact - WhatsApp/phone and email
+  if (!facts.contact) {
+    const phonePattern = /\+27[\s\d\-()]{9,}/g;
+    const emailPattern = /[\w\.-]+@[\w\.-]+\.\w+/g;
+    
+    const phones = markdown.match(phonePattern) || [];
+    const emails = markdown.match(emailPattern) || [];
+    
+    const contacts: string[] = [];
+    if (phones.length > 0 && phones[0]) {
+      contacts.push(`Phone: ${phones[0].trim()}`);
+    }
+    if (emails.length > 0 && emails[0]) {
+      contacts.push(`Email: ${emails[0].trim()}`);
+    }
+    
+    if (contacts.length > 0) {
+      facts.contact = contacts.join(', ');
+    }
+  }
+
+  // WiFi - amenity mention only
+  if (!facts.wifi) {
+    if (lowerMarkdown.includes('free wi-fi') || 
+        lowerMarkdown.includes('complimentary wi-fi') ||
+        lowerMarkdown.includes('wi-fi available')) {
+      for (const line of lines) {
+        const lowerLine = line.toLowerCase();
+        if ((lowerLine.includes('wi-fi') || lowerLine.includes('wifi')) && 
+            line.length < 150 && 
+            !lowerLine.startsWith('#')) {
+          const cleaned = line.replace(/^[-*•]\s*/, '').trim();
+          if (cleaned) {
+            facts.wifi = cleaned;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Parking
+  if (!facts.parking) {
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      if ((lowerLine.includes('secure parking') || 
+           lowerLine.includes('parking available') ||
+           (lowerLine.includes('gate') && lowerLine.includes('remote'))) &&
+          line.length < 200 && 
+          !lowerLine.startsWith('#')) {
+        const cleaned = line.replace(/^[-*•]\s*/, '').trim();
+        if (cleaned) {
+          facts.parking = cleaned;
+          break;
+        }
+      }
+    }
+  }
+
+  // Blue Crane restaurant - only if explicitly described as restaurant/dining
+  if (!facts.blueCrane) {
+    for (const line of lines) {
+      const lowerLine = line.toLowerCase();
+      if (lowerLine.includes('blue crane') && 
+          (lowerLine.includes('restaurant') || 
+           lowerLine.includes('dining') || 
+           lowerLine.includes('breakfast') ||
+           lowerLine.includes('lunch') ||
+           lowerLine.includes('dinner')) &&
+          !lowerLine.includes('drive') &&
+          line.length < 250 &&
+          !lowerLine.startsWith('#')) {
+        const cleaned = line.replace(/^[-*•]\s*/, '').trim();
+        if (cleaned) {
+          facts.blueCrane = cleaned;
+          break;
+        }
+      }
+    }
+  }
 }
