@@ -14,6 +14,7 @@ export interface CliOptions {
   'run-daily-ops'?: boolean;
   'run-guest-comms'?: boolean;
   'run-adapter'?: boolean;
+  'run-late-checkin'?: boolean;
 }
 
 export interface PackManifest {
@@ -42,6 +43,7 @@ export interface PackFlags {
   ranDailyOps: boolean;
   ranGuestComms: boolean;
   ranAdapter: boolean;
+  ranLateCheckin: boolean;
 }
 
 export interface TimedChecklistItem {

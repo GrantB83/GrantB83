@@ -6,7 +6,7 @@ import type { CliOptions, TimedChecklistItem } from './types.js';
 
 export function generatePackIndex(
   options: CliOptions,
-  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean },
+  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean },
   sourcesProvided: { bookings: boolean; beforeAfter: boolean; facts: boolean; guestBooking: boolean }
 ): string {
   const lines: string[] = [];
@@ -61,6 +61,11 @@ export function generatePackIndex(
     lines.push('| guest-*.md | Guest welcome drafts (copied from browns-guest-comms-draft) |');
   }
   
+  if (ranFlags.ranLateCheckin) {
+    lines.push('| queue.md | Late check-in queue (copied from browns-late-checkin-queue) |');
+    lines.push('| unknown-time.md | Late check-in unknown times (copied from browns-late-checkin-queue) |');
+  }
+  
   lines.push('| manifest.json | Machine-readable pack inventory |');
   lines.push('');
   
@@ -78,6 +83,7 @@ export function generatePackIndex(
   lines.push(`- Ran change-check: ${ranFlags.ranChangeCheck ? 'Yes' : 'No'}`);
   lines.push(`- Ran daily-ops: ${ranFlags.ranDailyOps ? 'Yes' : 'No'}`);
   lines.push(`- Ran guest-comms: ${ranFlags.ranGuestComms ? 'Yes' : 'No'}`);
+  lines.push(`- Ran late-checkin: ${ranFlags.ranLateCheckin ? 'Yes' : 'No'}`);
   lines.push('');
   
   lines.push('## Safety Reminder');
@@ -94,16 +100,28 @@ export function generatePackIndex(
 }
 
 function buildTimedChecklist(
-  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean },
+  ranFlags: { ranAdapter: boolean; ranChangeCheck: boolean; ranDailyOps: boolean; ranGuestComms: boolean; ranLateCheckin: boolean },
   sourcesProvided: { bookings: boolean; beforeAfter: boolean; facts: boolean; guestBooking: boolean }
 ): TimedChecklistItem[] {
   const items: TimedChecklistItem[] = [];
   
   // 20:00 CT - Same-day morning guest drafts
+  const guestFiles = [];
+  if (ranFlags.ranGuestComms) {
+    guestFiles.push('guest-*.md');
+  }
+  if (ranFlags.ranLateCheckin) {
+    guestFiles.push('queue.md');
+    guestFiles.push('unknown-time.md');
+  }
+  if (guestFiles.length === 0) {
+    guestFiles.push('(No guest drafts in this pack)');
+  }
+  
   items.push({
     time: '20:00 CT',
     description: 'Review and send same-day morning guest drafts (welcome messages for arrivals)',
-    files: ranFlags.ranGuestComms ? ['guest-*.md'] : ['(No guest drafts in this pack)'],
+    files: guestFiles,
   });
   
   // 09:00 CT (next morning) - After-hours check-ins
