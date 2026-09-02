@@ -15,6 +15,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
 | [family-school-subject-digest](#family-school-subject-digest) | Generate family school/admin digest from email subjects | Family Command Center | **No LLM**. Keyword classification only. DRAFT ONLY. Never sends. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
+| [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
@@ -457,6 +458,70 @@ npm run intake -- --text inquiry.txt --mode booking
 - ⚠️ **Human approval required** - Always review APPROVAL.md before using outputs
 
 [→ Full README](./browns-inquiry-intake/README.md)
+
+---
+
+## hm-quote-intake
+
+**One-line:** Extract structured quote JSON from Heavy Metal Sand & Stone WhatsApp inquiry text.
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-quote-intake/`
+
+### Install and Run
+
+```bash
+cd tools/hm-quote-intake
+npm install
+npm run build
+
+# Extract from text file
+npm run intake -- --text inquiry.txt --outdir out/
+
+# Extract from stdin
+cat inquiry.txt | npm run intake -- --stdin
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **No LLM API calls** - Heuristic extraction only
+- ✅ **No WhatsApp Cloud API** - WhatsApp stays on CoS
+- ✅ **No auto-send** - DRAFT outputs only
+- ✅ **Never invents rates, volumes, or locations** - Only extracts if explicitly present
+- ✅ **Offline only** - No APIs or network calls
+- ⚠️ **Human approval required** - Always review APPROVAL.md before using outputs
+- ⚠️ **H1 gate required** - `APPROVE SEND <thread-or-wa-id>` for every quote
+- ⚠️ **Confirm volume + location** - Before any quote per lane:heavy-metal rules
+
+### Output Files
+
+- `quote.json` - Structured quote data (customer, materials, volume, delivery, pricing)
+- `draft-reply.md` - Draft WhatsApp reply with placeholders (never invents rates)
+- `missing-fields.md` - Checklist of fields to fill manually
+- `APPROVAL.md` - Review document with safety checklist and approval gates
+- `manifest.json` - Extraction metadata
+
+### Extracted Fields
+
+**Customer:** name, phone (SA formats)  
+**Materials:** sand, stone, gravel, crusher dust, fill, aggregate, rock, pebble, ballast, G5, G7  
+**Volume:** quantity + unit (m³, ton, load)  
+**Delivery:** location, date needed  
+**Pricing:** per-unit price, total price, currency (ONLY if explicitly present)
+
+### Entity Context
+
+- **Lane:** heavy-metal
+- **Trading Name:** Heavy Metal Sand & Stone
+- **Location:** Dullstroom (yard)
+- **Emails:** grant@hmsand.co.za, mail@hmsand.co.za
+- **Automation Target:** structured-whatsapp-quotes
+
+[→ Full README](./hm-quote-intake/README.md)
 
 ---
 
