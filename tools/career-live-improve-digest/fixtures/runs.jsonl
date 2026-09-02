@@ -1,0 +1,15 @@
+{"company":"Tesla","title":"Operations Manager","score":9,"gatePass":true,"action":"scored","source":"LinkedIn","date":"2026-08-15"}
+{"company":"SpaceX","title":"Director of Operations","score":8,"gatePass":true,"action":"scored","source":"Indeed","date":"2026-08-15"}
+{"company":"Rivian","title":"Senior Operations Manager","score":7,"gatePass":true,"action":"scored","source":"Direct","date":"2026-08-16"}
+{"company":"Ford","title":"Associate Manager","score":4,"gatePass":false,"action":"skipped","reason":"Too junior","source":"LinkedIn","date":"2026-08-16"}
+{"company":"GM","title":"Coordinator","score":3,"gatePass":false,"action":"skipped","reason":"Too junior","source":"Indeed","date":"2026-08-17"}
+{"company":"BadCo","title":"Director","score":8,"gatePass":false,"action":"skipped","reason":"DNC list company","source":"LinkedIn","date":"2026-08-18"}
+{"company":"LowPay Inc","title":"VP Operations","score":9,"gatePass":false,"action":"rejected","reason":"Comp below floor","source":"LinkedIn","date":"2026-08-20"}
+{"company":"RemoteCorp","title":"Operations Director","score":8,"gatePass":false,"action":"skipped","reason":"Remote policy mismatch","source":"Indeed","date":"2026-08-22"}
+{"company":"Tesla","title":"Senior Director","action":"applied","source":"LinkedIn","date":"2026-08-23"}
+{"company":"Apple","title":"Director of Operations","score":10,"gatePass":true,"action":"scored","source":"Recruiter","date":"2026-08-25"}
+{"company":"Google","title":"Head of Operations","score":9,"gatePass":true,"action":"scored","source":"LinkedIn","date":"2026-08-26"}
+{"company":"Amazon","title":"Operations Manager","score":6,"gatePass":true,"action":"scored","source":"Indeed","date":"2026-08-28"}
+{"company":"Netflix","title":"VP Product Operations","score":7,"gatePass":true,"action":"scored","source":"LinkedIn","date":"2026-08-29"}
+{"company":"SpaceX","title":"Director","action":"applied","source":"Direct","date":"2026-08-30"}
+{"company":"Startup Inc","title":"COO","score":7,"gatePass":false,"action":"rejected","reason":"Team size gate","source":"LinkedIn","date":"2026-09-01"}

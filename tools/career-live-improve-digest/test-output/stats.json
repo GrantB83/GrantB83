@@ -1,0 +1,45 @@
+{
+  "period": {
+    "since": "2026-08-15",
+    "until": "2026-09-01",
+    "totalDays": 18
+  },
+  "totals": {
+    "entries": 15,
+    "scored": 7,
+    "applied": 2,
+    "skipped": 4,
+    "rejected": 2
+  },
+  "scoreBands": {
+    "excellent_9_10": 4,
+    "good_7_8": 6,
+    "medium_5_6": 1,
+    "low_0_4": 2
+  },
+  "gateFails": {
+    "total": 6,
+    "patterns": {
+      "Too junior": 2,
+      "DNC list company": 1,
+      "Comp below floor": 1,
+      "Remote/location mismatch": 1,
+      "Team size gate": 1
+    }
+  },
+  "skipReasons": {
+    "Too junior": 2,
+    "DNC list company": 1,
+    "Remote/location mismatch": 1
+  },
+  "rejectReasons": {
+    "Comp below floor": 1,
+    "Team size gate": 1
+  },
+  "sources": {
+    "LinkedIn": 8,
+    "Indeed": 4,
+    "Direct": 2,
+    "Recruiter": 1
+  }
+}

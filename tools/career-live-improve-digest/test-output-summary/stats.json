@@ -1,0 +1,27 @@
+{
+  "period": {
+    "since": "",
+    "until": "",
+    "totalDays": null
+  },
+  "totals": {
+    "entries": 0,
+    "scored": 0,
+    "applied": 0,
+    "skipped": 0,
+    "rejected": 0
+  },
+  "scoreBands": {
+    "excellent_9_10": 0,
+    "good_7_8": 0,
+    "medium_5_6": 0,
+    "low_0_4": 0
+  },
+  "gateFails": {
+    "total": 0,
+    "patterns": {}
+  },
+  "skipReasons": {},
+  "rejectReasons": {},
+  "sources": {}
+}
