@@ -34,6 +34,7 @@ type Lead = {
   status: string
   created_at: string
   tenant_name: string | null
+  invite_code: string | null // Phase 31: invite code attribution
 }
 
 type LeadNote = {
@@ -216,6 +217,9 @@ export default function CRMTable({ initialLeads, tenant, defaultTenantId }: CRMT
                     Current System
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invite Code
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -274,6 +278,15 @@ export default function CRMTable({ initialLeads, tenant, defaultTenantId }: CRMT
                         {lead.current_system || '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {lead.invite_code ? (
+                          <span className="px-2 py-1 text-xs font-mono font-semibold bg-teal-100 text-teal-800 rounded">
+                            {lead.invite_code}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {lead.phone ? (
                           <div className="text-sm text-gray-900">{lead.phone}</div>
                         ) : (
@@ -292,7 +305,7 @@ export default function CRMTable({ initialLeads, tenant, defaultTenantId }: CRMT
                     </tr>
                     {expandedLeadId === lead.id && (
                       <tr key={`${lead.id}-notes`}>
-                        <td colSpan={8} className="px-6 py-4 bg-gray-50">
+                        <td colSpan={9} className="px-6 py-4 bg-gray-50">
                           <div className="max-w-4xl">
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">

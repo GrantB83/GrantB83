@@ -1,8 +1,52 @@
-# GuestFlow - Guesthouse Operations SaaS (Phase 29 Demo)
+# GuestFlow - Guesthouse Operations SaaS (Phase 31 Demo)
 
 **Status:** DEMO / WAITLIST — Not production-ready  
 **Purpose:** Multi-tenant-ready product demo for guesthouse operations automation  
-**Current Phase:** Phase 29 — Invite codes in sales walkthrough & leave-behind (DRAFT/fixtures only; NO paid signup)
+**Current Phase:** Phase 31 — CRM invite code filter + attribution (DEMO ACCESS ONLY; NO live payments)
+
+---
+
+## What Works (Phase 31)
+
+### ✅ Phase 31 Additions (CRM Filter by Invite Code)
+
+1. **CRM Filter by Invite Code** (`/crm`)
+   - Filter dropdown on CRM page to show leads by specific invite code
+   - Filter options: "All Leads", "Any Attributed" (has invite code), "Unattributed" (no invite code), or specific code (DEMO2026, SALES-OCT, etc.)
+   - Displays invite code string on attributed lead rows (teal badge, font-mono)
+   - Tenant-scoped via DemoAuthGuard (password: demo2026)
+   - Never invents codes—only displays actual invite_code from database join
+   - URL query param support: `/crm?invite_code=DEMO2026` for deep linking
+
+2. **Deep Link from Usage Report**
+   - Each invite code row on `/demo/invite-usage` links to CRM filtered to that code's attributed leads
+   - "View in CRM →" link appears when `waitlist_leads_count > 0`
+   - Click-through from usage report → filtered CRM view
+
+3. **Demo Seed Integration** (Phase 9 extended)
+   - Demo seed already attributes 1 lead (Sarah Johnson) to DEMO2026 invite code
+   - CRM filter demo works immediately after seed
+   - Note on attributed lead: "(via invite code DEMO2026)"
+
+4. **Phase 31 Card on Demo Hub**
+   - Prominent cyan card at top of `/demo` hub linking to CRM with Phase 31 badge
+   - Explains CRM filter feature: specific code, any attributed, unattributed
+   - Positioned above Phase 30 invite usage report
+
+5. **Sales Walkthrough Note** (Phase 29 extended)
+   - Sales walkthrough includes note pointing at CRM filter after usage report
+   - Complete attribution loop: generate code → share → redeem → CRM filter → follow-up
+
+**What Works vs. Stubbed:**
+- ✅ Works: CRM filter by invite code (query param + dropdown), invite code display on leads, deep links from usage report, demo seed attribution, SQLite persistence
+- 🚧 Stubbed: Production auth, live payments, email/WhatsApp auto-send, public paid signup, live campaigns
+
+**Hard Gates (UNCHANGED):**
+- NO live payments, NO paid ads, NO public signup, NO WhatsApp/email auto-send
+- Demo environment only—CRM filter for local SQLite sales demos with demo auth stub
+- Codes display actual invite_code from database—never invents codes
+- All data persists to local SQLite only with tenant scoping
+- Clear messaging: "This is demo/preview access only — NOT a paid account"
 
 ---
 
