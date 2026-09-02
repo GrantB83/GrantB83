@@ -99,7 +99,8 @@ Required fields:
   "adults": "number (required, >= 1)",
   "children": "number (optional)",
   "notes": "string (optional)",
-  "channel": "whatsapp | email (required)"
+  "channel": "whatsapp | email (required)",
+  "guestPhone": "string (optional, E.164 or local SA format)"
 }
 ```
 
@@ -115,9 +116,24 @@ Required fields:
   "adults": 2,
   "children": 1,
   "notes": "Anniversary celebration",
-  "channel": "whatsapp"
+  "channel": "whatsapp",
+  "guestPhone": "+27 83 645 1234"
 }
 ```
+
+### Guest Phone Field
+
+The optional `guestPhone` field supports E.164 format (e.g., `+27 83 645 1234`) or local SA format (e.g., `083 645 1234`).
+
+**When present:**
+- Included in team check-in notes as `Guest phone: ...`
+- WhatsApp link helper included in team-facing drafts (e.g., `https://wa.me/27836451234`)
+- Included in APPROVAL.md summary for CoS admin reference
+
+**When absent:**
+- Phone section omitted entirely from all drafts (no placeholders)
+
+**Critical:** Guest phone is NEVER included in guest-facing messages (WhatsApp welcome, email welcome). It appears only in team/admin-facing drafts.
 
 ## Output Files
 

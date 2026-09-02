@@ -2,6 +2,16 @@ import type { BookingData, BrandFacts, SeedSamples, DraftOutputs } from './types
 import { analyzeTone } from './seed-loader.js';
 
 /**
+ * Format phone number for wa.me link (strip spaces, +, and other non-digits except leading +)
+ */
+function formatWaLink(phone: string): string {
+  // Remove spaces and keep only digits and leading +
+  const cleaned = phone.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+  // Remove + from the path (wa.me expects just digits)
+  return `https://wa.me/${cleaned.replace(/^\+/, '')}`;
+}
+
+/**
  * Generates all draft communications from booking data
  */
 export function generateDrafts(
@@ -16,7 +26,7 @@ export function generateDrafts(
     welcomeEmail: generateWelcomeEmail(booking, facts, tone),
     lateCheckIn: generateLateCheckInDraft(booking, facts, tone),
     teamCheckIn: generateTeamCheckIn(booking, facts),
-    approval: generateApprovalNotice(),
+    approval: generateApprovalNotice(booking),
     manifest: {
       booking,
       generatedAt: new Date().toISOString(),
@@ -146,13 +156,17 @@ function generateTeamCheckIn(booking: BookingData, facts: BrandFacts): string {
     day: 'numeric'
   });
 
+  const phoneSection = booking.guestPhone 
+    ? `Guest phone: ${booking.guestPhone}\nWhatsApp link: ${formatWaLink(booking.guestPhone)}\n`
+    : '';
+
   return `Team Check-In - ${dateStr}
 
 ARRIVAL:
 Guest: ${booking.guestName}
 Suite: ${booking.suiteOrUnit}
 Guests: ${booking.adults} adult(s)${booking.children ? ` + ${booking.children} child(ren)` : ''}
-${booking.lateCheckIn ? 'Late check-in: YES - coordinate timing\n' : ''}${booking.notes ? `Notes: ${booking.notes}\n` : ''}
+${phoneSection}${booking.lateCheckIn ? 'Late check-in: YES - coordinate timing\n' : ''}${booking.notes ? `Notes: ${booking.notes}\n` : ''}
 PREP:
 ☐ Suite ready and inspected
 ☐ Amenities in place
@@ -162,11 +176,15 @@ ${booking.lateCheckIn ? '☐ After-hours instructions prepared\n' : ''}
 DRAFT - Internal use only.`;
 }
 
-function generateApprovalNotice(): string {
+function generateApprovalNotice(booking: BookingData): string {
+  const phoneSection = booking.guestPhone
+    ? `\n## Guest Contact\n\nGuest phone: ${booking.guestPhone}\nWhatsApp link: ${formatWaLink(booking.guestPhone)}\n`
+    : '';
+
   return `# APPROVAL REQUIRED
 
 **CRITICAL:** These are DRAFT communications only.
-
+${phoneSection}
 ## Grant Must Approve Before ANY Send
 
 All guest-facing communications require explicit approval from Grant before sending.
