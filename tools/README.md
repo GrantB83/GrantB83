@@ -19,6 +19,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
 | [vault-due-digest-pack](#vault-due-digest-pack) | Assemble weekday Vault due digest by orchestrating vault-filename-due-queue and vault-entity-due-pack | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Never submits to SARS/CIPC. |
+| [vault-due-digest-post-checklist](#vault-due-digest-post-checklist) | Validate vault-due-digest-pack output before Vault weekday ops with go/no-go checklist | Vault / CoS | **Offline only**. Never opens file bodies. Never invents dates/amounts. N2 gate reminder. Exit 1 if checks fail. |
 | [budget-merchant-matcher](#budget-merchant-matcher) | Match budget transactions against merchant rules | Ledger / CoS | **Amounts pass-through only**. Never invented. Keep amounts in files, not chat. |
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
@@ -37,6 +38,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [hm-quote-to-pod](#hm-quote-to-pod) | Map quote.json into pod.json stub for hm-delivery-pod-draft field bridge | SA Ops / Heavy Metal | **Offline**. No LLM. Never invents volume/signature/price. Field bridge only. |
 | [hm-delivery-pod-draft](#hm-delivery-pod-draft) | Generate DRAFT proof-of-delivery notes from Heavy Metal delivery data | SA Ops / Heavy Metal | **Offline**. No auto-send. Never invents volumes/signatures. JSON or paste text input. |
+| [hm-quote-pipeline-pack](#hm-quote-pipeline-pack) | Orchestrate Heavy Metal quote pipeline into one pack for single inquiry | SA Ops / Heavy Metal | **Offline orchestrator**. Never invents volume/price/location/signature. Never sends WhatsApp. H1 gate reminder. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
@@ -54,6 +56,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
 | [career-hunt-run-log](#career-hunt-run-log) | Append career hunt runs into durable offline log for live-improve tracking | Career / CoS | **Offline only**. Append-only (never rewrites prior lines). Never invents scores or employers. Career bot owns apply. |
 | [career-live-improve-digest](#career-live-improve-digest) | Generate live-improve digest from career-hunt-run-log output for Career learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
+| [career-weekday-improve-pack](#career-weekday-improve-pack) | Orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -792,6 +795,76 @@ npm run digest -- --packs ../vault-entity-due-pack/packs/by-entity/ --outdir dig
 ```
 
 [→ Full README](./vault-due-digest-pack/README.md)
+
+---
+
+## vault-due-digest-post-checklist
+
+**One-line:** Offline CLI to generate pre-action checklist from vault-due-digest-pack output before CIPC/SARS/trust research or filing steps.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-due-digest-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/vault-due-digest-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run checklist -- --pack ./digest-pack-2026-09-02
+
+# With date label and output directory
+npm run checklist -- --pack ./digest-pack-2026-09-02 --as-of 2026-09-02 --outdir reports/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No file body reads, no network calls
+- ✅ **Read-only** - Validates pack structure only (filename/markdown heuristics)
+- ✅ **Never invents** - No dates, amounts, or legal positions fabricated
+- ✅ **Never submits** - Vault owns all CIPC/SARS/trust filings (N2 gate)
+- ✅ **Exit codes** - 0 = pass, 1 = fail (scriptable)
+- ⚠️ **N2 gate reminder** - Human approval required before SARS/CIPC submit
+
+### Checks Performed
+
+1. Required overview (DIGEST.md or master.md) present
+2. APPROVAL.md present with relevant keywords
+3. by-entity/ directory exists (warns if missing)
+4. DIGEST/master does NOT contain currency tokens (amounts must stay in files)
+5. N2 gate reminder: human approval before any statutory filing
+
+### Output Files
+
+- **ACTION-CHECKLIST.md** - Numbered go/no-go for Vault weekday ops
+- **ISSUES.md** - Failures and warnings only
+- **APPROVAL.md** - Vault research gates and N2 reminder
+- **manifest.json** - Machine-readable metadata
+
+### Integration with vault-due-digest-pack
+
+This tool validates the output from `vault-due-digest-pack` before research:
+
+```bash
+# Step 1: Generate due digest pack
+cd tools/vault-due-digest-pack
+npm run pack -- --filenames vault-filenames.txt --run-filename-queue --run-entity-pack --outdir digest/
+
+# Step 2: Validate pack before research
+cd ../vault-due-digest-post-checklist
+npm run checklist -- --pack ../vault-due-digest-pack/digest/ --outdir checklist/
+
+# Step 3: Review ACTION-CHECKLIST.md and ISSUES.md
+# Step 4: Vault proceeds with research (never auto-submits)
+```
+
+[→ Full README](./vault-due-digest-post-checklist/README.md)
 
 ---
 
@@ -2054,6 +2127,94 @@ Signed by: J. Botha
 
 ---
 
+## hm-quote-pipeline-pack
+
+**One-line:** Offline CLI orchestrator for Heavy Metal quote pipeline: hm-quote-intake → hm-quote-to-pod → optional hm-delivery-pod-draft for single inquiry.
+
+**Owning desk(s):** SA Ops / Heavy Metal
+
+**Location:** `tools/hm-quote-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/hm-quote-pipeline-pack
+npm install
+npm run build
+
+# Use prebuilt outputs (recommended)
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --quote-outdir ../hm-quote-intake/out/intake-20260902/ \
+  --pod-outdir ../hm-quote-to-pod/out/map-20260902/
+
+# Run intake and map tools
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --run-intake --text inquiry.txt \
+  --run-map
+
+# Full pipeline
+npm run pack -- \
+  --outdir out/pack-20260902/ \
+  --run-intake --text inquiry.txt \
+  --run-map \
+  --run-pod
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline orchestrator** - Shells out to sibling tools or copies prebuilt outputs
+- ✅ **Never invents volume/price/location/signature** - Only packages existing data
+- ✅ **Never sends WhatsApp** - Pack assembly only, no sends
+- ✅ **Missing fields tracked** - No invented rates/volumes in prose
+- ✅ **H1 gate reminder** - APPROVAL.md includes `APPROVE SEND <whatsapp-id>` requirement
+- ⚠️ **Approval required** - Review APPROVAL.md before every quote send
+- ⚠️ **Confirm volume + location** - Before any quote per lane:heavy-metal rules
+
+### Output Files
+
+- `PACK.md` - Pack index with quote/pod summary and missing fields list
+- `APPROVAL.md` - Approval checklist with H1 gate reminder and safety checks
+- `quote.json` - Copy of quote (if provided)
+- `pod.json` - Copy of pod (if provided)
+- `pod.md` - Copy of pod draft (if provided)
+- `manifest.json` - Pack metadata
+
+### Integration
+
+**Workflow position:**
+
+```
+hm-quote-intake → quote.json
+       ↓
+ hm-quote-to-pod → pod.json
+       ↓
+hm-delivery-pod-draft → pod.md (optional)
+       ↓
+hm-quote-pipeline-pack → PACK + APPROVAL
+       ↓
+   Manual review + H1 approval
+       ↓
+   Send via CoS WhatsApp
+```
+
+**Orchestration modes:**
+1. **Prebuilt** (recommended): Copy existing outputs via `--quote-outdir`, `--pod-outdir`
+2. **Shell out**: Run sibling tools via `--run-intake`, `--run-map`, `--run-pod`
+
+**Approval gates:**
+- **H1**: `APPROVE SEND <whatsapp-id>` required for every quote
+- **lane:heavy-metal**: Confirm volume + location before any quote
+- **N7**: Never invent rates, volumes, locations, signatures
+
+[→ Full README](./hm-quote-pipeline-pack/README.md)
+
+---
+
 ## browns-guest-comms-draft
 
 **One-line:** Generate DRAFT guest welcome communications (WhatsApp/email) from booking JSON.
@@ -3034,6 +3195,56 @@ cat digest/LEARNING-DRAFT.md
 - **Source optimization** - Track which sources yield best roles
 
 [→ Full README](./career-live-improve-digest/README.md)
+
+---
+
+## career-weekday-improve-pack
+
+**One-line:** Orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-weekday-improve-pack/`
+
+### Install and Run
+
+```bash
+cd tools/career-weekday-improve-pack
+npm install
+npm run build
+
+# Use prebuilt digest
+npm run pack -- --outdir pack-out/ --digest-outdir ../career-live-improve-digest/out/
+
+# Run digest tool during pack
+npm run pack -- --outdir pack-out/ --run-digest --log runs.jsonl
+
+# With time filter
+npm run pack -- --outdir pack-out/ --run-digest --log runs.jsonl --since 2026-08-01
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No job board APIs
+- ✅ **Never invents scores or employers** - Only packages existing digest outputs
+- ✅ **Career owns apply** - This tool does not apply to jobs
+- ✅ **Never auto-updates learning.md** - Manual fold-in required
+- ✅ **Exit 1 on missing inputs** - Validation failures are fatal
+- ⚠️ **Orchestrator** - Can run career-live-improve-digest via --run-digest
+
+### Pack Contents
+
+- `PACK.md` - Index with counts and summary (no invented employers)
+- `LEARNING-DRAFT.md` - Copy from digest (numbered patterns)
+- `stats.json` - Copy from digest (machine-readable)
+- `runs.md` - Hunt runs summary (if available)
+- `APPROVAL.md` - Safety gates and Career ownership
+- `manifest.json` - Tool metadata
+
+[→ Full README](./career-weekday-improve-pack/README.md)
 
 ---
 

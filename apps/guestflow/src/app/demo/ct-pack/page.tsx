@@ -323,11 +323,11 @@ export default function CTPackPage() {
 
       {/* Links to Source Pages */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-3">Source Pages</h3>
+        <h3 className="font-semibold text-blue-900 mb-3">Source Pages & Verification Tools</h3>
         <p className="text-sm text-blue-800 mb-4">
           This CT-pack assembles outputs from the following existing demo pages:
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 mb-4">
           <Link
             href={`/demo/daily-brief?date=${targetDate}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition"
@@ -349,6 +349,19 @@ export default function CTPackPage() {
             <FileText className="w-4 h-4" />
             Late Check-In Queue
           </Link>
+        </div>
+        <div className="border-t border-blue-300 pt-4">
+          <p className="text-sm text-blue-800 mb-3 font-semibold">Before sending CT-pack communications:</p>
+          <Link
+            href="/demo/booking-change-check"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 border-2 border-amber-400 text-amber-900 rounded-lg font-semibold hover:bg-amber-200 transition"
+          >
+            <AlertCircle className="w-4 h-4" />
+            Last-Minute Change Check (Phase 21)
+          </Link>
+          <p className="text-xs text-blue-700 mt-2">
+            Compare booking snapshots to catch last-minute changes before sending communications
+          </p>
         </div>
       </div>
 

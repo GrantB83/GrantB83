@@ -1,0 +1,6 @@
+{
+  "customerName": "Test Customer",
+  "materials": ["Stone"],
+  "volume": 10,
+  "volumeUnit": "m³"
+}
