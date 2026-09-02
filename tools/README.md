@@ -50,6 +50,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
+| [browns-ct-pack-post-checklist](#browns-ct-pack-post-checklist) | Pre-WhatsApp post checklist from browns-ct-pack-assemble output folder before 20:00 / 09:00 / 21:00 CT Admin posts | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents guest phones/rates/ETAs. CoS owns WhatsApp. Exit 1 if checks fail. |
 | [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [sa-texas-exception-post-checklist](#sa-texas-exception-post-checklist) | Pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents rates/volumes/guest facts. CoS owns WhatsApp. |
@@ -2766,6 +2767,90 @@ CoS runs timed Browns CT packs:
 This orchestrator assembles all outputs into one dated pack folder ready for Liana vet / Grant approval.
 
 [→ Full README](./browns-ct-pack-assemble/README.md)
+
+---
+
+## browns-ct-pack-post-checklist
+
+**One-line:** Offline CLI tool to generate pre-WhatsApp post checklist from browns-ct-pack-assemble output folder before 20:00 / 09:00 / 21:00 CT Admin posts.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ct-pack-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ct-pack-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run checklist -- --pack ./ct-2026-09-20 --outdir out/
+
+# With slot emphasis
+npm run checklist -- --pack ./ct-2026-09-20 --outdir out/ --slot 20:00
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **OFFLINE ONLY** — No WhatsApp APIs or network calls
+- ✅ **READ-ONLY** — Validates pack structure only; never modifies files
+- ✅ **NEVER INVENTS** — No guest phones, rates, or ETAs fabricated
+- ✅ **DULLSTROOM / THE BROWNS ONLY** — Scope boundary
+- ✅ **CoS OWNS WHATSAPP** — Never auto-sends; manual approval workflow only
+- ⚠️ **MANUAL REVIEW REQUIRED** — Every checklist before WhatsApp posting
+
+### Checks Performed
+
+1. **Required files present:** PACK.md, APPROVAL.md
+2. **Timed checklist references:** Warns if PACK.md references missing sibling files
+3. **Slot expectations (if --slot specified):** 
+   - 20:00 CT: Warns if no welcome or guest draft files present
+   - 09:00 CT: Warns if no late check-in queue files present
+   - 21:00 CT: Warns if no daily-ops.md file present
+4. **Booking changes:** Reminds to perform last-minute booking-change-check if changes.md absent
+
+### Output Files
+
+- `POST-CHECKLIST.md` — Numbered go/no-go checklist for CoS WhatsApp Admin - The Browns
+- `ISSUES.md` — Failures and warnings only
+- `APPROVAL.md` — CoS owns WhatsApp; Grant approval; never auto-send
+- `manifest.json` — Machine-readable checklist metadata
+
+### Typical Workflow
+
+1. Generate CT pack with `browns-ct-pack-assemble`
+2. Generate post checklist from pack folder
+3. Review `POST-CHECKLIST.md` for numbered go/no-go items
+4. Review `ISSUES.md` for any failures or warnings
+5. CoS manual WhatsApp Admin - The Browns workflow (never automated)
+
+### Integration
+
+- **Input from:** `browns-ct-pack-assemble` (pack folder)
+- **Workflow:** CT pack → post checklist → manual CoS WhatsApp posting
+
+### Slot Emphasis
+
+The `--slot` option tailors checklist warnings to specific CT time slots:
+- **20:00 CT**: Same-day morning guest drafts (emphasizes guest/welcome files)
+- **09:00 CT**: After-hours check-ins (emphasizes late check-in queue)
+- **21:00 CT**: Staff ops brief (emphasizes daily-ops.md)
+- **all**: Comprehensive warnings for all time slots (default if omitted)
+
+### Scope
+
+- ✅ Dullstroom / The Browns Luxury Guest Suites ONLY
+- ❌ Rivendell / other properties: NOT in scope
+- ❌ Perfect Water / Heavy Metal: NOT in scope
+
+America/Chicago (CT = Chicago Time for timed operations)
+
+[→ Full README](./browns-ct-pack-post-checklist/README.md)
 
 ---
 
