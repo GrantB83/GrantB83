@@ -27,6 +27,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
+| [pw-invoice-docno-index](#pw-invoice-docno-index) | Index Perfect Water / CoS invoice Doc Nos from filenames to prevent duplicate uploads | Perfect Water / CoS | **Offline only**. Basename-only. Never opens PDFs. No invented Doc Nos. |
 
 ---
 
@@ -1034,6 +1035,76 @@ Generates:
 - `report.md` - Human-readable numbered digest (filename + reason, NO file bodies)
 
 [→ Full README](./drive-create-file-validate/README.md)
+
+---
+
+## pw-invoice-docno-index
+
+**One-line:** Offline CLI to index Perfect Water / CoS invoice Doc Nos from filenames to prevent duplicate uploads during At-PET Drive operations.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-invoice-docno-index/`
+
+### Install and Run
+
+```bash
+cd tools/pw-invoice-docno-index
+npm install
+npm run build
+
+# Scan directory
+npm run index -- --dir ./pdfs/ --outdir out/
+
+# From filename list
+npm run index -- --files names.txt --outdir out/
+
+# Compare against known index
+npm run index -- --dir ./pdfs/ --known known-index.md --outdir out/
+
+# Test with fixtures
+npm run test:fixtures:dir
+npm run test:fixtures:list
+npm run test:fixtures:known
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Drive API or network calls
+- ✅ **Basename-only** - Never opens or reads PDF file bodies
+- ✅ **Read-only** - Does not move, rename, or modify files
+- ✅ **Never invents Doc Nos** - Only extracts from filenames using `/IN\d+/i` regex
+- ✅ **Duplicate detection** - Flags Doc Nos appearing multiple times in batch
+- ✅ **Known index comparison** - Identifies already-uploaded vs new invoices
+
+### Why This Tool Exists
+
+Tonight's At-PET Drive uploads risked duplicate PDFs. This tool builds a basename-only index of invoice Doc Nos (e.g., `IN236058`) from a folder or filename list, with optional comparison against an existing index to flag already-uploaded vs new invoices.
+
+### Output Files
+
+- `index.json` - Doc No → filenames mapping
+- `index.md` - Human-readable index
+- `dupes-in-batch.md` - Duplicate Doc Nos in this batch (if any)
+- `already-known.md` - Doc Nos already in known index (if `--known` provided)
+- `new.md` - New Doc Nos not in known index (if `--known` provided)
+- `manifest.json` - Run metadata
+
+### Pattern
+
+- **Regex:** `/IN\d+/i`
+- **Examples:** `IN236058`, `in123456`, `IN999999`
+- All extracted Doc Nos normalized to uppercase
+
+### Integration with At-PET Drive Workflow
+
+1. **Before upload:** Run indexer on tonight's batch
+2. **Review:** Check `dupes-in-batch.md` and remove duplicates
+3. **Compare:** Use `--known` to identify already-uploaded files
+4. **Upload:** Only upload files listed in `new.md`
+5. **After upload:** Append new Doc Nos to known index for next batch
+
+[→ Full README](./pw-invoice-docno-index/README.md)
 
 ---
 
