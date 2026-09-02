@@ -528,6 +528,14 @@ async function runTests() {
   await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - hard gates', { checkContent: 'Hard Gates' });
   await testRoute('/demo/sales-walkthrough', 'Sales walkthrough - progress tracking', { checkContent: 'Progress' });
   
+  // Test Phase 31 CRM invite code filter
+  await testRoute('/crm', 'CRM with invite code filter (Phase 31)', { checkContent: 'Filter by Invite Code', auth: true });
+  await testRoute('/crm', 'CRM - invite code column header', { checkContent: 'Invite Code', auth: true });
+  await testRoute('/api/leads?tenant_id=1', 'Leads API - all leads', { checkContent: 'leads' });
+  await testRoute('/api/leads?tenant_id=1&invite_code=any', 'Leads API - any attributed filter', { checkContent: 'leads' });
+  await testRoute('/api/leads?tenant_id=1&invite_code=none', 'Leads API - unattributed filter', { checkContent: 'leads' });
+  await testRoute('/demo/invite-usage', 'Invite usage report - deep link to CRM', { checkContent: 'View in CRM', auth: true });
+  
   // Test Phase 23 fixture files exist
   try {
     const withAmounts = await fs.promises.readFile('./fixtures/inquiry-with-amounts.json', 'utf8');

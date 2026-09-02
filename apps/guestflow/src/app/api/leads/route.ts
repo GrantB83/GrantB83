@@ -7,20 +7,42 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const tenantId = searchParams.get('tenant_id')
+    const inviteCodeFilter = searchParams.get('invite_code') // Phase 31: optional invite code filter
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Missing tenant_id parameter' }, { status: 400 })
     }
 
     const db = getDb()
-    const leads = db.prepare(`
+    
+    // Phase 31: Join with invite_codes table to fetch code string
+    // Support filtering by: specific code, "any" (has attribution), or "none" (no attribution)
+    let query = `
       SELECT w.id, w.name, w.email, w.property_name, w.room_count, w.current_system, w.phone, w.notes, w.status, w.created_at,
-             t.name as tenant_name
+             t.name as tenant_name,
+             ic.code as invite_code
       FROM waitlist w
       LEFT JOIN tenants t ON w.tenant_id = t.id
-      WHERE w.tenant_id = ? OR w.tenant_id IS NULL
-      ORDER BY w.created_at DESC
-    `).all(parseInt(tenantId, 10))
+      LEFT JOIN invite_codes ic ON w.invite_code_id = ic.id
+      WHERE (w.tenant_id = ? OR w.tenant_id IS NULL)
+    `
+    
+    const params: any[] = [parseInt(tenantId, 10)]
+    
+    // Phase 31: Apply invite code filter
+    if (inviteCodeFilter === 'any') {
+      query += ` AND w.invite_code_id IS NOT NULL`
+    } else if (inviteCodeFilter === 'none') {
+      query += ` AND w.invite_code_id IS NULL`
+    } else if (inviteCodeFilter) {
+      // Specific code filter: join again to match code string
+      query += ` AND ic.code = ?`
+      params.push(inviteCodeFilter)
+    }
+    
+    query += ` ORDER BY w.created_at DESC`
+
+    const leads = db.prepare(query).all(...params)
 
     return NextResponse.json({ leads })
   } catch (error) {

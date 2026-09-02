@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BarChart3, Download, AlertCircle, Calendar, Users, Gift } from 'lucide-react'
-import DemoAuthGuard from '@/components/DemoAuthGuard'
+import Link from 'next/link'
+import { BarChart3, Download, AlertCircle, Calendar, Users, Gift, ArrowRight } from 'lucide-react'
+import { DemoAuthGuard } from '@/components/DemoAuthGuard'
 import { useTenant } from '@/components/TenantContext'
 
 interface InviteCodeUsage {
@@ -17,17 +18,19 @@ interface InviteCodeUsage {
 }
 
 function InviteUsageContent() {
-  const { activeTenant } = useTenant()
+  const { selectedTenantId, tenants } = useTenant()
   const [codes, setCodes] = useState<InviteCodeUsage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
+  
+  const activeTenant = tenants.find(t => t.id === selectedTenantId)
 
   useEffect(() => {
     if (activeTenant) {
       fetchUsage()
     }
   }, [activeTenant])
-
+  
   const fetchUsage = async () => {
     if (!activeTenant) return
     
@@ -241,9 +244,19 @@ function InviteUsageContent() {
                           <p className="text-sm text-gray-600">{code.max_uses}</p>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                            <Users className="w-4 h-4" />
-                            <span className="font-bold">{code.waitlist_leads_count}</span>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                              <Users className="w-4 h-4" />
+                              <span className="font-bold">{code.waitlist_leads_count}</span>
+                            </div>
+                            {code.waitlist_leads_count > 0 && (
+                              <Link
+                                href={`/crm?invite_code=${code.code}`}
+                                className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium"
+                              >
+                                View in CRM <ArrowRight className="w-3 h-3" />
+                              </Link>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
