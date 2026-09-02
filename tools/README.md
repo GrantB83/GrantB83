@@ -46,6 +46,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
+| [sa-texas-exception-post-checklist](#sa-texas-exception-post-checklist) | Pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents rates/volumes/guest facts. CoS owns WhatsApp. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
@@ -2424,6 +2425,81 @@ npm run test:fixtures
 America/Chicago (Texas morning workflow for SA Ops / CoS)
 
 [→ Full README](./sa-texas-morning-exception-pack/README.md)
+
+---
+
+## sa-texas-exception-post-checklist
+
+**One-line:** Offline CLI to generate pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/sa-texas-exception-post-checklist/`
+
+### Install and Run
+
+```bash
+cd tools/sa-texas-exception-post-checklist
+npm install
+npm run build
+
+# Basic usage
+npm run checklist -- --pack ./pack-2026-09-02 --outdir out/
+
+# With date label
+npm run checklist -- --pack ./pack-2026-09-02 --outdir out/ --date 2026-09-02
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **OFFLINE ONLY** — No WhatsApp APIs or network calls
+- ✅ **READ-ONLY** — Validates pack structure only; never modifies files
+- ✅ **NEVER INVENTS** — No Heavy Metal rates/volumes or Browns guest facts fabricated
+- ✅ **PERFECT WATER EXCLUDED** — Not in scope for this checklist
+- ✅ **CoS OWNS WHATSAPP** — Never auto-sends; manual approval workflow only
+- ⚠️ **MANUAL REVIEW REQUIRED** — Every checklist before WhatsApp posting
+
+### Checks Performed
+
+1. **Required files present:** PACK.md, hospitality.md, heavy-metal.md, APPROVAL.md
+2. **Hospitality section:** File exists and readable (may be empty)
+3. **Heavy Metal section:** File exists and readable (may be empty)
+4. **APPROVAL.md present:** Approval content keywords detected
+5. **PACK.md warnings:** Warns if warnings or missing inputs detected
+
+### Output Files
+
+- `POST-CHECKLIST.md` — Numbered go/no-go checklist for SA Ops / CoS
+- `ISSUES.md` — Failures and warnings only
+- `APPROVAL.md` — CoS workflow and safety gates
+- `manifest.json` — Machine-readable checklist metadata
+
+### Typical Workflow
+
+1. Generate exception pack with `sa-texas-morning-exception-pack`
+2. Generate post checklist from pack folder
+3. Review `POST-CHECKLIST.md` for numbered go/no-go items
+4. Review `ISSUES.md` for any failures or warnings
+5. CoS manual WhatsApp Admin workflow (never automated)
+
+### Integration
+
+- **Input from:** `sa-texas-morning-exception-pack` (pack folder)
+- **Workflow:** Exception pack → post checklist → manual CoS WhatsApp posting
+
+### Scope
+
+- ✅ Heavy Metal Sand & Stone: open quotes validation
+- ✅ The Browns: exceptional bookings validation
+- ❌ Perfect Water: excluded from scope
+- ❌ Automated WhatsApp sending: CoS manual workflow only
+
+America/Chicago (Texas morning workflow for SA Ops / CoS)
+
+[→ Full README](./sa-texas-exception-post-checklist/README.md)
 
 ---
 
