@@ -368,6 +368,18 @@ async function runTests() {
   } else {
     fail(`Lead notes POST API validation: Expected 400, got ${notesPostMissingFields.status}`);
   }
+
+  // Test Phase 13 leave-behind export API (POST)
+  await testRoute('/api/leavebehind/export', 'Leave-behind export API (POST markdown)', { 
+    method: 'POST', 
+    body: { format: 'markdown' },
+    expectedStatus: 200
+  });
+  await testRoute('/api/leavebehind/export', 'Leave-behind export API (POST html)', { 
+    method: 'POST', 
+    body: { format: 'html' },
+    expectedStatus: 200
+  });
   
   // Test 404 handling
   await testRoute('/nonexistent-page', '404 handling', { expectedStatus: 404 });

@@ -25,6 +25,25 @@ export default function DemoPage() {
         <TenantSwitcher />
       </div>
 
+      {/* Phase 13: Printable Leave-Behind Export */}
+      <div className="mb-8 max-w-5xl mx-auto">
+        <Link 
+          href="/demo/leavebehind"
+          className="block bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-xl hover:shadow-xl transition group"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <FileDown className="w-8 h-8" />
+              <h3 className="text-2xl font-bold">Printable Leave-Behind Export</h3>
+            </div>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 13</span>
+          </div>
+          <p className="text-orange-100">
+            Download/print sales leave-behind in markdown or HTML format—mirror Phase 8 quote export UX (local demo only)
+          </p>
+        </Link>
+      </div>
+
       {/* Phase 11: Waitlist to CRM Convert */}
       <div className="mb-8 max-w-5xl mx-auto">
         <Link 
@@ -161,11 +180,11 @@ export default function DemoPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <FileDown className="w-8 h-8" />
-            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 5</span>
+            <span className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">Phase 5 → 13</span>
           </div>
-          <h3 className="text-xl font-bold mb-2">Sales Leave-Behind</h3>
+          <h3 className="text-xl font-bold mb-2">Sales Leave-Behind Export</h3>
           <p className="text-purple-100 text-sm">
-            Printable one-pager + markdown export for post-demo follow-up
+            Printable one-pager + markdown/HTML export for post-demo follow-up
           </p>
         </Link>
       </div>

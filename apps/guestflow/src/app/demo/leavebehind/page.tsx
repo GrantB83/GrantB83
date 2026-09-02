@@ -6,6 +6,7 @@ import { Download, FileText, Printer, ArrowLeft } from 'lucide-react'
 
 export default function LeaveBehindPage() {
   const [showMarkdown, setShowMarkdown] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const leaveBehindContent = generateLeaveBehind()
   const markdownContent = generateMarkdown()
@@ -22,41 +23,111 @@ export default function LeaveBehindPage() {
     URL.revokeObjectURL(url)
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handleExport = async (format: 'markdown' | 'html') => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/leavebehind/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format })
+      })
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `guestflow-platform-overview.${format === 'markdown' ? 'md' : 'html'}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Export error:', error)
+      alert('Failed to export leave-behind. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handlePrint = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/leavebehind/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format: 'html' })
+      })
+
+      if (!response.ok) {
+        throw new Error('Print preparation failed')
+      }
+
+      const htmlContent = await response.text()
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => {
+          printWindow.print()
+        }, 250)
+      }
+    } catch (error) {
+      console.error('Print error:', error)
+      alert('Failed to prepare leave-behind for printing. Please try again.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="no-print mb-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-4">
-            📄 PHASE 5 · Sales Leave-Behind
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-medium mb-4">
+            📄 PHASE 13 · Printable Leave-Behind Export
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             GuestFlow Platform Overview
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Printable one-pager for post-demo follow-up. 
-            Export as markdown for email or print for in-person meetings.
+            Export as markdown or HTML, or print directly to PDF.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-4 justify-center mb-8 flex-wrap">
           <button
-            onClick={handleDownloadMarkdown}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+            onClick={() => handleExport('markdown')}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-5 h-5" />
             Download Markdown
           </button>
           <button
+            onClick={() => handleExport('html')}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-5 h-5" />
+            Download HTML
+          </button>
+          <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-800 transition"
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Printer className="w-5 h-5" />
-            Print PDF
+            Print to PDF
           </button>
           <button
             onClick={() => setShowMarkdown(!showMarkdown)}
