@@ -8,6 +8,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 |------|---------|---------|-------------|
 | [csv-fixture-harness](#csv-fixture-harness) | Validate CSV fixtures: headers, row counts, blanks, currency violations | Perfect Water / Ledger / Browns / Vault | **Read-only**. Never modifies files. No invented amounts. |
 | [pw-bank-csv-normalize](#pw-bank-csv-normalize) | Normalize SA bank CSVs to Xero format for receipt recon | Perfect Water / CoS | **Offline**. No invented amounts. Blanks → rejected.csv. |
+| [pw-grv-csv-normalize](#pw-grv-csv-normalize) | Normalize messy GRV / goods-received CSVs to standard schema for inventory ops | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
@@ -152,6 +153,72 @@ npm run recon -- --mode receipt \
 **Output:** `xero-bank-normalized.csv` with headers exactly: `Date,Reference,Amount,Description`
 
 [→ Full README](./pw-bank-csv-normalize/README.md)
+
+---
+
+## pw-grv-csv-normalize
+
+**One-line:** Normalize messy GRV (goods-received voucher) CSVs into standard schema for Perfect Water / CoS inventory operations.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-grv-csv-normalize/`
+
+### Install and Run
+
+```bash
+cd tools/pw-grv-csv-normalize
+npm install
+npm run build
+
+# Auto-detect format
+npm run normalize -- --in grv.csv --outdir out/
+
+# Specific profile
+npm run normalize -- --in loyverse-export.csv --outdir out/ --profile loyverse
+
+# Custom column names
+npm run normalize -- --in grv.csv --outdir out/ \
+  --store-col "Location" \
+  --item-col "Product" \
+  --qty-col "Qty Received"
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No APIs or network calls
+- ✅ **No invented quantities** - Blank/unparseable → rejected.csv
+- ✅ **No invented references** - Missing supplier/docno → blank field (not rejected)
+- ✅ **Read-only** - No write-back to Loyverse or source systems
+- ✅ **File-based** - All quantities stay in files
+
+### Standard Schema
+
+Outputs `grv-normalized.csv` with headers exactly: `Store,SKU/Item,ReceivedQty,Unit,ReceivedAt,Supplier,DocNo,Notes`
+
+Required fields (must be present and non-blank):
+- **Store** - Store/location name
+- **SKU/Item** - SKU or item name
+- **ReceivedQty** - Received quantity (must be parseable number)
+- **Unit** - Unit of measure
+
+Optional fields:
+- **ReceivedAt** - Date received (YYYY-MM-DD or original format)
+- **Supplier** - Supplier name
+- **DocNo** - Document/GRV/invoice number
+- **Notes** - Additional notes from unmapped columns
+
+**Supported profiles:** auto (default), generic, loyverse
+
+**Output files:** `grv-normalized.csv`, `rejected.csv`, `missing-fields.md`, `APPROVAL.md`, `manifest.json`, `report.md` (row counts only)
+
+**Use cases:**
+- Supplier invoice reconciliation - Match received quantities to invoiced quantities
+- Stock-on-hand verification - Compare GRV data to stocktake results
+- Cost-of-sales tracking - Track goods received by store and supplier
+- Data quality auditing - Identify missing or unparseable GRV data
+
+[→ Full README](./pw-grv-csv-normalize/README.md)
 
 ---
 
