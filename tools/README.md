@@ -40,6 +40,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
+| [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
@@ -1985,6 +1986,77 @@ CoS runs timed Browns CT packs:
 This orchestrator assembles all outputs into one dated pack folder ready for Liana vet / Grant approval.
 
 [→ Full README](./browns-ct-pack-assemble/README.md)
+
+---
+
+## browns-welcome-draft-pack
+
+**One-line:** Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-welcome-draft-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-welcome-draft-pack
+npm install
+npm run build
+
+# Basic usage (same-day check-ins)
+npm run draft-pack -- --bookings bookings.json --outdir out/
+
+# With guest facts
+npm run draft-pack -- \
+  --bookings bookings.json \
+  --facts guest-facts.json \
+  --outdir out/
+
+# Custom window (check-ins within 2 days)
+npm run draft-pack -- \
+  --bookings bookings.json \
+  --as-of 2026-09-03 \
+  --window-days 2 \
+  --outdir out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No WhatsApp API or NightsBridge integration
+- ✅ **DRAFT ONLY** - Never sends messages automatically
+- ✅ **Never invents guest phone** - Placeholder `[GUEST_PHONE]` when unknown
+- ✅ **Never invents rates** - Placeholder `[RATE CARD REQUIRED]` when unknown
+- ✅ **Skips missing names** - Bookings without `guestName` are filtered out
+- ✅ **CoS owns WhatsApp** - Coexistence of Service required for all Admin posts
+- ⚠️ **Manual approval required** - Review APPROVAL.md before every WhatsApp post
+- ⚠️ **Grant approval required** - Before posting to WhatsApp Admin - The Browns
+
+### Use Case
+
+From `bookings.json` (output of `browns-nightsbridge-bookings-adapter`), draft same-day/upcoming welcome message stubs for CoS WhatsApp Admin. Filters bookings by check-in date window (default: same-day). Generates warm, practical Dullstroom-toned welcome stubs with placeholders for missing phone/rates. Never invents data.
+
+### Output Files
+
+- `queue.md` - Numbered list of welcome stubs for CoS WhatsApp posting
+- `drafts/<safe-name>.md` - Individual welcome stub per guest
+- `missing-fields.md` - Guests missing phone or rate card
+- `APPROVAL.md` - Review checklist (CoS posts Admin; Grant approval; no auto-send)
+- `manifest.json` - Pack metadata
+
+### Integration
+
+This tool consumes outputs from:
+- `browns-nightsbridge-bookings-adapter` - bookings.json
+- `browns-guest-facts-pack` - guest-facts.json (optional)
+
+It can feed into:
+- `browns-guest-comms-draft` - Full welcome messages
+- `browns-ct-pack-assemble` - Timed CT packs
+
+**Note:** Wire integration with sibling tools is not implemented unless trivial. This tool outputs standalone stubs for manual CoS workflow.
+
+[→ Full README](./browns-welcome-draft-pack/README.md)
 
 ---
 

@@ -1,0 +1,30 @@
+{
+  "name": "browns-welcome-draft-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI that generates welcome message stubs for CoS WhatsApp Admin from bookings",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "draft-pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "draft-pack": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run test:fixtures:basic && npm run test:fixtures:facts && npm run test:fixtures:window",
+    "test:fixtures:basic": "node dist/index.js --bookings fixtures/sample-bookings.json --outdir out/basic",
+    "test:fixtures:facts": "node dist/index.js --bookings fixtures/sample-bookings.json --facts fixtures/sample-facts.json --outdir out/facts",
+    "test:fixtures:window": "node dist/index.js --bookings fixtures/sample-bookings.json --as-of 2026-09-03 --window-days 2 --outdir out/window",
+    "clean": "rm -rf dist out"
+  },
+  "keywords": ["hospitality", "guest", "communications", "browns", "draft"],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
