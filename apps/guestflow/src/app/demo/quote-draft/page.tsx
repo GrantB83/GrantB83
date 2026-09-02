@@ -1,25 +1,96 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, FileText } from 'lucide-react'
 
 export default function QuoteDraftPage() {
   const [generated, setGenerated] = useState(false)
+  const [rateCards, setRateCards] = useState<any[]>([])
+  const [hasRates, setHasRates] = useState(false)
 
-  const sampleQuote = {
+  const sampleBooking = {
     property: 'Riverside Lodge',
     guestName: 'Sarah & John Miller',
     checkIn: '2026-12-15',
     checkOut: '2026-12-17',
     nights: 2,
-    room: 'Deluxe Suite with Valley View',
-    ratePerNight: '[RATE CARD REQUIRED]',
-    subtotal: '[PENDING RATE CARD]',
-    tax: '[PENDING]',
-    total: '[PENDING]',
-    note: 'Rates must be loaded from approved rate card. Never invented.'
+    room: 'Deluxe Suite with Valley View'
   }
+
+  useEffect(() => {
+    fetchRateCards()
+  }, [])
+
+  const fetchRateCards = async () => {
+    try {
+      const response = await fetch('/api/rate-cards')
+      const data = await response.json()
+      setRateCards(data.rateCards || [])
+      setHasRates(data.rateCards && data.rateCards.length > 0)
+    } catch (error) {
+      console.error('Error fetching rate cards:', error)
+    }
+  }
+
+  const findMatchingRate = (roomType: string, checkIn: string) => {
+    const checkInDate = new Date(checkIn)
+    
+    const matchingRates = rateCards.filter(rate => {
+      if (rate.room_type !== roomType) return false
+      
+      if (rate.valid_from && rate.valid_to) {
+        const validFrom = new Date(rate.valid_from)
+        const validTo = new Date(rate.valid_to)
+        return checkInDate >= validFrom && checkInDate <= validTo
+      }
+      
+      return true
+    })
+
+    if (matchingRates.length > 0) {
+      matchingRates.sort((a, b) => {
+        if (a.valid_from && b.valid_from) {
+          return new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime()
+        }
+        return 0
+      })
+      return matchingRates[0]
+    }
+
+    return null
+  }
+
+  const matchedRate = findMatchingRate(sampleBooking.room, sampleBooking.checkIn)
+
+  const calculateQuote = () => {
+    if (!matchedRate) {
+      return {
+        ratePerNight: '[RATE CARD REQUIRED]',
+        subtotal: '[PENDING RATE CARD]',
+        tax: '[PENDING]',
+        total: '[PENDING]',
+        currency: 'ZAR',
+        note: 'Rates must be loaded from approved rate card. Never invented.'
+      }
+    }
+
+    const subtotal = matchedRate.rate_per_night * sampleBooking.nights
+    const taxRate = 0.15
+    const tax = subtotal * taxRate
+    const total = subtotal + tax
+
+    return {
+      ratePerNight: `${matchedRate.currency} ${matchedRate.rate_per_night.toLocaleString()}`,
+      subtotal: `${matchedRate.currency} ${subtotal.toLocaleString()}`,
+      tax: `${matchedRate.currency} ${tax.toFixed(2)}`,
+      total: `${matchedRate.currency} ${total.toFixed(2)}`,
+      currency: matchedRate.currency,
+      note: `Rate from ${matchedRate.season || 'standard'} season card. Min nights: ${matchedRate.min_nights}`
+    }
+  }
+
+  const quote = calculateQuote()
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -45,11 +116,11 @@ export default function QuoteDraftPage() {
           <div className="bg-white border border-gray-300 rounded-lg p-6 space-y-4">
             <div>
               <span className="text-sm text-gray-600">Guest:</span>
-              <p className="font-medium">Sarah & John Miller</p>
+              <p className="font-medium">{sampleBooking.guestName}</p>
             </div>
             <div>
               <span className="text-sm text-gray-600">Dates:</span>
-              <p className="font-medium">Dec 15-17, 2026 (2 nights)</p>
+              <p className="font-medium">Dec 15-17, 2026 ({sampleBooking.nights} nights)</p>
             </div>
             <div>
               <span className="text-sm text-gray-600">Guests:</span>
@@ -61,14 +132,37 @@ export default function QuoteDraftPage() {
             </div>
           </div>
 
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <h3 className="font-semibold text-amber-900 mb-2">Rate Card Status</h3>
-            <p className="text-sm text-amber-800">
-              🚫 No rate card loaded (Demo mode)
-            </p>
-            <p className="text-xs text-amber-700 mt-2">
-              In production: upload your seasonal rates, never let the system invent pricing
-            </p>
+          <div className={`mt-6 border rounded-lg p-4 ${hasRates ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+            <h3 className={`font-semibold mb-2 ${hasRates ? 'text-green-900' : 'text-amber-900'}`}>
+              Rate Card Status
+            </h3>
+            {hasRates ? (
+              <>
+                <p className={`text-sm mb-2 ${hasRates ? 'text-green-800' : 'text-amber-800'}`}>
+                  ✅ {rateCards.length} rate card{rateCards.length !== 1 ? 's' : ''} loaded
+                </p>
+                {matchedRate ? (
+                  <p className="text-xs text-green-700">
+                    Using: {matchedRate.season || 'standard'} season, {matchedRate.currency} {matchedRate.rate_per_night.toLocaleString()}/night
+                  </p>
+                ) : (
+                  <p className="text-xs text-amber-700">
+                    ⚠️ No matching rate found for "{sampleBooking.room}" on {sampleBooking.checkIn}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-amber-800">
+                  🚫 No rate cards loaded
+                </p>
+                <p className="text-xs text-amber-700 mt-2">
+                  <Link href="/demo/rate-card-upload" className="underline hover:text-amber-900">
+                    Upload rate card
+                  </Link> to enable accurate pricing
+                </p>
+              </>
+            )}
           </div>
 
           <button
@@ -87,46 +181,62 @@ export default function QuoteDraftPage() {
           {generated ? (
             <div className="bg-white border border-gray-300 rounded-lg p-6 space-y-4">
               <div className="border-b pb-4">
-                <h2 className="text-xl font-bold text-gray-900">Quote for {sampleQuote.guestName}</h2>
-                <p className="text-sm text-gray-600">{sampleQuote.property}</p>
+                <h2 className="text-xl font-bold text-gray-900">Quote for {sampleBooking.guestName}</h2>
+                <p className="text-sm text-gray-600">{sampleBooking.property}</p>
               </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-700">Check-in:</span>
-                  <span className="font-medium">{sampleQuote.checkIn}</span>
+                  <span className="font-medium">{sampleBooking.checkIn}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700">Check-out:</span>
-                  <span className="font-medium">{sampleQuote.checkOut}</span>
+                  <span className="font-medium">{sampleBooking.checkOut}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700">Accommodation:</span>
-                  <span className="font-medium">{sampleQuote.room}</span>
+                  <span className="font-medium">{sampleBooking.room}</span>
                 </div>
               </div>
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">{sampleQuote.nights} nights × Rate:</span>
-                  <span className="font-medium text-amber-600">{sampleQuote.ratePerNight}</span>
+                  <span className="text-gray-700">{sampleBooking.nights} nights × Rate:</span>
+                  <span className={`font-medium ${matchedRate ? 'text-gray-900' : 'text-amber-600'}`}>
+                    {quote.ratePerNight}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700">Subtotal:</span>
-                  <span className="font-medium text-amber-600">{sampleQuote.subtotal}</span>
+                  <span className={`font-medium ${matchedRate ? 'text-gray-900' : 'text-amber-600'}`}>
+                    {quote.subtotal}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Tax:</span>
-                  <span className="font-medium text-amber-600">{sampleQuote.tax}</span>
+                  <span className="text-gray-700">Tax (15%):</span>
+                  <span className={`font-medium ${matchedRate ? 'text-gray-900' : 'text-amber-600'}`}>
+                    {quote.tax}
+                  </span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span className="text-gray-900">Total:</span>
-                  <span className="text-amber-600">{sampleQuote.total}</span>
+                  <span className={matchedRate ? 'text-gray-900' : 'text-amber-600'}>
+                    {quote.total}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
-                ⚠️ Amounts require approved rate card. Draft-only, no auto-send.
+              <div className={`rounded p-3 text-sm border ${matchedRate ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                {matchedRate ? (
+                  <>
+                    ✅ {quote.note}
+                  </>
+                ) : (
+                  <>
+                    ⚠️ {quote.note}
+                  </>
+                )}
               </div>
 
               <div className="pt-4 border-t">
