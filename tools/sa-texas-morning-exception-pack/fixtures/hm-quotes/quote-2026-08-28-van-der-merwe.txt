@@ -1,0 +1,5 @@
+Customer: John van der Merwe
+Material: G5 crusher run
+Volume: 10 cubic meters
+Delivery: Dullstroom area
+Status: Awaiting pricing confirmation
