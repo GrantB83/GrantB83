@@ -1,18 +1,21 @@
 # Brown Ops Automation Control Plane
 
-Grok Bot directs Cursor Cloud agents from this folder. This is the map, not the apps.
+Grok Bot **runs** the household and businesses. Cursor Cloud Agents **record locks or write code**, then die. This folder is the map, not the daily operator.
 
 ## Start here
 
 | File | Purpose |
 | --- | --- |
-| [RUNTIME.md](RUNTIME.md) | Grok Bot vs Cloud Agents vs filters — cost and who does what |
+| [CAPABILITIES.md](CAPABILITIES.md) | What Grok Bot / Cloud Agents / Automations can actually do (2026-08-23) |
+| [RUNTIME.md](RUNTIME.md) | Who does what, cost, standing rules |
 | [GROK-BOT-AMENDMENTS.md](GROK-BOT-AMENDMENTS.md) | Amend existing Grok Bots — do not create a second team |
 | [bot-roster.yaml](bot-roster.yaml) | Live Bot name → plan role (Grant fills `existing_name`) |
 | [GOOGLE-ACCOUNTS.md](GOOGLE-ACCOUNTS.md) | Link **all** Gmail / Drive / Calendar logins |
 | [google-accounts.yaml](google-accounts.yaml) | Identity registry + link status |
 | [FAMILY-COMMAND-CENTER.md](FAMILY-COMMAND-CENTER.md) | School, medical, household finance, budget |
 | [family-filters.yaml](family-filters.yaml) | Zero-token Gmail routing |
+| [usa-budget.yaml](usa-budget.yaml) | USA household Budget locks (sheet, Bell, 7th close) |
+| [monarch-category-map.yaml](monarch-category-map.yaml) | Monarch category → Budget line (names only) |
 | [BUSINESS-REQUIREMENTS.md](BUSINESS-REQUIREMENTS.md) | Per-entity admin evaluation, gaps, RACI, labour tests |
 | [SPEC.md](SPEC.md) | Phased build, workable approach, done criteria |
 | [labor-ledger.md](labor-ledger.md) | Hours removed per phase — Grant fills actuals |
@@ -24,16 +27,16 @@ Grok Bot directs Cursor Cloud agents from this folder. This is the map, not the 
 ## Operating model
 
 ```text
-Grant / Liana  →  existing Grok Bots (amended, not duplicated)
+Grant / Liana  →  existing Grok Bots (message them; teach once)
                       │
-                      ├─ reads SPEC + STATUS
-                      ├─ uses every linked Google login (not hub-only)
-                      ├─ picks next work package
-                      ├─ launches 1 Cursor Cloud agent
-                      └─ reviews PR / exception queue
+                      ├─ Family / Ops Chief / Stay / Aqua / Yard / Vault do the work
+                      ├─ in Gmail, Drive, browser, Budget sheet
+                      └─ ping humans for RED, Action, money, dead sessions
+
+Cloud Agent    →  only when the output is a git PR (locks, WhatsApp code)
 ```
 
-Heavy token work belongs in a Cloud agent against a specific repo. Grok keeps the conversation short and only reasons about exceptions, approvals, and the next package.
+Do not launch a Cloud Agent to write the Sunday Family digest or close the Budget.
 
 ## Current entry points already in flight
 

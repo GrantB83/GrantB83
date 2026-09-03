@@ -1,0 +1,209 @@
+# USA household Budget automation locks.
+# No account numbers, balances, medical notes, or NatPay stub bodies.
+schema_version: 1
+updated: 2026-08-23
+lane: family
+owner_bot: Family
+approval: Grant locks in chat; this file records them
+
+sheet:
+  title: Budget
+  drive_path: The Browns USA / Finance
+  id: 1XefM6adRfjRIJtYOpCvNcrNqf-R6_jOox68Q4i_32NA
+  owner: thebrownsusa@gmail.com
+  write_as: thebrownsusa@gmail.com
+  editors: [grant, liana]
+  grant_phrase_editors: "LIANA SHEET: yes"
+  currency: USD
+  zar_snapshot: out_of_scope_until_grant_says
+  live_budget_edited: test_tabs_only   # Family 2026-08-23 TEST CLOSE; intended plan left alone
+  new_plan_lines:
+    - { group: Housing, line: Austin utilities (bundle), type: Essential }
+    - { group: Lifestyle, line: Shopping (bundle), type: Discretionary }
+  planned_tabs:
+    - existing intended plan (category totals)
+    - Line items   # receipt/email item rows; feeds category totals; queryable
+    - Budget vs Actual
+    - Paystubs     # numbers only
+    - Sinking target
+    - 3-month forecast
+    - Leftover for Grant
+  draft:
+    actuals_title: Budget — Actuals dry-run 2026-08-23
+    actuals_id: 19OGoNTA3vZRd8tcB5Gi0-1oguht-Fk1DdILhOnnIjAg
+    actuals_row_count: 64
+    leftover_title: Budget — Exceptions dry-run 2026-08-23
+    leftover_id: 13XYcQZv_O25Rl77iLkQly3JQpXUm30PZLCRME7Dyurw
+    leftover_compile: 2026-08-23
+    leftover_mailbox: hub_only   # thebrownsusa Cloud MCP skipped
+    leftover_row_count: 1
+    leftover_merchant: Brown & Grant
+    exceptions_row_count: 84
+    empty_line_items_draft_trashed: 1YDpE0IQEYWGEwgsUlIpXPNqME0PQnPpUYFny94zJNLk
+    old_66_row_leftover_trashed: 1bGS9BJGAyluaPM_4NidLZLgXWAAcJskvmnZNgwpdx0Q
+    line_items_ai_no_amounts_trashed: 1lo_DjuCLl-5oniqsuBSP_ibCQbtRwdPCK1FPmRYZC1M
+    leftover_no_amounts_trashed: 1W0-gr_FB5VPjGUchIn8GyUVMNNLLYik7ZEVYuFdZ7Zk
+    write_path: family_bot_as_thebrownsusa
+
+books:
+  source: monarch_official_csv
+  monarch_path: Settings → Data → Download Transactions
+  monarch_accounts: BELL ONLY
+  dry_run_file_title: 2026-08-22__monarch__bell__transactions
+  dry_run_file_id: 1C7YZ8Qaj5wazgm_EEr8ITZVkEJr9YLrO7sUYGW48H30
+  category_map: docs/automation/monarch-category-map.yaml
+  vehicles: tesla_only
+  monarch_gas: tesla_supercharger_to_electricity
+  natural_gas_vendor: Texas Gas Service
+  natural_gas_not: City of Austin
+  city_of_austin: utilities_bundle
+  city_of_austin_hold_line: Austin utilities (bundle)
+  city_of_austin_grant_phrase: "MAP AUSTIN: utilities-bundle"
+  city_of_austin_hold_phrase: "AUSTIN HOLD: new-line"
+  city_of_austin_split_source: Grant or Liana downloads the bill from the COA website and uploads the PDF to Drive. Family does not log into COA.
+  shopping_hold_line: Shopping (bundle)
+  shopping_grant_phrase: "MAP SHOPPING: new-line Shopping"
+  shopping_split: optional_refinement_when_receipt_changes_a_line
+  shopping_split_not_a_close_blocker: true
+  shopping_split_sources:
+    - retailer_emails_first
+    - monarch_receipt_images_only_for_remainder
+  shopping_receipt_mailboxes: [grant830318@gmail.com, thebrownsusa@gmail.com]
+  shopping_receipt_mail_phrase: "RECEIPTS MAIL: both"
+  shopping_split_method: AI reads receipt line-item descriptions and assigns each item to a sheet line
+  close_unit: monarch_transaction
+  close_primary_output: actuals_by_plan_line_with_amounts
+  close_compare: intended_monthly_vs_full_month_actuals
+  last_full_month_rule: last calendar month fully inside the export
+  allocator:
+    first: ai_identify_item_then_map_to_budget_line
+    if_ai_fails: leftover_list_for_grant
+    leftover_when: only if merchant and purpose remain unknown after a best-guess onto an existing plan line
+    leftover_policy: prefer_existing_line_over_ask
+    leftover_asks: grant
+    leftover_contains: [merchant, item_description, date, amount, source_email_or_monarch_image]
+    intended_source_tab: Group / Line Item / Type / Amount
+    bills_scratch_tab: not_used_for_close
+    leftover_omits_unless_grant_asks: [last_four, medical_item_text]
+    amounts_on_drive: true
+    amounts_in_chat_or_git: false
+    after_grant_answers: write Line items tab and roll category totals to main Budget
+    do_not_invent_new_plan_lines: true
+    may_pick_existing_line: true
+  shopping_main_sheet: category_totals_only
+  shopping_detail_tab: Line items
+  shopping_detail_tab_feeds: category totals on the main Budget plan / Budget vs Actual
+  shopping_split_run: family_bot_on_7th_close
+  shopping_split_not: this_cloud_vm_daily
+  shopping_tax:
+    keep_item_level_on_detail_tab: true
+    agent_does_not_determine_deductibility: true
+    agent_does_not_file: true   # N2
+    flag_tax_review: true
+    never_quote_line_items_in_chat_or_git: true
+  shopping_skip_n3: true   # pharmacy / medical item text stays out
+  unofficial_api: never
+  stored_passwords: never
+  monarch_session: family_bot_computer   # Grant types password; session stays
+  natpay_session: family_bot_computer    # numbers only on a Paystubs tab
+  recon: Bell statement PDF into The Browns USA / Finance / Bell Bank
+
+close:
+  day: 7
+  time: "07:00"
+  timezone: America/Chicago
+  grant_phrase: "CLOSE TIME: 07:00 CT"
+  family_does:
+    - export Monarch CSV (Bell only) when the Family-computer session is live
+    - ping Grant once if the Monarch session is dead (he types the password; session stays)
+    - file Bell statement PDF from Family/Finance or Drive; ping once if missing; do not block close
+    - map each Monarch transaction to an existing plan line (amounts on Drive)
+    - write live Budget vs Actual for the prior month as thebrownsusa
+    - write Exceptions (ask / review / exclude only)
+    - check sinking target vs MONTH LEFT
+    - archive a dated copy under The Browns USA / Finance
+    - item-split mixed shopping only if a receipt would move money between lines
+  grant_does_on_close:
+    - type Monarch password only if Family says the session is dead
+    - answer Status=ask (target 0-3 merchants)
+    - upload Bell statement PDF only if Family says it is missing
+  family_does_not:
+    - remind-only close
+    - quote amounts in chat
+    - store Monarch or NatPay passwords
+    - unofficial Monarch APIs
+    - log into City of Austin
+    - pay anyone
+  grant_phrase_family_closes: "FAMILY CLOSES: yes"
+  family_locked: 2026-08-23
+  family_locked_text: Family confirmed reminder-only is out; routine USA Budget close 7th 07:00 CT is on
+  test_close:
+    grant_phrase: "TEST CLOSE: now"
+    uses: existing_monarch_dry_run_first
+    optional_export: if_monarch_session_live
+    write_to: live Budget tab "Budget vs Actual — test" plus refresh Exceptions sibling
+    do_not: [overwrite intended plan, freeze official close, archive as official, quote amounts in chat]
+    ran: 2026-08-23
+    outcome: passed
+    result:
+      thebrownsusa_avatar: yes
+      monarch_session: dead
+      wrote_test_tab: yes
+      exceptions_written: yes
+      ask_merchants: [Brown & Grant]
+      blocked: no
+      official_archive: no
+      plan_tab: left_alone
+  books_are: monarch_csv_plus_statement
+  daily_flash_is_not_books: true
+  first_close: dry_run_now
+  grant_phrase_first_close: "FIRST CLOSE: dry-run now"
+  first_close_date_scheduled: 2026-09-07
+  teach_by_doing: now_then_repeat_on_7th
+
+daily_flash:
+  mailbox: thebrownsusa@gmail.com
+  from: donotreply@customercenter.net
+  label: Family/Finance
+  skip_inbox: false
+  subject_constraint: none
+  grant_phrase: "BELL FILTER: from-only"
+  create_on_hub: never
+
+funds:
+  sinking_official: none_yet
+  sinking_target_tab: what the pot should be by objective
+  bell_should_hold: sinking_target_plus_month_left
+  month_left: unspent intended Essential + Controlled this month
+
+forecast:
+  horizon_months: 3
+  income_rule: average_last_3_paystubs
+  grant_phrase: "FORECAST: average-3"
+  fewer_than_3_stubs: average_whatever_exists
+  grant_phrase_short: "FORECAST SHORT: use-what-we-have"
+  do_not_invent_income: true
+  numbers_only_on_paystubs_tab: true
+  spend_rule: intended_plan
+  spend_includes: [Essential, Controlled, Discretionary, Savings, Sinking_targets]
+  grant_phrase_spend: "FORECAST SPEND: intended"
+  grant_phrase_discretionary: "FORECAST DISCRETIONARY: include"
+
+archive:
+  dated_budget_vs_actual_on_sheet: true
+  file_copy_under: The Browns USA / Finance
+
+build_vs_run:
+  tabs_formulas_mapping: cursor_cloud_agent_once
+  monthly_and_daily_run: family_bot
+  cloud_mcp_thebrownsusa: skipped_2026-08-22
+  family_amend_prompt: locked_by_family_2026-08-23
+  daily_digest_amend: wait_until_grant_says   # still not pasted unless Grant asks
+
+never:
+  - N1 payments
+  - N3 medical/will/tax-emigration bodies
+  - quote amounts or last-four in chat or git
+  - unofficial Monarch APIs
+  - determine tax deductibility or file income tax
+  - quote receipt line items or prices in chat or git
