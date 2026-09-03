@@ -31,7 +31,7 @@ Use this phrase in STATUS.md when a human must act:
 | `G5` | Host the WhatsApp webhook on a public HTTPS URL | `APPROVE WA HOST <url>` |
 | `G6` | Allow auto-label of a whole sender class after 95% sample accuracy | `APPROVE AUTO LABEL <class>` |
 | `G7` | Confirm Grok Bot entitlement / Cursor plan | `RUNTIME: grok-bot=yes|no cursor-plan=… on-demand=yes|no` |
-| `G8` | Map live Grok Bot names to plan roles (amend, do not duplicate) | `BOT ROSTER: <name>=ops-chief, <name>=family, … unused=…` |
+| `G8` | Optional: record the desktop Bot’s sidebar name or public share URL (six-role team is retired) | `LIVE BOT: name=<sidebar>` or `LIVE BOT: share=<url>` |
 
 ## Needs per-item or per-batch human approval
 

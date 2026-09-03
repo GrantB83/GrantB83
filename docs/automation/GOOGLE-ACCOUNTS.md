@@ -42,7 +42,7 @@ Grok Bot plugins are **account-wide** (one authorize is shared by every Bot). Of
 
 Sessions persist on the shared Bot computer and are available to every Bot.
 
-1. Open the Ops Chief (or any) Bot computer → browser.
+1. Open the desktop Grok Bot computer → browser.
 2. Go to `mail.google.com`, `drive.google.com`, `calendar.google.com`.
 3. Sign in **every** Google login (Google avatar → Add account). Grant types the password; the Bot does not see it.
 4. Leave all accounts signed in. Do not use Incognito.
