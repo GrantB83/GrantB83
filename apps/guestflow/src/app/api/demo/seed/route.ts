@@ -100,9 +100,9 @@ export async function POST(request: Request) {
     const inviteCodeIds: number[] = []
     for (const ic of inviteCodes) {
       const result = db.prepare(`
-        INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note, uses_count)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(ic.tenantId, ic.code, ic.maxUses, ic.expiresAt, ic.note, 1) // Pre-seed with 1 use for DEMO2026
+        INSERT INTO invite_codes (tenant_id, code, max_uses, expires_at, note, uses_count, current_uses)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(ic.tenantId, ic.code, ic.maxUses, ic.expiresAt, ic.note, 1, 1) // Pre-seed with 1 use for DEMO2026
       inviteCodeIds.push(Number(result.lastInsertRowid))
     }
 

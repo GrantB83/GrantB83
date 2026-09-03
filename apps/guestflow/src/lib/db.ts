@@ -39,6 +39,7 @@ function initializeDb(database: Database.Database) {
       code TEXT NOT NULL UNIQUE,
       max_uses INTEGER DEFAULT 1,
       uses_count INTEGER DEFAULT 0,
+      current_uses INTEGER DEFAULT 0,
       expires_at DATETIME,
       note TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -55,6 +56,7 @@ function initializeDb(database: Database.Database) {
       current_system TEXT,
       phone TEXT,
       notes TEXT,
+      status TEXT DEFAULT 'new' CHECK(status IN ('new', 'contacted', 'qualified', 'won', 'lost', 'converted')),
       invite_code_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (tenant_id) REFERENCES tenants(id),
@@ -147,28 +149,9 @@ function initializeDb(database: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_lead_notes_lead ON lead_notes(lead_id);
     CREATE INDEX IF NOT EXISTS idx_lead_notes_tenant ON lead_notes(tenant_id);
-<<<<<<< HEAD
-    
     CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
     CREATE INDEX IF NOT EXISTS idx_waitlist_invite_code ON waitlist(invite_code_id);
-=======
-
-    CREATE TABLE IF NOT EXISTS invite_codes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tenant_id INTEGER NOT NULL,
-      code TEXT NOT NULL UNIQUE,
-      max_uses INTEGER DEFAULT 1,
-      current_uses INTEGER DEFAULT 0,
-      expires_at DATETIME,
-      note TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
-    CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
->>>>>>> origin/main
   `)
   
   const tenantCount = database.prepare('SELECT COUNT(*) as count FROM tenants').get() as { count: number }
@@ -193,6 +176,10 @@ function initializeDb(database: Database.Database) {
 
 export function getDefaultTenantId(): number {
   const db = getDb()
+  const seeded = db.prepare('SELECT id FROM tenants WHERE name = ? LIMIT 1').get('Dullstroom Demo Guesthouse') as { id: number } | undefined
+  if (seeded?.id) {
+    return seeded.id
+  }
   const tenant = db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
   return tenant?.id || 1
 }
