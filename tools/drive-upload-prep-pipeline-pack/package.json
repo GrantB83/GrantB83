@@ -1,0 +1,31 @@
+{
+  "name": "drive-upload-prep-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator for Drive handoff prep: drive-create-file-validate → drive-pdf-upload-prep",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "drive-upload-prep-pipeline": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "pipeline": "npm run build && node dist/index.js",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && node dist/index.js --source-pdf fixtures/test-invoice.pdf --parent-id TEST-PARENT-ID-FIXTURE --title \"Test Invoice 2026\" --outdir test-out",
+    "clean": "rm -rf dist/ test-out/ out/"
+  },
+  "keywords": [
+    "drive",
+    "upload",
+    "prep",
+    "pipeline",
+    "orchestrator",
+    "offline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
