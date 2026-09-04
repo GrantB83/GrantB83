@@ -1,0 +1,11 @@
+{
+  "tool": "pw-bank-csv-normalize",
+  "version": "1.0.0",
+  "inputFile": "test-bank.csv",
+  "profile": "fnb",
+  "delimiter": "comma",
+  "timestamp": "2024-09-02T01:00:00.000Z",
+  "totalRows": 8,
+  "normalizedRows": 5,
+  "rejectedRows": 3
+}

@@ -15,6 +15,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [pw-rejected-csv-digest](#pw-rejected-csv-digest) | Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose | Perfect Water / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Read-only. |
+| [pw-bank-rejected-pipeline-pack](#pw-bank-rejected-pipeline-pack) | Offline orchestrator combining pw-bank-csv-normalize and pw-rejected-csv-digest for PW bank reconciliation pipeline | Perfect Water / CoS | **Offline orchestrator**. Never invents amounts. Default ON rejected digest with PR #114 skip flags. PR #116 manifest accuracy. |
 | [pw-inventory-recon-pack](#pw-inventory-recon-pack) | Orchestrate PW inventory recon pack (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest) | Perfect Water / CoS | **Offline orchestrator**. Amounts stay in files. PACK.md = index + counts only. H3 gate reminder. Never invents quantities. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
@@ -592,6 +593,59 @@ npm run digest -- --csv rejected.csv --outdir out/ \
 Digest one or more `rejected.csv` files produced by sibling normalizers (pw-grv-csv-normalize, pw-stocktake-csv-normalize, pw-bank-csv-normalize, pw-ordered-vs-sold-diff, etc.) into a structured human review pack. Classifies rejection reasons heuristically from common columns (RejectionReason, Error, Notes) or from blank required fields. Perfect Water / CoS can review multi-file rejection patterns without hunting through individual CSVs.
 
 [→ Full README](./pw-rejected-csv-digest/README.md)
+
+---
+
+## pw-bank-rejected-pipeline-pack
+
+**One-line:** Offline CLI orchestrator combining pw-bank-csv-normalize and pw-rejected-csv-digest for Perfect Water bank reconciliation pipeline.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-bank-rejected-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-bank-rejected-pipeline-pack
+npm install
+npm run build
+
+# Mode A: Raw bank CSV with normalization
+npm run pack -- --bank-csv bank.csv --run-normalize --outdir pack-out/
+
+# Mode B: Prebuilt normalized output (default: with rejected digest)
+npm run pack -- --normalized-outdir normalized/ --outdir pack-out/
+
+# Mode B: Skip rejected digest (PR #114 boolean flags)
+npm run pack -- --normalized-outdir normalized/ --no-run-rejected-digest --outdir pack-out/
+npm run pack -- --normalized-outdir normalized/ --run-rejected-digest=false --outdir pack-out/
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No bank login, no network calls, no payments
+- ✅ **Never invents amounts** - All rands from source bank CSV only
+- ✅ **Read-only** - Never writes back to bank systems
+- ✅ **File-based** - Figures stay in files/sheet, not chat
+- ✅ **Default ON rejected digest** - With PR #114 boolean skip flags
+- ✅ **PR #116 manifest accuracy** - Only lists files actually present
+- ⚠️ **Perfect Water owns ops** - Draft digests only, PW makes final decisions
+- ⚠️ **H3 gate** - Bank reconciliation decisions require approval per approval-gates.md
+
+### Output Files
+
+- `PACK.md` - Index with normalized/rejected counts only (NO amount tables in prose)
+- `APPROVAL.md` - H3-style gate reminder, PW ownership, offline-only constraint
+- `manifest.json` - Run metadata (PR #116: only lists present files)
+- Copies: `xero-bank-normalized.csv`, `rejected.csv`, `missing-fields.md`, `report.md`
+- Optional: `DIGEST-DIGEST.md`, `DIGEST-reasons.json`, `DIGEST-missing-headers.md`, `DIGEST-APPROVAL.md` (if rejected digest run)
+
+### Use Case
+
+Wire bank CSV normalize → rejected-csv digest into one offline pipeline pack (same pattern as pw-inventory-recon-pack). Cash integrity is current Perfect Water priority. Accepts bank CSV with normalization, OR existing normalized bank outdir. Optionally runs pw-bank-csv-normalize. Runs pw-rejected-csv-digest on rejected inputs (default ON, PR #114 boolean skip). One outdir with PACK.md + manifest.json accurate to present files (PR #116). Never invents amounts. Never pays. Figures stay in files, not chat.
+
+[→ Full README](./pw-bank-rejected-pipeline-pack/README.md)
 
 ---
 
