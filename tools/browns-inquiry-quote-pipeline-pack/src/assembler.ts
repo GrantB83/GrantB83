@@ -47,19 +47,51 @@ export async function assemblePack(options: CliOptions): Promise<PackResult> {
         throw new Error('browns-inquiry-intake not found. Ensure sibling tool is installed.');
       }
 
+      // Auto-build sibling tool if dist missing (PR #122, PR #129 pattern)
+      const intakeDistPath = path.join(intakeTool, 'dist', 'index.js');
+      if (!fs.existsSync(intakeDistPath)) {
+        console.log('⚙️  Building browns-inquiry-intake (dist missing)...');
+        
+        // Install dependencies if node_modules missing
+        const nodeModulesPath = path.join(intakeTool, 'node_modules');
+        if (!fs.existsSync(nodeModulesPath)) {
+          console.log('   Installing dependencies...');
+          execSync('npm install', {
+            cwd: intakeTool,
+            stdio: 'inherit'
+          });
+        }
+        
+        // Build the tool
+        execSync('npm run build', {
+          cwd: intakeTool,
+          stdio: 'inherit'
+        });
+        console.log('✅ browns-inquiry-intake built successfully\n');
+      }
+
       // Shell out to browns-inquiry-intake
       execSync(
         `cd ${intakeTool} && npm run intake -- --text ${path.resolve(options.text)} --outdir ${path.resolve(intakeDir)} --mode both`,
         { stdio: 'inherit' }
       );
 
-      // Find the generated intake directory
-      const intakeOut = fs.readdirSync(intakeDir).find(f => f.startsWith('intake-'));
-      if (!intakeOut) {
-        throw new Error('browns-inquiry-intake did not produce expected output');
+      // Discover intake output: accept flat layout (booking.json in intakeDir) OR intake-* subdirectory
+      let intakePath: string;
+      const bookingPathFlat = path.join(intakeDir, 'booking.json');
+      const quotePathFlat = path.join(intakeDir, 'quote.json');
+      
+      if (fs.existsSync(bookingPathFlat) || fs.existsSync(quotePathFlat)) {
+        // Flat layout: intake wrote directly to intakeDir
+        intakePath = intakeDir;
+      } else {
+        // Subdirectory layout: look for intake-* subdirectory
+        const intakeOut = fs.readdirSync(intakeDir).find(f => f.startsWith('intake-'));
+        if (!intakeOut) {
+          throw new Error('browns-inquiry-intake did not produce expected output (no booking.json/quote.json in outdir or intake-* subdirectory)');
+        }
+        intakePath = path.join(intakeDir, intakeOut);
       }
-
-      const intakePath = path.join(intakeDir, intakeOut);
       
       // Read booking.json (or quote.json as fallback)
       const bookingPath = path.join(intakePath, 'booking.json');
@@ -105,6 +137,29 @@ export async function assemblePack(options: CliOptions): Promise<PackResult> {
       
       if (!fs.existsSync(quoteTool)) {
         throw new Error('browns-quote-invoice-draft not found. Ensure sibling tool is installed.');
+      }
+
+      // Auto-build sibling tool if dist missing (PR #122, PR #129 pattern)
+      const quoteDistPath = path.join(quoteTool, 'dist', 'index.js');
+      if (!fs.existsSync(quoteDistPath)) {
+        console.log('⚙️  Building browns-quote-invoice-draft (dist missing)...');
+        
+        // Install dependencies if node_modules missing
+        const nodeModulesPath = path.join(quoteTool, 'node_modules');
+        if (!fs.existsSync(nodeModulesPath)) {
+          console.log('   Installing dependencies...');
+          execSync('npm install', {
+            cwd: quoteTool,
+            stdio: 'inherit'
+          });
+        }
+        
+        // Build the tool
+        execSync('npm run build', {
+          cwd: quoteTool,
+          stdio: 'inherit'
+        });
+        console.log('✅ browns-quote-invoice-draft built successfully\n');
       }
 
       const quoteOutdir = path.join(packDir, 'quote-temp');
