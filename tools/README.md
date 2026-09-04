@@ -22,6 +22,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
+| [vault-entity-due-pipeline-pack](#vault-entity-due-pipeline-pack) | Offline CLI pipeline pack orchestrator combining vault-filename-due-queue (optional) with vault-entity-due-pack for Vault weekday operations | Vault / CoS | **Offline orchestrator**. Never opens file bodies. Never invents dates/amounts. PR #114 boolean flags. PR #116 manifest accuracy. |
 | [vault-due-digest-pack](#vault-due-digest-pack) | Assemble weekday Vault due digest by orchestrating vault-filename-due-queue and vault-entity-due-pack | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Never submits to SARS/CIPC. |
 | [vault-due-digest-post-checklist](#vault-due-digest-post-checklist) | Validate vault-due-digest-pack output before Vault weekday ops with go/no-go checklist | Vault / CoS | **Offline only**. Never opens file bodies. Never invents dates/amounts. N2 gate reminder. Exit 1 if checks fail. |
 | [vault-due-digest-pipeline-pack](#vault-due-digest-pipeline-pack) | Offline CLI orchestrator combining vault-due-digest-pack with vault-due-digest-post-checklist for Vault weekday operations | Vault / CoS | **Offline orchestrator**. Never opens file bodies. Never submits to SARS/CIPC. Flexible boolean parsing. Accurate manifest when checklist skipped. |
@@ -921,6 +922,76 @@ npm run pack -- --queue ../vault-filename-due-queue/due-queue/queue.json --outdi
 ```
 
 [→ Full README](./vault-entity-due-pack/README.md)
+
+---
+
+## vault-entity-due-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack orchestrator combining vault-filename-due-queue (optional, default OFF) with vault-entity-due-pack (default ON) for Vault weekday operations.
+
+**Owning desk(s):** Vault / CoS
+
+**Location:** `tools/vault-entity-due-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/vault-entity-due-pipeline-pack
+npm install
+npm run build
+
+# Use existing queue.json (preferred)
+npm run pack -- --queue ../vault-filename-due-queue/out/queue.json --outdir pack/
+
+# From filename list (entity pack only, no queue stage)
+npm run pack -- --filenames vault-filenames.txt --outdir pack/
+
+# From filename list with both stages
+npm run pack -- --filenames vault-filenames.txt --run-queue --outdir pack/
+
+# Skip entity pack (queue stage only)
+npm run pack -- --filenames list.txt --run-queue --no-run-entity-pack --outdir pack/
+
+# With custom entity mappings and as-of date
+npm run pack -- --queue queue.json --entity-map entities.json --as-of 2026-09-02 --outdir pack/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No file bodies opened, no API calls
+- ✅ **Never invents dates/amounts** - Source data only
+- ✅ **Never submits to SARS/CIPC** - Vault owns filings (N2 gate)
+- ✅ **Auto-builds siblings** - Sibling tools built if dist/ missing (PR #132)
+- ✅ **Flexible boolean flags** - Supports `--flag`, `--flag=false`, `--no-flag` (PR #114)
+- ✅ **Accurate manifest** - Lists only files present / stages that ran (PR #116)
+- ⚠️ **Entity classification is heuristic guidance only**
+
+### Pipeline Stages
+
+1. **vault-filename-due-queue** (optional, default OFF)
+   - Trigger: `--run-queue` flag
+   - Outputs: queue.json, queue.md, missing-signals.md
+
+2. **vault-entity-due-pack** (default ON)
+   - Trigger: Runs by default unless `--no-run-entity-pack`
+   - Outputs: by-entity/, master.md, unknown.md
+
+### Output Structure
+
+- `PACK.md` - Pipeline pack index with workflow summary
+- `APPROVAL.md` - Vault research gates
+- `by-entity/` - Entity pack subdirectories (if entity pack ran)
+- `master.md` - Entity overview (if entity pack ran)
+- `unknown.md` - Unmatched filenames (if entity pack ran)
+- `queue.json` - Due date queue data (if queue ran)
+- `queue.md` - Due date queue overview (if queue ran)
+- `missing-signals.md` - Files without date hints (if queue ran)
+- `manifest.json` - Pipeline metadata
+
+[→ Full README](./vault-entity-due-pipeline-pack/README.md)
 
 ---
 
