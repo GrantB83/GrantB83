@@ -64,6 +64,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [career-hunt-run-log](#career-hunt-run-log) | Append career hunt runs into durable offline log for live-improve tracking | Career / CoS | **Offline only**. Append-only (never rewrites prior lines). Never invents scores or employers. Career bot owns apply. |
 | [career-live-improve-digest](#career-live-improve-digest) | Generate live-improve digest from career-hunt-run-log output for Career learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
 | [career-weekday-improve-pack](#career-weekday-improve-pack) | Orchestrate career-hunt-run-log outputs into career-live-improve-digest results for folding into learning.md | Career / CoS | **Offline only**. Never invents scores/employers. Career bot owns apply. Never auto-updates learning.md. |
+| [career-weekday-improve-pipeline-pack](#career-weekday-improve-pipeline-pack) | Offline CLI pipeline pack assembler combining career tools for Career weekday improve workflow | Career / CoS | **Offline only**. Never invents scores/employers/compensation. Career owns apply + learning.md fold-in. Hard gates unchanged. Flexible boolean flags. |
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
@@ -3597,6 +3598,71 @@ npm run test:fixtures
 - `manifest.json` - Tool metadata
 
 [→ Full README](./career-weekday-improve-pack/README.md)
+
+---
+
+## career-weekday-improve-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack assembler combining career-weekday-improve-pack with optional career-live-improve-digest and career-hunt-run-log for Career weekday workflow.
+
+**Owning desk(s):** Career / CoS
+
+**Location:** `tools/career-weekday-improve-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/career-weekday-improve-pipeline-pack
+npm install
+npm run build
+
+# Use existing improve pack (digest default ON)
+npm run pipeline -- --pack ../career-weekday-improve-pack/out/pack-2026-09-02
+
+# Skip digest (default ON, turn OFF)
+npm run pipeline -- --pack path/to/pack --no-run-digest
+
+# Run hunt-log append (default OFF, turn ON)
+npm run pipeline -- --pack path/to/pack --run-hunt-log --log runs.jsonl
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Purpose
+
+Assemble a complete Career weekday pipeline pack that combines `career-weekday-improve-pack` output with optional `career-live-improve-digest` results and `career-hunt-run-log` append for Career learning.md fold-in. Never invents Grant facts. Never loosens DNC / $180k+ / WFH hard gates. Never auto-applies.
+
+### Optional Stages (Flexible Boolean Flags)
+
+- **Digest (default ON):** `--run-digest` / `--no-run-digest` - Run career-live-improve-digest
+- **Hunt Log (default OFF):** `--run-hunt-log` / `--no-run-hunt-log` - Append to career-hunt-run-log
+
+### Output Files
+
+- `PACK.md` - Index of improve pack + optional digest + hunt-log status
+- `LEARNING-DRAFT.md` - From improve pack (numbered patterns)
+- `stats.json` - From improve pack (if present)
+- `APPROVAL.md` - Career owns apply; hard gates unchanged; no invented facts
+- `DIGEST-LEARNING-DRAFT.md` - From digest (if --run-digest)
+- `DIGEST-stats.json` - From digest (if --run-digest)
+- `HUNT-LOG-runs.jsonl` - From hunt-log (if --run-hunt-log)
+- `HUNT-LOG-runs.md` - From hunt-log (if --run-hunt-log)
+- `manifest.json` - Metadata (accurate to present files, PR #116 pattern)
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No job board APIs or live data
+- ✅ **Never auto-applies** - Career bot owns apply workflow
+- ✅ **Never auto-updates learning.md** - Manual fold-in required
+- ✅ **Hard gates unchanged** - $180k+, DNC list, WFH requirements remain
+- ✅ **No invented data** - Never fabricates scores, employers, or compensation
+- ✅ **Flexible boolean flags** - PR #114 style for optional stages
+- ✅ **Accurate manifest** - PR #116 pattern excludes optional files when skipped
+- ⚠️ **Career owns apply** - Apply decisions separate from learning workflow
+- ⚠️ **Manual review required** - Review PACK.md and APPROVAL.md before fold-in
+
+[→ Full README](./career-weekday-improve-pipeline-pack/README.md)
 
 ---
 

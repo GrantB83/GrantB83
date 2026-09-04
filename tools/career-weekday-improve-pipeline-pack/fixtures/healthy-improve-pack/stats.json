@@ -1,0 +1,14 @@
+{
+  "totals": {
+    "entries": 12,
+    "scored": 7,
+    "applied": 3,
+    "skipped": 2,
+    "rejected": 0
+  },
+  "scoreBands": {
+    "excellent_9_10": 3,
+    "good_7_8": 3,
+    "medium_5_6": 1
+  }
+}
