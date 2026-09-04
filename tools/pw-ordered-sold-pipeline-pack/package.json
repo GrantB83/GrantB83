@@ -1,0 +1,36 @@
+{
+  "name": "pw-ordered-sold-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator for Perfect Water cost-of-sales: optional Loyverse sales digest → ordered-vs-sold diff pack",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "pack": "node dist/index.js",
+    "start": "npm run pack",
+    "test:fixtures": "npm run build && node dist/index.js --ordered-csv fixtures/ordered.csv --sold-csv fixtures/sold.csv --outdir test-out && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": [
+    "perfect-water",
+    "cost-of-sales",
+    "ordered",
+    "sold",
+    "diff",
+    "loyverse",
+    "pipeline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
