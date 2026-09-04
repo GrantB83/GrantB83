@@ -1,0 +1,31 @@
+{
+  "totalReceived": 200,
+  "totalCounted": 195,
+  "totalDelta": -5,
+  "items": [
+    {
+      "store": "LT",
+      "item": "Water 5L",
+      "received": 100,
+      "counted": 95,
+      "delta": -5,
+      "unit": "bottles"
+    },
+    {
+      "store": "LT",
+      "item": "Filter Cartridge",
+      "received": 20,
+      "counted": 18,
+      "delta": -2,
+      "unit": "units"
+    },
+    {
+      "store": "Tho",
+      "item": "Water 5L",
+      "received": 80,
+      "counted": 82,
+      "delta": 2,
+      "unit": "bottles"
+    }
+  ]
+}

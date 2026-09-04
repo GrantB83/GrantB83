@@ -1,0 +1,35 @@
+{
+  "name": "pw-grv-stocktake-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator wiring Perfect Water GRV+stocktake normalize → diff → optional inventory-recon into one pipeline pack",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "pipeline": "node dist/index.js",
+    "test:fixtures": "npm run build && node dist/index.js --grv-norm fixtures/normalized-csvs/grv-normalized.csv --stock-norm fixtures/normalized-csvs/stocktake-normalized.csv --outdir test-out && echo 'Fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out"
+  },
+  "keywords": [
+    "grv",
+    "stocktake",
+    "diff",
+    "inventory",
+    "recon",
+    "perfect-water",
+    "pipeline"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
