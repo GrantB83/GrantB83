@@ -14,6 +14,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
+| [pw-ordered-sold-pipeline-pack](#pw-ordered-sold-pipeline-pack) | Orchestrate Perfect Water cost-of-sales reconciliation: optional Loyverse daily sales digest → ordered-vs-sold diff pack | Perfect Water / CoS | **Offline orchestrator**. Never invents quantities/amounts. Default OFF for sales digest. PR #114 skip flags. PR #116 manifest accuracy. |
 | [pw-rejected-csv-digest](#pw-rejected-csv-digest) | Digest rejected.csv files into human review pack WITHOUT pasting quantities/amounts into prose | Perfect Water / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Read-only. |
 | [pw-bank-rejected-pipeline-pack](#pw-bank-rejected-pipeline-pack) | Offline orchestrator combining pw-bank-csv-normalize and pw-rejected-csv-digest for PW bank reconciliation pipeline | Perfect Water / CoS | **Offline orchestrator**. Never invents amounts. Default ON rejected digest with PR #114 skip flags. PR #116 manifest accuracy. |
 | [pw-inventory-recon-pack](#pw-inventory-recon-pack) | Orchestrate PW inventory recon pack (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest) | Perfect Water / CoS | **Offline orchestrator**. Amounts stay in files. PACK.md = index + counts only. H3 gate reminder. Never invents quantities. |
@@ -42,6 +43,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-digest-post-checklist](#family-digest-post-checklist) | Validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Pre-WhatsApp validation. Exit 1 if checks fail. |
 | [family-morning-digest-pipeline-pack](#family-morning-digest-pipeline-pack) | Offline pipeline pack assembler combining family-morning-digest-pack and family-digest-post-checklist for Family / CoS morning workflow | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Assembles morning pack + post-checklist. Kids School vs Family separation preserved. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
+| [family-school-pipeline-pack](#family-school-pipeline-pack) | Orchestrate Family school morning pieces: family-school-subject-digest + family-school-due-queue + optional family-calendar-ics-digest | Family Command Center / CoS | **Offline orchestrator**. Never opens email bodies. Never invents due dates. Never auto-sends. AISD / Kids School workflows. Default ON for digest + due-queue. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [hm-quote-to-pod](#hm-quote-to-pod) | Map quote.json into pod.json stub for hm-delivery-pod-draft field bridge | SA Ops / Heavy Metal | **Offline**. No LLM. Never invents volume/signature/price. Field bridge only. |
@@ -60,6 +62,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-ct-pack-post-checklist](#browns-ct-pack-post-checklist) | Pre-WhatsApp post checklist from browns-ct-pack-assemble output folder before 20:00 / 09:00 / 21:00 CT Admin posts | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents guest phones/rates/ETAs. CoS owns WhatsApp. Exit 1 if checks fail. |
 | [browns-ct-pack-pipeline-pack](#browns-ct-pack-pipeline-pack) | Orchestrate Browns CT pack pipeline: booking-change-check → ct-pack-assemble → optional ct-pack-post-checklist | SA Ops / CoS | **Offline orchestrator**. Never auto-sends. Flexible boolean parsing. Accurate manifest when checklist skipped. DRAFT ONLY. |
 | [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
+| [browns-welcome-late-pipeline-pack](#browns-welcome-late-pipeline-pack) | Orchestrate Browns same-day guest packs: browns-welcome-draft-pack + browns-late-checkin-queue + optional browns-daily-ops-brief | SA Ops / CoS | **Offline orchestrator**. Never invents guest phone/ETA/rates. Never auto-sends. Default ON for welcome + late-checkin. Dullstroom The Browns only. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [sa-texas-exception-post-checklist](#sa-texas-exception-post-checklist) | Pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents rates/volumes/guest facts. CoS owns WhatsApp. |
 | [sa-texas-exception-pipeline-pack](#sa-texas-exception-pipeline-pack) | Offline CLI pipeline pack assembler combining sa-texas-morning-exception-pack and sa-texas-exception-post-checklist for SA Ops / CoS weekday Texas-morning workflow | SA Ops / CoS | **Offline orchestrator**. Never auto-sends. Flexible boolean parsing. Accurate manifest when checklist skipped (PR #116). DRAFT ONLY. |
@@ -538,6 +541,66 @@ Perfect Water maintains ordered-vs-sold comparisons on Drive. This tool provides
 - Identifying unsold stock
 
 [→ Full README](./pw-ordered-vs-sold-diff/README.md)
+
+---
+
+## pw-ordered-sold-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Perfect Water cost-of-sales reconciliation.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-ordered-sold-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-ordered-sold-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (only diff stage, no sales digest):
+npm run pack -- --ordered ordered.csv --sold sold.csv --date 2026-09-04
+
+# With sales digest:
+npm run pack -- --ordered ordered.csv --sold sold.csv --loyverse loyverse.csv --run-sales-digest
+
+# Skip diff stage:
+npm run pack -- --loyverse loyverse.csv --run-sales-digest --run-diff=false
+
+# Test with fixtures:
+npm run test:fixtures
+```
+
+### Orchestrated Stages
+
+This tool orchestrates two Perfect Water tools:
+
+1. **pw-loyverse-daily-sales-digest** (default OFF) — Optional sales digest from Loyverse CSV
+2. **pw-ordered-vs-sold-diff** (default ON) — Compare ordered vs sold by SKU
+
+### Stage Flags (PR #114 pattern)
+
+All stage flags support multiple syntaxes: `--flag`, `--flag=false`, `--no-flag`
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No API calls
+- ✅ **Never invents** quantities or amounts
+- ✅ **Amounts stay in files** - Never in PACK.md prose
+- ✅ **Auto-build sibling tools** - PR #132 pattern
+- ✅ **Accurate manifest** - PR #116 pattern (files[] only lists present files)
+- ⚠️ **CoS reconciliation** - Manual review required
+
+### Output Pack
+
+Creates `<outdir>/pack-YYYY-MM-DD/` with PACK.md, APPROVAL.md, outputs from enabled stages, and manifest.json.
+
+### Why This Tool Exists
+
+Wire optional pw-loyverse-daily-sales-digest → pw-ordered-vs-sold-diff into one dated pack for Perfect Water cost-of-sales reconciliation. Never invents quantities. Amounts stay in files.
+
+[→ Full README](./pw-ordered-sold-pipeline-pack/README.md)
 
 ---
 
@@ -2140,6 +2203,88 @@ Family morning digest sometimes needs calendar events from an exported .ics file
 
 ---
 
+## family-school-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack assembler orchestrating Family school morning pieces for AISD / Kids School workflows.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-school-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (digest + due-queue enabled by default):
+npm run pack -- --subjects subjects.txt --date 2026-09-04
+
+# With filenames for due-queue:
+npm run pack -- --subjects subjects.txt --filenames files.txt
+
+# With calendar:
+npm run pack -- --subjects subjects.txt --ics school.ics --run-calendar
+
+# Skip digest:
+npm run pack -- --subjects subjects.txt --run-digest=false
+
+# Test with fixtures:
+npm run test:fixtures
+```
+
+### Orchestrated Stages
+
+This tool orchestrates three family school tools:
+
+1. **family-school-subject-digest** (default ON) — Classify and digest email subjects
+2. **family-school-due-queue** (default ON) — Extract due/deadline signals
+3. **family-calendar-ics-digest** (default OFF) — Parse .ics calendar exports
+
+### Stage Flags (PR #114 pattern)
+
+All stage flags support multiple syntaxes:
+
+```bash
+--run-digest           # Enable (default)
+--run-digest=false     # Disable with equals
+--run-digest false     # Disable with space
+--no-run-digest        # Disable with negative flag
+```
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never opens email bodies** - Only subjects/filenames processed
+- ✅ **Never invents data** - Only extracts explicit signals
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Auto-build sibling tools** - PR #132 pattern (builds siblings if dist/ missing)
+- ✅ **Accurate manifest** - PR #116 pattern (files[] only lists present files)
+- ⚠️ **Family / CoS owns send** - WhatsApp posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review PACK.md and APPROVAL.md before every post
+
+### Output Pack
+
+Creates `<outdir>/pack-YYYY-MM-DD/` with:
+
+- **PACK.md** — Index of stages and outputs
+- **APPROVAL.md** — Safety checklist
+- **digest-digest.md** — From family-school-subject-digest (if run)
+- **digest-items.json** — From family-school-subject-digest (if run)
+- **queue-queue.md** — From family-school-due-queue (if run)
+- **queue-queue.json** — From family-school-due-queue (if run)
+- **calendar-digest.md** — From family-calendar-ics-digest (if run)
+- **manifest.json** — Metadata (files[] only lists present files)
+
+### Why This Tool Exists
+
+Family morning school digest workflow previously required running three separate tools manually. This orchestrator wires them together into one dated pack with proper stage control, auto-build of siblings, and accurate manifests. Never opens email bodies. Never invents due dates. AISD / Kids School only.
+
+[→ Full README](./family-school-pipeline-pack/README.md)
+
+---
+
 ## browns-guest-facts-pack
 
 **One-line:** Extract structured guest facts from markdown knowledge files into JSON and snippet files.
@@ -3212,6 +3357,68 @@ It can feed into:
 **Note:** Wire integration with sibling tools is not implemented unless trivial. This tool outputs standalone stubs for manual CoS workflow.
 
 [→ Full README](./browns-welcome-draft-pack/README.md)
+
+---
+
+## browns-welcome-late-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Browns same-day guest packs for SA Ops / CoS.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-welcome-late-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-welcome-late-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (welcome + late-checkin enabled by default):
+npm run pack -- --bookings bookings.json --date 2026-09-04
+
+# Skip welcome draft:
+npm run pack -- --bookings bookings.json --date 2026-09-04 --run-welcome=false
+
+# Add daily ops brief:
+npm run pack -- --bookings bookings.json --date 2026-09-04 --run-brief
+
+# Test with fixtures:
+npm run test:fixtures
+```
+
+### Orchestrated Stages
+
+This tool orchestrates three Browns guest workflow tools:
+
+1. **browns-welcome-draft-pack** (default ON) — Same-day/upcoming welcome message stubs
+2. **browns-late-checkin-queue** (default ON) — Late/after-hours check-in queue
+3. **browns-daily-ops-brief** (default OFF) — Daily ops team brief
+
+### Stage Flags (PR #114 pattern)
+
+All stage flags support multiple syntaxes: `--flag`, `--flag=false`, `--no-flag`
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No API calls
+- ✅ **Never invents** guest phone, ETA, rates, or amounts
+- ✅ **Never auto-sends** - No WhatsApp/email API
+- ✅ **Auto-build sibling tools** - PR #132 pattern
+- ✅ **Accurate manifest** - PR #116 pattern (files[] only lists present files)
+- ⚠️ **CoS owns send** - Manual WhatsApp workflow
+- ⚠️ **Dullstroom The Browns only** - Not for other properties
+
+### Output Pack
+
+Creates `<outdir>/pack-YYYY-MM-DD/` with PACK.md, APPROVAL.md, outputs from enabled stages, and manifest.json.
+
+### Why This Tool Exists
+
+Wire browns-welcome-draft-pack + browns-late-checkin-queue + optional browns-daily-ops-brief into existing CT morning / 09:00 after-hours flows. One dated pack from bookings.json (adapter output). Never invents guest details.
+
+[→ Full README](./browns-welcome-late-pipeline-pack/README.md)
 
 ---
 

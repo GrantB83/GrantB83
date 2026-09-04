@@ -1,0 +1,34 @@
+{
+  "name": "family-school-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler combining family-school-subject-digest, family-school-due-queue, and family-calendar-ics-digest",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "pack": "node dist/index.js",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && npm run pack -- --subjects fixtures/sample-subjects.txt --date 2026-09-04 --outdir test-out-full && echo 'All fixture tests completed successfully'",
+    "clean": "rm -rf dist test-out* out*"
+  },
+  "keywords": [
+    "family",
+    "school",
+    "pipeline",
+    "pack",
+    "AISD",
+    "digest"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
