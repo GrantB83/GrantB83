@@ -1,0 +1,12 @@
+{
+  "guestName": "Sarah Thompson",
+  "checkInDate": "2026-09-20",
+  "checkOutDate": "2026-09-22",
+  "suiteOrUnit": "The Browns Suite",
+  "lateCheckIn": false,
+  "adults": 2,
+  "children": 0,
+  "notes": "Anniversary celebration",
+  "channel": "whatsapp",
+  "guestPhone": "+27 83 645 1234"
+}
