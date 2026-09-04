@@ -1,0 +1,33 @@
+{
+  "date": null,
+  "generatedAt": "2026-09-04T05:26:58.825Z",
+  "packPath": "/workspace/tools/sa-texas-exception-post-checklist/fixtures/healthy-pack",
+  "outputs": [
+    "POST-CHECKLIST.md",
+    "ISSUES.md",
+    "APPROVAL.md",
+    "manifest.json"
+  ],
+  "checks": {
+    "requiredFiles": {
+      "passed": true,
+      "message": "All required files present"
+    },
+    "hospitality": {
+      "passed": true,
+      "message": "hospitality.md exists with content"
+    },
+    "heavyMetal": {
+      "passed": true,
+      "message": "heavy-metal.md exists with content"
+    },
+    "approval": {
+      "passed": true,
+      "message": "APPROVAL.md present with approval content"
+    },
+    "packWarnings": {
+      "passed": false,
+      "message": "PACK.md contains warnings or missing inputs. Browns bookings mentioned, Heavy Metal quotes mentioned"
+    }
+  }
+}

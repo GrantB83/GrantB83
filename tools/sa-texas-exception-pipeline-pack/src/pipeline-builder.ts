@@ -65,6 +65,45 @@ export function buildPipelineFromExistingPack(
       '../../sa-texas-exception-post-checklist'
     );
 
+    // Auto-install and auto-build sibling tool if dist missing
+    const distPath = path.join(checklistToolPath, 'dist', 'index.js');
+    if (!fs.existsSync(distPath)) {
+      console.log('⚙️  Building sa-texas-exception-post-checklist (dist missing)...');
+      
+      // Install dependencies if node_modules missing
+      const nodeModulesPath = path.join(checklistToolPath, 'node_modules');
+      if (!fs.existsSync(nodeModulesPath)) {
+        console.log('   Installing dependencies...');
+        try {
+          execSync('npm install', {
+            cwd: checklistToolPath,
+            stdio: 'inherit'
+          });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return {
+            success: false,
+            message: `Failed to install sa-texas-exception-post-checklist dependencies: ${errorMessage}`
+          };
+        }
+      }
+      
+      // Build the tool
+      try {
+        execSync('npm run build', {
+          cwd: checklistToolPath,
+          stdio: 'inherit'
+        });
+        console.log('✅ sa-texas-exception-post-checklist built successfully\n');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          message: `Failed to build sa-texas-exception-post-checklist: ${errorMessage}`
+        };
+      }
+    }
+
     const absolutePackPath = path.resolve(packPath);
 
     try {
@@ -89,11 +128,23 @@ export function buildPipelineFromExistingPack(
       const manifestPath = path.join(checklistDir, 'manifest.json');
       if (fs.existsSync(manifestPath)) {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        
+        // Derive allPassed, failCount, and warningCount from checks structure
+        // Match post-checklist semantics: packWarnings is non-blocking, other failed checks are critical
+        const checks = manifest.checks || {};
+        const criticalChecks = Object.entries(checks).filter(([name]) => name !== 'packWarnings');
+        const allCriticalPassed = criticalChecks.every(([_, check]: [string, any]) => check.passed === true);
+        const failedCriticalChecks = criticalChecks.filter(([_, check]: [string, any]) => check.passed !== true);
+        const warnings = checks.packWarnings && !checks.packWarnings.passed ? [checks.packWarnings] : [];
+        
+        // Fall back to manifest.allPassed if present (forward compatible)
+        const derivedAllPassed = manifest.allPassed !== undefined ? manifest.allPassed : allCriticalPassed;
+        
         checklistOutput = {
-          allPassed: manifest.allPassed,
+          allPassed: derivedAllPassed,
           checks: [],
-          failures: manifest.failCount > 0 ? ['See ISSUES.md for details'] : [],
-          warnings: manifest.warningCount > 0 ? ['See ISSUES.md for warnings'] : []
+          failures: failedCriticalChecks.length > 0 ? ['See ISSUES.md for details'] : [],
+          warnings: warnings.length > 0 ? ['See ISSUES.md for warnings'] : []
         };
       }
 
