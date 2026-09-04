@@ -1,0 +1,36 @@
+{
+  "name": "browns-ota-rate-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler for Browns OTA rate worksheets - orchestrates browns-ota-rate-worksheet for SA Ops / CoS",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pack": "dist/index.js"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "test": "node --test dist/**/*.test.js",
+    "pack": "node dist/index.js",
+    "start": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pack -- --rates fixtures/sample-rates.csv --promo fixtures/sample-promo.json --as-of 2026-09-20 --outdir test-out",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "browns",
+    "hospitality",
+    "ota",
+    "rate-worksheet",
+    "pipeline",
+    "pack",
+    "dullstroom"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
