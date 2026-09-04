@@ -1,0 +1,25 @@
+{
+  "tool": "pw-grv-stocktake-pipeline-pack",
+  "version": "1.0.0",
+  "generatedAt": "2026-09-04T05:18:38.261Z",
+  "operations": {
+    "grvNormalized": false,
+    "stocktakeNormalized": false,
+    "diffGenerated": false,
+    "inventoryReconRan": false
+  },
+  "inputs": {
+    "grvNorm": null,
+    "stockNorm": null,
+    "grvRaw": null,
+    "stockRaw": null,
+    "diffOutdir": "/workspace/tools/pw-grv-stocktake-pipeline-pack/fixtures/prebuilt-diff"
+  },
+  "files": [
+    "PACK.md",
+    "diff.md",
+    "diff.json",
+    "missing-keys.md",
+    "APPROVAL.md"
+  ]
+}

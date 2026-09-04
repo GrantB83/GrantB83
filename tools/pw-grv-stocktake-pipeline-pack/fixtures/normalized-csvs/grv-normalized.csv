@@ -1,0 +1,4 @@
+Store,SKU/Item,ReceivedQty,Unit,ReceivedAt,Supplier,DocNo,Notes
+LT,Water 5L,100,bottles,2026-09-01,Acme Water,GRV001,
+LT,Filter Cartridge,20,units,2026-09-01,Acme Water,GRV001,
+Tho,Water 5L,80,bottles,2026-09-01,Acme Water,GRV002,
