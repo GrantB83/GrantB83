@@ -4454,6 +4454,41 @@ Generates:
 
 ---
 
+## drive-upload-prep-pipeline-pack
+
+**One-line:** Offline CLI orchestrator for Drive handoff prep: validates and prepares files for Google Drive upload without using Drive API.
+
+**Owning desk(s):** Studio / Career / CoS / Perfect Water / Hospitality
+
+**Location:** `tools/drive-upload-prep-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/drive-upload-prep-pipeline-pack
+npm install
+npm run build
+
+# Default: upload-prep only
+npm run pipeline -- --source-pdf invoice.pdf --parent-id 1A2B3C4D5E6F --title "Invoice 2026"
+
+# With validation enabled
+npm run pipeline -- --source-pdf invoice.pdf --parent-id 1A2B3C4D5E6F --run-validate
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+**Pipeline stages:**
+1. **drive-create-file-validate** [default: OFF, enable with `--run-validate`]
+2. **drive-pdf-upload-prep** [default: ON, disable with `--no-run-upload-prep`]
+
+**Safety:** Offline only. Never uploads. Never invents Drive URLs or file IDs. Boolean flag patterns (PR #114). Manifest accuracy (PR #116).
+
+[→ Full README](./drive-upload-prep-pipeline-pack/README.md)
+
+---
+
 ## pw-invoice-docno-index
 
 **One-line:** Offline CLI to index Perfect Water / CoS invoice Doc Nos from filenames to prevent duplicate uploads during At-PET Drive operations.
