@@ -42,6 +42,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [family-digest-post-checklist](#family-digest-post-checklist) | Validate family-morning-digest-pack output before WhatsApp Admin posting with go/no-go checklist | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Pre-WhatsApp validation. Exit 1 if checks fail. |
 | [family-morning-digest-pipeline-pack](#family-morning-digest-pipeline-pack) | Offline pipeline pack assembler combining family-morning-digest-pack and family-digest-post-checklist for Family / CoS morning workflow | Family Command Center / CoS | **Offline only**. Never sends. Never invents school facts. Assembles morning pack + post-checklist. Kids School vs Family separation preserved. |
 | [family-calendar-ics-digest](#family-calendar-ics-digest) | Parse exported .ics calendar files into numbered digest for date window | Family Command Center / CoS | **Offline only**. Never invents events or times. Pass-through data only. DRAFT ONLY. |
+| [family-school-pipeline-pack](#family-school-pipeline-pack) | Orchestrate Family school morning pieces: family-school-subject-digest + family-school-due-queue + optional family-calendar-ics-digest | Family Command Center / CoS | **Offline orchestrator**. Never opens email bodies. Never invents due dates. Never auto-sends. AISD / Kids School workflows. Default ON for digest + due-queue. |
 | [browns-inquiry-intake](#browns-inquiry-intake) | Extract structured booking/quote JSON from inquiry text | SA Ops / CoS | **No LLM**. No auto-send. Never invents rates. WhatsApp stays on CoS. |
 | [hm-quote-intake](#hm-quote-intake) | Extract structured quote JSON from Heavy Metal WhatsApp inquiry text | SA Ops / Heavy Metal | **No LLM**. No auto-send. Never invents volume/price/location. WhatsApp stays on CoS. |
 | [hm-quote-to-pod](#hm-quote-to-pod) | Map quote.json into pod.json stub for hm-delivery-pod-draft field bridge | SA Ops / Heavy Metal | **Offline**. No LLM. Never invents volume/signature/price. Field bridge only. |
@@ -2137,6 +2138,88 @@ npm run test:fixtures
 Family morning digest sometimes needs calendar events from an exported .ics file (school/admin calendars). This offline parser extracts events in a date window and generates a numbered digest. Never invents events or times.
 
 [→ Full README](./family-calendar-ics-digest/README.md)
+
+---
+
+## family-school-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack assembler orchestrating Family school morning pieces for AISD / Kids School workflows.
+
+**Owning desk(s):** Family Command Center / CoS
+
+**Location:** `tools/family-school-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/family-school-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (digest + due-queue enabled by default):
+npm run pack -- --subjects subjects.txt --date 2026-09-04
+
+# With filenames for due-queue:
+npm run pack -- --subjects subjects.txt --filenames files.txt
+
+# With calendar:
+npm run pack -- --subjects subjects.txt --ics school.ics --run-calendar
+
+# Skip digest:
+npm run pack -- --subjects subjects.txt --run-digest=false
+
+# Test with fixtures:
+npm run test:fixtures
+```
+
+### Orchestrated Stages
+
+This tool orchestrates three family school tools:
+
+1. **family-school-subject-digest** (default ON) — Classify and digest email subjects
+2. **family-school-due-queue** (default ON) — Extract due/deadline signals
+3. **family-calendar-ics-digest** (default OFF) — Parse .ics calendar exports
+
+### Stage Flags (PR #114 pattern)
+
+All stage flags support multiple syntaxes:
+
+```bash
+--run-digest           # Enable (default)
+--run-digest=false     # Disable with equals
+--run-digest false     # Disable with space
+--no-run-digest        # Disable with negative flag
+```
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never opens email bodies** - Only subjects/filenames processed
+- ✅ **Never invents data** - Only extracts explicit signals
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Auto-build sibling tools** - PR #132 pattern (builds siblings if dist/ missing)
+- ✅ **Accurate manifest** - PR #116 pattern (files[] only lists present files)
+- ⚠️ **Family / CoS owns send** - WhatsApp posting via Family bot or CoS workflow
+- ⚠️ **Manual review required** - Review PACK.md and APPROVAL.md before every post
+
+### Output Pack
+
+Creates `<outdir>/pack-YYYY-MM-DD/` with:
+
+- **PACK.md** — Index of stages and outputs
+- **APPROVAL.md** — Safety checklist
+- **digest-digest.md** — From family-school-subject-digest (if run)
+- **digest-items.json** — From family-school-subject-digest (if run)
+- **queue-queue.md** — From family-school-due-queue (if run)
+- **queue-queue.json** — From family-school-due-queue (if run)
+- **calendar-digest.md** — From family-calendar-ics-digest (if run)
+- **manifest.json** — Metadata (files[] only lists present files)
+
+### Why This Tool Exists
+
+Family morning school digest workflow previously required running three separate tools manually. This orchestrator wires them together into one dated pack with proper stage control, auto-build of siblings, and accurate manifests. Never opens email bodies. Never invents due dates. AISD / Kids School only.
+
+[→ Full README](./family-school-pipeline-pack/README.md)
 
 ---
 
