@@ -2,41 +2,63 @@
   "suggestions": [
     {
       "merchant": "AMAZON.COM*XX1234567",
-      "alias": "Amazon",
-      "score": 0.750,
-      "matchedPattern": "Amazon.com",
-      "confidence": "high",
-      "alternatives": [
-        { "alias": "Amazon Prime", "score": 0.667, "pattern": "Amazon Prime" }
-      ]
+      "topMatch": {
+        "alias": "Amazon",
+        "score": 0.750,
+        "matchedPattern": "Amazon.com"
+      },
+      "allMatches": [
+        {
+          "alias": "Amazon",
+          "score": 0.750,
+          "matchedPattern": "Amazon.com"
+        },
+        {
+          "alias": "Amazon Prime",
+          "score": 0.667,
+          "matchedPattern": "Amazon Prime"
+        }
+      ],
+      "confidence": "high"
     },
     {
       "merchant": "WALMART #1234",
-      "alias": "Walmart",
-      "score": 0.800,
-      "matchedPattern": "Walmart",
-      "confidence": "high",
-      "alternatives": []
+      "topMatch": {
+        "alias": "Walmart",
+        "score": 0.800,
+        "matchedPattern": "Walmart"
+      },
+      "allMatches": [
+        {
+          "alias": "Walmart",
+          "score": 0.800,
+          "matchedPattern": "Walmart"
+        }
+      ],
+      "confidence": "high"
     },
     {
       "merchant": "TARGET T-1234",
-      "alias": "Target",
-      "score": 0.600,
-      "matchedPattern": "Target",
-      "confidence": "medium",
-      "alternatives": []
+      "topMatch": {
+        "alias": "Target",
+        "score": 0.600,
+        "matchedPattern": "Target"
+      },
+      "allMatches": [
+        {
+          "alias": "Target",
+          "score": 0.600,
+          "matchedPattern": "Target"
+        }
+      ],
+      "confidence": "medium"
     }
   ],
-  "noMatch": [
+  "noMatches": [
     "UNKNOWN MERCHANT 123",
     "ACME CORP"
   ],
-  "stats": {
-    "totalMerchants": 5,
-    "withSuggestions": 3,
-    "noMatch": 2,
-    "highConfidence": 2,
-    "mediumConfidence": 1,
-    "lowConfidence": 0
-  }
+  "generatedAt": "2026-09-04T10:00:00.000Z",
+  "minScore": 0.4,
+  "totalMerchants": 5
 }

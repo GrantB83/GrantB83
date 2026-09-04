@@ -84,17 +84,62 @@ export function buildPipelineWithSuggest(
   fs.mkdirSync(tempSuggestDir, { recursive: true });
   
   try {
-    // Build suggest command
+    // Auto-build sibling tool if dist missing
     const suggestToolDir = path.resolve(__dirname, '../../ledger-merchant-alias-suggest');
-    let suggestCmd = `cd ${suggestToolDir} && npm run suggest -- --outdir ${tempSuggestDir} --aliases ${aliases}`;
+    const suggestDistPath = path.join(suggestToolDir, 'dist', 'index.js');
     
-    if (unmatchedQueue) {
-      suggestCmd += ` --unmatched ${unmatchedQueue}`;
-    } else if (merchants) {
-      suggestCmd += ` --merchants ${merchants}`;
+    if (!fs.existsSync(suggestDistPath)) {
+      console.log('⚙️  Building ledger-merchant-alias-suggest (dist missing)...');
+      
+      // Install dependencies if node_modules missing
+      const nodeModulesPath = path.join(suggestToolDir, 'node_modules');
+      if (!fs.existsSync(nodeModulesPath)) {
+        console.log('   Installing dependencies...');
+        try {
+          execSync('npm install', {
+            cwd: suggestToolDir,
+            stdio: 'inherit'
+          });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return {
+            success: false,
+            message: `Failed to install ledger-merchant-alias-suggest dependencies: ${errorMessage}`,
+            outdir,
+            files: []
+          };
+        }
+      }
+      
+      // Build the tool
+      try {
+        execSync('npm run build', {
+          cwd: suggestToolDir,
+          stdio: 'inherit'
+        });
+        console.log('✅ ledger-merchant-alias-suggest built successfully\n');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          success: false,
+          message: `Failed to build ledger-merchant-alias-suggest: ${errorMessage}`,
+          outdir,
+          files: []
+        };
+      }
     }
     
-    // Run suggest tool
+    // Build suggest command using node dist/index.js
+    let suggestArgs = `--outdir ${tempSuggestDir} --aliases ${aliases}`;
+    
+    if (unmatchedQueue) {
+      suggestArgs += ` --unmatched ${unmatchedQueue}`;
+    } else if (merchants) {
+      suggestArgs += ` --merchants ${merchants}`;
+    }
+    
+    // Run suggest tool via node dist/index.js
+    const suggestCmd = `node ${suggestDistPath} ${suggestArgs}`;
     console.log(`  Command: ${suggestCmd}`);
     execSync(suggestCmd, { stdio: 'inherit' });
     
@@ -160,23 +205,64 @@ function assemblePipelinePack(
     console.log('\n🔨 Running ledger-alias-apply-checklist...');
     
     try {
+      // Auto-build sibling tool if dist missing
       const checklistToolDir = path.resolve(__dirname, '../../ledger-alias-apply-checklist');
+      const checklistDistPath = path.join(checklistToolDir, 'dist', 'index.js');
+      
+      if (!fs.existsSync(checklistDistPath)) {
+        console.log('⚙️  Building ledger-alias-apply-checklist (dist missing)...');
+        
+        // Install dependencies if node_modules missing
+        const nodeModulesPath = path.join(checklistToolDir, 'node_modules');
+        if (!fs.existsSync(nodeModulesPath)) {
+          console.log('   Installing dependencies...');
+          try {
+            execSync('npm install', {
+              cwd: checklistToolDir,
+              stdio: 'inherit'
+            });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`⚠ Failed to install ledger-alias-apply-checklist dependencies: ${errorMessage}`);
+            console.error('  Continuing without checklist outputs...\n');
+            return assemblePipelinePack(suggestOutdir, false, outdir, month, suggestRan);
+          }
+        }
+        
+        // Build the tool
+        try {
+          execSync('npm run build', {
+            cwd: checklistToolDir,
+            stdio: 'inherit'
+          });
+          console.log('✅ ledger-alias-apply-checklist built successfully\n');
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`⚠ Failed to build ledger-alias-apply-checklist: ${errorMessage}`);
+          console.error('  Continuing without checklist outputs...\n');
+          return assemblePipelinePack(suggestOutdir, false, outdir, month, suggestRan);
+        }
+      }
+      
       const suggestionsJson = path.join(suggestOutdir, 'suggestions.json');
       const noMatchMd = path.join(suggestOutdir, 'no-match.md');
       
       const tempChecklistDir = path.join(outdir, 'temp-checklist-output');
       fs.mkdirSync(tempChecklistDir, { recursive: true });
       
-      let checklistCmd = `cd ${checklistToolDir} && npm run apply -- --suggestions ${suggestionsJson} --outdir ${tempChecklistDir}`;
+      // Build checklist command using node dist/index.js
+      let checklistArgs = `--suggestions ${suggestionsJson} --outdir ${tempChecklistDir}`;
       
       if (fs.existsSync(noMatchMd)) {
-        checklistCmd += ` --no-match ${noMatchMd}`;
+        checklistArgs += ` --no-match ${noMatchMd}`;
       }
       
       if (month) {
-        checklistCmd += ` --month ${month}`;
+        checklistArgs += ` --month ${month}`;
       }
       
+      // Run checklist tool via node dist/index.js
+      const checklistCmd = `node ${checklistDistPath} ${checklistArgs}`;
       console.log(`  Command: ${checklistCmd}`);
       execSync(checklistCmd, { stdio: 'inherit' });
       
