@@ -77,6 +77,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [tools-catalog-doctor](#tools-catalog-doctor) | Validate tools/README.md catalog integrity: check index completeness, detect duplicates | CoS / Repository | **Read-only**. CI-style checks. Never modifies catalog. Structural validation only. |
 | [drive-pdf-upload-prep](#drive-pdf-upload-prep) | Prepare PDFs for Google Drive MCP upload with auto-compression for large files | Perfect Water / CoS / Hospitality | **Offline only**. No Drive API. Never invents data. Compression is lossy (greyscale). |
 | [drive-create-file-validate](#drive-create-file-validate) | Validate Drive create_file JSON payloads before MCP upload | Perfect Water / CoS / Hospitality / Coding | **Offline only**. No Drive API. Preflight validator. CI-friendly exit codes. |
+| [drive-upload-prep-pipeline-pack](#drive-upload-prep-pipeline-pack) | Offline orchestrator for Drive handoff prep: validate + upload-prep without Drive API | Studio / Career / CoS / Perfect Water / Hospitality | **Offline orchestrator**. Never uploads. Never invents Drive URLs/IDs. Default ON upload-prep, OFF validate. PR #114 boolean flags. PR #116 manifest accuracy. |
 | [pw-invoice-docno-index](#pw-invoice-docno-index) | Index Perfect Water / CoS invoice Doc Nos from filenames to prevent duplicate uploads | Perfect Water / CoS | **Offline only**. Basename-only. Never opens PDFs. No invented Doc Nos. |
 
 ---
