@@ -21,6 +21,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-inventory-recon-pack](#pw-inventory-recon-pack) | Orchestrate PW inventory recon pack (pw-grv-csv-normalize + pw-stocktake-csv-normalize + pw-grv-vs-stocktake-diff + optional pw-rejected-csv-digest) | Perfect Water / CoS | **Offline orchestrator**. Amounts stay in files. PACK.md = index + counts only. H3 gate reminder. Never invents quantities. |
 | [pw-grv-stocktake-pipeline-pack](#pw-grv-stocktake-pipeline-pack) | Wire GRV + stocktake normalize → diff → optional inventory-recon into one offline pipeline pack | Perfect Water / CoS | **Offline orchestrator**. Never invents quantities. PR #114 boolean skip flags. PR #116 accurate manifest. H3 gate. |
 | [attachment-filename-index](#attachment-filename-index) | Index Drive/mail attachment filenames without opening file bodies | Vault / CoS / Perfect Water | **No file body reads**. Never extracts amounts. Filename classification only. |
+| [attachment-filename-index-pipeline-pack](#attachment-filename-index-pipeline-pack) | Offline CLI pipeline pack orchestrating attachment-filename-index into structured packs for Vault / Family / CoS | Vault / Family / CoS | **Offline orchestrator**. Never opens file bodies. Never invents dates/amounts. PR #114 boolean flags. PR #116 manifest accuracy. |
 | [vault-filename-due-queue](#vault-filename-due-queue) | Extract due date hints from CIPC/SARS/trust filenames without opening bodies | Vault / CoS | **No file body reads**. Never invents dates or legal positions. Heuristic extraction only. |
 | [vault-entity-due-pack](#vault-entity-due-pack) | Group filename-due-queue items into per-entity research packs for Vault weekday ops | Vault / CoS | **Filename heuristics only**. No file body reads. Never invents dates/amounts. Entity classification is guidance. |
 | [vault-entity-due-pipeline-pack](#vault-entity-due-pipeline-pack) | Offline CLI pipeline pack orchestrator combining vault-filename-due-queue (optional) with vault-entity-due-pack for Vault weekday operations | Vault / CoS | **Offline orchestrator**. Never opens file bodies. Never invents dates/amounts. PR #114 boolean flags. PR #116 manifest accuracy. |
@@ -867,6 +868,72 @@ npm run index -- \
 - ⚠️ **Sensitive files:** Family medical, tax-emigration, will files are filename-only; bodies never enter indexing
 
 [→ Full README](./attachment-filename-index/README.md)
+
+---
+
+## attachment-filename-index-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack orchestrating attachment-filename-index into structured packs for Vault / Family / CoS.
+
+**Owning desk(s):** Vault / Family / CoS
+
+**Location:** `tools/attachment-filename-index-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/attachment-filename-index-pipeline-pack
+npm install
+npm run build
+
+# From filename list (preferred)
+npm run pack -- --files filenames.txt
+
+# From directory
+npm run pack -- --dir /vault/documents
+
+# With mail subject matching
+npm run pack -- --files filenames.txt --subjects mail-subjects.csv
+
+# With as-of date label
+npm run pack -- --files filenames.txt --as-of 2026-09-04
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Drive/Gmail API or network calls
+- ✅ **No file body reads** - Filename heuristics only
+- ✅ **Never invents data** - Never fabricates dates/amounts/legal positions
+- ✅ **Read-only** - Never modifies source files
+- ✅ **Auto-build sibling** - Builds attachment-filename-index if dist missing (PR #132/141 pattern)
+- ⚠️ **Manual review required** - Review all index outputs before action
+- ⚠️ **Heuristic-based** - Entity tagging may have false positives/negatives
+
+### Boolean Flag Patterns (PR #114)
+
+Supports multiple boolean flag syntaxes for `--run-index`:
+- Enable: `--run-index`, `--run-index=true`, `--run-index true`
+- Disable: `--run-index=false`, `--run-index false`, `--no-run-index`
+
+### Output Structure
+
+Creates `<outdir>/attachment-index-pack[-YYYY-MM-DD]/` with:
+- `PACK.md` - Pipeline pack index with workflow summary
+- `index.csv` - Machine-readable CSV from attachment-filename-index
+- `index.md` - Human-readable Markdown report from attachment-filename-index
+- `APPROVAL.md` - Review workflow gates
+- `manifest.json` - Metadata (PR #116 - only lists files actually present)
+
+### Use Cases
+
+- **Vault:** Index attachment filenames for due-queue intake (Plimmer/Charisse/tax-emigration files)
+- **Family:** Index school attachment filenames for classification
+- **CoS:** Index hub mail attachments for filing/cleanup
+
+[→ Full README](./attachment-filename-index-pipeline-pack/README.md)
 
 ---
 
