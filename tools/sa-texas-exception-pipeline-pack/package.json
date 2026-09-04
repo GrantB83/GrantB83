@@ -1,0 +1,37 @@
+{
+  "name": "sa-texas-exception-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler combining sa-texas-morning-exception-pack and sa-texas-exception-post-checklist for SA Ops / CoS weekday Texas-morning workflow",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js",
+    "pipeline": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run test:fixture:healthy && npm run test:fixture:no-checklist",
+    "test:fixture:healthy": "node dist/index.js --pack fixtures/healthy-pack --date 2026-09-02 --outdir test-out && echo '✓ Healthy pack test passed'",
+    "test:fixture:no-checklist": "node dist/index.js --pack fixtures/healthy-pack --date 2026-09-02 --outdir test-out --no-run-post-checklist && echo '✓ No checklist test passed'",
+    "clean": "rm -rf dist test-out out"
+  },
+  "keywords": [
+    "sa-ops",
+    "cos",
+    "heavy-metal",
+    "browns",
+    "hospitality",
+    "pipeline-pack",
+    "texas-morning"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

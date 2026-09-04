@@ -59,6 +59,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-welcome-draft-pack](#browns-welcome-draft-pack) | Generate same-day/upcoming welcome message stubs for CoS WhatsApp Admin from bookings | SA Ops / CoS | **Offline only**. Never invents guest phone or amounts. Placeholders when unknown. DRAFT ONLY. |
 | [sa-texas-morning-exception-pack](#sa-texas-morning-exception-pack) | Assemble SA Ops Texas-morning exception digest for Heavy Metal + hospitality / The Browns | SA Ops / CoS | **DRAFT ONLY**. CoS owns WhatsApp. Never invents rates/volumes/guest facts. Perfect Water excluded. |
 | [sa-texas-exception-post-checklist](#sa-texas-exception-post-checklist) | Pre-WhatsApp post checklist from sa-texas-morning-exception-pack output folder | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents rates/volumes/guest facts. CoS owns WhatsApp. |
+| [sa-texas-exception-pipeline-pack](#sa-texas-exception-pipeline-pack) | Offline CLI pipeline pack assembler combining sa-texas-morning-exception-pack and sa-texas-exception-post-checklist for SA Ops / CoS weekday Texas-morning workflow | SA Ops / CoS | **Offline orchestrator**. Never auto-sends. Flexible boolean parsing. Accurate manifest when checklist skipped (PR #116). DRAFT ONLY. |
 | [career-jd-hard-gates-score](#career-jd-hard-gates-score) | Score job descriptions against career hard gates for apply decisions | Career / CoS | **Offline only**. Never invents comp. Facts-only reminder. Career bot owns apply. |
 | [career-cover-letter-facts-lint](#career-cover-letter-facts-lint) | Lint cover letter drafts against allowed facts to prevent invented claims | Career / CoS | **Offline only**. Never invents comp/titles/employers. Facts-only reminder. Career bot owns apply. |
 | [career-application-packet-assemble](#career-application-packet-assemble) | Assemble dated application packet with score, lint, facts, and APPROVAL checklist | Career / CoS | **Offline orchestrator**. Calls sibling tools or accepts prebuilt reports. Never auto-apply. Score ≥8 floor. |
@@ -3247,6 +3248,112 @@ npm run test:fixtures
 America/Chicago (Texas morning workflow for SA Ops / CoS)
 
 [→ Full README](./sa-texas-exception-post-checklist/README.md)
+
+---
+
+## sa-texas-exception-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack assembler combining sa-texas-morning-exception-pack and sa-texas-exception-post-checklist for SA Ops / CoS weekday Texas-morning workflow.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/sa-texas-exception-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/sa-texas-exception-pipeline-pack
+npm install
+npm run build
+
+# Use existing morning exception pack (preferred)
+npm run pipeline -- --pack ../sa-texas-morning-exception-pack/out/pack-2026-09-02
+
+# Generate morning exception pack first
+npm run pipeline -- --run-morning-pack --date 2026-09-02 \
+  --browns-bookings bookings.json \
+  --hm-quotes-dir ./hm-open/ \
+  --notes notes.md
+
+# Skip post-checklist (multiple syntax options)
+npm run pipeline -- --pack path/to/pack --run-post-checklist=false
+npm run pipeline -- --pack path/to/pack --no-run-post-checklist
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No API calls of any kind
+- ✅ **Never sends** - No WhatsApp API, no Gmail API
+- ✅ **Read-only assembly** - Never modifies source pack files
+- ✅ **No invented data** - Never fabricates rates, volumes, or guest facts
+- ✅ **Heavy Metal + hospitality only** - Perfect Water excluded
+- ✅ **Accurate manifest** - Only lists files actually present (PR #116 pattern)
+- ⚠️ **CoS / SA Ops owns send** - WhatsApp Admin posting via CoS workflow
+- ⚠️ **Manual review required** - Review PACK.md, POST-CHECKLIST.md, and ISSUES.md before every post
+
+### Workflow Integration
+
+This tool is the final assembler in the SA Texas-morning exception workflow:
+
+```bash
+# Step 1: Generate morning exception pack (or use existing)
+cd tools/sa-texas-morning-exception-pack
+npm run pack -- --date 2026-09-02 \
+  --browns-bookings bookings.json \
+  --hm-quotes-dir ./hm-open/ \
+  --notes notes.md
+
+# Step 2: Assemble pipeline pack with validation
+cd ../sa-texas-exception-pipeline-pack
+npm run pipeline -- --pack ../sa-texas-morning-exception-pack/out/pack-2026-09-02
+
+# Step 3: Review outputs
+cat out/pipeline-pack-2026-09-02/PACK.md
+cat out/pipeline-pack-2026-09-02/POST-CHECKLIST.md
+cat out/pipeline-pack-2026-09-02/ISSUES.md
+
+# Step 4: If all checks pass, CoS / SA Ops posts to WhatsApp Admin
+```
+
+### Boolean Flag Patterns (PR #114)
+
+The tool supports flexible boolean parsing for `--run-post-checklist`:
+
+```bash
+# Enable (explicit)
+--run-post-checklist
+--run-post-checklist=true
+--run-post-checklist true
+
+# Disable (explicit)
+--run-post-checklist=false
+--run-post-checklist false
+--no-run-post-checklist
+```
+
+### Manifest Accuracy (PR #116)
+
+When post-checklist is skipped (`--no-run-post-checklist`), the manifest accurately reflects files present:
+
+```json
+{
+  "postChecklistRan": false,
+  "files": [
+    "PACK.md",
+    "manifest.json",
+    "hospitality.md",
+    "heavy-metal.md",
+    "APPROVAL.md"
+  ]
+}
+```
+
+**No POST-CHECKLIST.md or ISSUES.md** listed when post-checklist was not run.
+
+[→ Full README](./sa-texas-exception-pipeline-pack/README.md)
 
 ---
 
