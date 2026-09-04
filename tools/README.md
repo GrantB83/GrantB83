@@ -25,6 +25,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [ledger-unmatched-merchant-queue](#ledger-unmatched-merchant-queue) | Build research queue for unmatched merchants from budget CSV | Ledger / CoS | **Offline**. No invented amounts. Amounts stay in files, not prose. Research aid only. |
 | [ledger-merchant-alias-suggest](#ledger-merchant-alias-suggest) | Suggest merchant→alias mappings from unmatched queue using heuristic token overlap | Ledger / CoS | **Offline**. No invented amounts. Never writes Budget sheet. Heuristic scoring only. |
 | [ledger-alias-apply-checklist](#ledger-alias-apply-checklist) | Generate H2-ready apply checklist from ledger-merchant-alias-suggest output before Budget sheet writes | Ledger / CoS | **Offline**. Never writes sheet. Never invents amounts/aliases. Names/patterns only. H2 approval required. |
+| [ledger-alias-pipeline-pack](#ledger-alias-pipeline-pack) | Wire suggest → apply-checklist into one offline pipeline pack with PACK.md + manifest.json | Ledger / CoS | **Offline orchestrator**. Never writes Budget. Never invents amounts. Default ON checklist with PR #114 skip flags. |
 | [ledger-month-close-pack](#ledger-month-close-pack) | Build offline month-end close pack: CSV inventory, header sanity, APPROVAL checklist | Ledger / CoS | **Offline**. Amounts stay in files, never in digest prose. H2 approval required. |
 | [ledger-month-close-pipeline-pack](#ledger-month-close-pipeline-pack) | Assemble month-close pipeline pack from unmatched-queue → alias-suggest → alias-checklist → close-pack | Ledger / CoS | **Offline**. No amounts in PACK.md prose. H2 before sheet writes. Never writes Budget. |
 | [suno-package-prep](#suno-package-prep) | Package kid lyrics for manual Suno paste workflow | Studio | **No browser automation**. No Suno API. No auto-send. Manual paste only. |
@@ -1187,6 +1188,80 @@ npm run apply -- \
 ```
 
 [→ Full README](./ledger-alias-apply-checklist/README.md)
+
+---
+
+## ledger-alias-pipeline-pack
+
+**One-line:** Offline CLI pipeline pack orchestrating ledger-merchant-alias-suggest → ledger-alias-apply-checklist into one outdir with PACK.md + manifest.json.
+
+**Owning desk(s):** Ledger / CoS
+
+**Location:** `tools/ledger-alias-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/ledger-alias-pipeline-pack
+npm install
+npm run build
+
+# Option 1: Use existing suggest output (preferred)
+npm run pipeline -- --suggest-outdir ../ledger-merchant-alias-suggest/out/
+
+# Option 2: Run suggest first
+npm run pipeline -- \
+  --run-suggest \
+  --unmatched-queue ../ledger-unmatched-merchant-queue/out/queue.json \
+  --aliases aliases.json \
+  --month 2026-09
+
+# Skip apply-checklist (PR #114 boolean flag patterns)
+npm run pipeline -- --suggest-outdir out/ --run-apply-checklist=false
+npm run pipeline -- --suggest-outdir out/ --no-run-apply-checklist
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Google Sheets API or network calls
+- ✅ **Read-only assembly** - Never modifies source files
+- ✅ **No invented data** - Never fabricates amounts, aliases, or merchant identities
+- ✅ **H2 approval required** - Never writes to Budget sheet
+- ✅ **Accurate manifest** - Only lists files actually present (PR #116 pattern)
+- ⚠️ **Ledger owns sheet writes** - Manual application after approval
+
+### Behavior
+
+1. Input Mode 1: Use existing suggest output directory (preferred)
+2. Input Mode 2: Run suggest tool first with provided inputs
+3. Copy suggest outputs (suggestions.json, suggestions.md, no-match.md, APPROVAL.md)
+4. Optionally run apply-checklist (default ON, PR #114 skip flags)
+5. Generate PACK.md (pipeline pack index) and manifest.json
+6. Exit 1 if suggest output missing/invalid or tools fail
+
+### Example Workflow
+
+```bash
+# Full pipeline from unmatched queue
+cd tools/ledger-alias-pipeline-pack
+npm run pipeline -- \
+  --run-suggest \
+  --unmatched-queue ../ledger-unmatched-merchant-queue/out/queue.json \
+  --aliases aliases.json \
+  --month 2026-09 \
+  --outdir pipeline-packs/
+
+# Or use existing suggest output
+npm run pipeline -- \
+  --suggest-outdir ../ledger-merchant-alias-suggest/out/ \
+  --month 2026-09
+
+# Review outputs
+cat out/ledger-alias-pack-2026-09/PACK.md
+cat out/ledger-alias-pack-2026-09/APPLY-CHECKLIST.md
+```
+
+[→ Full README](./ledger-alias-pipeline-pack/README.md)
 
 ---
 

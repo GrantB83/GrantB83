@@ -1,0 +1,42 @@
+{
+  "suggestions": [
+    {
+      "merchant": "AMAZON.COM*XX1234567",
+      "alias": "Amazon",
+      "score": 0.750,
+      "matchedPattern": "Amazon.com",
+      "confidence": "high",
+      "alternatives": [
+        { "alias": "Amazon Prime", "score": 0.667, "pattern": "Amazon Prime" }
+      ]
+    },
+    {
+      "merchant": "WALMART #1234",
+      "alias": "Walmart",
+      "score": 0.800,
+      "matchedPattern": "Walmart",
+      "confidence": "high",
+      "alternatives": []
+    },
+    {
+      "merchant": "TARGET T-1234",
+      "alias": "Target",
+      "score": 0.600,
+      "matchedPattern": "Target",
+      "confidence": "medium",
+      "alternatives": []
+    }
+  ],
+  "noMatch": [
+    "UNKNOWN MERCHANT 123",
+    "ACME CORP"
+  ],
+  "stats": {
+    "totalMerchants": 5,
+    "withSuggestions": 3,
+    "noMatch": 2,
+    "highConfidence": 2,
+    "mediumConfidence": 1,
+    "lowConfidence": 0
+  }
+}
