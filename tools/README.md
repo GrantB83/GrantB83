@@ -12,6 +12,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [pw-grv-vs-stocktake-diff](#pw-grv-vs-stocktake-diff) | Compare normalized GRV vs stocktake CSV by Store+SKU for inventory recon | Perfect Water / CoS | **Offline**. No invented quantities. Amounts stay in files. Delta = counted - received. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
+| [pw-loyverse-xero-pipeline-pack](#pw-loyverse-xero-pipeline-pack) | Orchestrate Perfect Water Loyverse↔Xero reconciliation packing: Loyverse CSV + Xero CSV → gap report pack | Perfect Water / CoS | **Offline orchestrator**. Never invents amounts or matches. Default ON for recon. PR #114 skip flags. PR #116 manifest accuracy. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [pw-ordered-sold-pipeline-pack](#pw-ordered-sold-pipeline-pack) | Orchestrate Perfect Water cost-of-sales reconciliation: optional Loyverse daily sales digest → ordered-vs-sold diff pack | Perfect Water / CoS | **Offline orchestrator**. Never invents quantities/amounts. Default OFF for sales digest. PR #114 skip flags. PR #116 manifest accuracy. |
@@ -427,6 +428,57 @@ npm run recon:summary -- \
 - ✅ **Read-only** - No write-back to Loyverse or Xero
 
 [→ Full README](./loyverse-xero-recon/README.md)
+
+---
+
+## pw-loyverse-xero-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Perfect Water Loyverse↔Xero reconciliation packing.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-loyverse-xero-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-loyverse-xero-pipeline-pack
+npm install
+npm run build
+
+# Receipt mode (default)
+npm run pack -- \
+  --loyverse-csv loyverse-receipts.csv \
+  --xero-csv xero-transactions.csv \
+  --outdir pack-out/
+
+# Summary mode
+npm run pack -- \
+  --loyverse-csv loyverse-summary.csv \
+  --xero-csv xero-pl.csv \
+  --mode summary
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Loyverse/Xero API
+- ✅ **Never invents amounts** - All amounts from source CSVs only
+- ✅ **Never invents matches** - Only reports actual gaps
+- ✅ **Auto-build sibling** - Builds loyverse-xero-recon if needed
+- ✅ **Perfect Water owns ops** - PW owns all CoS decisions
+
+### Tool Details
+
+- **Inputs:** Loyverse CSV + Xero CSV
+- **Outputs:** PACK.md + APPROVAL.md + gap-report.csv + gap-report.md + manifest.json
+- **Modes:** Receipt (transactions) or summary (monthly aggregates)
+- **Stage control:** --run-recon (default ON, PR #114 boolean flags)
+- **Sibling:** Auto-builds tools/loyverse-xero-recon/ if dist missing
+
+[→ Full README](./pw-loyverse-xero-pipeline-pack/README.md)
 
 ---
 
