@@ -1,0 +1,29 @@
+{
+  "name": "browns-inquiry-quote-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler combining browns-inquiry-intake and browns-quote-invoice-draft for Dullstroom / The Browns.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "pack": "node dist/index.js",
+    "test": "node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && npm run pack -- --text fixtures/sample-inquiry.txt --outdir test-out/ --run-intake --run-quote",
+    "clean": "rm -rf dist/ out/ test-out/"
+  },
+  "keywords": [
+    "browns",
+    "hospitality",
+    "inquiry",
+    "quote",
+    "pipeline",
+    "offline",
+    "dullstroom"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}

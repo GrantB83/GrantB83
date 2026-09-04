@@ -48,6 +48,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
+| [browns-inquiry-quote-pipeline-pack](#browns-inquiry-quote-pipeline-pack) | Orchestrate Browns inquiry → quote draft into one pack for Dullstroom / The Browns | SA Ops / CoS | **Offline orchestrator**. Never invents rates. Never auto-sends. H7 gate reminder. [RATE CARD REQUIRED] flag when amounts missing. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS coordination | SA Ops / CoS | **DRAFT ONLY**. Never invents times/phones. Offline only. Manual CoS WhatsApp send. |
@@ -2590,6 +2591,59 @@ npm run draft -- --quote quote-no-amounts.json --outdir out/
 
 ---
 
+## browns-inquiry-quote-pipeline-pack
+
+**One-line:** Orchestrate Browns inquiry → quote draft into one offline pipeline pack for Dullstroom / The Browns.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-inquiry-quote-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-inquiry-quote-pipeline-pack
+npm install
+npm run build
+
+# Use existing inquiry JSON (recommended)
+npm run pack -- --outdir out/pack-20260902/ --inquiry ../browns-inquiry-intake/out/intake-20260902/booking.json
+
+# Run intake from text
+npm run pack -- --outdir out/pack-20260902/ --run-intake --text inquiry.txt
+
+# Skip quote draft (PR #114 boolean flag pattern)
+npm run pack -- --outdir out/pack-20260902/ --inquiry data.json --run-quote=false
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### What It Does
+
+- ✅ Wires inquiry → quote draft into one pipeline pack
+- ✅ Accepts inquiry text OR existing inquiry JSON
+- ✅ Optionally runs browns-inquiry-intake (--run-intake, requires --text)
+- ✅ Runs browns-quote-invoice-draft (default ON, PR #114 skip flags)
+- ✅ One outdir with PACK.md + manifest.json accurate to present files (PR #116)
+- ✅ APPROVAL.md with H7 / Grant-CoS approval reminder
+- ✅ Flags `[RATE CARD REQUIRED]` when amounts missing
+- ❌ Never invents rates or amounts
+- ❌ Never auto-sends mail/WhatsApp
+- ❌ Offline only
+
+### Safety
+
+- ✅ **Offline only** - No API calls
+- ✅ **Never auto-sends** - No mail/WhatsApp
+- ✅ **Dullstroom only** - The Browns Luxury Guest Suites Dullstroom
+- ⚠️ **H7 gate required** - Grant approval before quote send
+- ⚠️ **[RATE CARD REQUIRED]** - Flags when amounts missing
+
+[→ Full README](./browns-inquiry-quote-pipeline-pack/README.md)
+
+---
+
 ## browns-nightsbridge-bookings-adapter
 
 **One-line:** Transform Nightsbridge-ish day sheets (CSV/TSV/paste) into bookings.json for browns-daily-ops-brief.
@@ -4043,8 +4097,10 @@ Inquiry (email/WhatsApp)
     ↓
 browns-inquiry-intake (extract structured JSON)
     ↓
+    ├──→ browns-inquiry-quote-pipeline-pack (orchestrate inquiry → quote)
+    │        ↓
+    │   browns-quote-invoice-draft (quotes/invoices)
     ├──→ browns-guest-comms-draft (welcome messages, consumes facts.json)
-    ├──→ browns-quote-invoice-draft (quotes/invoices)
     └──→ browns-daily-ops-brief (team coordination)
 
 Nightsbridge screen (day sheet)
