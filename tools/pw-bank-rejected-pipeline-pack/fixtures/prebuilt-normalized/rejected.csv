@@ -1,0 +1,4 @@
+reason,Date,Reference,Amount,Description
+missing date,,REF001,100.00,Test transaction
+missing or unparseable amount,2024-01-15,REF002,,Invalid row
+missing reference,2024-01-16,,50.00,No ref provided

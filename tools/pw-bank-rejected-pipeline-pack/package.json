@@ -1,0 +1,29 @@
+{
+  "name": "pw-bank-rejected-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI orchestrator combining pw-bank-csv-normalize and pw-rejected-csv-digest for Perfect Water bank reconciliation pipeline",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "pack": "node dist/index.js",
+    "test": "node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && npm run pack -- --normalized-outdir fixtures/prebuilt-normalized --no-run-rejected-digest --outdir test-out && echo '✅ Test passed: prebuilt normalized mode (rejected digest skipped)'",
+    "clean": "rm -rf dist/ test-out/"
+  },
+  "keywords": [
+    "perfect-water",
+    "bank",
+    "reconciliation",
+    "pipeline",
+    "csv",
+    "offline"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.0"
+  }
+}
