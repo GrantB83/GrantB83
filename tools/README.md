@@ -12,6 +12,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [pw-stocktake-csv-normalize](#pw-stocktake-csv-normalize) | Normalize store stocktake CSVs to standard schema for recon | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected.csv. |
 | [pw-grv-vs-stocktake-diff](#pw-grv-vs-stocktake-diff) | Compare normalized GRV vs stocktake CSV by Store+SKU for inventory recon | Perfect Water / CoS | **Offline**. No invented quantities. Amounts stay in files. Delta = counted - received. |
 | [loyverse-xero-recon](#loyverse-xero-recon) | Reconcile Loyverse POS sales with Xero accounting | Perfect Water / CoS | **No API keys**. Offline CSV only. No invented amounts. |
+| [pw-loyverse-xero-pipeline-pack](#pw-loyverse-xero-pipeline-pack) | Orchestrate Perfect Water Loyverse↔Xero reconciliation packing: Loyverse CSV + Xero CSV → gap report pack | Perfect Water / CoS | **Offline orchestrator**. Never invents amounts or matches. Default ON for recon. PR #114 skip flags. PR #116 manifest accuracy. |
 | [pw-loyverse-daily-sales-digest](#pw-loyverse-daily-sales-digest) | Generate Perfect Water daily sales digest from Loyverse CSV exports | Perfect Water / CoS | **Offline**. No Loyverse API. No invented amounts. Amounts stay in files. |
 | [pw-ordered-vs-sold-diff](#pw-ordered-vs-sold-diff) | Compare ordered exports vs sold/Loyverse exports by SKU/Item for CoS | Perfect Water / CoS | **Offline**. No invented quantities. Blanks → rejected. Amounts stay in files. |
 | [pw-ordered-sold-pipeline-pack](#pw-ordered-sold-pipeline-pack) | Orchestrate Perfect Water cost-of-sales reconciliation: optional Loyverse daily sales digest → ordered-vs-sold diff pack | Perfect Water / CoS | **Offline orchestrator**. Never invents quantities/amounts. Default OFF for sales digest. PR #114 skip flags. PR #116 manifest accuracy. |
@@ -52,6 +53,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [hm-quote-pipeline-pack](#hm-quote-pipeline-pack) | Orchestrate Heavy Metal quote pipeline into one pack for single inquiry | SA Ops / Heavy Metal | **Offline orchestrator**. Never invents volume/price/location/signature. Never sends WhatsApp. H1 gate reminder. |
 | [browns-guest-facts-pack](#browns-guest-facts-pack) | Extract structured guest facts from markdown into JSON and snippets | SA Ops / CoS | **Never invents**. Offline only. No fabricated passwords/rates/times. Missing fields flagged. |
 | [browns-guest-comms-draft](#browns-guest-comms-draft) | Generate DRAFT guest communications from booking JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents times or rates. Manual approval required. |
+| [browns-guest-comms-pipeline-pack](#browns-guest-comms-pipeline-pack) | Orchestrate Browns guest communication drafts: optional facts-pack → guest-comms-draft | SA Ops / CoS | **Offline orchestrator**. Never invents rates/passwords/phones. Never auto-sends. Default ON for comms draft. PR #114 skip flags. |
 | [browns-quote-invoice-draft](#browns-quote-invoice-draft) | Generate DRAFT quote/invoice communications from booking/quote JSON | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Missing amounts = availability-only. |
 | [browns-inquiry-quote-pipeline-pack](#browns-inquiry-quote-pipeline-pack) | Orchestrate Browns inquiry → quote draft into one pack for Dullstroom / The Browns | SA Ops / CoS | **Offline orchestrator**. Never invents rates. Never auto-sends. H7 gate reminder. [RATE CARD REQUIRED] flag when amounts missing. |
 | [browns-nightsbridge-bookings-adapter](#browns-nightsbridge-bookings-adapter) | Transform Nightsbridge day sheets into bookings.json for daily-ops-brief | SA Ops / CoS | **Offline only**. Never invents data. Flags missing fields. Feed into daily-ops-brief. |
@@ -59,6 +61,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS coordination | SA Ops / CoS | **DRAFT ONLY**. Never invents times/phones. Offline only. Manual CoS WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
+| [browns-ota-rate-pipeline-pack](#browns-ota-rate-pipeline-pack) | Orchestrate Browns OTA rate worksheet packing: browns-ota-rate-worksheet → pack | SA Ops / CoS | **Offline orchestrator**. Never invents rates/discounts. Default ON for worksheet. PR #114 skip flags. PR #116 manifest accuracy. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
 | [browns-ct-pack-post-checklist](#browns-ct-pack-post-checklist) | Pre-WhatsApp post checklist from browns-ct-pack-assemble output folder before 20:00 / 09:00 / 21:00 CT Admin posts | SA Ops / CoS | **Offline only**. Read-only pack validation. Never invents guest phones/rates/ETAs. CoS owns WhatsApp. Exit 1 if checks fail. |
 | [browns-ct-pack-pipeline-pack](#browns-ct-pack-pipeline-pack) | Orchestrate Browns CT pack pipeline: booking-change-check → ct-pack-assemble → optional ct-pack-post-checklist | SA Ops / CoS | **Offline orchestrator**. Never auto-sends. Flexible boolean parsing. Accurate manifest when checklist skipped. DRAFT ONLY. |
@@ -427,6 +430,57 @@ npm run recon:summary -- \
 - ✅ **Read-only** - No write-back to Loyverse or Xero
 
 [→ Full README](./loyverse-xero-recon/README.md)
+
+---
+
+## pw-loyverse-xero-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Perfect Water Loyverse↔Xero reconciliation packing.
+
+**Owning desk(s):** Perfect Water / CoS
+
+**Location:** `tools/pw-loyverse-xero-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/pw-loyverse-xero-pipeline-pack
+npm install
+npm run build
+
+# Receipt mode (default)
+npm run pack -- \
+  --loyverse-csv loyverse-receipts.csv \
+  --xero-csv xero-transactions.csv \
+  --outdir pack-out/
+
+# Summary mode
+npm run pack -- \
+  --loyverse-csv loyverse-summary.csv \
+  --xero-csv xero-pl.csv \
+  --mode summary
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Loyverse/Xero API
+- ✅ **Never invents amounts** - All amounts from source CSVs only
+- ✅ **Never invents matches** - Only reports actual gaps
+- ✅ **Auto-build sibling** - Builds loyverse-xero-recon if needed
+- ✅ **Perfect Water owns ops** - PW owns all CoS decisions
+
+### Tool Details
+
+- **Inputs:** Loyverse CSV + Xero CSV
+- **Outputs:** PACK.md + APPROVAL.md + gap-report.csv + gap-report.md + manifest.json
+- **Modes:** Receipt (transactions) or summary (monthly aggregates)
+- **Stage control:** --run-recon (default ON, PR #114 boolean flags)
+- **Sibling:** Auto-builds tools/loyverse-xero-recon/ if dist missing
+
+[→ Full README](./pw-loyverse-xero-pipeline-pack/README.md)
 
 ---
 
@@ -2828,6 +2882,54 @@ npm run draft -- \
 
 ---
 
+## browns-guest-comms-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Browns guest communication drafts for SA Ops / CoS.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-guest-comms-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-guest-comms-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (booking JSON → guest comms drafts)
+npm run pack -- \
+  --booking booking.json \
+  --outdir pack-out/
+
+# With guest facts
+npm run pack -- \
+  --run-facts \
+  --facts-md knowledge.md \
+  --booking booking.json
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No WhatsApp/email API
+- ✅ **Never invents** - No rates, Wi-Fi passwords, phones, amenities
+- ✅ **Never auto-sends** - Drafts only, manual approval required
+- ✅ **Auto-build sibling** - Builds browns-guest-comms-draft if needed
+
+### Tool Details
+
+- **Inputs:** Booking JSON, optional facts markdown
+- **Outputs:** PACK.md + APPROVAL.md + draft-*.txt + manifest.json
+- **Stage control:** --run-facts (default OFF), --run-comms (default ON)
+- **Sibling:** Auto-builds tools/browns-guest-comms-draft/ if dist missing
+
+[→ Full README](./browns-guest-comms-pipeline-pack/README.md)
+
+---
+
 ## browns-quote-invoice-draft
 
 **One-line:** Generate DRAFT quote and proforma invoice communications from booking/quote JSON.
@@ -3148,6 +3250,48 @@ npm run worksheet -- --rates rates.csv --promo promos.json --outdir reports/
 - ⚠️ **Dullstroom property only** - The Browns Luxury Guest Suites Dullstroom
 
 [→ Full README](./browns-ota-rate-worksheet/README.md)
+
+---
+
+## browns-ota-rate-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Browns OTA rate worksheet packing for SA Ops / CoS.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-ota-rate-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-ota-rate-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (rate card CSV → OTA worksheet pack)
+npm run pack -- \
+  --rate-card rates.csv \
+  --outdir pack-out/
+
+# Test with fixtures
+npm run test:fixtures
+```
+
+### Critical Safety Note
+
+- ✅ **Offline only** - No Nightsbridge/Booking.com API
+- ✅ **Never invents** - No rates or discounts (blanks stay blank)
+- ✅ **Never auto-sends** - Draft only, manual Nightsbridge entry
+- ✅ **Auto-build sibling** - Builds browns-ota-rate-worksheet if needed
+
+### Tool Details
+
+- **Inputs:** Rate card CSV
+- **Outputs:** PACK.md + APPROVAL.md + worksheet.csv + worksheet.md + manifest.json
+- **Stage control:** --run-worksheet (default ON)
+- **Sibling:** Auto-builds tools/browns-ota-rate-worksheet/ if dist missing
+
+[→ Full README](./browns-ota-rate-pipeline-pack/README.md)
 
 ---
 
