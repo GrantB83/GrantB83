@@ -1,0 +1,33 @@
+{
+  "name": "career-weekday-improve-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack assembler combining career tools for Career weekday improve workflow",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pipeline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test dist/pipeline-builder.test.js",
+    "pipeline": "node dist/index.js",
+    "test:fixtures": "npm run build && npm run pipeline -- --pack fixtures/healthy-improve-pack --outdir test-out-healthy --no-run-digest; exit 0 && echo 'Fixture tests completed'",
+    "clean": "rm -rf dist test-out* out*"
+  },
+  "keywords": [
+    "career",
+    "improve",
+    "pipeline",
+    "pack",
+    "weekday"
+  ],
+  "author": "Grant Brown",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
