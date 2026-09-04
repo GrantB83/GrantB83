@@ -1,0 +1,15 @@
+{
+  "guestName": "Emma Wilson",
+  "checkInDate": "2027-01-20",
+  "checkOutDate": "2027-01-24",
+  "suiteOrUnit": "Garden Suite",
+  "adults": 2,
+  "children": 1,
+  "channel": "direct",
+  "notes": "Family getaway, anniversary celebration",
+  "nightlyRate": 2800,
+  "nights": 4,
+  "totalAmount": 11200,
+  "depositRequired": 5600,
+  "currency": "ZAR"
+}
