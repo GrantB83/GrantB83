@@ -1,0 +1,24 @@
+{
+  "entity": "sars",
+  "count": 2,
+  "items": [
+    {
+      "filename": "SARS-ITR14-Provisional-Tax-2024-06-30.pdf",
+      "category": "sars-provisional-tax",
+      "dateTokens": ["2024-06-30"],
+      "dueStatus": "has-date",
+      "confidence": "high",
+      "signals": ["sars-provisional-tax", "keyword:provisional"],
+      "notes": ""
+    },
+    {
+      "filename": "SARS-VAT201-Return-2024-Q2.pdf",
+      "category": "sars-vat-return",
+      "dateTokens": ["2024"],
+      "dueStatus": "has-date",
+      "confidence": "high",
+      "signals": ["sars-vat-return", "keyword:return"],
+      "notes": ""
+    }
+  ]
+}
