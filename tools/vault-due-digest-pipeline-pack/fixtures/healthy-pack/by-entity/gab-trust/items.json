@@ -1,0 +1,24 @@
+{
+  "entity": "gab-trust",
+  "count": 2,
+  "items": [
+    {
+      "filename": "CIPC-Annual-Return-2024-AR2024-GABTrust.pdf",
+      "category": "cipc-annual-return",
+      "dateTokens": ["2024"],
+      "dueStatus": "has-date",
+      "confidence": "high",
+      "signals": ["cipc-annual-return", "keyword:return"],
+      "notes": ""
+    },
+    {
+      "filename": "Trust-Resolution-2024-06-Board-Meeting.pdf",
+      "category": "trust-resolution",
+      "dateTokens": ["2024-06"],
+      "dueStatus": "has-date",
+      "confidence": "high",
+      "signals": ["trust-resolution", "keyword:resolution"],
+      "notes": ""
+    }
+  ]
+}

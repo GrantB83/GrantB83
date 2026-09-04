@@ -1,0 +1,30 @@
+{
+  "name": "vault-due-digest-pipeline-pack",
+  "version": "1.0.0",
+  "description": "Offline CLI pipeline pack orchestrator: vault-filename-due-queue → vault-due-digest-pack → vault-due-digest-post-checklist",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "pipeline": "node dist/index.js",
+    "test": "node --test dist/**/*.test.js",
+    "test:fixtures": "npm run build && node dist/index.js --pack fixtures/healthy-pack --outdir test-out",
+    "clean": "rm -rf dist/ test-out/ out/"
+  },
+  "keywords": [
+    "vault",
+    "due-digest",
+    "pipeline",
+    "offline",
+    "cipc",
+    "sars",
+    "trust",
+    "compliance"
+  ],
+  "author": "Grant Brown <grant@thebrowns.co.za>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.3"
+  }
+}
