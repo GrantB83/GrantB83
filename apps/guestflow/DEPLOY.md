@@ -31,6 +31,17 @@ This is a **staff-only internal operations console**. Not a public site.
 
 ## Option A: Vercel Deployment (with Turso DB)
 
+### Important: Vercel Project Configuration
+
+When deploying from a monorepo, configure the Vercel project with:
+
+- **Root Directory:** `apps/guestflow`
+- **Build Command:** `npm run build` (default, no change needed)
+- **Install Command:** `npm install` (default, no change needed)
+- **Output Directory:** `.next` (default, no change needed)
+
+The `vercel.json` in `apps/guestflow` already specifies the Next.js framework. If building from the monorepo root is preferred, ensure the build process changes into the app directory first.
+
 ### Step 1: Set Up Turso Database
 
 ```bash
