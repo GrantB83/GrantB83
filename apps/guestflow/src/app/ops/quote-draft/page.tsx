@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Download, Printer, Upload, Sparkles } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
+import { PackGenerator } from '@/components/PackGenerator'
 
 // Import fixtures
 import fixtureWithAmounts from '../../../../fixtures/inquiry-with-amounts.json'

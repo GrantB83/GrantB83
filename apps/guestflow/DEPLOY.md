@@ -542,4 +542,138 @@ View logs in Cloudflare dashboard → Pages → Logs
 
 ---
 
+---
+
+## M3: SA Ops Runbook - One-Click Packs for CLI Tools
+
+### Overview
+
+GuestFlow M3 adds **"Generate Pack"** buttons to ops pages that produce downloadable packs for running browns-* CLI tools offline.
+
+Each pack includes:
+- All input files (JSON/CSV/text)
+- Exact CLI command (copy-paste ready)
+- APPROVAL.md with hard gate checklist
+- RUN.sh script for terminal execution
+
+### Quick Start (SA Ops)
+
+1. **Visit ops page**: `https://guestflow.thebrowns.co.za/ops/inquiry-intake`
+2. **Fill data or load fixture**
+3. **Click "Generate Pack"**
+4. **Click "Download Pack"** - saves multiple files prefixed with pack name
+5. **Review APPROVAL.md** for hard gates (H7/H11/N7)
+6. **Run CLI command** from `RUN.sh` or copy from UI
+
+### Available Packs
+
+| Ops Page | Pack Name Pattern | CLI Tool | Purpose |
+|----------|-------------------|----------|---------|
+| Inquiry Intake | `browns-inquiry-intake-*` | `tools/browns-inquiry-intake` | Extract structured data from inquiry text |
+| Quote Draft | `browns-inquiry-quote-pipeline-*` | `tools/browns-inquiry-quote-pipeline-pack` | Orchestrate inquiry → quote pipeline |
+| Welcome Drafts | `browns-welcome-late-pipeline-*` | `tools/browns-welcome-late-pipeline-pack` | Welcome messages + late check-in queue |
+| CT Pack | `browns-ct-pack-pipeline-*` | `tools/browns-ct-pack-pipeline-pack` | Communication pack orchestrator |
+
+### File Organization
+
+Downloaded files use `packname__filename` format for easy organization:
+
+```bash
+# Downloaded files (example)
+browns-inquiry-intake-20260905-143022__booking.json
+browns-inquiry-intake-20260905-143022__quote.json
+browns-inquiry-intake-20260905-143022__APPROVAL.md
+browns-inquiry-intake-20260905-143022__manifest.json
+browns-inquiry-intake-20260905-143022__README.md
+browns-inquiry-intake-20260905-143022__RUN.sh
+
+# Organize into folder
+mkdir browns-inquiry-intake-20260905-143022
+mv browns-inquiry-intake-20260905-143022__*.* browns-inquiry-intake-20260905-143022/
+
+# Run CLI
+cd tools/browns-inquiry-intake
+npm run build
+bash ../../browns-inquiry-intake-20260905-143022/RUN.sh
+```
+
+### CLI Commands Reference
+
+All CLI tools are under `tools/browns-*` in the repository:
+
+```bash
+# 1. Inquiry Intake
+cd tools/browns-inquiry-intake
+npm run build
+npm run intake -- --text inquiry.txt --outdir out/
+
+# 2. Inquiry → Quote Pipeline
+cd tools/browns-inquiry-quote-pipeline-pack
+npm run build
+npm run pack -- --inquiry intake-booking.json --outdir out/
+
+# 3. Welcome & Late Check-In
+cd tools/browns-welcome-late-pipeline-pack
+npm run build
+npm run pack -- --bookings bookings.json --day 2026-09-20 --outdir out/
+
+# 4. CT Pack Pipeline
+cd tools/browns-ct-pack-pipeline-pack
+npm run build
+npm run pipeline -- --date 2026-09-20 --pack pack/ --outdir out/
+```
+
+### Hard Gates (Always Respected)
+
+Every pack includes `APPROVAL.md` with gate checklist:
+
+- **H7 Gate** - `APPROVE SEND <thread-or-wa-id>` required for quote send
+- **H11 Gate** - `APPROVE RUN SHEET <date>` required for staff WhatsApp
+- **N7 Rule** - Never invent rates, phone numbers, Wi-Fi codes, or ETAs
+
+**All output is DRAFT-ONLY** - Never auto-sends to guests.
+
+### Workflow Example: Process Inquiry
+
+```bash
+# 1. SA Ops receives WhatsApp inquiry
+# 2. Visit https://guestflow.thebrowns.co.za/ops/inquiry-intake
+# 3. Paste inquiry text
+# 4. Click "Generate Pack"
+# 5. Click "Download Pack"
+# 6. Review APPROVAL.md:
+#    - Check extracted fields are accurate
+#    - Verify no rates invented (should show [RATE CARD REQUIRED] if missing)
+#    - Confirm H7 gate reminder present
+# 7. Optional: Run CLI for advanced processing
+#    cd tools/browns-inquiry-intake
+#    npm run intake -- --text inquiry.txt --outdir out/
+# 8. Use booking.json with downstream tools (welcome drafts, quote generation)
+```
+
+### Troubleshooting
+
+**"Pack generation failed"**
+- Check browser console for error details
+- Verify all required fields are filled
+- Try refreshing the page and re-generating
+
+**"CLI command not found"**
+- Ensure you're in the repository root
+- Run `npm install` in the tool directory first
+- Run `npm run build` before executing CLI
+
+**"Missing fields in APPROVAL.md"**
+- This is expected - fill manually from approved sources
+- Never invent missing data
+- Use rate cards for pricing, CoS for Wi-Fi/access details
+
+### Support
+
+For pack generation issues or CLI tool questions:
+- Contact: grant@thebrowns.co.za
+- Slack: #browns-ops (internal)
+
+---
+
 **Questions?** Contact grant@thebrowns.co.za

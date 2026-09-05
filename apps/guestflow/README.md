@@ -119,25 +119,101 @@ Each page exports/downloads packs that match CLI tool inputs/outputs, with exact
 
 ---
 
-## CLI Tool Integration
+## CLI Tool Integration (M3: One-Click Pack Generation)
 
-Each operational page shows the corresponding CLI command for terminal execution:
+Each operational page includes a **"Generate Pack"** button that produces:
+
+1. **Downloadable pack** - All files needed to run the corresponding browns-* CLI tool
+2. **Exact CLI command** - Copy-paste ready command for SA Ops terminal
+3. **DRAFT-ONLY output** - Never auto-sends, respects all hard gates
+
+### Available Pack Generators
+
+| Ops Page | Pack Generated | CLI Tool | What It Does |
+|----------|----------------|----------|--------------|
+| **Inquiry Intake** | `browns-inquiry-intake-*` | `tools/browns-inquiry-intake` | Extract structured data from freeform inquiry |
+| **Quote Draft** | `browns-inquiry-quote-pipeline-*` | `tools/browns-inquiry-quote-pipeline-pack` | Orchestrate inquiry → quote pipeline |
+| **Welcome Drafts** | `browns-welcome-late-pipeline-*` | `tools/browns-welcome-late-pipeline-pack` | Welcome messages + late check-in queue |
+| **CT Pack** | `browns-ct-pack-pipeline-*` | `tools/browns-ct-pack-pipeline-pack` | Communication pack orchestrator |
+
+### How SA Ops Uses Packs
+
+#### Option A: One-Click UI (Recommended for Quick Tasks)
+
+1. Visit ops page (e.g. `/ops/inquiry-intake`)
+2. Fill in data / load fixture
+3. Click **"Generate Pack"**
+4. Click **"Download Pack"** - saves `packname__*.md` and `packname__RUN.sh` files
+5. Review `packname__APPROVAL.md` for hard gates
+6. All output is DRAFT-ONLY - requires manual approval before guest send
+
+#### Option B: CLI Execution (for Batch/Automation)
+
+If SA Ops prefers terminal workflow:
 
 ```bash
-# Example: Inquiry Intake
-node tools/browns-inquiry-intake/dist/index.js --input inquiry.json
+# Step 1: Download pack from UI (one-click)
+# Step 2: Organize files into folder
+mkdir -p browns-inquiry-intake-20260905-143022
+mv browns-inquiry-intake-20260905-143022__*.* browns-inquiry-intake-20260905-143022/
 
-# Example: Quote Draft  
-node tools/browns-quote-invoice-draft/dist/index.js --booking booking.json --rates rates.csv
+# Step 3: Run the CLI command (from RUN.sh or copy from UI)
+cd tools/browns-inquiry-intake
+npm run build
+npm run intake -- --text ../../browns-inquiry-intake-20260905-143022/inquiry.txt --outdir out/
 
-# Example: Daily Brief
-node tools/browns-daily-ops-brief/dist/index.js --date 2026-12-15
+# Expected output:
+# - booking.json
+# - quote.json  
+# - missing-fields.md
+# - APPROVAL.md
+# - manifest.json
 ```
 
-If CLI tools are not yet built, the UI exports packs with the expected input/output format so Browns can:
-1. Download the pack (JSON/markdown)
-2. Run the documented CLI command manually
-3. Review draft output before any guest communication
+### Pack File Structure
+
+Each downloaded pack includes:
+
+- **PACK.md** - Pack index with summary
+- **APPROVAL.md** - Hard gate checklist (H7/H11/N7 gates)
+- **Data files** - JSON/CSV inputs for CLI tool
+- **manifest.json** - Machine-readable metadata
+- **README.md** - Pack-specific instructions
+- **RUN.sh** - Exact CLI command to execute
+
+Files are prefixed with `packname__` for easy folder organization.
+
+### CLI Command Examples
+
+```bash
+# Inquiry Intake
+cd tools/browns-inquiry-intake
+npm run build
+npm run intake -- --text inquiry.txt --outdir out/
+
+# Inquiry → Quote Pipeline
+cd tools/browns-inquiry-quote-pipeline-pack
+npm run build
+npm run pack -- --inquiry intake-booking.json --outdir out/
+
+# Welcome & Late Check-In
+cd tools/browns-welcome-late-pipeline-pack
+npm run build
+npm run pack -- --bookings bookings.json --day 2026-09-20 --outdir out/
+
+# CT Pack Pipeline
+cd tools/browns-ct-pack-pipeline-pack
+npm run build
+npm run pipeline -- --date 2026-09-20 --pack pack/ --outdir out/
+```
+
+### Safety Features
+
+✅ **DRAFT-ONLY** - All packs are for manual review  
+✅ **Never auto-sends** - No WhatsApp/email without approval  
+✅ **Never invents data** - Missing rates/phones/ETAs flagged clearly  
+✅ **CLI-ready** - Exact commands shown in UI  
+✅ **Approval gates** - H7/H11/N7 gates documented in APPROVAL.md
 
 ---
 

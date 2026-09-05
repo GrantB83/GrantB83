@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Sparkles, Save, FileDown, AlertCircle, CheckCircle, Upload } from 'lucide-react'
 import { extractInquiry, generateDraftReply } from '@/lib/extraction'
 import { useTenant } from '@/components/TenantContext'
+import { PackGenerator } from '@/components/PackGenerator'
 
 const DEFAULT_INQUIRY = `Hi there,
 
@@ -287,6 +288,31 @@ export default function InquiryIntakePage() {
               ✗ Failed to save. Please try again.
             </div>
           )}
+        </div>
+      )}
+
+      {/* Pack Generator - M3 CLI Integration */}
+      {extracted && (
+        <div className="mb-8">
+          <PackGenerator
+            packType="inquiry-intake"
+            packLabel="Generate Inquiry Intake Pack"
+            packDescription="Export structured data + CLI command for browns-inquiry-intake tool"
+            onGenerate={async () => {
+              const response = await fetch('/api/packs/inquiry-intake', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  inquiryText: inquiry,
+                  extractedData: extracted
+                })
+              })
+              if (!response.ok) {
+                throw new Error('Pack generation failed')
+              }
+              return response.json()
+            }}
+          />
         </div>
       )}
 
