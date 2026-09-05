@@ -1,112 +1,137 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl
+    const { searchParams } = new URL(req.url)
     const tenantId = searchParams.get('tenant_id')
-    const day = searchParams.get('day')
-
-    if (!tenantId) {
-      return NextResponse.json({ error: 'tenant_id required' }, { status: 400 })
-    }
+    const status = searchParams.get('status')
+    const fromDate = searchParams.get('from_date')
+    const toDate = searchParams.get('to_date')
 
     const db = getDb()
+    
+    let query = `
+      SELECT 
+        b.id,
+        b.guest_name as guestName,
+        b.check_in as checkInDate,
+        b.check_out as checkOutDate,
+        b.suite_or_unit as suiteOrUnit,
+        b.property_name as propertyName,
+        b.adults,
+        b.children,
+        b.notes,
+        b.late_check_in as lateCheckIn,
+        b.guest_phone as guestPhone,
+        b.status,
+        b.created_at as createdAt,
+        p.name as propertyFullName
+      FROM bookings b
+      LEFT JOIN properties p ON b.property_id = p.id
+      WHERE 1=1
+    `
+    const params: any[] = []
 
-    // If day is specified, filter by arrival/departure/in-house on that day
-    if (day) {
-      const bookings = db
-        .prepare(
-          `SELECT * FROM bookings 
-           WHERE tenant_id = ? 
-           AND (
-             check_in = ? OR 
-             check_out = ? OR 
-             (check_in < ? AND check_out > ?)
-           )
-           ORDER BY check_in ASC`
-        )
-        .all(tenantId, day, day, day, day)
-
-      return NextResponse.json({ bookings })
+    if (tenantId) {
+      query += ' AND b.tenant_id = ?'
+      params.push(parseInt(tenantId))
     }
 
-    // Otherwise return all bookings for tenant
-    const bookings = db
-      .prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY check_in ASC')
-      .all(tenantId)
+    if (status) {
+      query += ' AND b.status = ?'
+      params.push(status)
+    }
+
+    if (fromDate) {
+      query += ' AND b.check_in >= ?'
+      params.push(fromDate)
+    }
+
+    if (toDate) {
+      query += ' AND b.check_out <= ?'
+      params.push(toDate)
+    }
+
+    query += ' ORDER BY b.check_in ASC, b.created_at DESC'
+
+    const bookings = db.prepare(query).all(...params)
 
     return NextResponse.json({ bookings })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('GET bookings error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch bookings' },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json()
-    const { tenant_id, bookings } = body
+    const { tenant_id, bookings } = await req.json()
 
-    if (!tenant_id) {
-      return NextResponse.json({ error: 'tenant_id required' }, { status: 400 })
-    }
-
-    if (!Array.isArray(bookings) || bookings.length === 0) {
-      return NextResponse.json({ error: 'bookings array required' }, { status: 400 })
+    if (!tenant_id || !bookings || !Array.isArray(bookings)) {
+      return NextResponse.json(
+        { error: 'tenant_id and bookings array are required' },
+        { status: 400 }
+      )
     }
 
     const db = getDb()
+    let inserted = 0
+    const errors: any[] = []
 
-    const insert = db.prepare(
-      `INSERT INTO bookings 
-       (tenant_id, guest_name, check_in, check_out, suite_or_unit, adults, children, notes, late_check_in, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-
-    const inserted = []
-    const errors = []
+    const insertStmt = db.prepare(`
+      INSERT INTO bookings (
+        tenant_id,
+        guest_name,
+        suite_or_unit,
+        check_in,
+        check_out,
+        adults,
+        children,
+        notes,
+        late_check_in,
+        guest_phone,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
 
     for (const booking of bookings) {
       try {
-        if (!booking.guestName || !booking.checkInDate || !booking.checkOutDate) {
-          errors.push({
-            guest: booking.guestName || 'Unknown',
-            field: !booking.guestName ? 'guestName' : !booking.checkInDate ? 'checkInDate' : 'checkOutDate',
-            reason: 'Required field missing',
-          })
-          continue
-        }
-
-        const result = insert.run(
+        insertStmt.run(
           tenant_id,
-          booking.guestName,
-          booking.checkInDate,
-          booking.checkOutDate,
-          booking.suiteOrUnit || null,
+          booking.guest_name || '',
+          booking.suite_or_unit || '',
+          booking.check_in || '',
+          booking.check_out || '',
           booking.adults || 2,
           booking.children || 0,
-          booking.notes || null,
-          booking.lateCheckIn ? 1 : 0,
-          booking.status || ''
+          booking.notes || '',
+          booking.late_check_in ? 1 : 0,
+          booking.guest_phone || '',
+          booking.status || 'pending'
         )
-
-        inserted.push({ id: result.lastInsertRowid, ...booking })
+        inserted++
       } catch (err: any) {
         errors.push({
-          guest: booking.guestName || 'Unknown',
-          field: 'database',
-          reason: err.message,
+          booking: booking.guest_name || 'Unknown',
+          error: err.message
         })
       }
     }
 
     return NextResponse.json({
       success: true,
-      inserted: inserted.length,
-      errors: errors.length > 0 ? errors : undefined,
-      bookings: inserted,
+      inserted,
+      errors
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('POST bookings error:', error)
+    return NextResponse.json(
+      { error: 'Failed to save bookings' },
+      { status: 500 }
+    )
   }
 }
