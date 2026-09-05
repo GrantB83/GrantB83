@@ -285,6 +285,75 @@ TTL: Auto
 
 ---
 
+## Seed Browns Data (M2)
+
+### Local Development
+
+After initializing the database, seed Browns Dullstroom rate cards and property facts:
+
+```bash
+cd apps/guestflow
+
+# Initialize database schema
+npm run db:init
+
+# Seed Browns data from authoritative sources
+npm run seed:browns
+```
+
+**What gets seeded:**
+- Rate cards from `tools/browns-ota-rate-pipeline-pack/fixtures/sample-rates.csv`
+- Property facts from `tools/browns-guest-facts-pack/fixtures/the-browns-like.md`
+- Browns tenant and properties (Luxury Suite 1, Garden Suite, Family Suite)
+
+**Hard Gates:**
+- ✅ Never invents rates, phone numbers, Wi-Fi codes, or contact details
+- ✅ Uses `[MISSING RATE]` placeholders for unavailable data
+- ✅ Only seeds Browns Dullstroom properties (tenant-scoped)
+
+### Vercel/Production
+
+**Option A: Turso (Recommended for Vercel)**
+
+Turso provides a free tier SQLite-compatible database that works on serverless:
+
+```bash
+# Install Turso CLI
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Create Browns database
+turso db create browns-guestflow
+
+# Get connection URL and auth token
+turso db show browns-guestflow --url
+turso db tokens create browns-guestflow
+
+# Add to Vercel environment variables:
+# DATABASE_URL=libsql://browns-guestflow-[...].turso.io
+# TURSO_AUTH_TOKEN=[token from above]
+
+# Initialize schema and seed data via Turso shell
+turso db shell browns-guestflow < scripts/schema.sql
+
+# Or seed via local script pointing to Turso:
+# (requires libsql client library - see Turso docs)
+```
+
+**Option B: Local Seed + Manual Upload**
+
+If Turso signup is not possible:
+
+1. Run seed script locally (creates `data/guestflow.db`)
+2. Export data to JSON/CSV
+3. Import via `/ops/rate-cards` upload page after deployment
+4. App degrades gracefully without `DATABASE_URL` (rate cards required per-session)
+
+**Option C: Seed Script in Vercel Build**
+
+Not recommended (better-sqlite3 doesn't work on Vercel serverless). Use Turso or manual upload.
+
+---
+
 ## Post-Deployment Verification
 
 ### 1. Test Health Endpoint
@@ -306,9 +375,35 @@ curl https://guestflow.thebrowns.co.za/api/health
 1. Login as staff
 2. Visit `/ops/inquiry-intake`
 3. Submit a test inquiry
-4. Visit `/crm` to verify it saved
+4. Verify it saves (or shows graceful error if no DATABASE_URL)
 
-### 4. Test CLI Export
+### 4. Test Rate Cards
+
+1. Visit `/ops/rate-cards`
+2. Verify seeded Browns rate cards appear
+3. Or upload rate cards manually if DATABASE_URL not set
+
+### 5. Run Smoke Tests
+
+Run full smoke test suite:
+
+```bash
+cd apps/guestflow
+
+# Start dev server (if not running)
+npm run dev
+
+# In another terminal, run smoke tests
+npm run smoke:ops
+```
+
+Expected output:
+```
+✅ All M2 ops console tests passed!
+GuestFlow ops console is ready for Browns Dullstroom.
+```
+
+### 6. Test CLI Export
 
 1. Visit `/ops/daily-brief`
 2. Click export
@@ -321,8 +416,14 @@ curl https://guestflow.thebrowns.co.za/api/health
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
 | `STAFF_PASSWORD` | Yes (prod) | Password for staff access | `your-secure-password-here` |
-| `DATABASE_URL` | Yes (Vercel) | Turso/Postgres connection string | `libsql://browns-guestflow-...` |
+| `DATABASE_URL` | Vercel only | Turso/Postgres connection string | `libsql://browns-guestflow-...` |
+| `TURSO_AUTH_TOKEN` | Vercel + Turso | Turso authentication token | `eyJh...` |
 | `NODE_ENV` | Yes | Environment mode | `production` |
+
+**Note on DATABASE_URL:**
+- **Local dev:** Not required (uses `data/guestflow.db` SQLite file automatically)
+- **Vercel:** Required if using Turso (or other remote DB)
+- **Without DATABASE_URL on Vercel:** App will show graceful error; rate cards must be uploaded per-session via `/ops/rate-cards` page
 
 ---
 

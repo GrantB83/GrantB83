@@ -21,6 +21,18 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS invite_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    max_uses INTEGER DEFAULT 1,
+    uses_count INTEGER DEFAULT 0,
+    expires_at DATETIME,
+    note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+  );
+
   CREATE TABLE IF NOT EXISTS waitlist (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id INTEGER,
@@ -31,9 +43,11 @@ db.exec(`
     current_system TEXT,
     phone TEXT,
     notes TEXT,
+    invite_code_id INTEGER,
     status TEXT DEFAULT 'new' CHECK(status IN ('new', 'contacted', 'qualified', 'won', 'lost')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    FOREIGN KEY (invite_code_id) REFERENCES invite_codes(id)
   );
 
   CREATE TABLE IF NOT EXISTS properties (
@@ -115,6 +129,10 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_lead_notes_lead ON lead_notes(lead_id);
   CREATE INDEX IF NOT EXISTS idx_lead_notes_tenant ON lead_notes(tenant_id);
+  
+  CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
+  CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
+  CREATE INDEX IF NOT EXISTS idx_waitlist_invite_code ON waitlist(invite_code_id);
 `)
 
 const tenantCount = db.prepare('SELECT COUNT(*) as count FROM tenants').get()
