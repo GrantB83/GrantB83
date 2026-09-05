@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getDb, getDefaultTenantId } from '@/lib/db'
+import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const db = getDb()
-    const properties = db.prepare(
+    const db = await getDbAsync()
+    const stmt = db.prepare(
       'SELECT id, tenant_id, name, location, room_count, created_at FROM properties ORDER BY name'
-    ).all()
+    )
+    const properties = await stmt.all()
 
     return NextResponse.json({ properties })
   } catch (error) {
@@ -29,16 +30,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const db = getDb()
-    const finalTenantId = tenantId || getDefaultTenantId()
+    const db = await getDbAsync()
+    const finalTenantId = tenantId || await getDefaultTenantIdAsync()
     
-    const result = db.prepare(
+    const insertStmt = db.prepare(
       'INSERT INTO properties (tenant_id, name, location, room_count) VALUES (?, ?, ?, ?)'
-    ).run(finalTenantId, name, location, roomCount)
+    )
+    const result = await insertStmt.run(finalTenantId, name, location, roomCount)
 
-    const newProperty = db.prepare(
+    const selectStmt = db.prepare(
       'SELECT id, tenant_id, name, location, room_count, created_at FROM properties WHERE id = ?'
-    ).get(result.lastInsertRowid)
+    )
+    const newProperty = await selectStmt.get(result.lastInsertRowid)
 
     return NextResponse.json(newProperty, { status: 201 })
   } catch (error) {
