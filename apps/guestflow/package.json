@@ -12,7 +12,8 @@
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-add-status.js",
     "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js",
-    "seed:browns": "node scripts/seed-browns-data.js"
+    "seed:browns": "node scripts/seed-browns-data.js",
+    "db:export": "node scripts/export-data.js"
   },
   "dependencies": {
     "next": "^14.2.0",
