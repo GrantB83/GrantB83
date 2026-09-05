@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 const DEMO_PASSWORD = 'demo2026'
 
 // GET /api/invite-codes/usage?tenant_id=N - Get usage report for tenant

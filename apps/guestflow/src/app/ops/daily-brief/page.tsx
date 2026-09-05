@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail, StickyNote, MessageSquare } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
 import { useSearchParams } from 'next/navigation'
@@ -23,7 +23,7 @@ interface Booking {
   special_requests?: string
 }
 
-export default function DailyBriefPage() {
+function DailyBriefContent() {
   const searchParams = useSearchParams()
   const { selectedTenantId, tenants } = useTenant()
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -447,5 +447,13 @@ function TaskItem({ task, status }: { task: string, status: string }) {
       <CheckCircle2 className={`w-5 h-5 ${status === 'complete' ? 'text-green-600' : 'text-gray-300'}`} />
       <span className="text-sm text-gray-700">{task}</span>
     </div>
+  )
+}
+
+export default function DailyBriefPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">Loading...</div>}>
+      <DailyBriefContent />
+    </Suspense>
   )
 }
