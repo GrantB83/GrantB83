@@ -31,6 +31,28 @@ This is a **staff-only internal operations console**. Not a public site.
 
 ## Option A: Vercel Deployment (with Turso DB)
 
+### ⚠️ CRITICAL: Vercel Project Configuration
+
+**This monorepo requires the Root Directory setting in Vercel to work correctly.**
+
+When creating or configuring the Vercel project, you MUST set:
+
+- **Root Directory:** `apps/guestflow` ← **REQUIRED**
+- **Build Command:** (leave default / auto-detect)
+- **Install Command:** (leave default / auto-detect)
+- **Output Directory:** (leave default / auto-detect)
+
+**Why this matters:**
+- The repository root has no `package.json` or Next.js app
+- Without Root Directory set, Vercel will try to build from root and fail
+- Path aliases (`@/components/*`, `@/lib/*`) only work when building from `apps/guestflow`
+
+**To configure in Vercel dashboard:**
+1. Go to Project Settings → General → Build & Development Settings
+2. Find "Root Directory" field
+3. Enter: `apps/guestflow`
+4. Save and trigger a new deployment
+
 ### Step 1: Set Up Turso Database
 
 ```bash

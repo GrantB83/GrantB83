@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Lock } from 'lucide-react'
 
-export default function StaffLoginPage() {
+function StaffLoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
@@ -108,5 +108,13 @@ export default function StaffLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function StaffLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center text-white">Loading...</div>}>
+      <StaffLoginContent />
+    </Suspense>
   )
 }
