@@ -428,6 +428,140 @@ View logs in Cloudflare dashboard → Pages → Logs
 
 ---
 
+## Data Backup & Persistence
+
+### ⚠️ CRITICAL: Platform Storage Characteristics
+
+| Platform | Filesystem | Data Persistence | Backup Strategy |
+|----------|-----------|------------------|-----------------|
+| **Vercel** | Ephemeral (serverless) | ❌ Lost on every deploy | Use Turso DB + export regularly |
+| **Fly.io** | Persistent volumes | ✅ Survives deploys | SQLite on volume + export regularly |
+| **Local Dev** | Normal filesystem | ✅ Persistent | data/guestflow.db + git (private only) |
+
+### Backup Methods
+
+#### 1. Local Development (SQLite)
+
+```bash
+# Export to JSON
+cd apps/guestflow
+npm run db:export > backups/backup-$(date +%Y%m%d).json
+
+# Or specify output file
+node scripts/export-data.js backups/backup-$(date +%Y%m%d).json
+```
+
+**What gets exported:**
+- Tenants (properties, locations)
+- Rate cards (pricing data)
+- Inquiries (leads, guest requests)
+- Bookings (confirmed reservations)
+- Waitlist (if any)
+- Invite codes (staff access)
+
+**⚠️ NEVER commit actual guest data to public repos**
+
+#### 2. Turso (Vercel Production)
+
+```bash
+# Dump entire database
+turso db shell browns-guestflow .dump > backup-$(date +%Y%m%d).sql
+
+# Export specific table
+turso db shell browns-guestflow "SELECT * FROM rate_cards"
+
+# Create snapshot (Turso paid tier)
+turso db snapshot browns-guestflow
+```
+
+**Turso Free Tier Limits:**
+- 9 GB total storage
+- 1 database
+- Backups: manual only (no automatic snapshots on free tier)
+
+**Recommendation:** Export weekly to JSON using the export script
+
+#### 3. Fly.io (SQLite on Volume)
+
+```bash
+# SSH into machine
+fly ssh console
+
+# Copy database file
+cd /app/data
+cat guestflow.db > /tmp/backup.db
+fly ssh sftp get /tmp/backup.db ./backup-$(date +%Y%m%d).db
+
+# Or run export script on the machine
+fly ssh console
+cd /app
+node scripts/export-data.js > /tmp/backup.json
+exit
+fly ssh sftp get /tmp/backup.json ./backup-$(date +%Y%m%d).json
+```
+
+### Backup Schedule (Recommendation)
+
+| Frequency | Method | Reason |
+|-----------|--------|--------|
+| **Weekly** | JSON export via script | Quick restore, human-readable |
+| **Before deploy** | Full dump (Turso/SQLite) | Rollback safety |
+| **Before rate changes** | Manual export | Audit trail |
+| **Monthly** | Archive to secure storage | Long-term retention |
+
+### Restore from Backup
+
+#### From JSON Export
+
+```bash
+# 1. Initialize fresh database
+npm run db:init
+
+# 2. Manually insert data from JSON
+# (No automatic restore script yet - restore manually via SQL or API)
+```
+
+#### From Turso Dump
+
+```bash
+turso db shell browns-guestflow < backup-20261205.sql
+```
+
+#### From SQLite File
+
+```bash
+# Replace current database
+cp backup-20261205.db data/guestflow.db
+```
+
+### Data You Should Backup
+
+✅ **Always backup:**
+- Rate cards (pricing is business logic)
+- Tenant/property configuration
+- Booking history (for records)
+
+⚠️ **Backup with care (contains PII):**
+- Guest names, emails, phone numbers
+- Inquiry details, special requests
+- Store encrypted in private location only
+
+❌ **Do NOT backup to public repos:**
+- Any file containing actual guest data
+- Staff passwords
+- API keys or secrets
+
+### Automated Backup (Optional)
+
+Add to cron (localhost or Fly.io):
+
+```bash
+# Daily export at 2am SAST
+0 2 * * * cd /path/to/apps/guestflow && npm run db:export > backups/auto-$(date +\%Y\%m\%d).json
+```
+
+---
+
 ## Grant's One-Time DNS Checklist
 
 - [ ] Choose deployment platform (recommend Vercel + Turso)
