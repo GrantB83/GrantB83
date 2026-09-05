@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail, StickyNote, MessageSquare } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
 import { useSearchParams } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 
 interface Booking {
   id: number
@@ -23,7 +25,7 @@ interface Booking {
   special_requests?: string
 }
 
-export default function DailyBriefPage() {
+function DailyBriefContent() {
   const searchParams = useSearchParams()
   const { selectedTenantId, tenants } = useTenant()
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -353,6 +355,21 @@ export default function DailyBriefPage() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function DailyBriefPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <p className="text-gray-600 mt-4">Loading brief...</p>
+        </div>
+      </div>
+    }>
+      <DailyBriefContent />
+    </Suspense>
   )
 }
 
