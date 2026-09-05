@@ -6,6 +6,61 @@ This is a **staff-only internal operations console**. Not a public site.
 
 ---
 
+## Staff Runbook: Turso Database Setup (Grant - One Time)
+
+**Context:** Vercel Hobby plan uses ephemeral storage. Turso provides free durable SQLite for production.
+
+### Quick Setup (5 minutes)
+
+1. **Install Turso CLI:**
+   ```bash
+   curl -sSfL https://get.tur.so/install.sh | bash
+   ```
+
+2. **Sign up (free, no credit card):**
+   ```bash
+   turso auth signup
+   # Or if you already have an account: turso auth login
+   ```
+
+3. **Create database:**
+   ```bash
+   turso db create browns-guestflow
+   ```
+
+4. **Get credentials:**
+   ```bash
+   # Get database URL
+   turso db show browns-guestflow --url
+   # Copy the output: libsql://browns-guestflow-[username].turso.io
+   
+   # Get auth token
+   turso db tokens create browns-guestflow
+   # Copy the output: eyJhbGc...
+   ```
+
+5. **Set Vercel environment variables:**
+   ```bash
+   vercel env add DATABASE_URL
+   # Paste the database URL from step 4
+   
+   vercel env add TURSO_AUTH_TOKEN
+   # Paste the auth token from step 4
+   
+   # Redeploy to apply
+   vercel --prod
+   ```
+
+6. **Verify:**
+   - Visit `https://guestflow.thebrowns.co.za/api/health`
+   - Should show `"database":"turso"` instead of `"sqlite"`
+
+**That's it!** The schema will initialize automatically on first request.
+
+**Fallback:** If Turso setup fails, the app will still work locally with SQLite file. Rate cards and data will need to be re-entered after each Vercel deploy (not recommended for production).
+
+---
+
 ## Quick Deploy Checklist
 
 ### 1. Choose Deployment Platform
@@ -53,23 +108,46 @@ When creating or configuring the Vercel project, you MUST set:
 3. Enter: `apps/guestflow`
 4. Save and trigger a new deployment
 
-### Step 1: Set Up Turso Database
+### Step 1: Set Up Turso Database (Free Tier)
+
+Turso provides a free tier with 9GB storage and 500 databases - perfect for GuestFlow:
 
 ```bash
 # Install Turso CLI
 curl -sSfL https://get.tur.so/install.sh | bash
 
-# Create Browns database
+# Sign up for free Turso account (first time only)
+turso auth signup
+
+# Or login if you already have an account
+turso auth login
+
+# Create Browns database on free tier
 turso db create browns-guestflow
 
 # Get connection URL
 turso db show browns-guestflow --url
-# Copy this URL for VERCEL_DATABASE_URL
+# Copy this URL - it will look like: libsql://browns-guestflow-[username].turso.io
 
 # Create auth token
 turso db tokens create browns-guestflow
-# Copy this token for VERCEL_DATABASE_AUTH_TOKEN
+# Copy this token - it will look like: eyJhbGc...
+
+# Initialize schema (creates all tables)
+turso db shell browns-guestflow < apps/guestflow/scripts/init-db.sql
+# Note: This requires converting init-db.js to SQL, or use the schema from src/lib/db.ts
 ```
+
+**Turso Free Tier Limits:**
+- 9 GB total storage
+- 500 databases per account
+- 1 billion row reads/month
+- Good for Browns single-tenant ops (low volume)
+- No credit card required
+
+**Save these for Step 2:**
+- DATABASE_URL: `libsql://browns-guestflow-[username].turso.io`
+- TURSO_AUTH_TOKEN: `eyJhbGc...`
 
 ### Step 2: Deploy to Vercel
 
