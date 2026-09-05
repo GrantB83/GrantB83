@@ -10,7 +10,8 @@
     "smoke": "node scripts/smoke-demo.mjs",
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-add-status.js",
-    "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js"
+    "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js",
+    "db:export": "node scripts/export-data.js"
   },
   "dependencies": {
     "next": "^14.2.0",
