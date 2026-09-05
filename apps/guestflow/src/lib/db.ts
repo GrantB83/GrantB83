@@ -9,6 +9,19 @@ export function getDb(): Database.Database {
     return db
   }
 
+  // Check if DATABASE_URL is set (Turso/remote DB)
+  if (process.env.DATABASE_URL) {
+    // Vercel deployment with Turso (libsql)
+    // Note: better-sqlite3 doesn't support libsql protocol
+    // This would require @libsql/client instead
+    throw new Error(
+      'DATABASE_URL is set but @libsql/client is not configured. ' +
+      'Either: (1) Install @libsql/client for Turso support, or ' +
+      '(2) Remove DATABASE_URL to use local SQLite file'
+    )
+  }
+
+  // Local SQLite file (development and Fly.io with persistent volume)
   const dbDir = path.join(process.cwd(), 'data')
   
   if (!fs.existsSync(dbDir)) {
@@ -16,11 +29,21 @@ export function getDb(): Database.Database {
   }
 
   const dbPath = path.join(dbDir, 'guestflow.db')
-  db = new Database(dbPath)
   
-  initializeDb(db)
-  
-  return db
+  try {
+    db = new Database(dbPath)
+    initializeDb(db)
+    return db
+  } catch (err: any) {
+    if (process.env.VERCEL) {
+      throw new Error(
+        'SQLite file not supported on Vercel serverless. ' +
+        'Either: (1) Set DATABASE_URL with Turso connection, or ' +
+        '(2) Upload rate cards manually via /ops/rate-cards page'
+      )
+    }
+    throw err
+  }
 }
 
 function initializeDb(database: Database.Database) {
@@ -147,28 +170,10 @@ function initializeDb(database: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_lead_notes_lead ON lead_notes(lead_id);
     CREATE INDEX IF NOT EXISTS idx_lead_notes_tenant ON lead_notes(tenant_id);
-<<<<<<< HEAD
     
     CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
     CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
     CREATE INDEX IF NOT EXISTS idx_waitlist_invite_code ON waitlist(invite_code_id);
-=======
-
-    CREATE TABLE IF NOT EXISTS invite_codes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tenant_id INTEGER NOT NULL,
-      code TEXT NOT NULL UNIQUE,
-      max_uses INTEGER DEFAULT 1,
-      current_uses INTEGER DEFAULT 0,
-      expires_at DATETIME,
-      note TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
-    CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
->>>>>>> origin/main
   `)
   
   const tenantCount = database.prepare('SELECT COUNT(*) as count FROM tenants').get() as { count: number }
