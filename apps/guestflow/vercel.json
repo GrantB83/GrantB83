@@ -1,20 +1,4 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "outputDirectory": ".next",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ],
-  "env": {
-    "STAFF_PASSWORD": "@staff-password",
-    "DATABASE_URL": "@database-url",
-    "NODE_ENV": "production"
-  },
-  "regions": ["iad1"]
+  "framework": "nextjs"
 }
