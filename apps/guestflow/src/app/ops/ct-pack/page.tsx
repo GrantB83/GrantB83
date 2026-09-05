@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Package, Download, Printer, FileText, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
+import { PackGenerator } from '@/components/PackGenerator'
 
 interface PackData {
   dailyBrief: any | null

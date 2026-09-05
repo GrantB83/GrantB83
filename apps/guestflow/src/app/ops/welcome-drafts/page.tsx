@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
+import { PackGenerator } from '@/components/PackGenerator'
 
 interface WelcomeDraft {
   id: number
@@ -351,6 +352,42 @@ export default function WelcomeDraftsPage() {
           Assemble CT Pack
         </Link>
       </div>
+
+      {/* Pack Generator - M3 CLI Integration */}
+      {drafts && drafts.length > 0 && (
+        <div className="mt-8">
+          <PackGenerator
+            packType="welcome-late"
+            packLabel="Generate Welcome & Late Check-In Pack"
+            packDescription="Export welcome drafts + late check-in queue with CLI command for browns-welcome-late-pipeline-pack"
+            onGenerate={async () => {
+              // Transform drafts to booking format
+              const bookings = drafts.map(draft => ({
+                guestName: draft.guestName,
+                checkInDate: draft.checkIn,
+                checkOutDate: draft.checkOut,
+                propertyName: draft.property,
+                roomNumber: draft.roomNumber,
+                missingFields: draft.missingFields,
+                lateCheckIn: draft.missingFields.includes('phone') || draft.missingFields.includes('arrival time')
+              }))
+              
+              const response = await fetch('/api/packs/welcome-late', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bookings,
+                  targetDate: asOfDate
+                })
+              })
+              if (!response.ok) {
+                throw new Error('Pack generation failed')
+              }
+              return response.json()
+            }}
+          />
+        </div>
+      )}
 
       <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-6">
         <h3 className="font-semibold text-red-900 mb-3">⚠️ Hard Gates (Phase 18)</h3>
