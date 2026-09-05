@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic'
 
 const DEMO_PASSWORD = 'demo2026'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/invite-codes/usage?tenant_id=N - Get usage report for tenant
 export async function GET(request: Request) {
   try {

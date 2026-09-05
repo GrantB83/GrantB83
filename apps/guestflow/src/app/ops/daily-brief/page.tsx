@@ -7,6 +7,8 @@ import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
 import { useSearchParams } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 interface Booking {
   id: number
   guest_name: string
@@ -353,6 +355,21 @@ function DailyBriefContent() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function DailyBriefPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <p className="text-gray-600 mt-4">Loading brief...</p>
+        </div>
+      </div>
+    }>
+      <DailyBriefContent />
+    </Suspense>
   )
 }
 
