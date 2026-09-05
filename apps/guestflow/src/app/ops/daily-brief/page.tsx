@@ -466,11 +466,3 @@ function TaskItem({ task, status }: { task: string, status: string }) {
     </div>
   )
 }
-
-export default function DailyBriefPage() {
-  return (
-    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">Loading...</div>}>
-      <DailyBriefContent />
-    </Suspense>
-  )
-}
