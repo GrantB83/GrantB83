@@ -10,7 +10,8 @@ import {
   Upload,
   FileCheck,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react'
 
 export default function OpsPage() {
@@ -145,6 +146,48 @@ export default function OpsPage() {
             cliTool="(internal only)"
             color="cyan"
           />
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-12 max-w-5xl mx-auto">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Sparkles className="w-6 h-6" />
+            Daily Quick Actions
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            <Link
+              href="/ops/daily-brief"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-lg p-4 transition group"
+            >
+              <Calendar className="w-6 h-6 mb-2" />
+              <div className="font-semibold mb-1">Morning Brief</div>
+              <div className="text-sm text-blue-100">Start your day with RED/AMBER/GREEN priorities</div>
+            </Link>
+            <Link
+              href="/ops/inquiry-intake"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-lg p-4 transition group"
+            >
+              <MessageSquare className="w-6 h-6 mb-2" />
+              <div className="font-semibold mb-1">Process Inquiries</div>
+              <div className="text-sm text-blue-100">Extract & save new guest inquiries</div>
+            </Link>
+            <Link
+              href="/ops/welcome-drafts"
+              className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-lg p-4 transition group"
+            >
+              <CheckCircle2 className="w-6 h-6 mb-2" />
+              <div className="font-semibold mb-1">Welcome Messages</div>
+              <div className="text-sm text-blue-100">One-click for today's arrivals</div>
+            </Link>
+          </div>
+          <div className="mt-4 p-4 bg-white/10 backdrop-blur rounded-lg">
+            <p className="text-sm">
+              <strong>Autonomous Mode:</strong> Pages auto-assemble packs from inputs. Export ready-to-post drafts for WhatsApp/email. 
+              All output is <strong>DRAFT-ONLY</strong> — requires CoS/Grant approval before sending.
+            </p>
+          </div>
         </div>
       </div>
 

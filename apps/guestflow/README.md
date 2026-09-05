@@ -27,6 +27,8 @@ This is **NOT:**
 
 ## How SA Ops Uses It
 
+### Localhost (Development)
+
 Run on localhost:3100 in Dullstroom or remote ops:
 
 ```bash
@@ -37,6 +39,16 @@ npm run dev
 ```
 
 Open http://localhost:3100
+
+### Production (guestflow.thebrowns.co.za)
+
+**Staff-only access** at `https://guestflow.thebrowns.co.za`
+
+1. Visit URL (redirects to `/staff-login`)
+2. Enter staff password (contact Grant for access)
+3. Access full ops console
+
+**Complete deployment guide:** See [`DEPLOY.md`](./DEPLOY.md) for Vercel/Fly.io/Cloudflare setup
 
 Each page exports/downloads packs that match CLI tool inputs/outputs, with exact `node dist/index.js ...` commands shown for terminal execution.
 
@@ -220,12 +232,36 @@ npm run db:init  # Creates data/guestflow.db with Browns tenant
 
 ## For SA Ops
 
-1. Start GuestFlow on localhost:3100
-2. Use operational pages to prepare drafts
-3. Export packs as JSON/markdown
-4. Run documented CLI commands if tools exist
-5. Review all drafts before sending to guests
-6. Never auto-send — all output requires manual approval
+### Daily Workflow
+
+1. **Morning:** Visit `/ops/daily-brief` for RED/AMBER/GREEN priorities
+2. **Inquiries:** Process via `/ops/inquiry-intake` → auto-export pack
+3. **Quotes:** Generate via `/ops/quote-draft` with rate cards
+4. **Welcome Messages:** One-click via `/ops/welcome-drafts` for same-day arrivals
+5. **Late Check-Ins:** Review `/ops/late-checkin-queue` for after-hours
+6. **CT Pack:** Verify bookings via `/ops/booking-change-check` before sending
+
+### Export & Handoff
+
+- All pages export JSON/markdown packs for CLI tools or manual review
+- CLI commands shown: `node tools/browns-*/dist/index.js ...`
+- **DRAFT-ONLY:** Review all output before posting to guests via WhatsApp/email
+- Never auto-send — all output requires CoS/Grant approval
+
+### DNS Setup (Grant One-Time)
+
+In DNS provider (Cloudflare/Namecheap/etc.):
+
+```
+Type: CNAME
+Name: guestflow
+Target: <deployment-url>  (e.g., browns-guestflow.vercel.app)
+TTL: Auto
+```
+
+Result: `guestflow.thebrowns.co.za` → Staff-only ops console
+
+**Full deployment guide:** [`DEPLOY.md`](./DEPLOY.md)
 
 ---
 
