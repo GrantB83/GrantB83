@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare } from 'lucide-react'
+import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare, Send, CheckCircle, XCircle } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
 import { PackGenerator } from '@/components/PackGenerator'
@@ -16,6 +16,8 @@ interface WelcomeDraft {
   roomNumber: string | null
   message: string
   missingFields: string[]
+  guestPhone?: string
+  portalUrl?: string
 }
 
 interface Stats {
@@ -33,8 +35,19 @@ export default function WelcomeDraftsPage() {
   const [asOfDate, setAsOfDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [windowDays, setWindowDays] = useState(1)
   const [exporting, setExporting] = useState(false)
+  const [whatsappConfigured, setWhatsappConfigured] = useState(false)
+  const [sendingDraftId, setSendingDraftId] = useState<number | null>(null)
+  const [sendResults, setSendResults] = useState<Record<number, { success: boolean, error?: string }>>({})
 
   const activeTenant = tenants.find(t => t.id === selectedTenantId)
+
+  // Check WhatsApp configuration on mount
+  useEffect(() => {
+    fetch('/api/whatsapp/send')
+      .then(res => res.json())
+      .then(data => setWhatsappConfigured(data.configured))
+      .catch(() => setWhatsappConfigured(false))
+  }, [])
 
   const fetchDrafts = async () => {
     if (!selectedTenantId) return
@@ -101,6 +114,71 @@ export default function WelcomeDraftsPage() {
       console.error('Error exporting drafts:', error)
     } finally {
       setExporting(false)
+    }
+  }
+
+  const handleWhatsAppSend = async (draft: WelcomeDraft) => {
+    // Require confirmation
+    const guestPhone = draft.guestPhone || prompt(
+      `Enter guest phone number for ${draft.guestName} (international format, e.g., +27836458313):`
+    )
+
+    if (!guestPhone) {
+      return // User cancelled
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ SEND WHATSAPP MESSAGE?\n\n` +
+      `To: ${guestPhone}\n` +
+      `Guest: ${draft.guestName}\n` +
+      `Property: ${draft.property}\n\n` +
+      `This will send a real WhatsApp message. Continue?`
+    )
+
+    if (!confirmed) {
+      return // User cancelled
+    }
+
+    setSendingDraftId(draft.id)
+
+    try {
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          draftId: draft.id,
+          guestPhone: guestPhone,
+          message: draft.message,
+          portalUrl: draft.portalUrl
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setSendResults(prev => ({
+          ...prev,
+          [draft.id]: { success: true }
+        }))
+        alert(`✅ WhatsApp message sent successfully to ${guestPhone}`)
+      } else {
+        setSendResults(prev => ({
+          ...prev,
+          [draft.id]: { success: false, error: result.error }
+        }))
+        alert(`❌ Failed to send WhatsApp message:\n\n${result.error}`)
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+      setSendResults(prev => ({
+        ...prev,
+        [draft.id]: { success: false, error: errorMsg }
+      }))
+      alert(`❌ Error sending WhatsApp message:\n\n${errorMsg}`)
+    } finally {
+      setSendingDraftId(null)
     }
   }
 
@@ -198,6 +276,25 @@ export default function WelcomeDraftsPage() {
         </div>
       )}
 
+      {/* WhatsApp Configuration Status */}
+      {drafts.length > 0 && (
+        <div className={`border rounded-xl p-6 mb-6 ${whatsappConfigured ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="flex items-start gap-3">
+            <MessageSquare className={`w-5 h-5 flex-shrink-0 mt-0.5 ${whatsappConfigured ? 'text-green-600' : 'text-amber-600'}`} />
+            <div className="flex-1">
+              <h3 className={`font-semibold mb-2 ${whatsappConfigured ? 'text-green-900' : 'text-amber-900'}`}>
+                WhatsApp Cloud API Status
+              </h3>
+              <p className={`text-sm ${whatsappConfigured ? 'text-green-800' : 'text-amber-800'}`}>
+                {whatsappConfigured 
+                  ? '✅ WhatsApp is configured and ready. Use "Approve & Send (WhatsApp)" buttons below to send messages after confirmation.'
+                  : '⚠️ WhatsApp not configured. Missing environment variables (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ACCOUNT_ID). Send buttons will be disabled until configured.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Export Buttons */}
       {drafts.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
@@ -264,47 +361,84 @@ export default function WelcomeDraftsPage() {
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900">Generated Welcome Stubs</h2>
           
-          {drafts.map((draft, index) => (
-            <div key={draft.id} className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Mail className="w-5 h-5 text-primary-600" />
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {index + 1}. {draft.guestName}
-                    </h3>
+          {drafts.map((draft, index) => {
+            const sendResult = sendResults[draft.id]
+            return (
+              <div key={draft.id} className="bg-white border border-gray-200 rounded-xl p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Mail className="w-5 h-5 text-primary-600" />
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {index + 1}. {draft.guestName}
+                      </h3>
+                      {sendResult && (
+                        <span className={`flex items-center gap-1 text-sm ${sendResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                          {sendResult.success ? (
+                            <>
+                              <CheckCircle className="w-4 h-4" />
+                              Sent
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4" />
+                              Failed
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                      <span>Check-in: {format(parseISO(draft.checkIn), 'EEE, d MMM yyyy')}</span>
+                      <span>•</span>
+                      <span>Property: {draft.property}</span>
+                      {draft.roomNumber && (
+                        <>
+                          <span>•</span>
+                          <span>Room: {draft.roomNumber}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    <span>Check-in: {format(parseISO(draft.checkIn), 'EEE, d MMM yyyy')}</span>
-                    <span>•</span>
-                    <span>Property: {draft.property}</span>
-                    {draft.roomNumber && (
-                      <>
-                        <span>•</span>
-                        <span>Room: {draft.roomNumber}</span>
-                      </>
-                    )}
+                  <button
+                    onClick={() => handleWhatsAppSend(draft)}
+                    disabled={!whatsappConfigured || sendingDraftId === draft.id || sendResult?.success}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    title={!whatsappConfigured ? 'WhatsApp not configured' : sendResult?.success ? 'Already sent' : 'Send WhatsApp message'}
+                  >
+                    <Send className="w-4 h-4" />
+                    {sendingDraftId === draft.id ? 'Sending...' : 'Approve & Send (WhatsApp)'}
+                  </button>
+                </div>
+
+                {draft.missingFields.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2 text-amber-800 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="font-medium">Missing:</span>
+                      <span>{draft.missingFields.map(f => `[${f.toUpperCase()}]`).join(', ')}</span>
+                    </div>
                   </div>
+                )}
+
+                {sendResult && !sendResult.success && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2 text-red-800 text-sm">
+                      <XCircle className="w-4 h-4" />
+                      <span className="font-medium">Send Error:</span>
+                      <span>{sendResult.error}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
+                    {draft.message}
+                  </pre>
                 </div>
               </div>
-
-              {draft.missingFields.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                  <div className="flex items-center gap-2 text-amber-800 text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="font-medium">Missing:</span>
-                    <span>{draft.missingFields.map(f => `[${f.toUpperCase()}]`).join(', ')}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
-                  {draft.message}
-                </pre>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         !loading && (
@@ -390,14 +524,16 @@ export default function WelcomeDraftsPage() {
       )}
 
       <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-6">
-        <h3 className="font-semibold text-red-900 mb-3">⚠️ Hard Gates (Phase 18)</h3>
+        <h3 className="font-semibold text-red-900 mb-3">⚠️ Hard Gates (Phase 18 + WhatsApp Send)</h3>
         <ul className="space-y-2 text-sm text-red-800">
-          <li>✅ <strong>DRAFT ONLY</strong> — Never sends WhatsApp or email automatically</li>
+          <li>✅ <strong>NEVER auto-send</strong> — Staff must explicitly click "Approve & Send (WhatsApp)" + confirm dialog</li>
+          <li>✅ <strong>Disabled when not configured</strong> — Button disabled with clear message if env vars missing</li>
           <li>✅ <strong>Never invents guest phone</strong> — Uses <code>[GUEST_PHONE]</code> placeholder when missing</li>
           <li>✅ <strong>Never invents rates</strong> — Uses <code>[RATE CARD REQUIRED]</code> placeholder when missing</li>
           <li>✅ <strong>Skips missing names</strong> — Bookings without guest_name are filtered out and listed separately</li>
+          <li>✅ <strong>Logs without storing bodies</strong> — Logs success/fail status only, not message content</li>
+          <li>✅ <strong>Portal links included</strong> — Automatically appends portal URL to message when available</li>
           <li>✅ <strong>Local demo only</strong> — Export operations are local-only with no external storage</li>
-          <li>✅ <strong>Mirrors tools/browns-welcome-draft-pack semantics</strong> — Same filtering logic and tone</li>
         </ul>
       </div>
 

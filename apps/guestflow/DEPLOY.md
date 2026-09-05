@@ -418,12 +418,338 @@ GuestFlow ops console is ready for Browns Dullstroom.
 | `STAFF_PASSWORD` | Yes (prod) | Password for staff access | `your-secure-password-here` |
 | `DATABASE_URL` | Vercel only | Turso/Postgres connection string | `libsql://browns-guestflow-...` |
 | `TURSO_AUTH_TOKEN` | Vercel + Turso | Turso authentication token | `eyJh...` |
+| `WHATSAPP_TOKEN` | Optional | Meta WhatsApp Cloud API access token | `EAAl...` |
+| `WHATSAPP_PHONE_NUMBER_ID` | Optional | WhatsApp Business phone number ID | `123456789012345` |
+| `WHATSAPP_BUSINESS_ACCOUNT_ID` | Optional | WhatsApp Business account ID | `987654321098765` |
 | `NODE_ENV` | Yes | Environment mode | `production` |
 
 **Note on DATABASE_URL:**
 - **Local dev:** Not required (uses `data/guestflow.db` SQLite file automatically)
 - **Vercel:** Required if using Turso (or other remote DB)
 - **Without DATABASE_URL on Vercel:** App will show graceful error; rate cards must be uploaded per-session via `/ops/rate-cards` page
+
+**Note on WhatsApp Configuration:**
+- **Optional:** WhatsApp send functionality is disabled until these env vars are configured
+- **When missing:** UI shows clear "WhatsApp not configured" message with disabled send buttons
+- **Setup required:** Meta Business Manager account, WhatsApp Business API approval, phone number registration
+- **See:** WhatsApp Setup section below for full configuration instructions
+
+---
+
+## WhatsApp Cloud API Setup (Optional)
+
+### Overview
+
+GuestFlow includes **human-approved WhatsApp send functionality** for welcome messages and guest communications. This feature is:
+
+- ✅ **Optional** — App works without WhatsApp configuration (send buttons disabled)
+- ✅ **NEVER auto-sends** — Requires explicit "Approve & Send (WhatsApp)" button click + confirmation dialog
+- ✅ **Gracefully degraded** — Clear UI messaging when not configured
+- ✅ **Production-ready** — Uses Meta WhatsApp Cloud API (official, no third-party)
+
+### Prerequisites
+
+Before configuring WhatsApp in GuestFlow, you need:
+
+1. **Meta Business Manager Account** ([business.facebook.com](https://business.facebook.com))
+2. **WhatsApp Business Account** (created within Meta Business Manager)
+3. **WhatsApp Business Phone Number** (new number or migrate existing)
+4. **WhatsApp Cloud API Access** (approved by Meta)
+
+**⚠️ CRITICAL:** The Browns' Dullstroom has a **new WhatsApp Business number** (not +27836458313). Contact Grant for:
+- Display name: **The Browns' Dullstroom**
+- Meta legal entity: **TheBrowns Group (Pty) Ltd**
+- Old number: Entry point only (do not register as Cloud API line)
+
+### Step 1: Access Meta Business Manager
+
+1. Go to [business.facebook.com](https://business.facebook.com)
+2. Login with TheBrowns Group account credentials
+3. Navigate to **Business Settings** → **Accounts** → **WhatsApp Business Accounts**
+
+### Step 2: Create or Select WhatsApp Business Account
+
+```
+Business Settings → WhatsApp Business Accounts → Add or Select
+```
+
+- **Account Name:** The Browns' Dullstroom
+- **Business Name:** TheBrowns Group (Pty) Ltd
+- **Time Zone:** Africa/Johannesburg
+
+### Step 3: Add Phone Number to WhatsApp Business
+
+```
+WhatsApp Business Account → Phone Numbers → Add Phone Number
+```
+
+**Options:**
+
+- **Option A: Get New Number** (Recommended if not purchased yet)
+  - Select South Africa (+27) country code
+  - Choose area code (e.g., Mpumalanga/Dullstroom region)
+  - Complete verification via SMS/call
+
+- **Option B: Use Existing Number** (If already have WhatsApp Business number)
+  - Enter existing number
+  - Verify ownership via SMS/call
+  - ⚠️ **WARNING:** Do NOT migrate old entrypoint number (+27836458313) to Cloud API
+
+### Step 4: Get API Credentials
+
+Once phone number is verified:
+
+1. Go to **WhatsApp Manager** → **API Setup**
+2. Copy these values:
+
+```bash
+# 1. Phone Number ID (shown in API Setup → Phone Numbers)
+WHATSAPP_PHONE_NUMBER_ID=123456789012345
+
+# 2. Business Account ID (shown in account header)
+WHATSAPP_BUSINESS_ACCOUNT_ID=987654321098765
+
+# 3. Access Token (initially temporary, replace with permanent token)
+WHATSAPP_TOKEN=EAAl...
+```
+
+### Step 5: Generate Permanent Access Token
+
+Temporary tokens expire in 24 hours. Create a **System User** for permanent access:
+
+```
+Business Settings → Users → System Users → Add → Create System User
+```
+
+- **Name:** GuestFlow WhatsApp Bot
+- **Role:** Admin
+- **Assign Assets:** Select WhatsApp Business Account
+
+Generate token:
+
+```
+System Users → GuestFlow WhatsApp Bot → Generate New Token
+```
+
+- **Permissions:** `whatsapp_business_messaging`, `whatsapp_business_management`
+- **Expiration:** Never (or 60 days, requires rotation)
+- **Copy token** → This is your permanent `WHATSAPP_TOKEN`
+
+### Step 6: Configure Webhook (Optional for Inbound)
+
+If you want to receive inbound messages (not required for send-only):
+
+```
+WhatsApp Manager → Configuration → Webhook
+```
+
+- **Callback URL:** `https://guestflow.thebrowns.co.za/api/whatsapp/webhook`
+- **Verify Token:** Generate secure random string, save in `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+- **Subscribe to:** messages, message_status
+
+**Note:** Current implementation is **send-only**. Webhook support can be added later.
+
+### Step 7: Add Environment Variables
+
+#### Vercel
+
+```bash
+vercel env add WHATSAPP_TOKEN
+# Paste permanent access token from Step 5
+
+vercel env add WHATSAPP_PHONE_NUMBER_ID
+# Paste phone number ID from Step 4
+
+vercel env add WHATSAPP_BUSINESS_ACCOUNT_ID
+# Paste business account ID from Step 4
+
+# Redeploy
+vercel --prod
+```
+
+#### Fly.io
+
+```bash
+fly secrets set WHATSAPP_TOKEN=EAAl...
+fly secrets set WHATSAPP_PHONE_NUMBER_ID=123456789012345
+fly secrets set WHATSAPP_BUSINESS_ACCOUNT_ID=987654321098765
+
+# Restart app
+fly deploy
+```
+
+#### Local Development
+
+```bash
+# Add to apps/guestflow/.env.local
+WHATSAPP_TOKEN=EAAl...
+WHATSAPP_PHONE_NUMBER_ID=123456789012345
+WHATSAPP_BUSINESS_ACCOUNT_ID=987654321098765
+```
+
+### Step 8: Verify Configuration
+
+1. Visit `https://guestflow.thebrowns.co.za/ops/welcome-drafts`
+2. Check WhatsApp status banner:
+   - ✅ Green = Configured and ready
+   - ⚠️ Amber = Not configured (env vars missing)
+3. If configured, "Approve & Send (WhatsApp)" buttons will be enabled
+
+### Message Templates (Meta Approval Required)
+
+Meta requires **approved Message Templates** for messages sent **outside the 24-hour customer service window**.
+
+**For The Browns' Dullstroom, submit these templates for approval:**
+
+#### 1. Welcome Message (same-day check-in)
+
+```
+Name: welcome_same_day
+Category: Utility
+Language: English
+
+Body:
+Hi {{1}}, looking forward to welcoming you to {{2}} today!
+
+Check-in from {{3}}. If you have any questions, just reply.
+
+Warm regards,
+The Browns Team
+```
+
+#### 2. Stay Packet Link
+
+```
+Name: stay_packet_link
+Category: Utility
+Language: English
+
+Body:
+Hi {{1}}, your booking at {{2}} is confirmed.
+
+Access your stay packet and details: {{3}}
+
+See you soon!
+```
+
+#### 3. Custom Message (within 24h window)
+
+No template required — free-form text allowed within 24 hours of customer contact.
+
+**Submit templates for approval:**
+
+1. Go to **WhatsApp Manager** → **Message Templates**
+2. Click **Create Template**
+3. Fill in template details
+4. Submit for Meta review (usually approved in 24-48 hours)
+
+**Until templates are approved:** GuestFlow sends free-form text (works within 24h window only).
+
+### Testing
+
+#### Test Send (Sandbox)
+
+Meta provides a **test phone number** for sandbox testing:
+
+```bash
+# In Meta WhatsApp Manager → API Setup → Test Number
+Test recipient: +1 555 0100 (provided by Meta)
+```
+
+1. Go to `/ops/welcome-drafts`
+2. Click "Approve & Send (WhatsApp)" on any draft
+3. Enter test phone number when prompted
+4. Confirm send
+5. Check Meta dashboard for delivery status
+
+#### Test with Real Number
+
+Once templates are approved:
+
+1. Use Grant's or staff member's real WhatsApp number
+2. Test same-day welcome message flow
+3. Verify:
+   - Message received
+   - Portal link works (if included)
+   - Formatting correct
+
+### Monitoring & Logs
+
+#### View Send Logs
+
+Send attempts are logged in `whatsapp_send_log` table (SQLite/Turso):
+
+```sql
+SELECT * FROM whatsapp_send_log 
+ORDER BY sent_at DESC 
+LIMIT 20;
+```
+
+**Logged fields:**
+- `draft_id`, `guest_phone`, `send_status`, `message_id`, `error_message`, `sent_at`, `has_portal_link`
+
+**NOT logged:**
+- Message body (privacy + hard gate compliance)
+
+#### Meta Analytics
+
+View delivery stats in Meta Business Manager:
+
+```
+WhatsApp Manager → Analytics → Message Analytics
+```
+
+Metrics: Sent, Delivered, Read, Failed
+
+### Troubleshooting
+
+#### "WhatsApp not configured" in UI
+
+- Verify all 3 env vars are set (see Step 7)
+- Check for typos in env var names
+- Redeploy after adding env vars
+
+#### "Invalid access token" error
+
+- Token may have expired (if using temporary token)
+- Generate permanent token via System User (Step 5)
+- Update `WHATSAPP_TOKEN` env var
+
+#### "Phone number not registered" error
+
+- Verify phone number is registered in Meta Business Manager
+- Check `WHATSAPP_PHONE_NUMBER_ID` matches the ID in Meta dashboard
+- Ensure phone number is verified (green checkmark in Meta)
+
+#### Message not delivered
+
+- Check if template is approved (for out-of-window messages)
+- Verify recipient number is in international format (+27...)
+- Check Meta Analytics for delivery status
+- Ensure recipient has WhatsApp installed
+
+#### "Business account not found" error
+
+- Verify `WHATSAPP_BUSINESS_ACCOUNT_ID` is correct
+- Check System User has access to WhatsApp Business Account
+- Regenerate access token if needed
+
+### Hard Gates (Always Enforced)
+
+✅ **NEVER auto-send** — Requires explicit button click + confirmation  
+✅ **Disabled when not configured** — Clear UI messaging, no fake sends  
+✅ **Logs without message bodies** — Privacy compliant  
+✅ **Portal links included automatically** — When booking has portal URL  
+✅ **Phone format validated** — Must be international format (+27...)
+
+### Cost Notes
+
+- **WhatsApp Cloud API Pricing:** See [Meta pricing page](https://developers.facebook.com/docs/whatsapp/pricing)
+- **Free tier:** 1,000 conversations/month (as of 2024)
+- **Conversation window:** 24 hours from last customer message
+- **Out-of-window messages:** Require approved templates + may incur charges
+
+**For Browns' volume (estimated 20-50 messages/month):** Should stay within free tier.
 
 ---
 
