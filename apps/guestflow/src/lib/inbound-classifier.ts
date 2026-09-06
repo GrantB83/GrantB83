@@ -53,8 +53,12 @@ const DATE_PATTERNS = [
   /\b(\d{4}-\d{2}-\d{2})\b/gi,
   // DD/MM/YYYY or DD-MM-YYYY
   /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\b/gi,
-  // Month name formats
+  // Month name formats with year
   /\b(\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{4})\b/gi,
+  // Month name formats without year (e.g., "15 December", "25 Jan")
+  /\b(\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*)\b/gi,
+  // Date ranges (e.g., "15-17 December")
+  /\b(\d{1,2}-\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*)\b/gi,
   // Relative dates
   /\b(next\s+(?:week|month|weekend|friday|saturday|sunday|monday))\b/gi,
   /\b(this\s+(?:week|month|weekend|friday|saturday|sunday|monday))\b/gi,
@@ -115,6 +119,7 @@ const OUTLIER_SIGNALS: Record<OutlierCategory, string[]> = {
  */
 export function classifyMessage(input: ClassifierInput): ClassificationResult {
   const text = input.messageText.toLowerCase()
+  const originalText = input.messageText // Keep original for name extraction
   const signals: string[] = []
   const extractedData: ClassificationResult['extractedData'] = {}
   const missingFields: string[] = []
@@ -183,7 +188,7 @@ export function classifyMessage(input: ClassifierInput): ClassificationResult {
   }
 
   // Extract name (simple heuristic: capitalized words not in common words list)
-  const nameMatch = text.match(/(?:my name is|i am|this is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
+  const nameMatch = originalText.match(/(?:my name is|i am|this is)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i)
   if (nameMatch) {
     extractedData.guestName = nameMatch[1]
     signals.push('name_introduced')
@@ -208,7 +213,11 @@ export function classifyMessage(input: ClassifierInput): ClassificationResult {
   let outlierScore = 0
 
   for (const [category, keywords] of Object.entries(OUTLIER_SIGNALS)) {
-    const matchCount = keywords.filter(kw => text.includes(kw)).length
+    // Use word boundary matching to avoid false positives (e.g., "ice" in "Alice")
+    const matchCount = keywords.filter(kw => {
+      const regex = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+      return regex.test(text)
+    }).length
     if (matchCount > outlierScore) {
       outlierCategory = category as OutlierCategory
       outlierScore = matchCount
@@ -223,6 +232,11 @@ export function classifyMessage(input: ClassifierInput): ClassificationResult {
   let intent: ClassificationResult['intent'] = 'unknown'
   let confidence = 0.0
 
+  // Check for returning guest signals first (before booking_inquiry)
+  const hasReturningGuestSignal = text.includes('previous') || text.includes('stayed before') || 
+                                  text.includes('returning') || text.includes('last year') || 
+                                  text.includes('stayed with you')
+  
   if (checkinScore >= 1) {
     // Check-in event detected (guests group)
     intent = 'checkin_event'
@@ -233,7 +247,18 @@ export function classifyMessage(input: ClassifierInput): ClassificationResult {
     intent = 'outlier_exception'
     confidence = Math.min(0.9, 0.55 + (outlierScore * 0.15))
     extractedData.outlierCategory = outlierCategory
-  } else if (bookingScore >= 2 || (bookingScore >= 1 && dates.length >= 1)) {
+  } else if (hasReturningGuestSignal) {
+    // Existing guest - prioritize this even if booking keywords present
+    intent = 'existing_guest'
+    confidence = 0.7
+    signals.push('returning_guest_signal')
+    if (!extractedData.checkIn) missingFields.push('dates')
+    if (!extractedData.adults) missingFields.push('guest_count')
+  } else if (bookingScore >= 2 || 
+             (bookingScore >= 1 && dates.length >= 1 && !text.includes('available')) || 
+             (bookingScore >= 1 && extractedData.adults) ||
+             (bookingScore >= 1 && (text.includes('book') || text.includes('reserve') || text.includes('reservation')))) {
+    // Booking inquiry - include strong keywords like "book", "reserve", "reservation" even without dates
     intent = 'booking_inquiry'
     confidence = Math.min(0.95, 0.5 + (bookingScore * 0.1) + (dates.length * 0.15))
     
@@ -242,18 +267,14 @@ export function classifyMessage(input: ClassifierInput): ClassificationResult {
     if (!extractedData.checkOut) missingFields.push('check_out')
     if (!extractedData.adults) missingFields.push('guest_count')
     if (!extractedData.guestName) missingFields.push('guest_name')
-  } else if (dates.length >= 2) {
+  } else if (dates.length >= 2 || (dates.length >= 1 && text.includes('available'))) {
+    // Date query - includes "available" with dates
     intent = 'date_query'
     confidence = 0.7
     if (!extractedData.adults) missingFields.push('guest_count')
   } else if (extractedData.property) {
     intent = 'suite_preference'
     confidence = 0.6
-    missingFields.push('dates', 'guest_count')
-  } else if (text.includes('previous') || text.includes('stayed before') || text.includes('returning')) {
-    intent = 'existing_guest'
-    confidence = 0.65
-    signals.push('returning_guest_signal')
     missingFields.push('dates', 'guest_count')
   } else {
     intent = 'general_question'
@@ -300,7 +321,12 @@ Thank you for your interest in ${propertyName}!
         draft += '\n'
       }
 
-      if (classification.missingFields.length > 0) {
+      // Only show missing fields if there are booking-critical ones
+      const hasBookingCriticalMissing = classification.missingFields.includes('check_in') ||
+                                        classification.missingFields.includes('check_out') ||
+                                        classification.missingFields.includes('guest_count')
+      
+      if (hasBookingCriticalMissing) {
         draft += `To provide you with accurate availability and rates, I'll need:\n`
         if (classification.missingFields.includes('check_in')) {
           draft += `• Your check-in date\n`
