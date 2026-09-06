@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start -p 3100",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "smoke": "node scripts/smoke-demo.mjs",
     "smoke:ops": "SMOKE_MODE=ops node scripts/smoke-ops.mjs",
     "smoke:portal": "node scripts/smoke-portal.mjs",
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-add-status.js",
+    "db:migrate:inbound": "node scripts/migrate-add-inbound-whatsapp.js",
+    "db:migrate:tickets": "node scripts/migrate-add-guest-tickets.js",
     "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js",
     "seed:browns": "node scripts/seed-browns-data.js",
     "db:export": "node scripts/export-data.js",
@@ -38,8 +42,10 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@vitest/ui": "^1.0.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "tsx": "^4.7.0"
+    "tsx": "^4.7.0",
+    "vitest": "^1.0.0"
   }
 }
