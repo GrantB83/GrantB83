@@ -286,6 +286,39 @@ npm run db:export > backups/backup-$(date +%Y%m%d).json
 
 ---
 
+## 📱 Mobile Access
+
+GuestFlow is now fully mobile-optimized for phones and tablets.
+
+### Mobile-Friendly Features
+
+✅ **Responsive navigation** — Hamburger menu on phones, full navigation on desktop  
+✅ **Touch-optimized inputs** — All form fields and buttons sized for easy tapping (44px minimum)  
+✅ **Scrollable tables** — Wide data tables scroll horizontally without breaking layout  
+✅ **Flexible grids** — Card layouts stack vertically on narrow screens  
+✅ **No zoom quirks** — Proper viewport settings prevent awkward zooming on form inputs
+
+### Supported Breakpoints
+
+- **Mobile phones:** 390px–767px width (iPhone SE and larger)
+- **Tablets:** 768px–1023px width
+- **Desktop:** 1024px and wider
+
+### Mobile Testing Notes
+
+All core pages have been tested at ~390px width:
+
+- `/staff-login` — Login form works cleanly on phones
+- `/ops` (hub) — Tool cards stack vertically, tap targets are large
+- `/ops/nightsbridge-import` — Tables scroll horizontally
+- `/ops/welcome-drafts` — Forms and stats stack for narrow screens
+- `/ops/bookings` — Table scrolls, action buttons are touch-friendly
+- `/guest/[code]` (guest portal) — Fully responsive, guests can view stay details on phones
+
+**Use any modern mobile browser** — Chrome, Safari, Edge all work. No special mobile app needed.
+
+---
+
 ## 📞 Support & Contact
 
 **Owner:** Grant Brown  

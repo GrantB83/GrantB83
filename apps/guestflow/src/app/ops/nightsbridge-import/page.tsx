@@ -360,7 +360,7 @@ export default function NightsbridgeImportPage() {
 
       {!parsed ? (
         <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
             <label className="block mb-2 font-semibold text-gray-900">
               Target Date (for status derivation)
             </label>
@@ -368,14 +368,14 @@ export default function NightsbridgeImportPage() {
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
             />
             <p className="text-xs text-gray-500 mt-2">
               Status (arriving/inhouse/departing) will be derived relative to this date
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
             <label className="block mb-2 font-semibold text-gray-900 flex items-center gap-2">
               <FileSpreadsheet className="w-5 h-5" />
               Upload Nightsbridge File (.xlsx or .csv)
@@ -384,7 +384,7 @@ export default function NightsbridgeImportPage() {
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleFileSelect}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
             />
             {file && (
               <p className="text-sm text-gray-600 mt-2">
@@ -395,7 +395,7 @@ export default function NightsbridgeImportPage() {
               <button
                 onClick={handleParseFile}
                 disabled={!file}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 <Upload className="w-4 h-4" />
                 Parse File
@@ -498,11 +498,13 @@ export default function NightsbridgeImportPage() {
           )}
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
               <h3 className="font-semibold text-gray-900">Parsed Bookings ({bookings.length})</h3>
+              <p className="text-xs text-gray-600 mt-1">Scroll horizontally to view all columns</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guest</th>
@@ -543,13 +545,14 @@ export default function NightsbridgeImportPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-              {bookings.length > 20 && (
-                <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600">
-                  Showing first 20 of {bookings.length} bookings
-                </div>
-              )}
+                </table>
+              </div>
             </div>
+            {bookings.length > 20 && (
+              <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600">
+                Showing first 20 of {bookings.length} bookings
+              </div>
+            )}
           </div>
 
           {gaps.length > 0 && (
@@ -577,20 +580,20 @@ export default function NightsbridgeImportPage() {
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             {!saved && activeTenant && (
               <button
                 onClick={handleSaveBookings}
                 disabled={saving || bookings.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 w-full sm:flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : `Save ${bookings.length} Booking(s) to Database`}
+                <span className="truncate">{saving ? 'Saving...' : `Save ${bookings.length} Booking(s)`}</span>
               </button>
             )}
             <button
               onClick={handleReset}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+              className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition min-h-[44px]"
             >
               {saved ? 'Import Another File' : 'Upload Another File'}
             </button>

@@ -100,13 +100,15 @@ export default function BookingsPage() {
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h3 className="font-semibold text-gray-900">
               {bookings.length} Booking{bookings.length !== 1 ? 's' : ''}
             </h3>
+            <p className="text-xs text-gray-600 mt-1">Scroll horizontally to view all columns</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guest</th>
@@ -156,18 +158,18 @@ export default function BookingsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => copyPortalLink(booking.id)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition"
+                          className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition whitespace-nowrap"
                           title="Copy guest portal link"
                         >
                           {copiedId === booking.id ? (
                             <>
-                              <CheckCircle className="w-3.5 h-3.5" />
+                              <CheckCircle className="w-4 h-4" />
                               Copied!
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3.5 h-3.5" />
-                              Copy Portal Link
+                              <Copy className="w-4 h-4" />
+                              Copy Link
                             </>
                           )}
                         </button>
@@ -175,17 +177,18 @@ export default function BookingsPage() {
                           href={`/guest/${booking.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                          className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                           title="Preview guest portal"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ExternalLink className="w-4 h-4" />
                         </a>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
       )}

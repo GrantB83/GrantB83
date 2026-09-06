@@ -225,9 +225,9 @@ export default function WelcomeDraftsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter Options</h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               As of Date
@@ -236,7 +236,7 @@ export default function WelcomeDraftsPage() {
               type="date"
               value={asOfDate}
               onChange={(e) => setAsOfDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
             />
           </div>
           <div>
@@ -249,15 +249,15 @@ export default function WelcomeDraftsPage() {
               max="7"
               value={windowDays}
               onChange={(e) => setWindowDays(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
             />
             <p className="text-xs text-gray-500 mt-1">Check-ins within N days of as-of date</p>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end sm:col-span-2 md:col-span-1">
             <button
               onClick={fetchDrafts}
               disabled={loading}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+              className="w-full px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 min-h-[44px]"
             >
               {loading ? 'Loading...' : 'Refresh Drafts'}
             </button>
@@ -267,7 +267,7 @@ export default function WelcomeDraftsPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
           <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
             <div className="text-3xl font-bold text-blue-900">{stats.draftCount}</div>
             <div className="text-sm text-blue-700">Welcome Drafts Generated</div>
@@ -306,13 +306,13 @@ export default function WelcomeDraftsPage() {
 
       {/* Export Buttons */}
       {drafts.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Export Options</h2>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             <button
               onClick={() => handleExport('markdown')}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition disabled:opacity-50 min-h-[44px]"
             >
               <Download className="w-4 h-4" />
               Download Markdown
@@ -320,7 +320,7 @@ export default function WelcomeDraftsPage() {
             <button
               onClick={() => handleExport('html')}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition disabled:opacity-50 min-h-[44px]"
             >
               <Download className="w-4 h-4" />
               Download HTML
@@ -328,7 +328,7 @@ export default function WelcomeDraftsPage() {
             <button
               onClick={() => handleExport('html')}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 min-h-[44px]"
             >
               <Printer className="w-4 h-4" />
               Print to PDF
@@ -373,9 +373,9 @@ export default function WelcomeDraftsPage() {
           {drafts.map((draft, index) => {
             const sendResult = sendResults[draft.id]
             return (
-              <div key={draft.id} className="bg-white border border-gray-200 rounded-xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
+              <div key={draft.id} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between mb-4 gap-4">
+                  <div className="flex-1 w-full">
                     <div className="flex items-center gap-3 mb-2">
                       <Mail className="w-5 h-5 text-primary-600" />
                       <h3 className="text-xl font-semibold text-gray-900">
@@ -412,17 +412,19 @@ export default function WelcomeDraftsPage() {
                   <button
                     onClick={() => handleWhatsAppSend(draft)}
                     disabled={sendingDraftId === draft.id || sendResult?.success}
-                    className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
+                    className={`flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] ${
                       whatsappSandboxMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
                     }`}
                     title={sendResult?.success ? 'Already sent' : whatsappSandboxMode ? 'Send WhatsApp message (sandbox dry-run)' : 'Send WhatsApp message'}
                   >
                     <Send className="w-4 h-4" />
-                    {sendingDraftId === draft.id 
-                      ? 'Sending...' 
-                      : whatsappSandboxMode 
-                        ? 'Approve & Send (Sandbox)' 
-                        : 'Approve & Send (WhatsApp)'}
+                    <span className="whitespace-nowrap">
+                      {sendingDraftId === draft.id 
+                        ? 'Sending...' 
+                        : whatsappSandboxMode 
+                          ? 'Approve & Send (Sandbox)' 
+                          : 'Approve & Send (WhatsApp)'}
+                    </span>
                   </button>
                 </div>
 
