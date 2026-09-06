@@ -80,6 +80,7 @@ The Browns Team`,
 - [ ] If after-hours: {{maintenanceContact}}
 
 **Guest Contact:** {{guestPhone}}
+**Suite:** {{suiteNumber}}
 **Booking:** {{bookingRef}}
 **Time:** {{timestamp}}`,
     escalationContact: 'maintenance'
