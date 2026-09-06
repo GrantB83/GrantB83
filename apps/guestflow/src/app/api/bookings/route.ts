@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDbAsync } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const fromDate = searchParams.get('from_date')
     const toDate = searchParams.get('to_date')
 
-    const db = getDb()
+    const db = await getDbAsync()
     
     let query = `
       SELECT 
@@ -55,7 +55,8 @@ export async function GET(req: NextRequest) {
 
     query += ' ORDER BY b.check_in ASC, b.created_at DESC'
 
-    const bookings = db.prepare(query).all(...params)
+    const stmt = db.prepare(query)
+    const bookings = await stmt.all(...params)
 
     return NextResponse.json({ bookings })
   } catch (error: any) {
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const db = getDb()
+    const db = await getDbAsync()
     let inserted = 0
     const errors: any[] = []
 
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     for (const booking of bookings) {
       try {
-        insertStmt.run(
+        await insertStmt.run(
           tenant_id,
           booking.guest_name || '',
           booking.suite_or_unit || '',
