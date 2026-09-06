@@ -7,7 +7,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import type { CliOptions, PipelineResult, PipelineManifest, ManifestFile, StageOutput } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TOOL_NAME = 'browns-welcome-late-pipeline-pack';
 const VERSION = '1.0.0';
@@ -16,7 +20,7 @@ const VERSION = '1.0.0';
  * Get the absolute path to a sibling tool
  */
 function getSiblingToolPath(toolName: string): string {
-  const toolsDir = path.resolve(process.cwd(), '..');
+  const toolsDir = path.resolve(__dirname, '../..');
   return path.join(toolsDir, toolName);
 }
 
