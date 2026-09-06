@@ -36,6 +36,7 @@ export default function WelcomeDraftsPage() {
   const [windowDays, setWindowDays] = useState(1)
   const [exporting, setExporting] = useState(false)
   const [whatsappConfigured, setWhatsappConfigured] = useState(false)
+  const [whatsappSandboxMode, setWhatsappSandboxMode] = useState(true)
   const [sendingDraftId, setSendingDraftId] = useState<number | null>(null)
   const [sendResults, setSendResults] = useState<Record<number, { success: boolean, error?: string }>>({})
 
@@ -45,8 +46,14 @@ export default function WelcomeDraftsPage() {
   useEffect(() => {
     fetch('/api/whatsapp/send')
       .then(res => res.json())
-      .then(data => setWhatsappConfigured(data.configured))
-      .catch(() => setWhatsappConfigured(false))
+      .then(data => {
+        setWhatsappConfigured(data.configured)
+        setWhatsappSandboxMode(data.sandboxMode ?? true)
+      })
+      .catch(() => {
+        setWhatsappConfigured(false)
+        setWhatsappSandboxMode(true)
+      })
   }, [])
 
   const fetchDrafts = async () => {
@@ -278,17 +285,19 @@ export default function WelcomeDraftsPage() {
 
       {/* WhatsApp Configuration Status */}
       {drafts.length > 0 && (
-        <div className={`border rounded-xl p-6 mb-6 ${whatsappConfigured ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+        <div className={`border rounded-xl p-6 mb-6 ${whatsappSandboxMode ? 'bg-blue-50 border-blue-200' : whatsappConfigured ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
           <div className="flex items-start gap-3">
-            <MessageSquare className={`w-5 h-5 flex-shrink-0 mt-0.5 ${whatsappConfigured ? 'text-green-600' : 'text-amber-600'}`} />
+            <MessageSquare className={`w-5 h-5 flex-shrink-0 mt-0.5 ${whatsappSandboxMode ? 'text-blue-600' : whatsappConfigured ? 'text-green-600' : 'text-amber-600'}`} />
             <div className="flex-1">
-              <h3 className={`font-semibold mb-2 ${whatsappConfigured ? 'text-green-900' : 'text-amber-900'}`}>
-                WhatsApp Cloud API Status
+              <h3 className={`font-semibold mb-2 ${whatsappSandboxMode ? 'text-blue-900' : whatsappConfigured ? 'text-green-900' : 'text-amber-900'}`}>
+                WhatsApp Status: {whatsappSandboxMode ? 'SANDBOX MODE' : whatsappConfigured ? 'LIVE MODE' : 'NOT CONFIGURED'}
               </h3>
-              <p className={`text-sm ${whatsappConfigured ? 'text-green-800' : 'text-amber-800'}`}>
-                {whatsappConfigured 
-                  ? '✅ WhatsApp is configured and ready. Use "Approve & Send (WhatsApp)" buttons below to send messages after confirmation.'
-                  : '⚠️ WhatsApp not configured. Missing environment variables (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ACCOUNT_ID). Send buttons will be disabled until configured.'}
+              <p className={`text-sm ${whatsappSandboxMode ? 'text-blue-800' : whatsappConfigured ? 'text-green-800' : 'text-amber-800'}`}>
+                {whatsappSandboxMode 
+                  ? '🧪 Sandbox mode active (safe for demos/testing). "Approve & Send" buttons will log dry-run attempts without sending real messages to guests. Staff flows, portal, and Nightsbridge sync continue working. Set WHATSAPP_MODE=live + credentials to enable live sending.'
+                  : whatsappConfigured 
+                    ? '✅ WhatsApp is configured and ready for LIVE sending. Use "Approve & Send (WhatsApp)" buttons below to send real messages to guests after confirmation.'
+                    : '⚠️ WhatsApp not configured. Missing environment variables. Send buttons will be disabled until configured.'}
               </p>
             </div>
           </div>
@@ -402,12 +411,18 @@ export default function WelcomeDraftsPage() {
                   </div>
                   <button
                     onClick={() => handleWhatsAppSend(draft)}
-                    disabled={!whatsappConfigured || sendingDraftId === draft.id || sendResult?.success}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                    title={!whatsappConfigured ? 'WhatsApp not configured' : sendResult?.success ? 'Already sent' : 'Send WhatsApp message'}
+                    disabled={sendingDraftId === draft.id || sendResult?.success}
+                    className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${
+                      whatsappSandboxMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                    title={sendResult?.success ? 'Already sent' : whatsappSandboxMode ? 'Send WhatsApp message (sandbox dry-run)' : 'Send WhatsApp message'}
                   >
                     <Send className="w-4 h-4" />
-                    {sendingDraftId === draft.id ? 'Sending...' : 'Approve & Send (WhatsApp)'}
+                    {sendingDraftId === draft.id 
+                      ? 'Sending...' 
+                      : whatsappSandboxMode 
+                        ? 'Approve & Send (Sandbox)' 
+                        : 'Approve & Send (WhatsApp)'}
                   </button>
                 </div>
 

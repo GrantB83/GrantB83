@@ -134,15 +134,60 @@ The ops pages still export the **expected format** so you can:
 
 ---
 
+## 🧪 WhatsApp Sandbox vs Live Mode
+
+GuestFlow supports two WhatsApp modes:
+
+### SANDBOX MODE (Default)
+
+**Current Status:** GuestFlow is in SANDBOX MODE by default until Grant completes Business Profile approval.
+
+**What Sandbox Does:**
+- ✅ All UI flows work (approve buttons, portal, Nightsbridge sync)
+- ✅ "Send" actions log dry-run attempts without calling Meta API
+- ✅ Returns success-shaped responses for smoke testing
+- ✅ Safe for demos and staff training
+- ❌ Does NOT send real messages to guests
+
+**How to Tell You're in Sandbox:**
+- Check `/api/whatsapp/send` endpoint returns `"sandboxMode": true`
+- Console logs show `[SANDBOX]` prefix
+- Success messages say "dry-run successful (SANDBOX MODE)"
+
+### LIVE MODE (After Approval)
+
+**When to Enable:** Only after Grant completes:
+1. Meta Business Profile approval (typically 1-3 days)
+2. Purchase SA phone number from approved provider
+3. Link number to WhatsApp Business Account
+4. Test with Twilio magic number (+15005550006)
+
+**How Grant Enables Live Mode:**
+```bash
+# In Vercel/Fly.io environment variables:
+WHATSAPP_MODE=live
+WHATSAPP_TOKEN=EAAl...
+WHATSAPP_PHONE_NUMBER_ID=123456789012345
+WHATSAPP_BUSINESS_ACCOUNT_ID=987654321098765
+```
+
+**Live Mode Behavior:**
+- ✅ "Send" actions call Meta WhatsApp Cloud API
+- ✅ Real messages delivered to guest phone numbers
+- ⚠️ Requires human approval before every send
+
+---
+
 ## ⚠️ Hard Gates — What You MUST NOT Do
 
 ### ❌ NEVER Auto-Send
 
-**All output is DRAFT-ONLY**
+**All output is DRAFT-ONLY (both sandbox and live)**
 
 - GuestFlow does NOT send emails automatically
 - GuestFlow does NOT send WhatsApp messages automatically
 - Every quote, welcome message, and communication **requires manual approval**
+- Sandbox mode adds extra safety — messages never leave the app
 
 ### ❌ NEVER Invent Data
 

@@ -496,9 +496,10 @@ GuestFlow ops console is ready for Browns Dullstroom.
 | `STAFF_PASSWORD` | Yes (prod) | Password for staff access | `your-secure-password-here` |
 | `DATABASE_URL` | Vercel only | Turso/Postgres connection string | `libsql://browns-guestflow-...` |
 | `TURSO_AUTH_TOKEN` | Vercel + Turso | Turso authentication token | `eyJh...` |
-| `WHATSAPP_TOKEN` | Optional | Meta WhatsApp Cloud API access token | `EAAl...` |
-| `WHATSAPP_PHONE_NUMBER_ID` | Optional | WhatsApp Business phone number ID | `123456789012345` |
-| `WHATSAPP_BUSINESS_ACCOUNT_ID` | Optional | WhatsApp Business account ID | `987654321098765` |
+| `WHATSAPP_MODE` | Optional | WhatsApp operation mode: `sandbox` (dry-run) or `live` (real sends) | `sandbox` |
+| `WHATSAPP_TOKEN` | Optional | Meta WhatsApp Cloud API access token (live mode only) | `EAAl...` |
+| `WHATSAPP_PHONE_NUMBER_ID` | Optional | WhatsApp Business phone number ID (live mode only) | `123456789012345` |
+| `WHATSAPP_BUSINESS_ACCOUNT_ID` | Optional | WhatsApp Business account ID (live mode only) | `987654321098765` |
 | `NODE_ENV` | Yes | Environment mode | `production` |
 
 **Note on DATABASE_URL:**
@@ -507,9 +508,10 @@ GuestFlow ops console is ready for Browns Dullstroom.
 - **Without DATABASE_URL on Vercel:** App will show graceful error; rate cards must be uploaded per-session via `/ops/rate-cards` page
 
 **Note on WhatsApp Configuration:**
-- **Optional:** WhatsApp send functionality is disabled until these env vars are configured
-- **When missing:** UI shows clear "WhatsApp not configured" message with disabled send buttons
-- **Setup required:** Meta Business Manager account, WhatsApp Business API approval, phone number registration
+- **Optional:** WhatsApp works in sandbox mode (dry-run) when credentials missing
+- **Sandbox mode (default):** All send actions log dry-run attempts without calling Meta API; safe for demos/testing
+- **Live mode:** Set `WHATSAPP_MODE=live` + credentials to enable real message sending
+- **Setup required for live:** Meta Business Manager account, WhatsApp Business API approval, phone number registration
 - **See:** WhatsApp Setup section below for full configuration instructions
 
 ---
@@ -520,10 +522,52 @@ GuestFlow ops console is ready for Browns Dullstroom.
 
 GuestFlow includes **human-approved WhatsApp send functionality** for welcome messages and guest communications. This feature is:
 
-- ✅ **Optional** — App works without WhatsApp configuration (send buttons disabled)
-- ✅ **NEVER auto-sends** — Requires explicit "Approve & Send (WhatsApp)" button click + confirmation dialog
-- ✅ **Gracefully degraded** — Clear UI messaging when not configured
-- ✅ **Production-ready** — Uses Meta WhatsApp Cloud API (official, no third-party)
+- ✅ **Optional** — App works in sandbox mode when credentials missing
+- ✅ **Sandbox mode (default)** — Safe dry-run operation for demos, testing, and development
+- ✅ **NEVER auto-sends** — Requires explicit "Approve & Send" button click + confirmation dialog (both modes)
+- ✅ **Gracefully degraded** — Clear UI messaging showing current mode (sandbox vs live)
+- ✅ **Production-ready** — Uses Meta WhatsApp Cloud API (official, no third-party) when in live mode
+
+### Sandbox vs Live Mode
+
+#### SANDBOX MODE (Default)
+
+**When active:**
+- No credentials configured, OR
+- `WHATSAPP_MODE=sandbox` explicitly set
+
+**Behavior:**
+- ✅ All UI flows work (approve buttons, portal, Nightsbridge sync)
+- ✅ "Send" actions log dry-run attempts to console
+- ✅ Returns success-shaped responses for UI testing
+- ✅ Safe for staff training and demos
+- ❌ Does NOT call Meta API
+- ❌ Does NOT send real messages to guests
+
+**Use cases:**
+- Local development without Meta credentials
+- Staff training and onboarding
+- Demo environments
+- Testing UI flows before Business Profile approval
+
+#### LIVE MODE (After Approval)
+
+**When active:**
+- All credentials configured (TOKEN, PHONE_NUMBER_ID, BUSINESS_ACCOUNT_ID), AND
+- `WHATSAPP_MODE=live` set (or mode omitted with credentials present)
+
+**Behavior:**
+- ✅ Calls Meta WhatsApp Cloud API
+- ✅ Sends real messages to guest phone numbers
+- ⚠️ Requires Business Profile approval (typically 1-3 days)
+- ⚠️ Requires purchased/verified SA phone number
+
+**Setup checklist:**
+1. Complete Meta Business Profile approval
+2. Purchase SA phone number from approved provider
+3. Link number to WhatsApp Business Account
+4. Test with Twilio magic number (+15005550006) first
+5. Set `WHATSAPP_MODE=live` + credentials in environment
 
 ### Prerequisites
 

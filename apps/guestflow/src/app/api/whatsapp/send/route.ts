@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendWhatsAppMessage, isWhatsAppConfigured } from '@/lib/whatsapp'
+import { sendWhatsAppMessage, isWhatsAppConfigured, getWhatsAppMode, isWhatsAppSandboxMode } from '@/lib/whatsapp'
 import { getDb } from '@/lib/db'
 
 interface SendRequest {
@@ -26,23 +26,14 @@ interface SendLogEntry {
  * 
  * Hard Gates:
  * - Only called after explicit UI button click + confirmation
- * - Disabled entirely if env vars missing
+ * - Works in sandbox mode (dry-run) when credentials missing
  * - Logs send attempt without storing message body
- * - Returns clear error if not configured
+ * - Returns clear mode indicator (sandbox vs live)
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check configuration
-    if (!isWhatsAppConfigured()) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'WhatsApp not configured',
-          details: 'Missing required environment variables (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ACCOUNT_ID)'
-        },
-        { status: 503 }
-      )
-    }
+    const mode = getWhatsAppMode()
+    const isSandbox = isWhatsAppSandboxMode()
 
     const body: SendRequest = await request.json()
     const { draftId, guestPhone, message, portalUrl } = body
@@ -128,14 +119,18 @@ export async function POST(request: NextRequest) {
         success: true,
         messageId: result.messageId,
         timestamp: result.timestamp,
-        message: 'WhatsApp message sent successfully'
+        sandboxMode: result.sandboxMode,
+        message: result.sandboxMode 
+          ? 'WhatsApp message dry-run successful (SANDBOX MODE - not sent to guest)'
+          : 'WhatsApp message sent successfully'
       })
     } else {
       return NextResponse.json(
         {
           success: false,
           error: result.error,
-          timestamp: result.timestamp
+          timestamp: result.timestamp,
+          sandboxMode: result.sandboxMode
         },
         { status: 500 }
       )
@@ -159,17 +154,24 @@ export async function POST(request: NextRequest) {
  * Check WhatsApp configuration status
  */
 export async function GET() {
+  const mode = getWhatsAppMode()
   const configured = isWhatsAppConfigured()
+  const isSandbox = isWhatsAppSandboxMode()
   
   return NextResponse.json({
+    mode,
     configured,
-    message: configured 
-      ? 'WhatsApp is configured and ready to send'
-      : 'WhatsApp not configured (missing env vars)',
-    requiredEnvVars: [
+    sandboxMode: isSandbox,
+    message: isSandbox
+      ? 'WhatsApp is in SANDBOX MODE (dry-run only, safe for demos/testing)'
+      : 'WhatsApp is configured and ready to send (LIVE MODE)',
+    requiredForLive: [
       'WHATSAPP_TOKEN',
       'WHATSAPP_PHONE_NUMBER_ID', 
       'WHATSAPP_BUSINESS_ACCOUNT_ID'
-    ]
+    ],
+    note: isSandbox 
+      ? 'Set WHATSAPP_MODE=live and provide credentials to enable live sending'
+      : 'Live mode enabled - messages will be sent to guests'
   })
 }

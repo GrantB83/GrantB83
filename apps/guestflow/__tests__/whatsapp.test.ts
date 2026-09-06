@@ -2,6 +2,7 @@
  * WhatsApp Cloud API Tests
  * 
  * Tests for WhatsApp message sending functionality with mocked Graph API
+ * Includes sandbox mode tests for dry-run operation
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -15,7 +16,8 @@ beforeEach(() => {
     ...originalEnv,
     WHATSAPP_TOKEN: 'test_token_123',
     WHATSAPP_PHONE_NUMBER_ID: 'test_phone_id_456',
-    WHATSAPP_BUSINESS_ACCOUNT_ID: 'test_business_id_789'
+    WHATSAPP_BUSINESS_ACCOUNT_ID: 'test_business_id_789',
+    WHATSAPP_MODE: 'live'
   }
 })
 
@@ -25,19 +27,33 @@ afterEach(() => {
 })
 
 describe('WhatsApp Service', () => {
-  it('should detect when WhatsApp is configured', async () => {
-    const { isWhatsAppConfigured } = await import('@/lib/whatsapp')
+  it('should detect when WhatsApp is configured for live mode', async () => {
+    const { isWhatsAppConfigured, getWhatsAppMode } = await import('@/lib/whatsapp')
     expect(isWhatsAppConfigured()).toBe(true)
+    expect(getWhatsAppMode()).toBe('live')
   })
 
-  it('should detect when WhatsApp is not configured', async () => {
+  it('should auto-detect sandbox mode when credentials missing', async () => {
     delete process.env.WHATSAPP_TOKEN
+    delete process.env.WHATSAPP_MODE
     
-    // Re-import to get fresh module with new env
     vi.resetModules()
-    const { isWhatsAppConfigured } = await import('@/lib/whatsapp')
+    const { isWhatsAppConfigured, getWhatsAppMode, isWhatsAppSandboxMode } = await import('@/lib/whatsapp')
     
     expect(isWhatsAppConfigured()).toBe(false)
+    expect(getWhatsAppMode()).toBe('sandbox')
+    expect(isWhatsAppSandboxMode()).toBe(true)
+  })
+
+  it('should respect explicit sandbox mode even with credentials', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const { isWhatsAppConfigured, getWhatsAppMode, isWhatsAppSandboxMode } = await import('@/lib/whatsapp')
+    
+    expect(isWhatsAppConfigured()).toBe(false)
+    expect(getWhatsAppMode()).toBe('sandbox')
+    expect(isWhatsAppSandboxMode()).toBe(true)
   })
 
   it('should send WhatsApp message successfully', async () => {
@@ -120,7 +136,7 @@ describe('WhatsApp Service', () => {
     expect(result.error).toContain('Invalid phone number format')
   })
 
-  it('should validate phone number format', async () => {
+  it('should validate phone number format in live mode', async () => {
     const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
     
     const result = await sendWhatsAppMessage({
@@ -132,10 +148,27 @@ describe('WhatsApp Service', () => {
     expect(result.error).toContain('international format')
   })
 
-  it('should return error when not configured', async () => {
+  it('should validate phone number format in sandbox mode', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result = await sendWhatsAppMessage({
+      to: '0836458313', // Missing +
+      message: 'Test'
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('international format')
+    expect(result.sandboxMode).toBe(true)
+  })
+
+  it('should succeed in sandbox mode when credentials missing', async () => {
     delete process.env.WHATSAPP_TOKEN
     delete process.env.WHATSAPP_PHONE_NUMBER_ID
     delete process.env.WHATSAPP_BUSINESS_ACCOUNT_ID
+    delete process.env.WHATSAPP_MODE
     
     vi.resetModules()
     const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
@@ -145,8 +178,44 @@ describe('WhatsApp Service', () => {
       message: 'Test'
     })
 
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('not configured')
+    expect(result.success).toBe(true)
+    expect(result.sandboxMode).toBe(true)
+    expect(result.messageId).toContain('sandbox_')
+  })
+
+  it('should succeed in explicit sandbox mode', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result = await sendWhatsAppMessage({
+      to: '+15005550006',
+      message: 'Sandbox test message'
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.sandboxMode).toBe(true)
+    expect(result.messageId).toContain('sandbox_')
+    expect(result.timestamp).toBeDefined()
+  })
+
+  it('should not call Meta API in sandbox mode', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const fetchSpy = vi.fn()
+    global.fetch = fetchSpy as any
+    
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test'
+    })
+
+    // Verify fetch was NOT called in sandbox mode
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
   it('should remove spaces from phone number', async () => {
@@ -219,6 +288,67 @@ describe('WhatsApp Message Templates', () => {
   })
 })
 
+describe('Sandbox Mode', () => {
+  it('should default to sandbox when credentials missing', async () => {
+    delete process.env.WHATSAPP_TOKEN
+    delete process.env.WHATSAPP_PHONE_NUMBER_ID
+    delete process.env.WHATSAPP_BUSINESS_ACCOUNT_ID
+    delete process.env.WHATSAPP_MODE
+    
+    vi.resetModules()
+    const { getWhatsAppMode } = await import('@/lib/whatsapp')
+    
+    expect(getWhatsAppMode()).toBe('sandbox')
+  })
+
+  it('should allow explicit sandbox mode with credentials present', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    // Credentials are set in beforeEach
+    
+    vi.resetModules()
+    const { getWhatsAppMode } = await import('@/lib/whatsapp')
+    
+    expect(getWhatsAppMode()).toBe('sandbox')
+  })
+
+  it('should generate unique sandbox message IDs', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result1 = await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test 1'
+    })
+
+    const result2 = await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test 2'
+    })
+
+    expect(result1.messageId).not.toBe(result2.messageId)
+    expect(result1.messageId).toContain('sandbox_')
+    expect(result2.messageId).toContain('sandbox_')
+  })
+
+  it('should include portal URL in sandbox dry-run', async () => {
+    process.env.WHATSAPP_MODE = 'sandbox'
+    
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result = await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Welcome',
+      portalUrl: 'https://portal.thebrowns.co.za/booking/abc123'
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.sandboxMode).toBe(true)
+  })
+})
+
 describe('Hard Gates', () => {
   it('should never auto-send without explicit approval', () => {
     // This test documents the hard gate requirement
@@ -229,6 +359,12 @@ describe('Hard Gates', () => {
   it('should log send attempts without storing message bodies', () => {
     // Log format documented: status, timestamp, has_portal_link
     // Message body is NOT stored in logs
+    expect(true).toBe(true)
+  })
+
+  it('should work in sandbox mode for demos without live credentials', () => {
+    // Sandbox mode allows staff flows, approve→draft, portal, 
+    // and Nightsbridge sync to continue working without live Twilio/Meta creds
     expect(true).toBe(true)
   })
 })
