@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 const CreateInviteCodeSchema = z.object({
   tenant_id: z.number(),
   max_uses: z.number().min(1).default(1),

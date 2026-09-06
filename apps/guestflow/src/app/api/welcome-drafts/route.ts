@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { format, parseISO, addDays, isWithinInterval } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 interface Booking {
   id: number
   tenant_id: number
