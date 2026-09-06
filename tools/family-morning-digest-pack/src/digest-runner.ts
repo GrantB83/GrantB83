@@ -6,8 +6,12 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Run family-school-subject-digest and return output directory
@@ -18,7 +22,7 @@ export async function runSubjectDigest(
   timezone: string,
   tempDir: string
 ): Promise<string> {
-  const digestToolDir = path.resolve(process.cwd(), '..', 'family-school-subject-digest');
+  const digestToolDir = path.resolve(__dirname, '..', '..', 'family-school-subject-digest');
   
   // Convert paths to absolute
   const absoluteSubjectsPath = path.resolve(subjectsPath);
@@ -82,7 +86,7 @@ export async function runIcsDigest(
   timezone: string,
   tempDir: string
 ): Promise<string> {
-  const digestToolDir = path.resolve(process.cwd(), '..', 'family-calendar-ics-digest');
+  const digestToolDir = path.resolve(__dirname, '..', '..', 'family-calendar-ics-digest');
   
   // Convert paths to absolute
   const absoluteIcsPath = path.resolve(icsPath);
@@ -132,7 +136,7 @@ export async function runSchoolDue(
   date: string,
   tempDir: string
 ): Promise<string> {
-  const queueToolDir = path.resolve(process.cwd(), '..', 'family-school-due-queue');
+  const queueToolDir = path.resolve(__dirname, '..', '..', 'family-school-due-queue');
   
   // Convert paths to absolute
   const absoluteSubjectsPath = subjectsPath ? path.resolve(subjectsPath) : undefined;
