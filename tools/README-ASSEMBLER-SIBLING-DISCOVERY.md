@@ -44,3 +44,7 @@ See `browns-ct-pack-pipeline-pack/src/assembler.ts` for the canonical pattern.
 - browns-welcome-late-pipeline-pack
 - browns-inquiry-quote-pipeline-pack
 - family-school-pipeline-pack
+
+## Fixed in PR #159
+
+- browns-nightsbridge-daily-ops-pipeline-pack
