@@ -268,7 +268,7 @@ export default function InboundQueuePage() {
         )}
 
         {/* Messages View */}
-        {viewMode === 'messages' && threads.length === 0 ? (
+        {viewMode === 'messages' && threads.length === 0 && (
           <div className="bg-white rounded-lg border p-8 text-center">
             <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-600">No messages in queue</p>
@@ -281,9 +281,10 @@ export default function InboundQueuePage() {
               </button>
             )}
           </div>
-        ) : viewMode === 'messages' ? (
+        )}
+        {viewMode === 'messages' && threads.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {viewMode === 'messages' && threads.map((thread) => (
+            {threads.map((thread) => (
               <div
                 key={thread.threadId}
                 className="bg-white rounded-lg border hover:border-blue-300 transition-colors cursor-pointer"

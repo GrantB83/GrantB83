@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
       } else if (body.fileBase64) {
         // Base64 encoded file
         const base64Data = body.fileBase64.split(',')[1] || body.fileBase64
-        fileBuffer = Buffer.from(base64Data, 'base64')
+        const buffer = Buffer.from(base64Data, 'base64')
+        fileBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
       } else {
         return NextResponse.json(
           { error: 'No file provided', message: 'Provide "fileUrl" or "fileBase64" in JSON body' },

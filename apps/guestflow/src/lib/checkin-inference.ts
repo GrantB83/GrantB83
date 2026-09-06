@@ -195,7 +195,7 @@ export function processCheckinEvent(
     confidence
   }
 
-  return { event, matchedBooking, confidence }
+  return { event, matchedBooking: matchedBooking ?? undefined, confidence }
 }
 
 /**
