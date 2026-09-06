@@ -53,7 +53,7 @@ export default function OpsPage() {
           <CheckCircle2 className="w-6 h-6 text-green-600" />
           Core Guest Workflow
         </h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <OpsToolCard
             href="/ops/inquiry-intake"
             icon={<MessageSquare className="w-8 h-8 text-blue-600" />}
@@ -95,7 +95,7 @@ export default function OpsPage() {
           <Package className="w-6 h-6 text-amber-600" />
           Operations Support
         </h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <OpsToolCard
             href="/ops/late-checkin-queue"
             icon={<Clock className="w-8 h-8 text-orange-600" />}
@@ -156,7 +156,7 @@ export default function OpsPage() {
             <Sparkles className="w-6 h-6" />
             Daily Quick Actions
           </h2>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <Link
               href="/ops/daily-brief"
               className="bg-white/10 hover:bg-white/20 backdrop-blur rounded-lg p-4 transition group"
@@ -201,7 +201,7 @@ export default function OpsPage() {
           <p className="text-sm text-gray-700 mb-4">
             Each page exports packs matching CLI tool inputs/outputs. If CLI tools exist under <code className="bg-slate-200 px-2 py-1 rounded text-xs">tools/browns-*</code>, run them manually:
           </p>
-          <pre className="bg-slate-900 text-slate-100 p-4 rounded text-xs overflow-x-auto mb-4">
+          <pre className="bg-slate-900 text-slate-100 p-3 sm:p-4 rounded text-xs overflow-x-auto mb-4 whitespace-pre-wrap break-words">
 {`# Example: Inquiry Intake
 node tools/browns-inquiry-intake/dist/index.js --input inquiry.json
 

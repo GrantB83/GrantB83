@@ -128,7 +128,7 @@ export default function GuestPortalPage() {
                 onChange={(e) => setLastName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
                 placeholder="Enter your last name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
                 autoFocus
               />
             </div>
@@ -142,7 +142,7 @@ export default function GuestPortalPage() {
             <button
               onClick={handleAuth}
               disabled={loading || !lastName.trim()}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
             >
               {loading ? 'Verifying...' : 'View My Stay Details'}
             </button>
@@ -193,7 +193,7 @@ export default function GuestPortalPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="flex items-start gap-4">
                 <Clock className="w-5 h-5 text-primary-600 flex-shrink-0 mt-1" />
                 <div>
