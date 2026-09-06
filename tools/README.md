@@ -61,6 +61,7 @@ Command-line utilities for CoS, bot desks, and owned-business operations. Each t
 | [browns-daily-ops-brief](#browns-daily-ops-brief) | Generate daily ops team brief from bookings | SA Ops / CoS | **DRAFT ONLY**. Never sends. Never invents rates. Manual team WhatsApp send. |
 | [browns-late-checkin-queue](#browns-late-checkin-queue) | Generate late/after-hours check-in queue for CoS coordination | SA Ops / CoS | **DRAFT ONLY**. Never invents times/phones. Offline only. Manual CoS WhatsApp send. |
 | [browns-booking-change-check](#browns-booking-change-check) | Diff two booking snapshots and report changes for last-minute CT-pack verification | SA Ops / CoS | **Offline only**. Never invents data. DRAFT ONLY. No auto-send. Pre-post checklist. |
+| [browns-nightsbridge-daily-ops-pipeline-pack](#browns-nightsbridge-daily-ops-pipeline-pack) | Orchestrate Nightsbridge day-sheet → bookings → ops brief → change check → late queue for SA Ops / CoS | SA Ops / CoS | **Offline orchestrator**. Never invents guest phone/ETA/rates. Never auto-sends. Default ON for adapter + brief. Change check ON when prior bookings given. Dullstroom only. |
 | [browns-ota-rate-worksheet](#browns-ota-rate-worksheet) | Generate OTA rate worksheets for Nightsbridge entry | SA Ops / CoS | **No API**. Never invents rates. Blanks stay blank. Grant approval required. |
 | [browns-ota-rate-pipeline-pack](#browns-ota-rate-pipeline-pack) | Orchestrate Browns OTA rate worksheet packing: browns-ota-rate-worksheet → pack | SA Ops / CoS | **Offline orchestrator**. Never invents rates/discounts. Default ON for worksheet. PR #114 skip flags. PR #116 manifest accuracy. |
 | [browns-ct-pack-assemble](#browns-ct-pack-assemble) | Assemble CoS Browns CT (Centurion Township) timed packs from sibling tool outputs | SA Ops / CoS | **Offline orchestrator**. Calls sibling tools via npm run. Never auto-send. Draft-only. |
@@ -3640,6 +3641,71 @@ It can feed into:
 **Note:** Wire integration with sibling tools is not implemented unless trivial. This tool outputs standalone stubs for manual CoS workflow.
 
 [→ Full README](./browns-welcome-draft-pack/README.md)
+
+---
+
+## browns-nightsbridge-daily-ops-pipeline-pack
+
+**One-line:** Offline CLI tool orchestrating Browns Dullstroom daily ops from Nightsbridge day-sheet exports.
+
+**Owning desk(s):** SA Ops / CoS
+
+**Location:** `tools/browns-nightsbridge-daily-ops-pipeline-pack/`
+
+### Install and Run
+
+```bash
+cd tools/browns-nightsbridge-daily-ops-pipeline-pack
+npm install
+npm run build
+
+# Basic usage (adapter + brief, no change check, no late queue):
+npm run pack -- --input nightsbridge.csv --day 2026-09-20
+
+# With prior bookings for change check:
+npm run pack -- --input nightsbridge.csv --day 2026-09-20 --prior-bookings bookings-yesterday.json
+
+# All stages including late queue:
+npm run pack -- --input nightsbridge.csv --day 2026-09-20 --prior-bookings bookings-yesterday.json --run-late
+
+# Test with fixtures:
+npm run test:fixtures
+```
+
+### Orchestrated Stages
+
+This tool orchestrates four Browns daily ops workflow tools:
+
+1. **browns-nightsbridge-bookings-adapter** (default ON) — Nightsbridge CSV/TSV → bookings.json
+2. **browns-daily-ops-brief** (default ON) — bookings → staff ops brief draft
+3. **browns-booking-change-check** (default ON when `--prior-bookings` given; OFF otherwise) — diff prior vs current bookings
+4. **browns-late-checkin-queue** (default OFF; opt-in `--run-late`) — after-hours check-in queue
+
+### Stage Flags (PR #114 pattern)
+
+All stage flags support multiple syntaxes: `--flag`, `--flag=false`, `--no-flag`
+
+### Critical Safety Notes
+
+- ✅ **Offline only** - No API calls
+- ✅ **Never invents** guest phone, ETA, rates, or amounts
+- ✅ **Never auto-sends** - No WhatsApp/email API
+- ✅ **Auto-build sibling tools** - PR #132 pattern
+- ✅ **Accurate manifest** - PR #116 pattern (files[] only lists present files)
+- ⚠️ **SA Ops / CoS owns send** - Manual WhatsApp workflow
+- ⚠️ **Dullstroom The Browns only** - Not for other properties
+
+### Output Pack
+
+Creates `<outdir>/pack-YYYY-MM-DD/` with PACK.md, APPROVAL.md, outputs from enabled stages, and manifest.json.
+
+### Why This Tool Exists
+
+SA Ops currently hand-builds daily ops materials from Nightsbridge screen by manually transcribing data. This pipeline pack eliminates that work by accepting a CSV/TSV export and producing complete daily ops materials: bookings.json, team brief, change detection, and optional late-queue coordination.
+
+One dated pipeline pack from Nightsbridge day-sheet → complete daily ops materials for SA Ops / CoS SAST ops flows. Never invents guest details. Prefer `node dist/` over nested npm exec (avoids hang on shared box).
+
+[→ Full README](./browns-nightsbridge-daily-ops-pipeline-pack/README.md)
 
 ---
 
