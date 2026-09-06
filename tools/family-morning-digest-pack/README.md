@@ -14,6 +14,8 @@ Assemble a dated morning digest pack folder for posting to **WhatsApp Admin - Gr
 
 ## Install and Run
 
+**Note:** Sibling tool discovery now works from any working directory - no need to `cd` into the tool directory first.
+
 ```bash
 cd tools/family-morning-digest-pack
 npm install
@@ -327,6 +329,9 @@ npm test
 
 # Run fixture tests (generates sample packs)
 npm run test:fixtures
+
+# One-line smoke test (SA Ops CLEAR)
+npm run test:fixtures && echo "✅ SA Ops CLEAR" || echo "❌ SA Ops FAIL"
 
 # Clean generated artifacts
 npm run clean
