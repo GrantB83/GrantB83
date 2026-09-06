@@ -1,6 +1,6 @@
 # SA Ops Runbook: Nightsbridge → GuestFlow Data Sync
 
-**Version:** 1.0  
+**Version:** 2.0 (Autonomous)  
 **Date:** September 2026  
 **Property:** The Browns Dullstroom (Nightsbridge Property ID 24299)  
 **Audience:** SA Operations staff
@@ -9,27 +9,40 @@
 
 ## Overview
 
-This runbook documents how to export bookings and rate cards from Nightsbridge and import them into GuestFlow for guest portal access and operational packs.
+This runbook documents both **autonomous** and **manual** workflows for importing bookings from Nightsbridge into GuestFlow.
+
+### 🤖 Autonomous Sync (NEW)
+
+**What:** Vercel Cron automatically checks for new booking data and imports it into GuestFlow twice daily.
+
+**When:** 
+- **Morning:** 07:00 SAST (05:00 UTC)
+- **Evening:** 17:00 SAST (15:00 UTC)
+
+**Workflow:**
+1. Export `arr_and_dep.xlsx` from Nightsbridge
+2. Upload to designated Google Drive folder (or use manual trigger endpoint)
+3. Cron job runs at scheduled time, processes the file, imports bookings
+4. Check GuestFlow `/ops/bookings` to verify import succeeded
 
 **Important:** This is a **one-way import**. Data flows from Nightsbridge → GuestFlow. GuestFlow does NOT write back to Nightsbridge.
 
+### 📋 Manual Sync (Fallback)
+
+If autonomous sync is not yet configured or you need to import immediately, use the manual workflow at `/ops/nightsbridge-import`.
+
 ---
 
-## 📊 Part 1: Bookings Import
+## 🤖 Part A: Autonomous Sync Setup & Usage
 
-### Data Flow
+### Prerequisites
 
-```
-Nightsbridge Calendar
-    ↓ (Reports → Arrivals & Departures)
-arr_and_dep.xlsx download
-    ↓ (Upload to GuestFlow)
-GuestFlow Database
-    ↓ (Available for)
-Guest Portal + Welcome Packs + Daily Brief
-```
+1. **CRON_SECRET** configured in Vercel environment
+2. **NIGHTSBRIDGE_TENANT_ID** set (default: 1 for The Browns Dullstroom)
+3. **NIGHTSBRIDGE_DRIVE_FOLDER_ID** set for drop-folder sync (optional)
+4. Vercel Cron entries configured in `vercel.json` (done)
 
-### Step 1: Export from Nightsbridge
+### Step 1: Export from Nightsbridge (Same as Manual)
 
 1. **Log in to Nightsbridge**
    - URL: https://app.nightsbridge.com/
@@ -54,7 +67,145 @@ Guest Portal + Welcome Packs + Daily Brief
    - File will save as `arr_and_dep.xlsx` (or similar name with date)
    - Save to a known location (e.g., Downloads folder)
 
-### Step 2: Import into GuestFlow
+### Step 2: Upload to Google Drive Drop Folder (Autonomous Path)
+
+1. **Open Google Drive**
+   - Navigate to the designated Nightsbridge drop folder
+   - Folder name: [TO BE CONFIGURED]
+   - URL: [TO BE CONFIGURED]
+
+2. **Upload File**
+   - Drag and drop `arr_and_dep.xlsx` into the folder
+   - Or use "New" → "File upload"
+
+3. **Wait for Next Scheduled Sync**
+   - Morning: 07:00 SAST
+   - Evening: 17:00 SAST
+   - Cron will automatically detect and process the file
+
+4. **Verify Import**
+   - After sync time, check GuestFlow `/ops/bookings`
+   - Verify new bookings appear with correct dates and guests
+
+### Step 3: Manual Trigger (If Immediate Import Needed)
+
+If you need to import immediately (before the next scheduled cron), you can manually trigger the sync:
+
+1. **Use Vercel Dashboard**
+   - Go to Vercel project dashboard
+   - Functions → Crons → `nightsbridge-sync`
+   - Click "Run Now"
+
+2. **Or Use cURL (Advanced)**
+   ```bash
+   curl -X POST https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync \
+     -H "Authorization: Bearer [CRON_SECRET]" \
+     -H "Content-Type: application/json"
+   ```
+
+3. **Or Upload Directly via API (Advanced)**
+   ```bash
+   # Convert file to base64
+   base64 arr_and_dep.xlsx > file.b64
+
+   # POST to sync endpoint
+   curl -X POST https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync \
+     -H "Authorization: Bearer [CRON_SECRET]" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "fileBase64": "'$(cat file.b64 | tr -d '\n')'",
+       "fileName": "arr_and_dep.xlsx"
+     }'
+   ```
+
+### Step 4: Check Sync Status
+
+**View Endpoint Configuration:**
+```bash
+curl https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync
+```
+
+Response shows:
+- Configured schedule (morning + evening SAST)
+- Environment configuration status
+- Workflow steps
+- Next steps if not fully configured
+
+**View Recent Imports:**
+- Go to `/ops/bookings` in GuestFlow
+- Filter by creation date to see newly imported bookings
+
+### Troubleshooting Autonomous Sync
+
+**Problem:** Bookings not appearing after upload to Drive  
+**Solution:**
+1. Check file name is `arr_and_dep.xlsx` (or configured pattern)
+2. Verify NIGHTSBRIDGE_DRIVE_FOLDER_ID is correct
+3. Check Vercel Cron logs for errors
+4. Fall back to manual import at `/ops/nightsbridge-import`
+
+**Problem:** Cron job not running at scheduled times  
+**Solution:**
+1. Verify `vercel.json` has cron entries (should exist)
+2. Check Vercel dashboard → Functions → Crons → Status
+3. Ensure CRON_SECRET is configured in Vercel environment
+4. Check Vercel deployment succeeded
+
+**Problem:** "Unauthorized" error when triggering manually  
+**Solution:**
+1. Verify CRON_SECRET is correct
+2. Use `Authorization: Bearer [CRON_SECRET]` header format
+3. Or use raw secret without "Bearer" prefix
+
+---
+
+## 📋 Part B: Manual Import (Fallback / Immediate Import)
+
+### Data Flow (Manual Path)
+
+```
+Nightsbridge Calendar
+    ↓ (Reports → Arrivals & Departures)
+arr_and_dep.xlsx download
+    ↓ (Upload to GuestFlow /ops/nightsbridge-import)
+GuestFlow Database
+    ↓ (Available for)
+Guest Portal + Welcome Packs + Daily Brief
+```
+
+### Manual Import Instructions
+
+Use this workflow when:
+- Autonomous sync is not yet configured
+- You need to import immediately (can't wait for next cron)
+- Testing or troubleshooting
+
+### Step 1: Export from Nightsbridge (Same as Autonomous)
+
+1. **Log in to Nightsbridge**
+   - URL: https://app.nightsbridge.com/
+   - Property: The Browns Dullstroom (Property 24299)
+
+2. **Navigate to Reports**
+   - Calendar → Reports (or Reports menu)
+
+3. **Select Report Type**
+   - Report Type: **Arrivals & Departures**
+
+4. **Configure Date Range**
+   - Select the date range you need (e.g., next 30 days, specific week, etc.)
+   - Tip: For daily ops, export the next 7-14 days
+
+5. **Run Report**
+   - Click "Run Reports" button
+   - Report will generate (may take a few seconds for larger date ranges)
+
+6. **Download File**
+   - Click download button
+   - File will save as `arr_and_dep.xlsx` (or similar name with date)
+   - Save to a known location (e.g., Downloads folder)
+
+### Step 2: Import into GuestFlow (Manual Upload)
 
 1. **Open GuestFlow Ops Console**
    - URL: https://browns-guestflow.vercel.app/ops (or https://guestflow.thebrowns.co.za if DNS configured)
@@ -128,7 +279,7 @@ The `arr_and_dep.xlsx` file typically contains these columns:
 
 ---
 
-## 💰 Part 2: Rate Card Import
+## 💰 Part C: Rate Card Import (Manual Only)
 
 ### Data Flow
 
@@ -222,13 +373,20 @@ After Grant reviews and signs off on the rate worksheet (from browns-ota-rate-pi
 
 ## 🔄 Recommended Sync Frequency
 
-### Bookings
+### Autonomous Sync (Preferred)
 
-- **Daily:** Export and import bookings every morning (before 09:00 SAST)
+- **Morning:** Automatically at 07:00 SAST
+- **Evening:** Automatically at 17:00 SAST
+- **On Demand:** Upload file to Drive folder anytime, will be processed at next scheduled time
+- **Immediate:** Use manual trigger or manual import page
+
+### Manual Sync (Fallback)
+
+- **Daily:** Export and import bookings every morning (before 09:00 SAST) if autonomous is not configured
 - **On Change:** Re-import after any major booking changes (new reservations, cancellations, room moves)
-- **Before CT Pack:** Always import fresh bookings before generating a CT Pack or guest communication
+- **Before CT Pack:** Always verify bookings are fresh before generating a CT Pack or guest communication
 
-### Rate Cards
+### Rate Cards (No Autonomous Sync)
 
 - **On Update:** Only re-import when Grant approves a new rate card
 - **Seasonal:** Typically quarterly or when seasons change (e.g., Summer → Winter rates)
@@ -237,6 +395,8 @@ After Grant reviews and signs off on the rate worksheet (from browns-ota-rate-pi
 ---
 
 ## ⚠️ Hard Gates & Safety Rules
+
+### Autonomous & Manual Sync
 
 ### Never Auto-Send
 
@@ -270,7 +430,24 @@ After Grant reviews and signs off on the rate worksheet (from browns-ota-rate-pi
 **Owner:** Grant Brown  
 **Email:** grant@thebrowns.co.za
 
-**Common Issues:**
+### Autonomous Sync Issues
+
+1. **Bookings not importing from Drive folder**
+   - Check NIGHTSBRIDGE_DRIVE_FOLDER_ID is configured
+   - Verify file uploaded to correct folder
+   - Check Vercel Cron logs for errors
+   - Fall back to manual import
+
+2. **Cron not running at scheduled times**
+   - Check Vercel Functions → Crons status
+   - Verify CRON_SECRET is set
+   - Check last deployment succeeded
+
+3. **"Unauthorized" when triggering manually**
+   - Verify correct CRON_SECRET
+   - Use proper Authorization header format
+
+### Manual Import Issues
 
 1. **"Invalid booking reference or last name"** (Guest Portal)
    - Guest is entering wrong last name or booking ID
@@ -294,10 +471,35 @@ After Grant reviews and signs off on the rate worksheet (from browns-ota-rate-pi
 
 ## 📋 Quick Reference Commands
 
-### Daily Ops Checklist
+### Autonomous Sync
 
-- [ ] **Morning:** Export bookings from Nightsbridge (next 7-14 days)
-- [ ] **Morning:** Import bookings into GuestFlow (`/ops/nightsbridge-import`)
+**Check Endpoint Status:**
+```bash
+curl https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync
+```
+
+**Manual Trigger:**
+```bash
+curl -X POST https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync \
+  -H "Authorization: Bearer [CRON_SECRET]"
+```
+
+**Upload File Directly:**
+```bash
+base64 arr_and_dep.xlsx > file.b64
+curl -X POST https://guestflow.thebrowns.co.za/api/ops/nightsbridge-sync \
+  -H "Authorization: Bearer [CRON_SECRET]" \
+  -H "Content-Type: application/json" \
+  -d '{"fileBase64": "'$(cat file.b64 | tr -d '\n')'", "fileName": "arr_and_dep.xlsx"}'
+```
+
+### Manual Import
+
+**Daily Ops Checklist:**
+
+- [ ] **Morning (Autonomous):** Export bookings from Nightsbridge, upload to Drive folder
+- [ ] **Morning (Manual Fallback):** Export + import bookings at `/ops/nightsbridge-import` (next 7-14 days)
+- [ ] **Morning:** Verify import succeeded at `/ops/bookings`
 - [ ] **Morning:** Generate Daily Brief (`/ops/daily-brief`)
 - [ ] **On Inquiry:** Process new inquiries (`/ops/inquiry-intake`)
 - [ ] **Before Arrival:** Generate welcome drafts (`/ops/welcome-drafts`)
