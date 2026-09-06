@@ -311,11 +311,55 @@ npm run db:init  # Creates data/guestflow.db with Browns tenant
 ### Daily Workflow
 
 1. **Morning:** Visit `/ops/daily-brief` for RED/AMBER/GREEN priorities
-2. **Inquiries:** Process via `/ops/inquiry-intake` → auto-export pack
-3. **Quotes:** Generate via `/ops/quote-draft` with rate cards
-4. **Welcome Messages:** One-click via `/ops/welcome-drafts` for same-day arrivals
-5. **Late Check-Ins:** Review `/ops/late-checkin-queue` for after-hours
-6. **CT Pack:** Verify bookings via `/ops/booking-change-check` before sending
+2. **Nightsbridge Sync (NEW — Autonomous):**
+   - **Option A (API Upload):** `npm run nightsbridge:upload -- --file arr_and_dep.xlsx --secret <CRON_SECRET>`
+   - **Option B (Manual UI):** Upload via `/ops/nightsbridge-import`
+   - **Sync Windows:** 05:00 and 19:00 SAST (cron reminders run automatically)
+3. **Inquiries:** Process via `/ops/inquiry-intake` → auto-export pack
+4. **Quotes:** Generate via `/ops/quote-draft` with rate cards
+5. **Welcome Messages:** One-click via `/ops/welcome-drafts` for same-day arrivals
+6. **Late Check-Ins:** Review `/ops/late-checkin-queue` for after-hours
+7. **CT Pack:** Verify bookings via `/ops/booking-change-check` before sending
+
+### Autonomous Nightsbridge Sync
+
+**NEW in v2:** GuestFlow now supports autonomous data ingest from Nightsbridge.
+
+**Scheduled Sync Windows:**
+- 🌅 **05:00 SAST** (before USA morning digests)
+- 🌆 **19:00 SAST** (before guest comms packs)
+
+**Upload Methods:**
+
+**1. CLI Upload (Recommended for SA Ops):**
+```bash
+# Export arr_and_dep.xlsx from Nightsbridge, then:
+npm run nightsbridge:upload -- --file arr_and_dep.xlsx --secret <CRON_SECRET>
+
+# For specific date:
+npm run nightsbridge:upload -- --file arr_and_dep.xlsx --secret <CRON_SECRET> --date 2026-09-20
+```
+
+**2. curl Upload:**
+```bash
+curl -X POST \
+  -H "x-cron-secret: <CRON_SECRET>" \
+  -F "file=@arr_and_dep.xlsx" \
+  "https://guestflow.thebrowns.co.za/api/cron/nightsbridge-ingest?date=2026-09-20"
+```
+
+**3. Manual UI Upload (Fallback):**
+Visit `/ops/nightsbridge-import` and upload file via web interface.
+
+**Cron Reminders:**
+A background job runs at 05:00 and 19:00 SAST and logs sync status to Vercel. Check logs at `https://vercel.com/<team>/guestflow/logs`.
+
+**Security:**
+- Requires `CRON_SECRET` environment variable (contact Grant)
+- Never commit CRON_SECRET to git
+- Rotate quarterly or if compromised
+
+**Full Documentation:** See `docs/SA-OPS-NIGHTSBRIDGE-RUNBOOK.md` Part 0
 
 ### Export & Handoff
 

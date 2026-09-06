@@ -1,6 +1,6 @@
 # SA Ops Runbook: Nightsbridge → GuestFlow Data Sync
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** September 2026  
 **Property:** The Browns Dullstroom (Nightsbridge Property ID 24299)  
 **Audience:** SA Operations staff
@@ -9,13 +9,136 @@
 
 ## Overview
 
-This runbook documents how to export bookings and rate cards from Nightsbridge and import them into GuestFlow for guest portal access and operational packs.
+This runbook documents how to sync bookings and rate cards from Nightsbridge to GuestFlow for guest portal access and operational packs.
 
 **Important:** This is a **one-way import**. Data flows from Nightsbridge → GuestFlow. GuestFlow does NOT write back to Nightsbridge.
 
+### Sync Methods
+
+1. **🤖 Autonomous API Ingest** (Recommended) — Drop file to secured endpoint or Drive folder
+2. **👤 Manual Web Upload** (Fallback) — Upload via GuestFlow ops console
+
 ---
 
-## 📊 Part 1: Bookings Import
+## 🤖 PART 0: Autonomous API Ingest (NEW — Recommended)
+
+### Overview
+
+GuestFlow now supports **autonomous data ingest** via a secured API endpoint. SA Ops can drop `arr_and_dep.xlsx` files without manual web upload.
+
+**Scheduled Sync Windows:**
+- **05:00 SAST** (03:00 UTC) — Morning sync before USA morning digests
+- **19:00 SAST** (17:00 UTC) — Evening sync before guest comms packs
+
+**Sync Reminder:** A cron job runs at these times and logs status to Vercel. SA Ops should upload fresh data before or during these windows.
+
+### Option A: API Upload (curl / Postman)
+
+**Endpoint:** `https://guestflow.thebrowns.co.za/api/cron/nightsbridge-ingest`
+
+**Method:** POST
+
+**Authentication:** Header `x-cron-secret: <CRON_SECRET>` OR query param `?secret=<CRON_SECRET>`
+
+**Body:** `multipart/form-data` with file field `file`
+
+#### curl Example
+
+```bash
+# Download arr_and_dep.xlsx from Nightsbridge first
+# Then upload to GuestFlow:
+
+curl -X POST \
+  -H "x-cron-secret: YOUR_CRON_SECRET_HERE" \
+  -F "file=@arr_and_dep.xlsx" \
+  "https://guestflow.thebrowns.co.za/api/cron/nightsbridge-ingest?date=2026-09-20"
+```
+
+**Query Parameters:**
+- `date` (optional) — Target date for status derivation (default: today, format: YYYY-MM-DD)
+
+**Response:**
+```json
+{
+  "success": true,
+  "targetDate": "2026-09-20",
+  "parsed": 12,
+  "inserted": 12,
+  "message": "Successfully imported 12 of 12 bookings"
+}
+```
+
+#### Postman Setup
+
+1. **URL:** `https://guestflow.thebrowns.co.za/api/cron/nightsbridge-ingest`
+2. **Method:** POST
+3. **Headers:**
+   - `x-cron-secret`: `<CRON_SECRET from Grant>`
+4. **Body:**
+   - Type: `form-data`
+   - Key: `file`
+   - Value: Select `arr_and_dep.xlsx` file
+5. **Send**
+
+### Option B: Google Drive Drop (Future)
+
+**Status:** Planned (not yet implemented)
+
+A future enhancement could watch a Google Drive folder and auto-ingest new `arr_and_dep.xlsx` files.
+
+**Proposed Flow:**
+1. Export from Nightsbridge → save to Drive folder `Nightsbridge Exports/`
+2. GuestFlow watches folder via Google Drive API
+3. New file detected → auto-ingest → notify SA Ops
+
+**Blockers:** Requires Drive API integration and CRON_SECRET environment setup on Vercel.
+
+### Option C: Email Export (If Nightsbridge Supports)
+
+**Status:** Not available (Nightsbridge does not support automated email exports)
+
+Nightsbridge does not have a built-in scheduled email export feature for the Arrivals & Departures report.
+
+### Sync Discipline
+
+**Daily Routine:**
+- **Morning (before 05:00 SAST):** Export latest bookings from Nightsbridge → upload via API or manual
+- **Evening (before 19:00 SAST):** Re-upload if any bookings changed during the day
+
+**Why sync twice daily:**
+- Morning sync ensures USA morning digests have fresh data
+- Evening sync ensures guest comms packs have latest bookings before overnight sends
+
+**Cron Reminder Logs:**
+At 05:00 and 19:00 SAST, a cron job logs sync status to Vercel. Check logs at:
+`https://vercel.com/<team>/guestflow/logs`
+
+### Security
+
+- **CRON_SECRET** is required for all API uploads
+- Never commit CRON_SECRET to git
+- Contact Grant for CRON_SECRET value
+- Rotate secret quarterly or if compromised
+
+### Troubleshooting API Ingest
+
+**401 Unauthorized:**
+- Check `x-cron-secret` header or `?secret=` query param
+- Verify CRON_SECRET matches environment variable on Vercel
+
+**400 Bad Request:**
+- Ensure file is valid `.xlsx` from Nightsbridge
+- Check `multipart/form-data` encoding
+- Verify file field name is `file`
+
+**500 Server Error:**
+- Check Vercel logs for detailed error message
+- Verify CRON_SECRET is set on Vercel environment
+- Ensure database is accessible
+
+---
+
+## 📊 PART 1: Manual Bookings Import (Fallback)
 
 ### Data Flow
 
@@ -224,9 +347,21 @@ After Grant reviews and signs off on the rate worksheet (from browns-ota-rate-pi
 
 ### Bookings
 
-- **Daily:** Export and import bookings every morning (before 09:00 SAST)
-- **On Change:** Re-import after any major booking changes (new reservations, cancellations, room moves)
+**Autonomous Path (Recommended):**
+- **05:00 SAST** — Morning sync via API upload (before USA morning digests)
+- **19:00 SAST** — Evening sync via API upload (before guest comms packs)
+- **On Change** — Re-upload immediately after major booking changes (new reservations, cancellations, room moves)
+
+**Manual Path (Fallback):**
+- **Daily:** Export and import bookings every morning (before 09:00 SAST) via `/ops/nightsbridge-import`
+- **On Change:** Re-import after any major booking changes
 - **Before CT Pack:** Always import fresh bookings before generating a CT Pack or guest communication
+
+**Sync Windows Explained:**
+- **05:00 SAST (03:00 UTC):** Aligns with Texas morning digest generation (Grant's coffee time)
+- **19:00 SAST (17:00 UTC):** Ensures fresh data before evening guest comms and next-day prep
+
+**Cron Job:** A reminder job runs at both sync windows and logs status to Vercel. No auto-fetch (Nightsbridge has no API).
 
 ### Rate Cards
 
