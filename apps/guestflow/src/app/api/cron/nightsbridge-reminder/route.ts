@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Nightsbridge Sync Reminder Endpoint
  * 
