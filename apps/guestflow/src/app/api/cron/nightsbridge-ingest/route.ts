@@ -305,7 +305,117 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 6. Return summary
+    // 6. P1: Auto-enqueue welcome and late check-in drafts after successful import
+    const now = new Date()
+    const today = format(now, 'yyyy-MM-dd')
+    const tomorrow = format(new Date(now.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+
+    // P1: Auto-enqueue welcome drafts for arrivals in next 24-48h
+    const arrivingSoonBookings = parsedBookings.filter(b => 
+      b.checkInDate >= today && b.checkInDate <= tomorrow && 
+      b.status !== 'Cancelled' && b.status !== 'No Show'
+    )
+
+    let welcomeDraftsCreated = 0
+    for (const booking of arrivingSoonBookings) {
+      try {
+        // Check if welcome draft already exists for this guest/date
+        const existing = db.prepare(`
+          SELECT id FROM welcome_drafts
+          WHERE tenant_id = ? AND guest_name = ? AND created_at >= datetime('now', '-24 hours')
+        `).get(tenantId, booking.guestName) as any
+
+        if (!existing && booking.guestPhone) {
+          // Create welcome draft (queued for approval)
+          const welcomeText = `Welcome to Browns ${booking.suiteOrUnit || 'Dullstroom'}!
+
+📅 Check-in: ${booking.checkInDate}
+📅 Check-out: ${booking.checkOutDate}
+👥 Guests: ${booking.adults || 2} adult${(booking.adults || 2) > 1 ? 's' : ''}${booking.children ? `, ${booking.children} child${booking.children > 1 ? 'ren' : ''}` : ''}
+
+Details:
+• Wi-Fi: [STAFF PROVIDES]
+• Parking: [STAFF PROVIDES]
+• Access: [STAFF PROVIDES]
+
+Looking forward to welcoming you!
+
+Warm regards,
+The Browns Team`
+
+          db.prepare(`
+            INSERT INTO welcome_drafts (
+              tenant_id, guest_name, guest_phone,
+              draft_message, source, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP)
+          `).run(
+            tenantId,
+            booking.guestName,
+            booking.guestPhone,
+            welcomeText,
+            `NightsBridge sync ${format(now, 'yyyy-MM-dd HH:mm')}`
+          )
+
+          welcomeDraftsCreated++
+        }
+      } catch (err: any) {
+        console.warn(`Failed to create welcome draft for ${booking.guestName}:`, err.message)
+      }
+    }
+
+    // P1: Auto-enqueue late check-in drafts (check-in time + 2h, after 4pm)
+    const todayArrivals = parsedBookings.filter(b => 
+      b.checkInDate === today && 
+      b.status !== 'Cancelled' && 
+      b.status !== 'No Show' &&
+      b.status !== 'Checked In'
+    )
+
+    let lateDraftsCreated = 0
+    if (now.getHours() >= 16) { // After 4pm
+      for (const booking of todayArrivals) {
+        try {
+          // Check if late draft already exists
+          const existing = db.prepare(`
+            SELECT id FROM late_checkin_drafts
+            WHERE tenant_id = ? AND guest_name = ? AND created_at >= datetime('now', '-6 hours')
+          `).get(tenantId, booking.guestName) as any
+
+          if (!existing && booking.guestPhone) {
+            // Create late check-in draft
+            const lateDraft = `Hi ${booking.guestName || 'there'},
+
+We noticed you haven't checked in yet. Your booking was for today.
+
+Are you still planning to arrive? If you're running late or need assistance, please let us know.
+
+After-hours access: [STAFF PROVIDES]
+
+Best regards,
+The Browns Team`
+
+            db.prepare(`
+              INSERT INTO late_checkin_drafts (
+                tenant_id, guest_name, guest_phone,
+                draft_message, source, status, created_at
+              ) VALUES (?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP)
+            `).run(
+              tenantId,
+              booking.guestName,
+              booking.guestPhone,
+              lateDraft,
+              `Late check-in auto-detect ${format(now, 'yyyy-MM-dd HH:mm')}`
+            )
+
+            lateDraftsCreated++
+          }
+        } catch (err: any) {
+          console.warn(`Failed to create late draft for ${booking.guestName}:`, err.message)
+        }
+      }
+    }
+
+    // 7. Return summary with P1 draft stats
     return NextResponse.json({
       success: true,
       targetDate,
@@ -313,7 +423,12 @@ export async function POST(request: NextRequest) {
       inserted,
       errors: errors.length > 0 ? errors : undefined,
       missingFields: missingFields.length > 0 ? missingFields : undefined,
-      message: `Successfully imported ${inserted} of ${parsedBookings.length} bookings`
+      message: `Successfully imported ${inserted} of ${parsedBookings.length} bookings`,
+      p1AutoEnqueue: {
+        welcomeDrafts: welcomeDraftsCreated,
+        lateDrafts: lateDraftsCreated,
+        note: 'Drafts queued in Needs Approval page (never auto-send)'
+      }
     })
 
   } catch (error: any) {

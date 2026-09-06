@@ -1,238 +1,366 @@
-import Link from 'next/link'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { format, addDays } from 'date-fns'
 import { 
-  MessageSquare, 
-  FileText, 
-  Calendar, 
-  Clock,
-  CheckCircle2,
+  Home, 
+  CheckCircle, 
+  AlertTriangle,
+  Calendar,
   Upload,
-  FileCheck,
-  Package
+  RefreshCw,
+  TrendingUp,
+  Users,
+  MessageSquare
 } from 'lucide-react'
+import Link from 'next/link'
 
-export default function OpsHubPage() {
-  return (
-    <div className="bg-gradient-to-b from-slate-50 to-white min-h-screen">
-      {/* Header */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+interface TodayStats {
+  approvals: {
+    count: number
+    items: Array<{ type: string; guest: string; id: number }>
+  }
+  exceptions: {
+    count: number
+    items: Array<{ category: string; guest: string; id: number }>
+  }
+  next24h: {
+    arriving: number
+    departing: number
+    inHouse: number
+  }
+  nbFreshness: {
+    lastSync: string | null
+    hoursAgo: number | null
+    status: 'fresh' | 'stale' | 'missing'
+  }
+  aiActivity: Array<{
+    action: string
+    count: number
+    timestamp: string
+  }>
+}
+
+export default function TodayPage() {
+  const [stats, setStats] = useState<TodayStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchStats = async (showRefresh = false) => {
+    try {
+      if (showRefresh) setRefreshing(true)
+      else setLoading(true)
+
+      const response = await fetch('/api/today-stats?tenant_id=1')
+      const data = await response.json()
+
+      if (data.success) {
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Failed to fetch today stats:', error)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  if (loading && !stats) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-full text-sm font-medium mb-4">
-            🏠 INTERNAL BROWNS OPS — Not for Sale
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Browns Dullstroom Operations Console
-          </h1>
-          <p className="text-xl text-gray-600 mb-2 max-w-2xl mx-auto">
-            Internal localhost ops automation for The Browns Luxury Guest Suites
-          </p>
-          <p className="text-base text-gray-500 max-w-2xl mx-auto">
-            Drives and wraps CLI tools under <code className="bg-gray-100 px-2 py-1 rounded text-sm">tools/browns-*</code>
-          </p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Loading today's overview...</p>
         </div>
-      </section>
-
-      {/* Quick Access Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Operational Tools
-        </h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <OpsCard
-            href="/ops/inquiry-intake"
-            icon={<MessageSquare className="w-8 h-8 text-blue-600" />}
-            title="Inquiry Intake"
-            description="Extract structured data from email/WhatsApp inquiries"
-            cliTool="browns-inquiry-intake"
-          />
-          <OpsCard
-            href="/ops/quote-draft"
-            icon={<FileText className="w-8 h-8 text-green-600" />}
-            title="Quote Draft"
-            description="Generate quotes from bookings and rate cards (DRAFT-ONLY)"
-            cliTool="browns-quote-invoice-draft"
-          />
-          <OpsCard
-            href="/ops/welcome-drafts"
-            icon={<CheckCircle2 className="w-8 h-8 text-purple-600" />}
-            title="Welcome Drafts"
-            description="Draft welcome messages for upcoming arrivals"
-            cliTool="browns-welcome-draft-pack"
-          />
-          <OpsCard
-            href="/ops/late-checkin-queue"
-            icon={<Clock className="w-8 h-8 text-orange-600" />}
-            title="Late Check-In Queue"
-            description="Track after-hours arrivals and unknown ETAs"
-            cliTool="browns-late-checkin-queue"
-          />
-          <OpsCard
-            href="/ops/daily-brief"
-            icon={<Calendar className="w-8 h-8 text-teal-600" />}
-            title="Daily Ops Brief"
-            description="Morning brief with arrivals, departures, housekeeping"
-            cliTool="browns-daily-ops-brief"
-          />
-          <OpsCard
-            href="/ops/nightsbridge-import"
-            icon={<Upload className="w-8 h-8 text-indigo-600" />}
-            title="NightsBridge Import"
-            description="Parse NightsBridge CSV bookings and detect gaps"
-            cliTool="browns-nightsbridge-bookings-adapter"
-          />
-          <OpsCard
-            href="/ops/booking-change-check"
-            icon={<FileCheck className="w-8 h-8 text-amber-600" />}
-            title="Booking Change Check"
-            description="Compare snapshots to detect last-minute changes"
-            cliTool="browns-booking-change-check"
-          />
-          <OpsCard
-            href="/ops/ct-pack"
-            icon={<Package className="w-8 h-8 text-rose-600" />}
-            title="CT Pack"
-            description="Communication pack for upcoming stays"
-            cliTool="browns-ct-pack"
-          />
-          <OpsCard
-            href="/ops/rate-cards"
-            icon={<FileText className="w-8 h-8 text-cyan-600" />}
-            title="Rate Card Upload"
-            description="Upload and manage Browns property rate cards"
-            cliTool="(internal only)"
-          />
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-slate-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            How Browns SA Ops Uses This
-          </h2>
-
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <StepCard
-              number="1"
-              title="Start Localhost"
-              description="Run npm run dev on localhost:3100 in Dullstroom or remote"
-            />
-            <StepCard
-              number="2"
-              title="Use Ops Pages"
-              description="Prepare drafts with inquiry intake, quotes, welcome messages"
-            />
-            <StepCard
-              number="3"
-              title="Export Packs"
-              description="Download JSON/markdown packs with CLI commands shown"
-            />
-            <StepCard
-              number="4"
-              title="Review & Approve"
-              description="All output is DRAFT-ONLY — manual approval before send"
-            />
-          </div>
-
-          <div className="bg-white border-2 border-slate-200 rounded-xl p-6 max-w-3xl mx-auto">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-slate-600">💻</span>
-              CLI Tool Integration
-            </h3>
-            <p className="text-sm text-gray-700 mb-3">
-              Each page exports packs matching CLI tool inputs/outputs. If CLI tools exist, run them manually:
-            </p>
-            <pre className="bg-slate-900 text-slate-100 p-3 rounded text-xs overflow-x-auto">
-{`# Example: Inquiry Intake
-node tools/browns-inquiry-intake/dist/index.js --input inquiry.json
-
-# Example: Quote Draft  
-node tools/browns-quote-invoice-draft/dist/index.js --booking booking.json
-
-# Example: Daily Brief
-node tools/browns-daily-ops-brief/dist/index.js --date 2026-12-15`}
-            </pre>
-          </div>
-        </div>
-      </section>
-
-      {/* Hard Gates Reminder */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
-            ⚠️ Hard Gates (Always Respected)
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-            <GateItem text="NO auto-send (email/WhatsApp) — DRAFT-ONLY" />
-            <GateItem text="NO invented rates/phones/ETAs — flagged clearly" />
-            <GateItem text="NO live payments — No Stripe, no processing" />
-            <GateItem text="NO public signup — Browns internal only" />
-            <GateItem text="SQLite only — Local Browns draft history" />
-            <GateItem text="Single tenant — Browns Dullstroom properties" />
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
-          <p className="mb-2">
-            <strong>INTERNAL OPERATIONS CONSOLE</strong> — The Browns Luxury Guest Suites, Dullstroom
-          </p>
-          <p className="text-sm">
-            Not for sale · Not multi-tenant · Not a SaaS product
-          </p>
-        </div>
-      </footer>
-    </div>
-  )
-}
-
-function OpsCard({ 
-  href, 
-  icon, 
-  title, 
-  description,
-  cliTool
-}: { 
-  href: string
-  icon: React.ReactNode
-  title: string
-  description: string
-  cliTool: string
-}) {
-  return (
-    <Link 
-      href={href}
-      className="block bg-white p-6 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition"
-    >
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-600 mb-3">{description}</p>
-      <code className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded block truncate">
-        {cliTool}
-      </code>
-    </Link>
-  )
-}
-
-function StepCard({ number, title, description }: { number: string, title: string, description: string }) {
-  return (
-    <div className="text-center">
-      <div className="inline-flex items-center justify-center w-10 h-10 bg-slate-800 text-white rounded-full text-lg font-bold mb-3">
-        {number}
       </div>
-      <h3 className="text-base font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
-    </div>
-  )
-}
+    )
+  }
 
-function GateItem({ text }: { text: string }) {
+  const now = new Date()
+  const tomorrow = addDays(now, 1)
+
   return (
-    <div className="flex items-start gap-2">
-      <CheckCircle2 className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-      <span className="text-sm text-gray-800">{text}</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <Home className="w-8 h-8 text-blue-600" />
+                Today
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {format(now, 'EEEE, MMMM d, yyyy')} • {format(now, 'HH:mm')} SAST
+              </p>
+            </div>
+            <button
+              onClick={() => fetchStats(true)}
+              disabled={refreshing}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Priority Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Needs Approval */}
+          <Link 
+            href="/needs-approval"
+            className="bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 p-6 transition group cursor-pointer"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 group-hover:text-blue-600">
+                    Needs approval
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {stats?.approvals.count || 0} items waiting
+                  </p>
+                </div>
+              </div>
+              {stats && stats.approvals.count > 0 && (
+                <span className="bg-blue-600 text-white text-lg font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                  {stats.approvals.count}
+                </span>
+              )}
+            </div>
+            {stats && stats.approvals.count === 0 && (
+              <p className="text-gray-500 text-sm">
+                ✓ Routine handled. Nothing needs you.
+              </p>
+            )}
+            {stats && stats.approvals.count > 0 && (
+              <div className="space-y-2">
+                {stats.approvals.items.slice(0, 3).map((item, idx) => (
+                  <div key={idx} className="text-sm text-gray-700 truncate">
+                    • {item.type}: {item.guest}
+                  </div>
+                ))}
+                {stats.approvals.count > 3 && (
+                  <div className="text-sm text-blue-600 font-medium">
+                    +{stats.approvals.count - 3} more
+                  </div>
+                )}
+              </div>
+            )}
+          </Link>
+
+          {/* Exceptions */}
+          <Link 
+            href="/exceptions"
+            className="bg-white rounded-xl border-2 border-amber-200 hover:border-amber-400 p-6 transition group cursor-pointer"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-amber-100 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 group-hover:text-amber-600">
+                    Exceptions
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    {stats?.exceptions.count || 0} active
+                  </p>
+                </div>
+              </div>
+              {stats && stats.exceptions.count > 0 && (
+                <span className="bg-amber-600 text-white text-lg font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                  {stats.exceptions.count}
+                </span>
+              )}
+            </div>
+            {stats && stats.exceptions.count === 0 && (
+              <p className="text-gray-500 text-sm">
+                ✓ No exceptions right now
+              </p>
+            )}
+            {stats && stats.exceptions.count > 0 && (
+              <div className="space-y-2">
+                {stats.exceptions.items.slice(0, 3).map((item, idx) => (
+                  <div key={idx} className="text-sm text-gray-700 truncate">
+                    • {item.category}: {item.guest}
+                  </div>
+                ))}
+                {stats.exceptions.count > 3 && (
+                  <div className="text-sm text-amber-600 font-medium">
+                    +{stats.exceptions.count - 3} more
+                  </div>
+                )}
+              </div>
+            )}
+          </Link>
+        </div>
+
+        {/* Next 24h Overview */}
+        <div className="bg-white rounded-xl border p-6 mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-gray-600" />
+            Next 24 hours
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link 
+              href="/ops/bookings?filter=arriving"
+              className="p-4 bg-green-50 rounded-lg border border-green-200 hover:border-green-400 transition"
+            >
+              <div className="text-2xl font-bold text-green-700">
+                {stats?.next24h.arriving || 0}
+              </div>
+              <div className="text-sm text-gray-700">Arriving</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {format(now, 'MMM d')} - {format(tomorrow, 'MMM d')}
+              </div>
+            </Link>
+            <Link 
+              href="/ops/bookings?filter=in-house"
+              className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:border-blue-400 transition"
+            >
+              <div className="text-2xl font-bold text-blue-700">
+                {stats?.next24h.inHouse || 0}
+              </div>
+              <div className="text-sm text-gray-700">In-house</div>
+              <div className="text-xs text-gray-500 mt-1">Current guests</div>
+            </Link>
+            <Link 
+              href="/ops/bookings?filter=departing"
+              className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-400 transition"
+            >
+              <div className="text-2xl font-bold text-amber-700">
+                {stats?.next24h.departing || 0}
+              </div>
+              <div className="text-sm text-gray-700">Departing</div>
+              <div className="text-xs text-gray-500 mt-1">Check-outs today</div>
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* NightsBridge Freshness */}
+          <div className="bg-white rounded-xl border p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Upload className="w-5 h-5 text-gray-600" />
+              NightsBridge Sync
+            </h2>
+            {stats?.nbFreshness.status === 'fresh' && (
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <div className="font-medium text-green-700">Fresh data</div>
+                  <div className="text-sm text-gray-600">
+                    Last sync: {stats.nbFreshness.hoursAgo !== null ? `${Math.floor(stats.nbFreshness.hoursAgo)}h ago` : 'recently'}
+                  </div>
+                </div>
+              </div>
+            )}
+            {stats?.nbFreshness.status === 'stale' && (
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <div className="font-medium text-amber-700">Data is stale</div>
+                  <div className="text-sm text-gray-600">
+                    Last sync: {stats.nbFreshness.hoursAgo !== null ? `${Math.floor(stats.nbFreshness.hoursAgo)}h ago` : 'unknown'}
+                  </div>
+                  <Link 
+                    href="/ops/nightsbridge-import" 
+                    className="text-sm text-blue-600 hover:underline mt-2 inline-block"
+                  >
+                    Upload now →
+                  </Link>
+                </div>
+              </div>
+            )}
+            {stats?.nbFreshness.status === 'missing' && (
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <div>
+                  <div className="font-medium text-red-700">No sync today</div>
+                  <div className="text-sm text-gray-600 mb-2">
+                    Expected: 05:00 & 19:00 SAST daily
+                  </div>
+                  <Link 
+                    href="/ops/nightsbridge-import" 
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Upload manually →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* AI Activity (Quiet) */}
+          <div className="bg-white rounded-xl border p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-gray-600" />
+              Recent Activity
+            </h2>
+            {stats && stats.aiActivity.length === 0 && (
+              <p className="text-sm text-gray-500">No recent activity</p>
+            )}
+            {stats && stats.aiActivity.length > 0 && (
+              <div className="space-y-3">
+                {stats.aiActivity.slice(0, 4).map((activity, idx) => (
+                  <div key={idx} className="text-sm text-gray-700 flex items-start gap-2">
+                    <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-medium">{activity.action}</div>
+                      <div className="text-xs text-gray-500">
+                        {activity.count} {activity.count === 1 ? 'item' : 'items'} • {activity.timestamp}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Link
+            href="/ops"
+            className="p-4 bg-white rounded-lg border hover:border-blue-400 hover:shadow transition text-center"
+          >
+            <Users className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+            <div className="text-sm font-medium text-gray-900">Tools</div>
+          </Link>
+          <Link
+            href="/ops/inbound-queue"
+            className="p-4 bg-white rounded-lg border hover:border-blue-400 hover:shadow transition text-center"
+          >
+            <MessageSquare className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+            <div className="text-sm font-medium text-gray-900">Inbound</div>
+          </Link>
+          <Link
+            href="/comms"
+            className="p-4 bg-white rounded-lg border hover:border-blue-400 hover:shadow transition text-center"
+          >
+            <MessageSquare className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+            <div className="text-sm font-medium text-gray-900">Comms</div>
+          </Link>
+          <Link
+            href="/ops/rate-cards"
+            className="p-4 bg-white rounded-lg border hover:border-blue-400 hover:shadow transition text-center"
+          >
+            <Calendar className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+            <div className="text-sm font-medium text-gray-900">Rates</div>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

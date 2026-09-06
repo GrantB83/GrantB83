@@ -57,6 +57,9 @@ function verifyWebhookSecret(request: NextRequest): boolean {
  * Accept inbound message, classify, persist, generate draft reply
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  const TIMEOUT_MS = 30000 // 30 seconds
+
   try {
     // Verify webhook secret
     if (!verifyWebhookSecret(request)) {
@@ -151,6 +154,44 @@ export async function POST(request: NextRequest) {
     )
 
     const messageId = messageInsert.lastInsertRowid
+
+    // P1: Check for timeout before classification
+    const elapsedMs = Date.now() - startTime
+    if (elapsedMs > TIMEOUT_MS) {
+      // P1: Timeout → Exception (never silent drop)
+      const timeoutException = await db.prepare(`
+        INSERT INTO guest_tickets (
+          tenant_id, thread_id, guest_name, guest_phone,
+          category, priority, status, subject, description,
+          problem_description, context_found, reason_stopped, suggested_next_step
+        ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?)
+      `).run(
+        tenantId,
+        thread.id,
+        'Unknown Guest',
+        payload.from,
+        'timeout',
+        'medium',
+        `Classification Timeout - ${payload.from}`,
+        payload.text,
+        `Original message: ${payload.text.substring(0, 100)}...`,
+        `Processing started at ${new Date(startTime).toISOString()}`,
+        `Classification timeout after ${TIMEOUT_MS}ms`,
+        `Manual review and classify required`
+      )
+
+      return NextResponse.json({
+        success: true,
+        messageId,
+        threadId: thread.id,
+        timeout: true,
+        exception: {
+          id: timeoutException.lastInsertRowid,
+          category: 'timeout',
+          reason: `Processing exceeded ${TIMEOUT_MS}ms`
+        }
+      })
+    }
 
     // Classify message
     const classification = classifyMessage({
@@ -316,11 +357,103 @@ export async function POST(request: NextRequest) {
       `).run(thread.id)
     }
 
-    // Generate draft reply (unless spam, checkin event, or outlier already handled)
+    // P1: Auto-enqueue booking_inquiry with rate card check
+    let exception = null
+    if (classification.intent === 'booking_inquiry' && 
+        classification.extractedData.checkIn &&
+        classification.confidence >= 0.6) {
+      
+      // Check if rate card exists for requested dates
+      const property = classification.extractedData.property || 'default'
+      const checkIn = classification.extractedData.checkIn
+      const checkOut = classification.extractedData.checkOut
+      
+      const rateCard = await db.prepare(`
+        SELECT * FROM rate_cards
+        WHERE tenant_id = ?
+        AND (
+          (valid_from IS NULL AND valid_to IS NULL) OR
+          (valid_from <= ? AND (valid_to IS NULL OR valid_to >= ?))
+        )
+        LIMIT 1
+      `).get(tenantId, checkIn, checkIn) as any
+
+      if (!rateCard) {
+        // P1: Missing rate card → Create Exception (never invent rates)
+        const exceptionInsert = await db.prepare(`
+          INSERT INTO guest_tickets (
+            tenant_id, thread_id, guest_name, guest_phone,
+            category, priority, status, subject, description,
+            problem_description, context_found, reason_stopped, suggested_next_step
+          ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?)
+        `).run(
+          tenantId,
+          thread.id,
+          classification.extractedData.guestName || 'Unknown Guest',
+          payload.from,
+          'missing_rate_card',
+          'high',
+          `Missing Rate Card - ${classification.extractedData.guestName || 'Guest'}`,
+          payload.text,
+          `Guest inquiry for ${checkIn}${checkOut ? ` to ${checkOut}` : ''}, ${classification.extractedData.adults || '?'} adults`,
+          `Property: ${property}, Check-in: ${checkIn}, Adults: ${classification.extractedData.adults || 'unknown'}`,
+          `No rate card found for requested dates`,
+          `Upload rate card at /ops/rate-cards or manually quote`
+        )
+
+        exception = {
+          id: exceptionInsert.lastInsertRowid,
+          category: 'missing_rate_card',
+          reason: 'No rate card available for requested dates'
+        }
+
+        // Do NOT create draft reply - exception instead
+      } else {
+        // Rate card exists - generate quote draft
+        const rate = rateCard.rate_per_night
+        const nights = checkOut ? Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)) : 1
+        const adults = classification.extractedData.adults || 2
+
+        const quoteDraft = `Hi${classification.extractedData.guestName ? ` ${classification.extractedData.guestName}` : ' there'},
+
+Thank you for your interest in The Browns Luxury Guest Suites!
+
+📅 Dates: ${checkIn}${checkOut ? ` to ${checkOut}` : ' (check-out date needed)'}
+👥 Guests: ${adults} adult${adults > 1 ? 's' : ''}
+🏡 Property: ${property}
+
+Rate: R${rate} per night
+${checkOut ? `Total for ${nights} night${nights > 1 ? 's' : ''}: R${(rate * nights).toFixed(2)}` : ''}
+
+[Rate card applied - requires approval before send]
+
+Looking forward to welcoming you!
+
+Warm regards,
+The Browns Team`
+
+        // Store draft on message
+        await db.prepare(`
+          UPDATE inbound_messages 
+          SET draft_reply = ?
+          WHERE id = ?
+        `).run(quoteDraft, messageId)
+
+        // Update thread status to drafted (queued for approval)
+        await db.prepare(`
+          UPDATE inbound_threads 
+          SET status = 'drafted'
+          WHERE id = ?
+        `).run(thread.id)
+      }
+    }
+
+    // Generate draft reply (for other intents: date_query, suite_preference, etc.)
     let draftReply = null
     if (classification.intent !== 'spam' && 
         classification.intent !== 'checkin_event' && 
-        classification.intent !== 'outlier_exception') {
+        classification.intent !== 'outlier_exception' &&
+        classification.intent !== 'booking_inquiry') { // booking_inquiry handled above
       const { draft, requiresApproval, missingInfo } = generateDraftReply(
         classification,
         'The Browns Luxury Guest Suites (Dullstroom)'
@@ -362,6 +495,8 @@ export async function POST(request: NextRequest) {
       draftReply,
       checkinEvent,
       ticket,
+      exception,
+      queuedForApproval: thread.status === 'drafted',
       status: thread.status
     })
 
