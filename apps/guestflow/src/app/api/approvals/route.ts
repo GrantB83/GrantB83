@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
         'WhatsApp inbound' as source,
         timestamp as created_at,
         'medium' as priority,
-        metadata
+        from_number as guest_phone,
+        '{}' as metadata
       FROM inbound_messages
       WHERE tenant_id = ? AND status = 'drafted' AND draft_reply IS NOT NULL
       ORDER BY timestamp DESC
@@ -35,20 +36,61 @@ export async function GET(request: NextRequest) {
     const ticketItems = await db.prepare(`
       SELECT 
         id,
-        CASE WHEN guest_draft IS NOT NULL THEN 'ticket_guest' ELSE 'ticket_staff' END as type,
+        CASE WHEN guest_draft_reply IS NOT NULL THEN 'ticket_guest' ELSE 'ticket_staff' END as type,
         guest_name as guest,
-        COALESCE(guest_draft, staff_brief) as draft_content,
+        COALESCE(guest_draft_reply, staff_brief) as draft_content,
         category as source,
         created_at,
         CASE WHEN priority = 'high' THEN 'high' ELSE 'medium' END as priority,
+        guest_phone,
         '{}' as metadata
       FROM guest_tickets
       WHERE tenant_id = ? AND status IN ('new', 'triaged')
-        AND (guest_draft IS NOT NULL OR staff_brief IS NOT NULL)
+        AND (guest_draft_reply IS NOT NULL OR staff_brief IS NOT NULL)
       ORDER BY created_at DESC
     `).all(tenantId) as any[]
 
-    const items = [...inboundItems, ...ticketItems].sort((a, b) => {
+    // P1: Fetch welcome drafts (auto-enqueued from NB ingest)
+    const welcomeItems = await db.prepare(`
+      SELECT 
+        id,
+        'welcome' as type,
+        guest_name as guest,
+        draft_message as draft_content,
+        source,
+        created_at,
+        'medium' as priority,
+        guest_phone,
+        '{}' as metadata
+      FROM welcome_drafts
+      WHERE tenant_id = ? AND status = 'pending_approval'
+      ORDER BY created_at DESC
+    `).all(tenantId) as any[]
+
+    // P1: Fetch late check-in drafts
+    const lateItems = await db.prepare(`
+      SELECT 
+        id,
+        'late_checkin' as type,
+        guest_name as guest,
+        draft_message as draft_content,
+        source,
+        created_at,
+        'high' as priority,
+        guest_phone,
+        '{}' as metadata
+      FROM late_checkin_drafts
+      WHERE tenant_id = ? AND status = 'pending_approval'
+      ORDER BY created_at DESC
+    `).all(tenantId) as any[]
+
+    // Merge all items with phone metadata
+    const allItems = [...inboundItems, ...ticketItems, ...welcomeItems, ...lateItems].map(item => ({
+      ...item,
+      metadata: { guest_phone: item.guest_phone, from_number: item.guest_phone }
+    }))
+
+    const items = allItems.sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 

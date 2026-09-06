@@ -55,6 +55,57 @@ TTL: 3600 (or Auto)
 
 ---
 
+## 🗄️ Database Migration (One-Time Setup)
+
+### Running the P0+P1 Schema Migration
+
+**When:** First deployment or when upgrading to P0+P1 features  
+**Who:** Grant or designated tech lead  
+**Safe:** Idempotent (safe to run multiple times)
+
+#### Migration Script
+
+```bash
+cd apps/guestflow
+node scripts/migrate-p0-p1-schema.js
+```
+
+#### What It Creates
+
+The migration script creates these tables (if they don't exist):
+
+- `audit_log` — Tracks all human approval decisions
+- `guest_tickets` — Exceptions queue (missing data, timeouts, outliers)
+- `inbound_messages` — WhatsApp/SMS/email inbound messages
+- `inbound_threads` — Grouped conversation threads
+- `welcome_drafts` — Auto-enqueued welcome messages from NB ingest (P1)
+- `late_checkin_drafts` — Auto-enqueued late check-in follow-ups (P1)
+- `rate_cards` — Property pricing for quote generation (P1)
+
+#### Migration History
+
+| Date | Run By | Status | Notes |
+|------|--------|--------|-------|
+| 2026-09-06 | Grant | ✅ Success | Initial P0+P1 deployment |
+| _TBD_ | _Staff_ | _Pending_ | Add your run here |
+
+#### After Migration
+
+1. **Add rate cards** (required for booking inquiry quotes):
+   ```sql
+   INSERT INTO rate_cards (tenant_id, property_name, rate_per_night, valid_from, valid_to)
+   VALUES (1, 'Browns Dullstroom', 1200.00, '2026-09-01', '2027-08-31');
+   ```
+
+2. **Test the approval queue** at `/needs-approval`
+
+3. **Test NB ingest** by uploading `arr_and_dep.xlsx` via:
+   ```bash
+   npm run nightsbridge:upload -- --file arr_and_dep.xlsx --secret <CRON_SECRET>
+   ```
+
+---
+
 ## 🏠 Today Page Overview
 
 After login, you land on **Today** — your daily dashboard showing:

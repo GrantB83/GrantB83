@@ -96,6 +96,52 @@ export default function NeedsApprovalPage() {
     }
   }
 
+  const handleSend = async () => {
+    if (!selectedItem) return
+    
+    const confirmed = confirm(
+      `Send this message via WhatsApp?\n\n` +
+      `To: ${selectedItem.guest}\n` +
+      `Type: ${selectedItem.type}\n\n` +
+      `Sandbox mode: Message will be logged but not sent to guest.`
+    )
+    
+    if (confirmed) {
+      try {
+        // Extract phone from metadata
+        const phone = selectedItem.metadata?.guest_phone || selectedItem.metadata?.from_number
+        if (!phone) {
+          alert('Error: Guest phone number not found')
+          return
+        }
+
+        const response = await fetch('/api/whatsapp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            draftId: selectedItem.id,
+            guestPhone: phone,
+            message: editMode ? editedContent : selectedItem.draftContent
+          })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          alert(data.message || 'Message sent successfully')
+          await fetchApprovals(true)
+          setSelectedItem(null)
+          setEditMode(false)
+        } else {
+          alert(`Send failed: ${data.error}`)
+        }
+      } catch (error) {
+        console.error('Send error:', error)
+        alert('Failed to send message')
+      }
+    }
+  }
+
   const handleEditAndApprove = () => {
     if (!editMode) {
       setEditMode(true)
@@ -253,35 +299,51 @@ export default function NeedsApprovalPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Approve (A)
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEditAndApprove(); }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        {editMode ? 'Save & Approve (E)' : 'Edit & approve (E)'}
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        Reject (R)
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEscalate(); }}
-                        className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition flex items-center gap-2"
-                      >
-                        <AlertTriangle className="w-4 h-4" />
-                        Escalate (X)
-                      </button>
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleApprove(); }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Approve (A)
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEditAndApprove(); }}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                          {editMode ? 'Save & Approve (E)' : 'Edit & approve (E)'}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleReject(); }}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Reject (R)
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEscalate(); }}
+                          className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition flex items-center gap-2"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          Escalate (X)
+                        </button>
+                      </div>
+
+                      {/* Send Button (after approval) */}
+                      <div className="pt-2 border-t">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                          className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2"
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                          Send via WhatsApp (Human-Gated)
+                        </button>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          ⚠️ Sandbox mode: Logs send without calling Meta API until WABA live
+                        </p>
+                      </div>
                     </div>
 
                     <div className="mt-3 text-xs text-gray-500">
