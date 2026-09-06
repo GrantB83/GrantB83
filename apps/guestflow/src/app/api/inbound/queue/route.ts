@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
 import { format, parseISO } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/inbound/queue
  * 

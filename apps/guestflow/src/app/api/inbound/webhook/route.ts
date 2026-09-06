@@ -4,6 +4,8 @@ import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { generateTicketDrafts } from '@/lib/ticket-playbooks'
 import { processCheckinEvent } from '@/lib/checkin-inference'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Inbound WhatsApp/SMS/Email Webhook
  * 

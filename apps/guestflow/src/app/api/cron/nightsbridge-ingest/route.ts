@@ -3,6 +3,8 @@ import { getDb } from '@/lib/db'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInDays } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 interface ParsedBooking {
   guestName: string
   guest2?: string

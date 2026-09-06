@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/tickets
  * 

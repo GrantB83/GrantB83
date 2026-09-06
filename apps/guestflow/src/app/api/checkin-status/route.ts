@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
 import { inferCheckinStatuses, generateLateCheckinInstructions } from '@/lib/checkin-inference'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/checkin-status
  * 
