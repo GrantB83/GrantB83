@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Base64 encoding helper for consistency with middleware
+function base64Encode(str: string): string {
+  return Buffer.from(str).toString('base64')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { password } = await request.json()
@@ -27,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Verify password
     if (password === staffPassword) {
-      const authToken = Buffer.from(staffPassword).toString('base64')
+      const authToken = base64Encode(staffPassword)
       
       const response = NextResponse.json({ success: true })
       response.cookies.set('staff_auth', authToken, {

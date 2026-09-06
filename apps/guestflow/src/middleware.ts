@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// Edge-compatible base64 encoding (Buffer is not available in Edge Runtime)
+function base64Encode(str: string): string {
+  return btoa(str)
+}
+
 export function middleware(request: NextRequest) {
   // Skip auth for static files and API routes that don't need auth
   if (
@@ -26,7 +31,7 @@ export function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('staff_auth')
   
   // Verify auth cookie matches password hash (simple approach for internal staff access)
-  if (authCookie?.value === Buffer.from(staffPassword || '').toString('base64')) {
+  if (authCookie?.value === base64Encode(staffPassword || '')) {
     return NextResponse.next()
   }
 
