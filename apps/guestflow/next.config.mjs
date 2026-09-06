@@ -8,7 +8,8 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'standalone',
+  // Removed standalone output - use default for Vercel deployment
+  // output: 'standalone',
   
   // Production optimizations
   productionBrowserSourceMaps: false,
