@@ -1,8 +1,20 @@
 # GuestFlow Staff Runbook — SA Ops
 
-**Version:** M4 (2026-12)  
+**Version:** P0+P1 (2026-09)  
 **Audience:** Browns Dullstroom operations staff  
 **Purpose:** Daily operational guide for the internal ops console
+
+## 🎯 New Navigation (P0 Update)
+
+GuestFlow now has a streamlined primary navigation:
+
+1. **Today** — House pulse, next 24h, Approvals + Exceptions badges, NB freshness
+2. **Needs approval** — Unified queue for all drafts requiring human approval
+3. **Exceptions** — Guest tickets, missing rate cards, timeouts (never silent drops)
+4. **Live bookings** — Arriving / in-house / departing (replaces old "Bookings")
+5. **Comms** — Unified timeline with sticky reservation panel
+
+Secondary tools remain under "Tools" in the quick actions.
 
 ---
 
@@ -43,15 +55,30 @@ TTL: 3600 (or Auto)
 
 ---
 
-## 🏠 Ops Hub Overview
+## 🏠 Today Page Overview
 
-After login, you land on the **Browns Ops Hub** — your daily dashboard.
+After login, you land on **Today** — your daily dashboard showing:
 
-### Quick Access Pages
+- **Needs approval badge** — Count of drafts waiting for human review
+- **Exceptions badge** — Count of active tickets and issues
+- **Next 24 hours** — Arriving (green), In-house (blue), Departing (amber)
+- **NightsBridge Sync status** — Fresh/Stale/Missing with last sync time
+- **Recent AI Activity** — Quiet feed of what the system did (classified, drafted, filed)
 
-| Page | Purpose | CLI Tool Integration |
+### Primary Navigation Pages
+
+| Page | Purpose | What You Do |
+|------|---------|-------------|
+| **Today** | House pulse and quick overview | Start your day here |
+| **Needs approval** | Unified queue for all drafts | Approve/Edit/Reject/Escalate with keyboard shortcuts (A/E/R/X) |
+| **Exceptions** | Guest tickets, missing data, timeouts | Triage and resolve issues that AI couldn't handle |
+| **Live bookings** | Arriving / in-house / departing views | See current guest status |
+| **Comms** | Timeline of all messages + reservation panel | Unified guest conversation view |
+
+### Secondary Tools (under "Tools" quick action)
+
+| Tool | Purpose | CLI Tool Integration |
 |------|---------|---------------------|
-| **Inbound Queue** | Review WhatsApp messages from old number | (webhook-based) |
 | **Inquiry Intake** | Extract booking fields from email/WhatsApp | `browns-inquiry-intake` |
 | **Quote Draft** | Generate quotes from inquiries + rate cards | `browns-quote-invoice-draft` |
 | **Welcome Drafts** | Draft welcome messages for arrivals | `browns-welcome-draft-pack` |
@@ -66,29 +93,50 @@ After login, you land on the **Browns Ops Hub** — your daily dashboard.
 
 ## 📋 Daily Workflow
 
-### Morning Routine
+### Morning Routine (Updated P0)
 
-1. **Login** to Browns Ops Hub
-2. Visit **Inbound Queue** (`/ops/inbound-queue`) — Check WhatsApp messages from old number
-   - Review new messages that came in overnight
-   - Approve draft replies for booking inquiries
-   - Mark spam as closed
-3. Visit **Daily Brief** (`/ops/daily-brief`)
-   - Review **RED** items first (urgent, SLA broken)
-   - Then **AMBER** (needs action today)
-   - **GREEN** items are on track
-4. Check **Late Check-In Queue** for after-hours arrivals
-5. Process new inquiries via **Inquiry Intake**
+1. **Login** and land on **Today** page
+2. Check the **Needs approval badge** — If > 0, click to review queue
+3. Visit **Needs approval** page:
+   - Review each draft (inbound, welcome, quote, tickets)
+   - Use keyboard shortcuts: **A** (Approve), **E** (Edit & approve), **R** (Reject), **X** (Escalate)
+   - Empty state = "Routine handled. Nothing needs you." ✓
+4. Check **Exceptions badge** — If > 0, click to resolve issues
+5. Visit **Exceptions** page:
+   - See what AI asked, what it found, why it stopped, next step
+   - Triage → In Progress → Resolved workflow
+   - Common: Missing rate card, Timeout (never auto-sent), Guest tickets
+6. Check **Next 24h** on Today:
+   - Click Arriving/In-house/Departing cards to see details
+7. Check **NightsBridge Sync** status:
+   - Fresh (< 12h ago) = ✓ green
+   - Stale (> 12h ago) = ⚠️ amber — Click "Upload now"
+   - Missing = ⚠️ red — Expected 05:00 & 19:00 SAST daily
 
-### Processing an Inquiry
+### Using the Needs Approval Queue (New in P0)
 
-1. Copy inquiry text from email or WhatsApp
-2. Go to **Inquiry Intake** page (`/ops/inquiry-intake`)
-3. Paste inquiry text
-4. Click **Extract Data**
-5. Review extracted fields (dates, guests, property)
-6. Click **Export Pack** to download JSON
-7. Save inquiry to database
+**What appears here:**
+- Inbound WhatsApp drafts (booking inquiries, date queries)
+- Welcome message drafts (auto-generated from NB data)
+- Quote drafts (if rate card is available)
+- Guest exception drafts (lost key, gate access, maintenance)
+- Staff briefs (for Admin/Housekeeping WhatsApp channel)
+
+**How to review:**
+
+1. Click on any item in the list
+2. See:
+   - **Source** — Where it came from (WhatsApp inbound, NB welcome, etc.)
+   - **Draft content** — What AI prepared
+   - **Metadata** — Guest details, booking info
+3. Take action:
+   - **Approve (A)** — Mark ready to send (still requires human send)
+   - **Edit & approve (E)** — Click to edit draft in textarea, then approve
+   - **Reject (R)** — Dismiss with reason
+   - **Escalate (X)** — Flag for Grant/Liana with note
+4. **Keyboard shortcuts work when item is selected** — No mouse needed for fast approval
+
+**Hard rule:** Approve **does NOT auto-send**. All output is draft-only. You must manually send via WhatsApp/email after approval.
 
 ### Generating a Quote
 
@@ -100,60 +148,43 @@ After login, you land on the **Browns Ops Hub** — your daily dashboard.
 6. Click **Export** to download
 7. **APPROVE MANUALLY** before sending to guest
 
-### WhatsApp Inbound Queue (3 Views)
+## 🔄 Always-On Inbound Webhook (P1 Documentation)
 
-**⚠️ Important:** Old number (+27836458313) is **entrypoint/migrate only**. NEW Twilio/WABA number (pending) will handle future inbound/outbound.
+**Status:** Implemented and documented for CoS/Grok Bot integration
 
-Go to **Inbound Queue** page (`/ops/inbound-queue`) and choose view:
+### How Inbound Works
 
-#### 💬 Messages View
-1. Shows all inbound messages from old number or guests group
-2. Review classification:
-   - 📅 Booking inquiry — has dates and guest count
-   - 🗓️ Date query — asking about availability
-   - 🏡 Suite preference — asking about properties
-   - 🔄 Existing guest — returning customer
-   - ✅ Check-in event — from guests group (arrived, in-house, late)
-   - 🎫 Outlier/exception — guest problem or request
-   - 🚫 Spam — promotional messages (auto-closed)
-3. Read draft reply (auto-generated, **NEVER auto-sent**)
-4. **APPROVE** if draft is good, or **CLOSE** if spam
-5. **Copy draft to WhatsApp manually** — NO automatic sending
+1. **Old WhatsApp number** (+27836458313) OR **Guests WhatsApp group** → Receives messages
+2. **CoS Bridge** (if configured) OR **Direct WABA webhook** → Sends to `/api/inbound/webhook`
+3. **GuestFlow classify** → Auto-classifies intent (booking_inquiry, date_query, suite_preference, etc.)
+4. **Auto-draft reply** → Uses rate cards + playbooks (never invents data)
+5. **Queue in "Needs approval"** → Appears with source "WhatsApp inbound"
+6. **Human approves** → Via Needs approval page (keyboard shortcut A)
+7. **Human sends** → Copy draft to WhatsApp manually (or future: via approved `/api/whatsapp/send`)
 
-#### 🎫 Tickets View
-1. Shows guest exception/outlier tickets (lost key, gate access, maintenance, etc.)
-2. Each ticket has TWO drafts:
-   - **Guest reply** (approve before sending to guest)
-   - **Staff brief** (for Admin/staff channel, may be ready to post)
-3. Categories:
-   - 🔑 Lost key (HIGH priority)
-   - 🚪 Gate access (HIGH priority)
-   - 📍 Can't find entrance (MEDIUM)
-   - ❄️ Refrigerator space (LOW)
-   - 🍽️ Restaurant recs (LOW)
-   - 🎉 Special event (MEDIUM)
-   - 🔧 Maintenance (HIGH)
-   - ❓ General problem (MEDIUM)
-4. Status flow: new → triaged → staff_notified → in_progress → resolved
+### What Happens on Different Intents
 
-#### ⏰ Late Check-in View
-1. Shows guests who should have checked in but haven't (from guests group context)
-2. Inferred from:
-   - NightsBridge bookings (arriving today)
-   - Guests WhatsApp group messages (who said they arrived)
-   - Current time > check-in time + 2 hours
-3. **DO NOT INVENT** check-ins — only infer from actual messages
-4. Each guest shows:
-   - Expected check-in time
-   - Last known status (not arrived, late, etc.)
-   - Auto-generated late check-in instructions (approve before sending)
+| Intent | What AI Does | What Goes to Queue | Exception Raised If |
+|--------|--------------|-------------------|---------------------|
+| **booking_inquiry** | Extract dates/guests/property → Draft quote | Quote draft (if rate card exists) | Missing rate card → Exceptions |
+| **date_query** | Check availability → Draft reply | Availability draft | No calendar access |
+| **existing_guest** | Match to booking → Draft welcome/late | Welcome/late draft (if NB data synced) | No booking found |
+| **outlier_exception** | Classify category → Draft guest reply + staff brief | Ticket with 2 drafts | Always creates ticket |
+| **spam** | Mark as spam → Auto-close | Nothing (silent close) | N/A |
 
-**Hard Constraints:**
-- ❌ NEVER auto-send to guests (dry-run/sandbox default)
-- ❌ Drafts show `[RATE CARD REQUIRED]` or `[ASK STAFF]` — do NOT guess
-- ❌ Do NOT invent check-ins — only infer from guests group messages
-- ✅ Human approval required for every outbound message
-- ✅ Future: NEW Twilio number will send approved replies via API
+### Timeout Handling (P1)
+
+**Rule:** If classification or draft generation takes > 30s, the system:
+1. **Holds the draft** in a "timeout" exception
+2. **Never silent drops** the message
+3. **Never auto-sends** a partial/broken draft
+4. Creates an **Exception ticket** with:
+   - What asked: Original message
+   - What AI found: Partial context (if any)
+   - Why stopped: "Classification timeout"
+   - Next step: "Manual review and classify"
+
+**You see this in:** Exceptions page → Filter "timeout" category
 
 ### Welcome Messages (Same-Day Arrivals)
 
