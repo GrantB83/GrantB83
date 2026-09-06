@@ -7,6 +7,8 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api/health') ||
     request.nextUrl.pathname.startsWith('/api/staff-auth') ||
+    request.nextUrl.pathname.startsWith('/api/inbound/webhook') ||
+    request.nextUrl.pathname.startsWith('/api/cron') ||
     request.nextUrl.pathname.includes('.')
   ) {
     return NextResponse.next()
