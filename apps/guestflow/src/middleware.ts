@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Edge-compatible base64 encoding (Buffer is not available in Edge Runtime)
-function base64Encode(str: string): string {
-  return btoa(str)
-}
+// Use Node.js runtime to have full access to environment variables and Buffer API
+// Without this, middleware runs on Edge Runtime with limited env var access
+export const runtime = 'nodejs'
 
 export function middleware(request: NextRequest) {
   // Skip auth for static files and API routes that don't need auth
@@ -19,21 +18,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check if staff password is required
-  // Note: In Vercel Edge Runtime, only NEXT_PUBLIC_ vars from .env are available
-  // Non-public vars must be configured in Vercel project settings to be accessible
+  // Check if staff password is required (production only)
   const staffPassword = process.env.STAFF_PASSWORD
-  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production'
   
-  // Skip auth in non-production if no password is set
-  // In production, require password to be configured in Vercel project settings
-  if (!staffPassword) {
-    if (!isProduction) {
-      return NextResponse.next()
-    }
-    // In production without password, allow through but log warning
-    // (Vercel logs will show this issue)
-    console.warn('[middleware] STAFF_PASSWORD not configured in Vercel project settings')
+  // Skip auth in development if no password is set
+  if (!staffPassword && process.env.NODE_ENV === 'development') {
     return NextResponse.next()
   }
 
@@ -41,7 +30,8 @@ export function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('staff_auth')
   
   // Verify auth cookie matches password hash (simple approach for internal staff access)
-  if (authCookie?.value === base64Encode(staffPassword)) {
+  // Using Node.js Buffer since we're in nodejs runtime
+  if (authCookie?.value === Buffer.from(staffPassword || '').toString('base64')) {
     return NextResponse.next()
   }
 
