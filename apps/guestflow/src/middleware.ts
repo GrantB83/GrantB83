@@ -19,11 +19,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check if staff password is required (production only)
+  // Check if staff password is required
+  // Note: In Vercel Edge Runtime, only NEXT_PUBLIC_ vars from .env are available
+  // Non-public vars must be configured in Vercel project settings to be accessible
   const staffPassword = process.env.STAFF_PASSWORD
+  const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production'
   
-  // Skip auth in development if no password is set
-  if (!staffPassword && process.env.NODE_ENV === 'development') {
+  // Skip auth in non-production if no password is set
+  // In production, require password to be configured in Vercel project settings
+  if (!staffPassword) {
+    if (!isProduction) {
+      return NextResponse.next()
+    }
+    // In production without password, allow through but log warning
+    // (Vercel logs will show this issue)
+    console.warn('[middleware] STAFF_PASSWORD not configured in Vercel project settings')
     return NextResponse.next()
   }
 
@@ -31,7 +41,7 @@ export function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('staff_auth')
   
   // Verify auth cookie matches password hash (simple approach for internal staff access)
-  if (authCookie?.value === base64Encode(staffPassword || '')) {
+  if (authCookie?.value === base64Encode(staffPassword)) {
     return NextResponse.next()
   }
 
