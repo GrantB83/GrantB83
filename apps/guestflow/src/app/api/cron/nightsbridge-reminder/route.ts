@@ -5,7 +5,13 @@ import { format } from 'date-fns'
 /**
  * Nightsbridge Sync Reminder Endpoint
  * 
- * Runs at 05:00 SAST (03:00 UTC) and 19:00 SAST (17:00 UTC).
+ * Designed to run at 05:00 SAST (03:00 UTC) and 19:00 SAST (17:00 UTC).
+ * 
+ * Vercel Config: Only one Vercel cron is configured (03:00 UTC) for Hobby tier compatibility.
+ * For the second daily run (17:00 UTC), trigger externally:
+ *   - Use an external cron service (e.g., cron-job.org, GitHub Actions)
+ *   - Call: GET https://guestflow.thebrowns.co.za/api/cron/nightsbridge-reminder
+ *   - Include header: Authorization: Bearer {CRON_SECRET}
  * 
  * Checks the last sync time and booking freshness.
  * Logs status for monitoring and optionally sends reminders to SA Ops.
@@ -14,6 +20,7 @@ import { format } from 'date-fns'
  * SA Ops must manually drop arr_and_dep.xlsx or use /api/cron/nightsbridge-ingest.
  * 
  * Security: Vercel cron jobs include CRON_SECRET automatically in headers.
+ * External triggers must provide it manually.
  */
 export async function GET(request: NextRequest) {
   try {
