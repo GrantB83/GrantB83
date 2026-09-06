@@ -11,7 +11,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import type { CliOptions, InquiryData, QuoteData, PackResult, Manifest } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Assemble pipeline pack from inquiry text or existing inquiry JSON
@@ -41,7 +45,7 @@ export async function assemblePack(options: CliOptions): Promise<PackResult> {
     console.log('Running browns-inquiry-intake...');
     try {
       const intakeDir = options.intakeOutdir || path.join(packDir, 'intake-temp');
-      const intakeTool = path.join(process.cwd(), '../browns-inquiry-intake');
+      const intakeTool = path.resolve(__dirname, '../../browns-inquiry-intake');
       
       if (!fs.existsSync(intakeTool)) {
         throw new Error('browns-inquiry-intake not found. Ensure sibling tool is installed.');
@@ -133,7 +137,7 @@ export async function assemblePack(options: CliOptions): Promise<PackResult> {
       const tempQuotePath = path.join(packDir, 'temp-quote.json');
       fs.writeFileSync(tempQuotePath, JSON.stringify(quoteData, null, 2));
 
-      const quoteTool = path.join(process.cwd(), '../browns-quote-invoice-draft');
+      const quoteTool = path.resolve(__dirname, '../../browns-quote-invoice-draft');
       
       if (!fs.existsSync(quoteTool)) {
         throw new Error('browns-quote-invoice-draft not found. Ensure sibling tool is installed.');

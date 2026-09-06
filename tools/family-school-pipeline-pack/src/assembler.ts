@@ -11,7 +11,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import type { CliOptions, PackResult, StageResult, PackManifest } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Ensure sibling tool is built
@@ -46,7 +50,7 @@ function ensureSiblingBuilt(toolName: string, toolPath: string): void {
  */
 function runDigestStage(subjects: string, date: string, timezone: string, packDir: string): StageResult {
   try {
-    const digestTool = path.join(process.cwd(), '../family-school-subject-digest');
+    const digestTool = path.resolve(__dirname, '../../family-school-subject-digest');
     
     if (!fs.existsSync(digestTool)) {
       throw new Error('family-school-subject-digest not found. Ensure sibling tool exists.');
@@ -90,7 +94,7 @@ function runDigestStage(subjects: string, date: string, timezone: string, packDi
  */
 function runDueQueueStage(subjects: string | undefined, filenames: string | undefined, date: string, packDir: string): StageResult {
   try {
-    const queueTool = path.join(process.cwd(), '../family-school-due-queue');
+    const queueTool = path.resolve(__dirname, '../../family-school-due-queue');
     
     if (!fs.existsSync(queueTool)) {
       throw new Error('family-school-due-queue not found. Ensure sibling tool exists.');
@@ -149,7 +153,7 @@ function runDueQueueStage(subjects: string | undefined, filenames: string | unde
  */
 function runCalendarStage(ics: string, date: string, timezone: string, packDir: string): StageResult {
   try {
-    const calendarTool = path.join(process.cwd(), '../family-calendar-ics-digest');
+    const calendarTool = path.resolve(__dirname, '../../family-calendar-ics-digest');
     
     if (!fs.existsSync(calendarTool)) {
       throw new Error('family-calendar-ics-digest not found. Ensure sibling tool exists.');
