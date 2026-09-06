@@ -58,48 +58,55 @@ Each page exports/downloads packs that match CLI tool inputs/outputs, with exact
 
 ### ✅ Operational Pages (All DRAFT-ONLY)
 
-1. **Inquiry Intake** (`/ops/inquiry-intake`)
+1. **Inbound WhatsApp Queue** (`/ops/inbound-queue`) — **NEW**
+   - Review messages from old WhatsApp number (+27836458313)
+   - Automatic classification (booking inquiry, dates, suite, spam)
+   - Auto-generated draft replies (NEVER auto-sent)
+   - Mobile-friendly queue for staff approval
+   - Webhook API for CoS bridge integration
+
+2. **Inquiry Intake** (`/ops/inquiry-intake`)
    - Paste inquiry text from email/WhatsApp
    - Extract structured booking fields
    - Export JSON pack for browns-inquiry-intake CLI
    - Save to local SQLite for Browns tenant
 
-2. **Quote Draft** (`/ops/quote-draft`)
+3. **Quote Draft** (`/ops/quote-draft`)
    - Generate quote from inquiry JSON or booking data
    - Uses Browns rate cards (upload via `/ops/rate-cards`)
    - Export markdown/HTML for browns-quote-invoice-draft CLI
    - Never invents rates - requires rate card or shows `[RATE CARD REQUIRED]`
 
-3. **Welcome Drafts** (`/ops/welcome-drafts`)
+4. **Welcome Drafts** (`/ops/welcome-drafts`)
    - Generate welcome messages for upcoming arrivals
    - Export pack for browns-welcome-draft-pack CLI
    - Date-filtered for same-day/next-day arrivals
 
-4. **Late Check-In Queue** (`/ops/late-checkin-queue`)
+5. **Late Check-In Queue** (`/ops/late-checkin-queue`)
    - Track after-hours arrivals and unknown ETAs
    - Export for browns-late-checkin-queue CLI
    - Never invents phone numbers or arrival times
 
-5. **Daily Brief** (`/ops/daily-brief`)
+6. **Daily Brief** (`/ops/daily-brief`)
    - Morning operations brief with RED/AMBER/GREEN priorities
    - Arrivals, departures, housekeeping
    - Export for browns-daily-ops-brief CLI
 
-6. **NightsBridge Import** (`/ops/nightsbridge-import`)
+7. **NightsBridge Import** (`/ops/nightsbridge-import`)
    - Parse NightsBridge CSV bookings
    - Detect gaps and late check-ins
    - Export for browns-nightsbridge-bookings-adapter CLI
 
-7. **Booking Change Check** (`/ops/booking-change-check`)
+8. **Booking Change Check** (`/ops/booking-change-check`)
    - Compare before/after booking snapshots
    - Detect additions, cancellations, modifications
    - Export for browns-ct-pack verification
 
-8. **CT Pack** (`/ops/ct-pack`)
+9. **CT Pack** (`/ops/ct-pack`)
    - Communication pack for upcoming stays
    - Export for browns-ct-pack CLI
 
-9. **Rate Card Upload** (`/ops/rate-cards`)
+10. **Rate Card Upload** (`/ops/rate-cards`)
    - Upload CSV/JSON rate cards for Browns properties
    - Tenant-scoped to Browns only
    - Used by quote draft generator

@@ -51,6 +51,7 @@ After login, you land on the **Browns Ops Hub** — your daily dashboard.
 
 | Page | Purpose | CLI Tool Integration |
 |------|---------|---------------------|
+| **Inbound Queue** | Review WhatsApp messages from old number | (webhook-based) |
 | **Inquiry Intake** | Extract booking fields from email/WhatsApp | `browns-inquiry-intake` |
 | **Quote Draft** | Generate quotes from inquiries + rate cards | `browns-quote-invoice-draft` |
 | **Welcome Drafts** | Draft welcome messages for arrivals | `browns-welcome-draft-pack` |
@@ -68,12 +69,16 @@ After login, you land on the **Browns Ops Hub** — your daily dashboard.
 ### Morning Routine
 
 1. **Login** to Browns Ops Hub
-2. Visit **Daily Brief** (`/ops/daily-brief`)
+2. Visit **Inbound Queue** (`/ops/inbound-queue`) — Check WhatsApp messages from old number
+   - Review new messages that came in overnight
+   - Approve draft replies for booking inquiries
+   - Mark spam as closed
+3. Visit **Daily Brief** (`/ops/daily-brief`)
    - Review **RED** items first (urgent, SLA broken)
    - Then **AMBER** (needs action today)
    - **GREEN** items are on track
-3. Check **Late Check-In Queue** for after-hours arrivals
-4. Process new inquiries via **Inquiry Intake**
+4. Check **Late Check-In Queue** for after-hours arrivals
+5. Process new inquiries via **Inquiry Intake**
 
 ### Processing an Inquiry
 
@@ -94,6 +99,61 @@ After login, you land on the **Browns Ops Hub** — your daily dashboard.
 5. Review draft output (HTML or markdown)
 6. Click **Export** to download
 7. **APPROVE MANUALLY** before sending to guest
+
+### WhatsApp Inbound Queue (3 Views)
+
+**⚠️ Important:** Old number (+27836458313) is **entrypoint/migrate only**. NEW Twilio/WABA number (pending) will handle future inbound/outbound.
+
+Go to **Inbound Queue** page (`/ops/inbound-queue`) and choose view:
+
+#### 💬 Messages View
+1. Shows all inbound messages from old number or guests group
+2. Review classification:
+   - 📅 Booking inquiry — has dates and guest count
+   - 🗓️ Date query — asking about availability
+   - 🏡 Suite preference — asking about properties
+   - 🔄 Existing guest — returning customer
+   - ✅ Check-in event — from guests group (arrived, in-house, late)
+   - 🎫 Outlier/exception — guest problem or request
+   - 🚫 Spam — promotional messages (auto-closed)
+3. Read draft reply (auto-generated, **NEVER auto-sent**)
+4. **APPROVE** if draft is good, or **CLOSE** if spam
+5. **Copy draft to WhatsApp manually** — NO automatic sending
+
+#### 🎫 Tickets View
+1. Shows guest exception/outlier tickets (lost key, gate access, maintenance, etc.)
+2. Each ticket has TWO drafts:
+   - **Guest reply** (approve before sending to guest)
+   - **Staff brief** (for Admin/staff channel, may be ready to post)
+3. Categories:
+   - 🔑 Lost key (HIGH priority)
+   - 🚪 Gate access (HIGH priority)
+   - 📍 Can't find entrance (MEDIUM)
+   - ❄️ Refrigerator space (LOW)
+   - 🍽️ Restaurant recs (LOW)
+   - 🎉 Special event (MEDIUM)
+   - 🔧 Maintenance (HIGH)
+   - ❓ General problem (MEDIUM)
+4. Status flow: new → triaged → staff_notified → in_progress → resolved
+
+#### ⏰ Late Check-in View
+1. Shows guests who should have checked in but haven't (from guests group context)
+2. Inferred from:
+   - NightsBridge bookings (arriving today)
+   - Guests WhatsApp group messages (who said they arrived)
+   - Current time > check-in time + 2 hours
+3. **DO NOT INVENT** check-ins — only infer from actual messages
+4. Each guest shows:
+   - Expected check-in time
+   - Last known status (not arrived, late, etc.)
+   - Auto-generated late check-in instructions (approve before sending)
+
+**Hard Constraints:**
+- ❌ NEVER auto-send to guests (dry-run/sandbox default)
+- ❌ Drafts show `[RATE CARD REQUIRED]` or `[ASK STAFF]` — do NOT guess
+- ❌ Do NOT invent check-ins — only infer from guests group messages
+- ✅ Human approval required for every outbound message
+- ✅ Future: NEW Twilio number will send approved replies via API
 
 ### Welcome Messages (Same-Day Arrivals)
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Calendar, FileText, Menu, X } from 'lucide-react'
+import { Home, Calendar, FileText, MessageCircle, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 export default function Navigation() {
@@ -34,7 +34,10 @@ export default function Navigation() {
             <NavLink href="/" icon={<Home className="w-4 h-4" />} active={isActive('/')}>
               Ops Hub
             </NavLink>
-            <NavLink href="/ops" icon={<Calendar className="w-4 h-4" />} active={pathname.startsWith('/ops')}>
+            <NavLink href="/ops/inbound-queue" icon={<MessageCircle className="w-4 h-4" />} active={isActive('/ops/inbound-queue')}>
+              Inbound Queue
+            </NavLink>
+            <NavLink href="/ops" icon={<Calendar className="w-4 h-4" />} active={pathname.startsWith('/ops') && !isActive('/ops/inbound-queue') && !isActive('/ops/rate-cards')}>
               Tools
             </NavLink>
             <NavLink href="/ops/rate-cards" icon={<FileText className="w-4 h-4" />} active={isActive('/ops/rate-cards')}>
@@ -71,9 +74,17 @@ export default function Navigation() {
                 Ops Hub
               </MobileNavLink>
               <MobileNavLink 
+                href="/ops/inbound-queue" 
+                icon={<MessageCircle className="w-5 h-5" />} 
+                active={isActive('/ops/inbound-queue')}
+                onClick={closeMobileMenu}
+              >
+                Inbound Queue
+              </MobileNavLink>
+              <MobileNavLink 
                 href="/ops" 
                 icon={<Calendar className="w-5 h-5" />} 
-                active={pathname.startsWith('/ops')}
+                active={pathname.startsWith('/ops') && !isActive('/ops/inbound-queue') && !isActive('/ops/rate-cards')}
                 onClick={closeMobileMenu}
               >
                 Tools
