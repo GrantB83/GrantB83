@@ -148,6 +148,22 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_invite_codes_tenant ON invite_codes(tenant_id);
   CREATE INDEX IF NOT EXISTS idx_invite_codes_code ON invite_codes(code);
   CREATE INDEX IF NOT EXISTS idx_waitlist_invite_code ON waitlist(invite_code_id);
+
+  CREATE TABLE IF NOT EXISTS guest_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    booking_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME,
+    last_accessed_at DATETIME,
+    revoked BOOLEAN DEFAULT 0,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_guest_tokens_booking ON guest_tokens(booking_id);
+  CREATE INDEX IF NOT EXISTS idx_guest_tokens_hash ON guest_tokens(token_hash);
+  CREATE INDEX IF NOT EXISTS idx_guest_tokens_expires ON guest_tokens(expires_at);
 `
 
 function createSqliteClient(): DbClient {

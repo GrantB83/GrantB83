@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
-import { Home, MapPin, Wifi, Clock, Phone, Mail, FileText, CheckCircle } from 'lucide-react'
+import { Home, MapPin, Wifi, Clock, Phone, Mail, FileText, CheckCircle, Key, Car, ExternalLink } from 'lucide-react'
 
 interface Booking {
   id: number
@@ -35,6 +35,12 @@ interface PortalData {
       network: string
       password: string
     }
+    accessCodes: {
+      available: boolean
+      gateCode: string
+      doorCode: string
+      message: string
+    }
     checkIn: {
       from: string
       to: string
@@ -42,114 +48,88 @@ interface PortalData {
     checkOut: {
       by: string
     }
+    parking: {
+      instructions: string
+    }
     directions: string
     houseRules: string[]
     emergencyContact: string
   }
+  nextStay: {
+    enabled: boolean
+    title: string
+    url: string
+    message: string
+  } | null
 }
 
 export default function GuestPortalPage() {
   const params = useParams()
-  const code = params?.code as string
+  const token = params?.code as string
   
-  const [lastName, setLastName] = useState('')
-  const [authenticated, setAuthenticated] = useState(false)
   const [portalData, setPortalData] = useState<PortalData | null>(null)
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const handleAuth = async () => {
-    if (!lastName.trim()) {
-      setError('Please enter your last name')
+  useEffect(() => {
+    if (!token) {
+      setError('Invalid access link')
+      setLoading(false)
       return
     }
 
-    setLoading(true)
-    setError('')
+    loadPortalData()
+  }, [token])
 
+  const loadPortalData = async () => {
     try {
-      const res = await fetch(`/api/guest-portal/${code}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lastName: lastName.trim() })
-      })
-
+      const res = await fetch(`/api/guest-portal/${token}`)
       const data = await res.json()
 
       if (res.ok) {
         setPortalData(data)
-        setAuthenticated(true)
       } else {
-        setError(data.error || 'Invalid booking reference or last name')
+        setError(data.error || 'Unable to access stay information')
       }
     } catch (err: any) {
-      setError('Unable to load booking. Please try again.')
+      setError('Unable to load stay details. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (!authenticated) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 shadow-lg">
+            <Home className="w-8 h-8 text-primary-600 animate-pulse" />
+          </div>
+          <p className="text-gray-700 font-medium">Loading your stay details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-              <Home className="w-8 h-8 text-primary-600" />
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+              <Home className="w-8 h-8 text-red-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome to The Browns
+              Unable to Access
             </h1>
-            <p className="text-gray-600">
-              Dullstroom Luxury Guest Suites
-            </p>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Booking Reference
-              </label>
-              <input
-                type="text"
-                value={code}
-                disabled
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name
-              </label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
-                placeholder="Enter your last name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base"
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
-                {error}
-              </div>
-            )}
-
-            <button
-              onClick={handleAuth}
-              disabled={loading || !lastName.trim()}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-            >
-              {loading ? 'Verifying...' : 'View My Stay Details'}
-            </button>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 mb-6">
+            {error}
           </div>
 
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>Need help? Contact us at</p>
+          <div className="text-center text-sm text-gray-600">
+            <p className="mb-2">Need help? Contact us at</p>
             <a href="mailto:grant@thebrowns.co.za" className="text-primary-600 hover:text-primary-700 font-medium">
               grant@thebrowns.co.za
             </a>
@@ -270,12 +250,72 @@ export default function GuestPortalPage() {
               </div>
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-900 font-medium">[WIFI DETAILS PENDING]</p>
+                <p className="text-amber-900 font-medium">Wi-Fi details pending</p>
                 <p className="text-sm text-amber-700 mt-1">
-                  Wi-Fi instructions will be provided upon arrival
+                  Please contact reception for Wi-Fi access
                 </p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Access Codes (Time-gated) */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-xl font-bold text-gray-900">Access Codes</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            {stayPacket.accessCodes.available ? (
+              stayPacket.accessCodes.gateCode || stayPacket.accessCodes.doorCode ? (
+                <div className="space-y-3">
+                  {stayPacket.accessCodes.gateCode && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Gate Code</p>
+                      <p className="font-mono font-semibold text-2xl text-gray-900 bg-gray-50 px-4 py-3 rounded border border-gray-200 text-center">
+                        {stayPacket.accessCodes.gateCode}
+                      </p>
+                    </div>
+                  )}
+                  {stayPacket.accessCodes.doorCode && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Door Code</p>
+                      <p className="font-mono font-semibold text-2xl text-gray-900 bg-gray-50 px-4 py-3 rounded border border-gray-200 text-center">
+                        {stayPacket.accessCodes.doorCode}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-amber-900 font-medium">Access codes pending</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Please contact reception for access details
+                  </p>
+                </div>
+              )
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-gray-900 font-medium">
+                  {stayPacket.accessCodes.message}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Parking */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-teal-50 border-b border-teal-100 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Car className="w-5 h-5 text-teal-600" />
+              <h2 className="text-xl font-bold text-gray-900">Parking</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            <p className="text-gray-900">{stayPacket.parking.instructions}</p>
           </div>
         </div>
 
@@ -380,6 +420,29 @@ export default function GuestPortalPage() {
             )}
           </div>
         </div>
+
+        {/* WEBDIRECT CTA - Only shown post-checkout */}
+        {portalData.nextStay && portalData.nextStay.enabled && (
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl shadow-lg overflow-hidden">
+            <div className="p-8 text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {portalData.nextStay.title}
+              </h2>
+              <p className="text-primary-100 mb-6">
+                {portalData.nextStay.message}
+              </p>
+              <a
+                href={portalData.nextStay.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-700 rounded-lg font-semibold hover:bg-gray-50 transition shadow-lg"
+              >
+                Book Your Next Stay
+                <ExternalLink className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center py-8 text-sm text-gray-600">
