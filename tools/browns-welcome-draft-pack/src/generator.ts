@@ -98,17 +98,9 @@ function generateWelcomeContent(
     lines.push('');
   }
 
-  // Rate card placeholder if missing
-  if (!hasRate) {
-    lines.push('**[RATE CARD REQUIRED]** — Rate details need to be confirmed.');
-    lines.push('');
-  }
-
-  // Contact placeholder if missing
-  if (!hasPhone) {
-    lines.push('**[GUEST_PHONE]** — Guest contact number needed for check-in coordination.');
-    lines.push('');
-  }
+  // NEVER include rate cards or guest phone in guest-facing WhatsApp draft body
+  // Missing rate → ops-only tracking (missing-fields.md); never mentioned in guest message
+  // Missing phone → hold/flag in queue + missing-fields.md; omit phone line from guest body OR leave draft offline
 
   // Booking notes
   if (booking.notes) {

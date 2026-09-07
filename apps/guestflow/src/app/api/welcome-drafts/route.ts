@@ -34,9 +34,12 @@ interface WelcomeDraft {
 
 function generateWelcomeMessage(booking: Booking, property: Property | null): { message: string, missingFields: string[] } {
   const missingFields: string[] = []
-  const guestPhone = '[GUEST_PHONE]'
-  const rateCard = '[RATE CARD REQUIRED]'
   
+  // Grant Law (CoS 6 Sep 2026): NEVER include [GUEST_PHONE] or [RATE CARD REQUIRED] in guest-facing WhatsApp draft bodies
+  // Missing phone → track in missingFields for ops; resolve from NB booking detail before CoS Admin post
+  // Missing rate → ops-only; rate cards never mentioned in guest welcome messages
+  
+  // Track missing data for ops (queue.md + missing-fields.md) but NOT in guest message body
   missingFields.push('guest_phone')
   missingFields.push('rate_card')
 
@@ -48,6 +51,7 @@ function generateWelcomeMessage(booking: Booking, property: Property | null): { 
   const propertyName = property?.name || 'Our Guesthouse'
   const location = property?.location || 'Dullstroom'
   
+  // Guest-facing message body: NEVER includes [GUEST_PHONE] or [RATE CARD REQUIRED] placeholders
   const message = `# Welcome Message Stub — ${booking.guest_name}
 
 **Check-in:** ${checkInFormatted}
@@ -62,9 +66,6 @@ Hi there,
 Looking forward to welcoming you to ${propertyName} in ${location} on ${checkInFormatted}!
 
 We're preparing everything for your arrival and want to make sure your stay is comfortable.
-
-**Contact:** ${guestPhone}
-**Rate:** ${rateCard}
 
 If you have any questions or special requests ahead of your stay, please don't hesitate to reach out.
 

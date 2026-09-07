@@ -2,11 +2,11 @@
 
 Offline CLI that generates welcome message stubs for CoS WhatsApp Admin from `bookings.json` (adapter output). 
 
-**⚠️ CRITICAL: Offline only. Never auto-sends. Never invents guest phone or amounts.**
+**⚠️ CRITICAL: Offline only. Never auto-sends. Never invents guest phone. Never mentions rates in guest-facing WhatsApp draft bodies.**
 
 ## Purpose
 
-From `bookings.json` (output of `browns-nightsbridge-bookings-adapter`), draft same-day/upcoming welcome message stubs for CoS WhatsApp Admin. Offline only. Never auto-sends. Never invents guest phone or amounts.
+From `bookings.json` (output of `browns-nightsbridge-bookings-adapter`), draft same-day/upcoming welcome message stubs for CoS WhatsApp Admin. Offline only. Never auto-sends. Never invents guest phone. Never mentions rates in guest-facing draft bodies.
 
 Scope: **The Browns Luxury Guest Suites, Dullstroom** — CoS / SA Ops workflow.
 
@@ -15,9 +15,10 @@ Scope: **The Browns Luxury Guest Suites, Dullstroom** — CoS / SA Ops workflow.
 - 📝 **Offline-only** — No WhatsApp API, no NightsBridge, no browser
 - 🔍 **Smart filtering** — Check-in within configurable window (default: same-day)
 - 🎨 **Warm tone** — Learned from Browns templates (warm, practical, Dullstroom)
-- 🚫 **Never invents** — Placeholders `[GUEST_PHONE]` / `[RATE CARD REQUIRED]` when unknown
+- 🚫 **Never invents** — Never invents guest phone; missing phone → blocked/hold in queue + missing-fields.md
+- 💰 **Rate cards ops-only** — Never mentions rates in guest-facing WhatsApp draft bodies
 - 📦 **Guest facts integration** — Optional merge with `browns-guest-facts-pack` output
-- ✅ **Approval gates** — APPROVAL.md in every pack
+- ✅ **Approval gates** — APPROVAL.md in every pack with Grant Law (CoS 6 Sep 2026)
 - 🧪 **Fully tested** — TypeScript with fixture tests
 
 ## Installation
@@ -180,7 +181,9 @@ See: `drafts/emma-thompson-20260902.md`
 
 ## 2. John Smith — 2 Sep
 
-**Missing:** [GUEST_PHONE], [RATE CARD REQUIRED]
+**🚫 BLOCKED:** [GUEST_PHONE]
+
+⚠️ Resolve guest phone from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.
 
 See: `drafts/john-smith-20260902.md`
 ```
@@ -189,7 +192,7 @@ See: `drafts/john-smith-20260902.md`
 
 Individual welcome stub per guest with warm, practical Dullstroom tone.
 
-Example:
+Example (no placeholders in guest-facing body):
 ```markdown
 # Welcome Message Stub — Emma Thompson
 
@@ -215,6 +218,8 @@ Warm regards,
 The Browns Team
 Dullstroom
 ```
+
+**Note:** Guest-facing draft never contains `[GUEST_PHONE]` or `[RATE CARD REQUIRED]` placeholders. Missing data tracked in queue.md + missing-fields.md only.
 
 ### `missing-fields.md`
 
@@ -248,12 +253,13 @@ Machine-readable pack metadata:
 }
 ```
 
-## Critical Safety Notes
+## Critical Safety Notes (Grant Law — CoS 6 Sep 2026)
 
 - ✅ **Offline only** — No WhatsApp API or NightsBridge integration
 - ✅ **DRAFT ONLY** — Never sends messages automatically
-- ✅ **Never invents guest phone** — Placeholder `[GUEST_PHONE]` when unknown
-- ✅ **Never invents rates** — Placeholder `[RATE CARD REQUIRED]` when unknown
+- ✅ **Never invents guest phone** — Missing phone → BLOCKED; resolve from NB booking detail or Browns/stay inbox
+- ✅ **Never mentions rates in guest body** — Rate cards are ops/pricing only; never in guest-facing WhatsApp draft text
+- ✅ **No placeholders in guest drafts** — Guest welcome draft bodies never contain `[GUEST_PHONE]` or `[RATE CARD REQUIRED]`
 - ✅ **CoS owns WhatsApp** — Coexistence of Service required for all Admin posts
 - ✅ **Skips missing names** — Bookings without `guestName` are filtered out
 - ⚠️ **Manual approval required** — Review APPROVAL.md before every WhatsApp post
@@ -365,10 +371,15 @@ Guest names are converted to safe filenames:
 - Known facts (preferences, allergies) are included in welcome stubs
 - Phone from facts takes precedence if booking phone is missing
 
-### Placeholder Rules
+### Missing Data Handling (Grant Law)
 
-- **`[GUEST_PHONE]`** — When `guestPhone` missing in booking and facts
-- **`[RATE CARD REQUIRED]`** — When `ratePerNight` or `currency` missing in booking
+**NEVER in guest-facing WhatsApp draft bodies:**
+- No `[GUEST_PHONE]` placeholder in guest message text
+- No `[RATE CARD REQUIRED]` or rate/currency mentions in guest message text
+
+**Ops-only tracking (queue.md + missing-fields.md):**
+- Missing `guestPhone` → guest marked **BLOCKED / hold for phone**; resolve from NightsBridge booking detail or Browns/stay inbox before CoS Admin post
+- Missing `ratePerNight` or `currency` → ops-only tracking (if any); rate cards are pricing/ops only, never mentioned to guests
 
 ## Troubleshooting
 

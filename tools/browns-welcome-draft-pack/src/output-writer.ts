@@ -60,8 +60,12 @@ function writeQueueFile(stubs: WelcomeStub[], outdir: string): void {
       lines.push('');
       
       if (stub.placeholders.length > 0) {
-        lines.push(`**Missing:** ${stub.placeholders.join(', ')}`);
+        lines.push(`**🚫 BLOCKED:** ${stub.placeholders.join(', ')}`);
         lines.push('');
+        if (!stub.hasPhone) {
+          lines.push('⚠️ Resolve guest phone from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.');
+          lines.push('');
+        }
       }
 
       lines.push(`See: \`drafts/${stub.safeName}.md\``);
@@ -79,7 +83,7 @@ function writeMissingFieldsFile(stubs: WelcomeStub[], outdir: string): void {
 
   lines.push('# Missing Fields Report');
   lines.push('');
-  lines.push('Guests missing phone numbers or rate cards. Never invented — flagged for manual resolution.');
+  lines.push('**Ops-only tracking.** Never invented. Never embedded in guest-facing WhatsApp draft bodies.');
   lines.push('');
   lines.push('---');
   lines.push('');
@@ -87,7 +91,9 @@ function writeMissingFieldsFile(stubs: WelcomeStub[], outdir: string): void {
   const missingPhone = stubs.filter((s) => !s.hasPhone);
   const missingRate = stubs.filter((s) => !s.hasRate);
 
-  lines.push(`## Missing Guest Phone (${missingPhone.length})`);
+  lines.push(`## 🚫 Missing Guest Phone — BLOCKED (${missingPhone.length})`);
+  lines.push('');
+  lines.push('**Action required:** Resolve from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.');
   lines.push('');
   if (missingPhone.length === 0) {
     lines.push('_None._');
@@ -98,7 +104,9 @@ function writeMissingFieldsFile(stubs: WelcomeStub[], outdir: string): void {
   }
   lines.push('');
 
-  lines.push(`## Missing Rate Card (${missingRate.length})`);
+  lines.push(`## Missing Rate Card — Ops-only (${missingRate.length})`);
+  lines.push('');
+  lines.push('**Note:** Rate cards are ops/pricing only. Never mentioned in guest welcome WhatsApp drafts.');
   lines.push('');
   if (missingRate.length === 0) {
     lines.push('_None._');
@@ -117,21 +125,29 @@ function writeApprovalFile(outdir: string): void {
 
   lines.push('# APPROVAL — Browns Welcome Draft Pack');
   lines.push('');
-  lines.push('## Safety Gates');
+  lines.push('## Safety Gates (Grant Law — CoS 6 Sep 2026)');
   lines.push('');
   lines.push('- ✅ **Offline only** — No WhatsApp API or NightsBridge integration');
   lines.push('- ✅ **DRAFT ONLY** — Never sends messages automatically');
-  lines.push('- ✅ **Never invents guest phone** — Placeholder `[GUEST_PHONE]` when unknown');
-  lines.push('- ✅ **Never invents rates** — Placeholder `[RATE CARD REQUIRED]` when unknown');
+  lines.push('- ✅ **Never invents guest phone** — Missing phone → BLOCKED; resolve from NB booking detail or Browns/stay inbox');
+  lines.push('- ✅ **Never mentions rates in guest body** — Rate cards are ops/pricing only; never in guest-facing WhatsApp draft text');
+  lines.push('- ✅ **No placeholders in guest drafts** — Guest welcome draft bodies never contain `[GUEST_PHONE]` or `[RATE CARD REQUIRED]`');
   lines.push('- ✅ **CoS owns WhatsApp** — Coexistence of Service required for all Admin posts');
   lines.push('');
   lines.push('## Workflow');
   lines.push('');
-  lines.push('1. **Review `queue.md`** — Numbered list of welcome stubs');
-  lines.push('2. **Check `missing-fields.md`** — Resolve missing phones/rates before posting');
-  lines.push('3. **Review individual stubs** — Check `drafts/<safe-name>.md` for tone and placeholders');
+  lines.push('1. **Review `queue.md`** — Numbered list of welcome stubs; check for BLOCKED status');
+  lines.push('2. **Check `missing-fields.md`** — Resolve missing phones from NB booking detail before posting');
+  lines.push('3. **Review individual stubs** — Check `drafts/<safe-name>.md` for tone (warm, practical, Dullstroom)');
   lines.push('4. **Grant approval required** — Before posting to WhatsApp Admin - The Browns');
   lines.push('5. **CoS posts to Admin** — Manual copy/paste to WhatsApp Admin - The Browns only');
+  lines.push('');
+  lines.push('## Hard Rules');
+  lines.push('');
+  lines.push('1. **NEVER** include rate card language, amounts, or currency in guest welcome WhatsApp draft text');
+  lines.push('2. **NEVER** ship `[GUEST_PHONE]` in a draft that CoS would paste to WhatsApp');
+  lines.push('3. Missing phone → mark guest **blocked / hold for phone** in queue + missing-fields.md');
+  lines.push('4. Missing rate → ops-only tracking (if any); not mentioned in guest WhatsApp body');
   lines.push('');
   lines.push('## Integration Notes');
   lines.push('');
@@ -143,8 +159,8 @@ function writeApprovalFile(outdir: string): void {
   lines.push('');
   lines.push('**I confirm:**');
   lines.push('- [ ] Reviewed all welcome stubs in `queue.md`');
-  lines.push('- [ ] Verified missing fields are acceptable or resolved');
-  lines.push('- [ ] No placeholders remain uninvestigated');
+  lines.push('- [ ] Verified blocked guests (missing phone) are resolved or will be offline until resolved');
+  lines.push('- [ ] No `[GUEST_PHONE]` or `[RATE CARD REQUIRED]` placeholders in guest draft bodies');
   lines.push('- [ ] Tone matches The Browns hospitality standards (warm, practical, Dullstroom)');
   lines.push('- [ ] Ready for CoS to post to WhatsApp Admin - The Browns');
   lines.push('');
