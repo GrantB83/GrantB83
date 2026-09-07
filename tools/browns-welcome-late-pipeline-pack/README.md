@@ -6,7 +6,7 @@ An offline CLI tool that orchestrates Browns same-day guest packs for SA Ops / C
 2. **browns-late-checkin-queue** (default ON)  
 3. **browns-daily-ops-brief** (default OFF)
 
-**Purpose:** One dated pipeline pack from `bookings.json` (adapter output) → welcome draft stubs + late/after-hours check-in queue (+ optional daily ops brief). Wire into existing CT morning / 09:00 after-hours flows. Never invents guest phone, ETA, rates, or amounts. Never auto-sends WhatsApp/email. Offline only. Dullstroom The Browns Luxury Guest Suites only.
+**Purpose:** One dated pipeline pack from `bookings.json` (adapter output) → welcome draft stubs + late/after-hours check-in queue (+ optional daily ops brief). Wire into existing CT morning / 09:00 after-hours flows. Never invents guest phone or ETA. Never mentions rates in guest-facing draft bodies. Never auto-sends WhatsApp/email. Offline only. Dullstroom The Browns Luxury Guest Suites only.
 
 ## Features
 
@@ -360,14 +360,16 @@ tools/browns-welcome-late-pipeline-pack/
 └── README.md                   # This file
 ```
 
-## Safety & Constraints
+## Safety & Constraints (Grant Law — CoS 6 Sep 2026)
 
 ### What This Tool Never Does
 
 - ❌ **No auto-send** - All outputs are drafts for manual review and send
 - ❌ **No WhatsApp API** - Does not connect to WhatsApp Business API
 - ❌ **No email sending** - Does not send emails
-- ❌ **No data invention** - Never fabricates guest phones, rates, or ETAs
+- ❌ **No data invention** - Never fabricates guest phones or ETAs
+- ❌ **No rate mentions in guest drafts** - Rate cards are ops/pricing only; never in guest-facing WhatsApp draft text
+- ❌ **No placeholders in guest bodies** - Guest welcome drafts never contain `[GUEST_PHONE]` or `[RATE CARD REQUIRED]`
 - ❌ **No browser automation** - Offline only
 - ❌ **No API calls** - Orchestrator calls local tools via npm run only
 

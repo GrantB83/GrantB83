@@ -12,13 +12,14 @@ export function generateWelcomeStubs(
     const normalizedName = normalizeGuestName(booking.guestName);
     const facts = guestFactsMap.get(normalizedName);
 
-    // Check for phone and rate
+    // Check for phone (only phone can block; rate is ops-only and never blocks)
     const hasPhone = !!(booking.guestPhone || facts?.phone);
     const hasRate = !!(booking.ratePerNight && booking.currency);
 
+    // Grant Law: Only missing phone blocks CoS Admin post
+    // Missing rate is ops-only tracking; never blocks, never mentioned in guest body
     const placeholders: string[] = [];
     if (!hasPhone) placeholders.push('[GUEST_PHONE]');
-    if (!hasRate) placeholders.push('[RATE CARD REQUIRED]');
 
     // Generate safe filename
     const safeName = generateSafeName(booking.guestName, booking.checkInDate);
@@ -98,17 +99,9 @@ function generateWelcomeContent(
     lines.push('');
   }
 
-  // Rate card placeholder if missing
-  if (!hasRate) {
-    lines.push('**[RATE CARD REQUIRED]** — Rate details need to be confirmed.');
-    lines.push('');
-  }
-
-  // Contact placeholder if missing
-  if (!hasPhone) {
-    lines.push('**[GUEST_PHONE]** — Guest contact number needed for check-in coordination.');
-    lines.push('');
-  }
+  // NEVER include rate cards or guest phone in guest-facing WhatsApp draft body
+  // Missing rate → ops-only tracking (missing-fields.md); never mentioned in guest message
+  // Missing phone → hold/flag in queue + missing-fields.md; omit phone line from guest body OR leave draft offline
 
   // Booking notes
   if (booking.notes) {

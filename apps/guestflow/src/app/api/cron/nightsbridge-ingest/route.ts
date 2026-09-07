@@ -325,8 +325,11 @@ export async function POST(request: NextRequest) {
           WHERE tenant_id = ? AND guest_name = ? AND created_at >= datetime('now', '-24 hours')
         `).get(tenantId, booking.guestName) as any
 
-        if (!existing && booking.guestPhone) {
-          // Create welcome draft (queued for approval)
+        if (!existing) {
+          // Grant Law (CoS 6 Sep 2026): Create welcome draft regardless of phone status
+          // Missing phone → mark blocked in queue; resolve from NB booking detail before CoS Admin post
+          // Guest-facing message body NEVER contains [GUEST_PHONE] or [RATE CARD REQUIRED] placeholders
+          
           const welcomeText = `Welcome to Browns ${booking.suiteOrUnit || 'Dullstroom'}!
 
 📅 Check-in: ${booking.checkInDate}
@@ -343,17 +346,21 @@ Looking forward to welcoming you!
 Warm regards,
 The Browns Team`
 
+          // If phone missing, draft is still created but marked for blocking in queue
+          const draftStatus = booking.guestPhone ? 'pending_approval' : 'blocked_missing_phone'
+          
           db.prepare(`
             INSERT INTO welcome_drafts (
               tenant_id, guest_name, guest_phone,
               draft_message, source, status, created_at
-            ) VALUES (?, ?, ?, ?, ?, 'pending_approval', CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
           `).run(
             tenantId,
             booking.guestName,
-            booking.guestPhone,
+            booking.guestPhone || null,
             welcomeText,
-            `NightsBridge sync ${format(now, 'yyyy-MM-dd HH:mm')}`
+            `NightsBridge sync ${format(now, 'yyyy-MM-dd HH:mm')}`,
+            draftStatus
           )
 
           welcomeDraftsCreated++
