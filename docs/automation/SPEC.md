@@ -572,7 +572,7 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 **Spec:** `FAMILY-COMMAND-CENTER.md` + `family-filters.yaml`. This is **not** a leftover. It is a first-class daily system so kids’ school, medical, bills, and budget stop landing in the business inbox.
 
 **Labour:** 2–4 h/week of interrupt-driven family mail → **10 min morning + 5 min evening** on `Family/Action` only.  
-**Runtime:** Zero-token filters do the volume. Grok Bot **Family** reads labelled mail only. Cloud Agents **build** filters/templates; they do not run every morning (`RUNTIME.md`).
+**Runtime:** Zero-token filters **route** senders into `Family/*`. Grok Bot **Family** AI classifies those labelled threads (Action / This Week / FYI). No action-word lists. Cloud Agents **record** locks in git; they do not run Family (`RUNTIME.md`, `CAPABILITIES.md`).
 
 #### 10a. Filters and labels (do first — $0, no Bot)
 
@@ -580,7 +580,7 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 **Approach**
 
 1. Create Gmail labels in `family-filters.yaml`.
-2. Enable filters: `from:austinisd.org` → `Family/School`; action-words → also `Family/Action`; WesBank → `Family/Finance`. Do **not** Trash. Do **not** skip inbox until `S10`.
+2. Enable routing filters only: `from:austinisd.org` → `Family/School`; WesBank → `Family/Finance`. Do **not** use action-word lists for `Family/Action`. Do **not** Trash. Do **not** skip inbox until `S10`.
 3. Leave `household-budget-sheet` disabled (too broad).
 4. Dry-run: 20 recent AISD threads correctly labelled. Log counts only in `samples/family-filter-dry-run.md` — no bodies.
 5. Keep `Personal/Family` and `Entity/Household` as aliases if already used.
@@ -593,7 +593,7 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 **Role:** `digest-builder` then Grok Bot Family  
 **Approach**
 
-1. Template `samples/family-digest.md`: Action cards, school FYI count, medical *file* count (no titles that leak), bills due ≤7d, budget total vs cap.
+1. Template `samples/family-digest.md`: Action cards (AI-classified), This Week attend, school FYI count, medical *file* count (no titles that leak), bills due ≤7d, budget total vs cap.
 2. 06:20 CT weekday + 18:00 CT optional. Weekly Sunday 17:00 CT.
 3. Separate from the business digest so AISD never buries a guest inquiry.
 4. Bot instructions: copy the standing prompt in `FAMILY-COMMAND-CENTER.md` §9.
@@ -604,7 +604,7 @@ Highest leverage. Covers Perfect Water, Heavy Metal, and The Browns.
 #### 10c. Family calendar
 
 **Role:** `family-sorter`  
-**Approach:** Extract dates from **subjects/snippets** of `Family/School` and Action medical mail → events on calendar `Family`, timezone `America/Chicago`. Titles only. After `S11`, auto-create; before that, list proposals in the digest.  
+**Approach:** Family AI extracts dates from **subjects/snippets** of labelled `Family/School` and Action medical mail (open body only if needed). After `S11`, write events on calendar `Family`, timezone `America/Chicago`, titles only. Before `S11`, list This Week proposals in the digest.  
 **Done when:** next 14 days of school dates visible without copy-paste.
 
 #### 10d. Household budget and bills

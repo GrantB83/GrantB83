@@ -32,19 +32,23 @@ No scrolling AISD newsletters. No hunting “was that vaccine form filed?”. No
 Inbound Gmail
     │
     ├─ ZERO-TOKEN filters  →  Family/School|Medical|Finance|Budget
+    │                         sender/domain routing only
     │                         skip-inbox after S10 standing approval
     │
-    ├─ Action heuristics   →  Family/Action  (stays in inbox)
-    │   due, sign, permission, volunteer, appointment, pay, overdue
-    │
-    └─ Grok Bot "Family" routine (labelled mail ONLY)
+    └─ Grok Bot "Family" AI (labelled Family/* ONLY)
+          ├─ classify each thread: Action | This Week attend | FYI
+          ├─ apply Family/Action when carded (stays in inbox)
           ├─ file attachments → 10_Household / existing The Browns USA
-          ├─ calendar events  → Family calendar (school + appt times)
+          ├─ calendar events  → Family calendar after S11; propose before
           ├─ budget lines     → Budget sheet totals / bill due list
           └─ digest draft     → Grant + Liana
 ```
 
-Cloud Agents **build** this (filters, schema, digest template). They do **not** run it every morning.
+Filters do **not** decide Action. Action-word lists are retired (`DIGEST CLASSIFY: ai`). Family reads subject + snippet first, opens the body only if it still cannot decide, and cards it if unsure. Do **not** scan the whole inbox. A sender that is not filtered (Remind, ParentSquare, …) never reaches AI until a from-filter exists.
+
+**Who runs this:** Grok Bot **Family** (persistent computer, thebrownsusa avatar). Official pattern: Chief of Staff digest + Expense Manager close. Teach one real Sunday, save a skill/routine. Cloud Agents only **record** locks in git. They do not run the digest and they cannot keep a Monarch session.
+
+Cloud Agents **build** filter specs and lock files. They do **not** run Family every morning.
 
 ---
 
@@ -56,7 +60,7 @@ Create under Gmail (nested). Do not delete `Personal/Family`.
 | --- | --- | --- |
 | `Family/School` | AISD, campus, teacher, volunteer FYI | skip inbox |
 | `Family/Medical` | Portals, reminders, results **files** | skip inbox; Action if a date/signature |
-| `Family/Finance` | Household bank, insurance, WesBank, Tesla, utilities | skip inbox unless due ≤7d |
+| `Family/Finance` | Household bank (Bell daily flash on thebrownsusa), insurance, WesBank, Tesla, utilities | skip inbox unless due ≤7d |
 | `Family/Budget` | Budget sheet pings, category questions | skip inbox |
 | `Family/Calendar` | Extracted events (agent-applied) | skip inbox |
 | `Family/FileOnly` | Filed; no parent action | skip inbox |
@@ -84,7 +88,9 @@ Rules:
 - School: title may include campus + form name + due date.
 - Medical: title may include **person first name + “appointment/form/bill” + time**. Never test names, conditions, or PDF text.
 - Finance: payee + amount + due date only.
+- Family AI decides Action vs This Week vs FYI from labelled threads. No keyword list.
 - If unsure whether it is an action: **Action**, not FileOnly (false positive is cheaper than a missed permission slip).
+- This Week: any attend date in the next 7 days is a card, even when `S11` is off. Propose the calendar title. Do not write the Family calendar until `APPROVE FAMILY CAL`.
 
 ---
 
@@ -110,6 +116,11 @@ Naming: `YYYY-MM-DD__household__school|medical|bill__{counterparty}__{ref}`.
 
 Calendar `Family` already exists (plus `School Holidays`).
 
+Before `APPROVE FAMILY CAL` (`S11` still off):
+
+- Read the Family calendar anyway (it may be empty).
+- List proposed This Week titles on the digest from labelled School/Medical subjects and snippets. Do not write events.
+
 After `APPROVE FAMILY CAL`:
 
 - AISD / campus events with a date → all-day or timed event on `Family`, title only.
@@ -126,6 +137,15 @@ Existing Drive `Budget` sheet stays the SoR.
 - Incoming household bills → due-date row (payee, amount, due, source thread).
 - Phase 3 household categories feed **monthly totals only** into the sheet (no family narrative).
 - Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
+- **Bell daily flash** (2026-08-22): Gmail filter on `thebrownsusa@gmail.com` only — From `donotreply@customercenter.net` → `Family/Finance`, from-only, no Skip Inbox. Books stay the 7th Monarch CSV + Bell statement, not the flash.
+- **Close** (2026-08-23): 7th of each month at **07:00 America/Chicago**. **Family closes** — export Monarch (Bell only) if the session is live, map transactions, write Budget vs Actual with amounts, file the Bell statement if present, archive a dated copy. Grant is pinged only for a dead Monarch session, a missing statement, or Status=ask. Locks: `usa-budget.yaml`.
+- **Editors** (2026-08-22): Grant and Liana both edit the sheet. Family writes the close as `thebrownsusa`. Daily Family digest amend can still wait; the 7th close block is locked.
+- **Family locked the 7th close** (2026-08-23): reminder-only is out.
+- **TEST CLOSE** (2026-08-23 evening CT): **passed**. Grant typed `TEST CLOSE: now`. Family used the existing Monarch file, wrote `Budget vs Actual — test` and Exceptions on the live Budget, left the plan tab alone, and did not freeze an official archive. Checklist: thebrownsusa avatar yes · Monarch session dead · wrote test tab yes · Exceptions yes · ask rows 1 (Brown & Grant) · anything blocked no. Before 7 Sep Grant types the Monarch password once so the session is live. Mapping and sheet write already work.
+- **Forecast** (2026-08-22): income = average of last 3 Paystubs-tab numbers (or whatever exists if fewer). Spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking. No stub bodies in chat.
+- **First close** (2026-08-22): dry-run now, then repeat 7 Sep 2026 at 07:00 CT. Books = official Monarch CSV (Bell only), not a Bell portal CSV.
+- **Shopping split** (2026-08-23): optional later, only when a receipt would move money between plan lines. Close does **not** wait on item-split. **Emails first** (hub and thebrownsusa), then Monarch receipt images only for remainder. Prefer an existing plan line over asking Grant. Main Budget shows **category totals**. Park still-open Amazon rows on `Shopping (bundle)`. Flag tax-review; do not decide deductibility or file (`N2`). Skip pharmacy/medical item text (`N3`).
+- **Close pack** (2026-08-23): books unit = each Monarch transaction, mapped to a plan line, **with amounts on Drive**. Chat/git still omit amounts. Dry-run files still exist (`Budget — Actuals dry-run 2026-08-23`, `Budget — Exceptions dry-run 2026-08-23`). TEST CLOSE then wrote the same shape onto the live Budget as test tabs. One leftover merchant: Brown & Grant. Add two plan lines on the intended-plan tab if they are still missing: `Austin utilities (bundle)`, `Shopping (bundle)`. On 7 Sep Family writes the official Budget vs Actual (not the test tab) as `thebrownsusa` and archives.
 
 ---
 
@@ -136,16 +156,24 @@ Amend the **existing** household / school / calendar Bot (`GROK-BOT-AMENDMENTS.m
 Gmail plugin on the hub is **not** enough. Also sign in `thebrownsusa@gmail.com` (and any Liana login) on the Bot computer — AISD is not on `grant830318@gmail.com`. Create `family-filters.yaml` filters on **that** mailbox too.
 
 ```text
-You are Family. You only read Gmail labels Family/School, Family/Medical,
-Family/Finance, Family/Budget, Family/Action.
+You are Family. You only read labelled Family/* on the mailbox that
+has the mail (thebrownsusa for AISD). Do not search the whole inbox.
 
-06:20 America/Chicago every weekday (and Sunday 17:00 CT weekly):
-1. Do not search the whole inbox.
-2. For each Family/Action: one card (kind, due, title, assignee).
-3. File FYI attachments by filename into The Browns USA. Do not open medical PDFs.
-4. Propose or create Family calendar events only if standing approval S11 is on.
-5. Draft the Family digest to Grant and Liana. Do not send medical body text.
-6. If something looks like a business thread, leave it and tell Ops Chief.
+06:20 America/Chicago weekdays + Sunday 17:00 CT:
+1. Filters only route senders into Family/*. You decide Action / This Week / FYI.
+   No action-word lists.
+2. Subject + snippet first. Open the body only if you still cannot decide.
+   If unsure, it is Action. Apply Family/Action when you card it.
+3. Card sign / pay / attend / reply / buy, plus every attend date this week.
+4. Collapse true FYI (newsletter, no parent action) to a count + themes.
+5. File FYI by filename. Do not open medical PDFs.
+6. Propose This Week calendar titles. Write the Family calendar only after S11.
+7. Draft the digest. Do not send school/clinic mail (H12).
+8. Business-looking thread → leave it and tell Ops Chief.
+
+7th of each month 07:00 CT: you close. Export Monarch (Bell only) if
+the session is live; write Budget vs Actual; ping Grant only for
+session / missing statement / Status=ask. Flash mail is not books.
 
 Never: pay, give medical advice, email a school, quote a lab result, use X.
 ```

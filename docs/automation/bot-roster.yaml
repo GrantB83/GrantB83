@@ -49,7 +49,7 @@ roles:
       gmail: [thebrownsusa@gmail.com, grant830318@gmail.com]
       drive: [thebrownsusa@gmail.com, grant@hospitality.partners]
       calendar: [thebrownsusa@gmail.com, grant830318@gmail.com]
-    routine: 06:20 America/Chicago weekdays; Sunday 17:00 CT
+    routine: 06:20 America/Chicago weekdays; Sunday 17:00 CT; 7th 07:00 CT USA Budget close
     create_if_missing: true
 
   stay:

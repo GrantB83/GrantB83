@@ -22,9 +22,10 @@
 
 Manual equivalents (on **each** mailbox that receives the mail):
 
-1. From `austinisd.org` → apply Family/School
-2. From `austinisd.org` AND permission OR volunteer OR due OR signup OR conference → also Family/Action
-3. From `wesbank.co.za` → Family/Finance
+1. From `austinisd.org` → apply Family/School (routing only)
+2. From `wesbank.co.za` → Family/Finance
+
+Do **not** create the old action-word → Family/Action filter. Family Bot AI classifies labelled School threads (`DIGEST CLASSIFY: ai`, 2026-08-23).
 
 Do not skip Inbox until `APPROVE FAMILY FILE`.
 

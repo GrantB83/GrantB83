@@ -16,6 +16,13 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 - Cloud environment is scoped to `GrantB83/GrantB83` only. Personal env `[4a344631-9c41-11f1-ba66-0e7d0216e441](https://cursor.com/dashboard/cloud-agents/environments/e/4a344631-9c41-11f1-ba66-0e7d0216e441)`.
 - Systems of record (`SOR:`) — **unset**. Ask Grant once per entity.
 - Family Gmail labels exist on the hub (empty except one WesBank). AISD filters belong on `thebrownsusa@gmail.com`.
+- **Family digest classify** (2026-08-23): Grant retired action-word lists (`DIGEST CLASSIFY: ai`). Filters only route senders into `Family/*`. Family Bot AI decides Action / This Week / FYI on labelled threads. Subject + snippet first; body only if needed; if unsure, Action. This Week attend cards even while `S11` is off. No full-inbox scan. Unlabelled senders (Remind, ParentSquare) still need a from-filter.
+- **Product rethink** (2026-08-23): Grok Bot runs ops (official Chief of Staff / Expense Manager). Cloud Agents write git PRs then die. No Cloud Agent Family-digest fallback. No daily Automation. Teach Family by doing, not by pasting novels. Facts: `CAPABILITIES.md`.
+- **Public job map** (2026-08-23): Inbox manager + Chief of Staff + Expense Manager + Office manager fit Family / Ops / Stay-Aqua-Yard. X.com crawl from this VM is blocked until Grant onboards that X account at console.x.com. Retry then.
+- **Bell daily flash** (2026-08-22): From `donotreply@customercenter.net` → `Family/Finance` on **thebrownsusa only**, from-only (Grant confirmed search is Bell-only). No Skip Inbox. Do not create on hub. Grant skipped Cloud MCP for thebrownsusa; Family Bot uses the browser avatar.
+- **USA Budget close** (2026-08-23): Family locked it. 7th 07:00 CT Family closes the books (reminder-only out). Grant pinged only for ask rows, a dead Monarch login, or a missing statement. Daily Family digest amend still waits.
+- **USA Budget TEST CLOSE** (2026-08-23 evening CT): **passed**. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget as thebrownsusa. Plan tab left alone. No official archive. Used existing Monarch file. Monarch session was **dead**. Ask rows: 1 (Brown & Grant). Nothing blocked. Mapping + sheet write already work. Before 7 Sep Grant types the Monarch password once on the Family computer so export is proven.
+- **USA Budget dry-run compile** (2026-08-23): this Cloud VM still has no Sheets write API. Drive close files **include amounts**; chat/git still omit them. Books unit = Monarch transaction. Primary output = Actuals by plan line. Item-split is an optional later refinement, not a close blocker. Finance still has the dry-run Actuals and Exceptions sheets. Name-only leftover sheets were trashed. One leftover merchant remains: Brown & Grant. Grant still adds `Austin utilities (bundle)` and `Shopping (bundle)` on the live **plan** tab if they are only on the test Actuals tab.
 - **Hub labels created 2026-08-22** via Cloud Gmail MCP: `Queue/NeedsGrant` (0), `Entity/Hospitality` (0), `Entity/PerfectWater` (0), `Entity/HeavyMetal` (10 stamped from `mail@hmsand.co.za`), `GBP` (20 stamped from `businessprofile-noreply@google.com`). Filter API still **403**. Grant created hub filters 4–5 (2026-08-22): From `businessprofile-noreply@google.com` → `GBP`; From `mail@hmsand.co.za` → `Entity/HeavyMetal`. No Skip Inbox. Do not auto-fill `Queue/NeedsGrant`.
 
 ## Phase board
@@ -42,10 +49,10 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 7b | Forex checklist + family one-pager | not started | `phase-07b-forex` | 2h/event → 0.5h | Grant doc list |
 | 8 | GBP drafts | not started | `phase-08-gbp` | 0.5h → 0.1h | `H6` to publish |
 | 9 | Weekly roll-up / monthly | not started | `phase-09-packs` | 2–3h/mo → 0.4h | 1d + 3 |
-| 10a | Family filters | **labels live on hub only** | Grant: add filters on **thebrownsusa** + hub (403) | 2–4h → 0 on FYI | filter scope; `G1` thebrownsusa |
-| 10b | Family digest | **Family Bot live** | first fire Monday 06:20 CT | 10 min/day | S10/S11 off |
-| 10c | Family calendar | not started | after 10b | copy-paste → 0 | `S11` |
-| 10d | Budget / bills | not started | after 10a | hunt → due list | Budget sheet |
+| 10a | Family filters | **route-only AISD + Bell** | add from-filters for Remind/ParentSquare if those senders matter | 2–4h → 0 on FYI | Grant creates filters (MCP create 403) |
+| 10b | Family digest | **AI classify locked** | paste Family amend; next Sunday/weekday digest uses AI not keywords | 10 min/day | S10/S11 off |
+| 10c | Family calendar | propose This Week on digest | write events only after `S11` | copy-paste → 0 | `S11` |
+| 10d | Budget / bills | **TEST CLOSE passed** | Grant types Monarch password once before 7 Sep; answers Brown & Grant; add 2 plan lines | hunt → due list | first live close 7 Sep 07:00 CT |
 | 11 | Local staff run-sheet | not started | `phase-11-run-sheet` | 2–4h → 0.3h | `H11`; staff exist? |
 | 12 | Stale pipeline | not started | `phase-12-stale` | 1–2h → 0.2h | `H2` |
 
@@ -84,3 +91,27 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 | 2026-08-22 | `accounts@bvrgroup.co.za` forwards to `grant@bvrgroup.co.za`. `grant@hmsand.co.za` forwards to the hub. Neither is a Google login. |
 | 2026-08-22 | Hub labels `Queue/NeedsGrant`, `Entity/Hospitality`, `Entity/PerfectWater`, `Entity/HeavyMetal`, `GBP` created via MCP. Sample stamped: GBP 20, HeavyMetal 10. Gmail filter create still 403. |
 | 2026-08-22 | Hub filters 4–5 live: GBP from `businessprofile-noreply@google.com`; Entity/HeavyMetal from `mail@hmsand.co.za`. No Skip Inbox. |
+| 2026-08-22 | Grant skipped Cloud MCP for `thebrownsusa@gmail.com` on this VM. Hub Gmail stays the only Cloud MCP. Family/Bell work stays on the Grok Bot thebrownsusa avatar. |
+| 2026-08-22 | Bell daily-flash filter locked from-only: `from:donotreply@customercenter.net` → `Family/Finance` on thebrownsusa. No Skip Inbox. Do not create on hub. |
+| 2026-08-22 | USA Budget close time locked: 7th of each month at 07:00 America/Chicago. |
+| 2026-08-22 | Liana edits the USA Budget sheet (`LIANA SHEET: yes`). Family Bot amend waits until remaining Budget scope is locked. |
+| 2026-08-22 | USA Budget 3-month forecast income = average of last 3 NatPay stubs (`FORECAST: average-3`). If fewer than 3, average whatever exists (`FORECAST SHORT: use-what-we-have`). Numbers only; no stub bodies. |
+| 2026-08-22 | USA Budget forecast spend = this month’s intended Essential + Controlled + Discretionary + Savings/Sinking (`FORECAST SPEND: intended` + `FORECAST DISCRETIONARY: include`). |
+| 2026-08-22 | USA Budget first close = dry-run now (`FIRST CLOSE: dry-run now`). Repeat on 7 Sep 2026 at 07:00 CT. |
+| 2026-08-22 | Monarch dry-run file uploaded (`2026-08-22__monarch__bell__transactions`). Category map proposed; Shopping/Gas/Insurance still ask Grant. |
+| 2026-08-22 | Monarch Gas = Tesla Supercharger → Housing / Electricity. Teslas only; no petrol line. |
+| 2026-08-22 | Natural gas = Texas Gas Service (merchant override → Housing / Natural gas). City of Austin is not the gas vendor. |
+| 2026-08-22 | City of Austin (Monarch Taxes) = utilities bundle to split later across Housing utility lines (`MAP AUSTIN: utilities-bundle`). |
+| 2026-08-22 | City of Austin dry-run hold = new sheet line `Austin utilities (bundle)` (`AUSTIN HOLD: new-line`). Split from a COA website bill PDF in Drive; Family does not scrape COA. |
+| 2026-08-22 | Monarch Shopping parks on new sheet line `Shopping (bundle)` (`MAP SHOPPING: new-line Shopping`). Split later from merchant names on the existing export; no amounts in chat. |
+| 2026-08-23 | Shopping split is autonomous item-level: Monarch receipt images first, else retailer emails. AI maps item descriptions to Budget lines. Tax-review flag only — no deductibility, no eFile (`N2`). No line items in chat/git. Hub has Amazon mail (metadata only, ~201 threads/90d). thebrownsusa Cloud MCP still skipped. |
+| 2026-08-23 | Shopping receipts = both hub and thebrownsusa. Emails first; Monarch images only for remainder. Main Budget = category totals. Detail = `Line items` tab. |
+| 2026-08-23 | Allocator: AI first. Prefer an existing plan line over asking. Leftover only if merchant and purpose are still unknown. Do not invent new plan lines. |
+| 2026-08-23 | Dry-run leftover compiled to Drive (hub Amazon + Monarch merchant groups; no amounts). Live Budget not edited. Family writes Line items as thebrownsusa. |
+| 2026-08-23 | Grant: empty Line items draft deleted; leftover pile too large. AI allocated 64 of 65 leftover items onto existing lines. One leftover remains: Brown & Grant. |
+| 2026-08-23 | Grant: name-only leftover sheets are inefficient. Close output is Actuals by plan line **with amounts** on Drive. Chat/git still omit amounts. Item-split is optional, not a close blocker. |
+| 2026-08-23 | Family takes the 7th close load (`FAMILY CLOSES: yes`). Remind-only is off. Grant only types Monarch password if the session is dead, answers Status=ask, and supplies a missing Bell statement. Daily digest amend still waits. |
+| 2026-08-23 | Family confirmed the 7th 07:00 CT close routine is on. Test phrase `TEST CLOSE: now`. |
+| 2026-08-23 | TEST CLOSE passed. Family wrote `Budget vs Actual — test` and Exceptions on the live Budget. Plan tab left alone. No official archive. Monarch session dead. Ask: Brown & Grant. |
+| 2026-08-23 | Family digest: retire action-word filters. AI classifies labelled Family/* (`DIGEST CLASSIFY: ai` + `DIGEST THIS WEEK: yes`). |
+| 2026-08-23 | Rethink vs official Grok Bot + Cloud Agent docs. Daily ops = Grok Bot. Cloud Agent = PR then die. Keep 7th close + TEST CLOSE + roster + N-rules. |
