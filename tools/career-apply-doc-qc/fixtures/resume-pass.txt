@@ -1,0 +1,32 @@
+GRANT BROWN
+Operations Manager & Systems Leader
+
+Austin, TX | grant@thebrowns.co.za | GitHub: @GrantB83
+
+SUMMARY
+Experienced operations leader with 15+ years managing remote teams and multi-site business operations across hospitality, logistics, and SaaS. Proven track record optimizing workflows, implementing automation, and driving operational excellence in distributed environments.
+
+EXPERIENCE
+
+Operations Manager | Perfect Water & Heavy Metal | 2015 - Present
+- Managed remote operations for multi-site retail and logistics businesses across South Africa from Austin, TX
+- Reduced daily admin time by 70% through Gmail filter automation, structured WhatsApp intake, and automated digest generation
+- Implemented inventory management system handling 2 retail locations with real-time stock tracking
+- Built automated reconciliation tools matching till vs bank for daily cash-up operations
+- Coordinated delivery logistics including POD tracking, driver scheduling, and quote-to-invoice pipeline
+
+Business Operations Lead | Hospitality Partners | 2012 - Present
+- Oversee guest booking pipeline from inquiry through checkout for luxury accommodation properties
+- Achieved 2-hour inquiry response SLA through automated drafting and calendar integration
+- Implemented housekeeping run-sheet automation reducing coordination time by 80%
+- Built OTA integration pipeline consolidating Booking.com reservations into unified calendar
+- Maintained 4.8+ star rating across properties through systematic review request sequences
+
+TECHNICAL SKILLS
+- Business automation: Gmail filters, WhatsApp Cloud API, calendar integration, document workflows
+- Tools: Python, TypeScript, Node.js, NestJS, Next.js, Prisma, Supabase, Google Apps Script
+- Systems: CRM workflows, inventory management, bank reconciliation, compliance tracking
+- Process design: SLA-driven operations, exception-based management, fail-closed quality gates
+
+EDUCATION
+MBA, University of Suffolk | In Progress
