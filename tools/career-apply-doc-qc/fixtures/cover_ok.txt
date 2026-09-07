@@ -1,20 +1,11 @@
-Grant Brown
-grant830318@gmail.com | 512 406 4300
-Austin, TX
+Dear Acme Corp Hiring Team,
 
-Dear Hiring Manager at Acme Corp,
-
-I am writing to express my strong interest in the VP Operations position at Acme Corp. With over 15 years of experience managing remote multi-site operations and implementing automation solutions that reduce overhead by 70%, I am confident I can drive operational excellence for Acme's growing operations team.
-
-Your VP Operations role requires someone who can build scalable systems while maintaining execution discipline. In my current role managing Perfect Water and Heavy Metal remotely from Austin, I have implemented fail-closed quality gates, structured intake pipelines, and exception-based management systems that ensure nothing falls through the cracks. This experience directly translates to Acme Corp's need for operational rigor at scale.
-
-At Hospitality Partners, I achieved a consistent 2-hour inquiry response SLA while scaling to multiple properties. I built automated housekeeping coordination reducing admin time 80%, integrated OTA channels into unified calendar systems, and maintained 4.8+ star ratings through systematic quality monitoring. These outcomes demonstrate my ability to balance automation with the human judgment required for operational leadership.
-
-My technical background (Python, TypeScript, NestJS, workflow automation) combined with business operations experience positions me uniquely for the VP Operations role at Acme Corp. I understand how to build tools that connect disparate systems, design processes that scale, and lead teams executing under pressure.
-
-I am excited about the opportunity to bring my remote operations expertise, automation mindset, and systems thinking to Acme Corp's VP Operations role. I would welcome the chance to discuss how my experience building scalable operations can support Acme's growth objectives.
-
-Thank you for your consideration.
+I am applying for the VP Operations role at Acme Corp. At 2Loan I led multi-site P&L
+across 13 locations and 54 staff, rebuilding credit and ops systems for scale. At Perfect
+Water Franchise Group I standardized multi-site franchise operations and logistics.
+I would bring the same operating discipline to Acme Corp without inventing metrics.
 
 Sincerely,
 Grant Brown
+grant830318@gmail.com
++1 512 406 4300
