@@ -6,19 +6,22 @@ Offline CLI that generates welcome message stubs for CoS WhatsApp Admin from `bo
 
 ## Purpose
 
-From `bookings.json` (output of `browns-nightsbridge-bookings-adapter`), draft same-day/upcoming welcome message stubs for CoS WhatsApp Admin. Offline only. Never auto-sends. Never invents guest phone. Never mentions rates in guest-facing draft bodies.
+From `bookings.json` (output of `browns-nightsbridge-bookings-adapter`), draft same-day/upcoming welcome message **link stubs** for CoS WhatsApp Admin. 
 
-Scope: **The Browns Luxury Guest Suites, Dullstroom** — CoS / SA Ops workflow.
+**Portal-First Law (Grant 2026-09-07):** Guest-facing WhatsApp = **short human-gated stub** with name + check-in date + magic portal URL **only**. NO Wi-Fi, access codes, parking, rates, or detailed property info in WA body. Full stay packet lives in the magic-link portal.
+
+Scope: **The Browns Luxury Guest Suites, Dullstroom** — CoS / SA Ops workflow. Offline only. Never auto-sends. Never invents guest phone or portal URLs.
 
 ## Features
 
 - 📝 **Offline-only** — No WhatsApp API, no NightsBridge, no browser
+- 🔗 **Portal-first link stubs** — Short message with name, date, and `[PORTAL_URL]` placeholder only
+- 🚫 **NO detailed property info in WA** — No Wi-Fi, access codes, parking, or rates in guest-facing body
 - 🔍 **Smart filtering** — Check-in within configurable window (default: same-day)
-- 🎨 **Warm tone** — Learned from Browns templates (warm, practical, Dullstroom)
-- 🚫 **Never invents** — Never invents guest phone; missing phone → blocked/hold in queue + missing-fields.md
-- 💰 **Rate cards ops-only** — Never mentions rates in guest-facing WhatsApp draft bodies
-- 📦 **Guest facts integration** — Optional merge with `browns-guest-facts-pack` output
-- ✅ **Approval gates** — APPROVAL.md in every pack with Grant Law (CoS 6 Sep 2026)
+- 🎨 **Warm tone** — Brief, welcoming, directs to portal for full info
+- 🚫 **Never invents** — Never invents guest phone or portal URLs; missing phone → blocked/hold in queue + missing-fields.md
+- 📦 **Guest facts integration** — Optional merge with `browns-guest-facts-pack` output (for ops tracking, not WA body)
+- ✅ **Approval gates** — APPROVAL.md in every pack with Portal-First Law (Grant 2026-09-07)
 - 🧪 **Fully tested** — TypeScript with fixture tests
 
 ## Installation
@@ -190,9 +193,9 @@ See: `drafts/john-smith-20260902.md`
 
 ### `drafts/<safe-name>.md`
 
-Individual welcome stub per guest with warm, practical Dullstroom tone.
+Individual welcome **link stub** per guest. Brief message directs to portal for all property details.
 
-Example (no placeholders in guest-facing body):
+Example (Portal-First Law — Grant 2026-09-07):
 ```markdown
 # Welcome Message Stub — Emma Thompson
 
@@ -207,19 +210,24 @@ Hi there,
 
 Looking forward to welcoming you to The Browns in Dullstroom on Tuesday, 2 Sep 2026!
 
-We've noted: Prefers ground floor rooms
+🔗 Your digital welcome pack:
+[PORTAL_URL]
 
-**Notes:**
-Celebrating anniversary
+(All check-in details, Wi-Fi, access codes, and property info are in your portal)
 
-Let us know if you have any questions ahead of your stay.
+Questions? Just reply to this message.
 
 Warm regards,
 The Browns Team
 Dullstroom
 ```
 
-**Note:** Guest-facing draft never contains `[GUEST_PHONE]` or `[RATE CARD REQUIRED]` placeholders. Missing data tracked in queue.md + missing-fields.md only.
+**Portal-First Law (Grant 2026-09-07):**
+- Guest-facing WhatsApp = **name + check-in date + portal link stub ONLY**
+- NO Wi-Fi, access codes, parking, rates, or detailed property info in WA body
+- `[PORTAL_URL]` placeholder replaced with actual magic-link portal URL before send
+- Full stay packet (check-in details, access codes, property info) lives in portal
+- Missing phone → BLOCKED in ops queue; must resolve before CoS can deliver link
 
 ### `missing-fields.md`
 
@@ -253,29 +261,62 @@ Machine-readable pack metadata:
 }
 ```
 
-## Critical Safety Notes (Grant Law — CoS 6 Sep 2026)
+## Critical Safety Notes (Portal-First Law — Grant 2026-09-07)
 
 - ✅ **Offline only** — No WhatsApp API or NightsBridge integration
 - ✅ **DRAFT ONLY** — Never sends messages automatically
-- ✅ **Never invents guest phone** — Missing phone → BLOCKED; resolve from NB booking detail or Browns/stay inbox
-- ✅ **Never mentions rates in guest body** — Rate cards are ops/pricing only; never in guest-facing WhatsApp draft text
-- ✅ **No placeholders in guest drafts** — Guest welcome draft bodies never contain `[GUEST_PHONE]` or `[RATE CARD REQUIRED]`
+- ✅ **Portal-first link stubs** — Guest-facing WA = name + check-in + `[PORTAL_URL]` only
+- ✅ **NO property details in WA** — No Wi-Fi, access codes, parking, rates in guest-facing message body
+- ✅ **Never invents guest phone or portal URLs** — Missing phone → BLOCKED; resolve from NB booking detail or Browns/stay inbox
+- ✅ **No placeholders except portal URL** — Guest welcome draft bodies only contain `[PORTAL_URL]` placeholder (replaced before send)
 - ✅ **CoS owns WhatsApp** — Coexistence of Service required for all Admin posts
 - ✅ **Skips missing names** — Bookings without `guestName` are filtered out
 - ⚠️ **Manual approval required** — Review APPROVAL.md before every WhatsApp post
 - ⚠️ **Grant approval required** — Before posting to WhatsApp Admin - The Browns
+- ⚠️ **Portal URL must be generated** — Use GuestFlow `POST /api/bookings/[id]/generate-link` or equivalent before send
 
 ## Integration
 
 ### Consumes
 
 - **`browns-nightsbridge-bookings-adapter`** — `bookings.json`
-- **`browns-guest-facts-pack`** — `guest-facts.json` (optional)
+- **`browns-guest-facts-pack`** — `guest-facts.json` (optional, ops tracking only)
 
 ### Feeds Into
 
-- **`browns-guest-comms-draft`** — For full welcome messages
+- **CoS WhatsApp Admin** — Manual posting of link stubs after portal URL replacement
 - **`browns-ct-pack-assemble`** — For timed CT packs (automated integration via `--run-welcome`)
+
+### Portal URL Generation (GuestFlow Integration)
+
+**Portal-First Law requires magic-link portal URL before send.**
+
+If GuestFlow app is deployed and operational:
+
+1. **Generate portal link per booking:**
+   ```bash
+   POST /api/bookings/[bookingId]/generate-link
+   ```
+
+2. **Response includes `whatsappStub`:**
+   ```json
+   {
+     "portalUrl": "https://portal.thebrowns.co.za/guest/abc123",
+     "whatsappStub": "Hi Emma, looking forward to...\n\n🔗 View Your Booking Portal:\nhttps://portal.thebrowns.co.za/guest/abc123"
+   }
+   ```
+
+3. **Recommended workflow:**
+   - Run `browns-welcome-draft-pack` → generates stubs with `[PORTAL_URL]` placeholder
+   - For each booking needing welcome:
+     - Call GuestFlow `POST /api/bookings/[id]/generate-link`
+     - Replace `[PORTAL_URL]` with actual `portalUrl` from response
+     - OR use `whatsappStub` directly if GuestFlow format matches Browns tone
+   - Manual CoS Admin post with replaced URLs
+
+**Until GuestFlow is live:** Keep `[PORTAL_URL]` as placeholder; CoS resolves manually or waits for portal deployment.
+
+**Hard constraint:** Never invent portal URLs. If GuestFlow unavailable and no manual URL, mark BLOCKED in queue.
 
 ### Wire Integration with browns-ct-pack-assemble
 

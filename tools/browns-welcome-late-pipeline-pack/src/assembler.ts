@@ -439,8 +439,9 @@ function generatePackMd(
   sections.push(`**Generated:** ${new Date().toISOString()}\n`);
   sections.push('**Property:** Dullstroom The Browns Luxury Guest Suites\n');
   sections.push('## Purpose\n');
-  sections.push('Orchestrated pack for same-day guest welcome drafts and late/after-hours check-in queue.\n');
-  sections.push('**SAFETY:** Never invents guest phone, ETA, rates, or amounts. Never auto-sends WhatsApp/email. Offline only.\n');
+  sections.push('Orchestrated pack for same-day guest welcome **link stubs** and late/after-hours check-in queue.\n');
+  sections.push('**Portal-First Law (Grant 2026-09-07):** Guest-facing WA = name + check-in date + portal URL ONLY. NO Wi-Fi, access codes, parking, rates in WA body.\n');
+  sections.push('**SAFETY:** Never invents guest phone, ETA, or portal URLs. Never auto-sends WhatsApp/email. Offline only.\n');
   
   sections.push('## Pipeline Summary\n');
   sections.push(`- **browns-welcome-draft-pack:** ${runOptions.ranWelcome ? '✅ Run' : '⏭️ Skipped'}\n`);
@@ -497,10 +498,13 @@ function generatePackMd(
   sections.push('## Safety Reminders\n');
   sections.push('- ✅ Offline only\n');
   sections.push('- ✅ Never auto-send\n');
-  sections.push('- ✅ Never invent guest phone, ETA, rates, or amounts\n');
+  sections.push('- ✅ Portal-first: WA = name + date + portal link ONLY\n');
+  sections.push('- ✅ NO Wi-Fi/access/parking/rates in WA body\n');
+  sections.push('- ✅ Never invent guest phone, ETA, or portal URLs\n');
   sections.push('- ✅ Dullstroom / The Browns only\n');
   sections.push('- ⚠️ Approval required before any send\n');
   sections.push('- ⚠️ CoS owns WhatsApp\n');
+  sections.push('- ⚠️ Portal URLs must be resolved before send\n');
   
   return sections.join('');
 }
@@ -524,13 +528,18 @@ function generateApprovalMd(
   sections.push('☐ **Approval required:** Grant/Liana approval before any guest send\n');
   
   sections.push('### Never Invent Data\n');
-  sections.push('☐ **Guest phone:** Never invented — `[GUEST_PHONE]` when missing\n');
+  sections.push('☐ **Guest phone:** Never invented — missing phone blocks queue delivery\n');
+  sections.push('☐ **Portal URLs:** Never invented — `[PORTAL_URL]` must be replaced with actual magic-link before send\n');
   sections.push('☐ **ETA/times:** Never invented — `[ETA REQUIRED]` when missing\n');
-  sections.push('☐ **Rates:** Never invented — `[RATE CARD REQUIRED]` when missing\n');
-  sections.push('☐ **Amounts:** Never invented — only from bookings or approved rate card\n');
+  
+  sections.push('### Portal-First Law (Grant 2026-09-07)\n');
+  sections.push('☐ **Link stub only:** Guest-facing WA = name + check-in date + portal URL ONLY\n');
+  sections.push('☐ **NO property details in WA:** No Wi-Fi, access codes, parking, rates in guest-facing message body\n');
+  sections.push('☐ **Portal URL resolved:** Each `[PORTAL_URL]` replaced with actual magic-link from GuestFlow or manual source\n');
+  sections.push('☐ **Stay packet in portal:** All check-in details, access codes, property info live in portal, not WA\n');
   
   sections.push('## Pipeline Summary\n');
-  sections.push(`- **Welcome drafts:** ${runOptions.ranWelcome ? 'Generated' : 'Skipped'}\n`);
+  sections.push(`- **Welcome drafts:** ${runOptions.ranWelcome ? 'Generated (link stubs only)' : 'Skipped'}\n`);
   sections.push(`- **Late check-in queue:** ${runOptions.ranLate ? 'Generated' : 'Skipped'}\n`);
   sections.push(`- **Daily ops brief:** ${runOptions.ranDailyOps ? 'Generated' : 'Skipped'}\n`);
   
@@ -538,20 +547,25 @@ function generateApprovalMd(
   sections.push('☐ **Guest names:** Verified against bookings\n');
   sections.push('☐ **Dates:** Check-in and check-out dates confirmed\n');
   sections.push('☐ **Suites:** Suite assignments confirmed\n');
-  sections.push('☐ **Missing fields:** Resolved from approved sources (never invented)\n');
+  sections.push('☐ **Portal URLs:** Each `[PORTAL_URL]` replaced with actual magic-link (GuestFlow or manual)\n');
+  sections.push('☐ **Missing phones resolved:** Phone required to deliver portal link; resolve from NB/Browns inbox\n');
   
   sections.push('## Safety Reminders\n');
   sections.push('- ✅ Offline only\n');
   sections.push('- ✅ Never auto-send\n');
+  sections.push('- ✅ Portal-first: WA = name + date + portal link ONLY\n');
+  sections.push('- ✅ NO Wi-Fi/access/parking/rates in WA body\n');
   sections.push('- ✅ Dullstroom / The Browns only\n');
   sections.push('- ⚠️ Grant/Liana approval required\n');
   sections.push('- ⚠️ CoS owns WhatsApp\n');
-  sections.push('- ⚠️ Never invent phone/ETA/rates/amounts\n');
+  sections.push('- ⚠️ Never invent phone/portal URLs\n');
   
   sections.push('## Approval\n');
   sections.push('☐ All hard gates checked\n');
+  sections.push('☐ Portal-First Law verified (link stubs only, no property details in WA)\n');
   sections.push('☐ Data verified\n');
-  sections.push('☐ Missing fields resolved\n');
+  sections.push('☐ Portal URLs replaced with actual magic-links\n');
+  sections.push('☐ Missing phones resolved (required to deliver link)\n');
   sections.push('☐ No invented data\n');
   sections.push('☐ Ready to proceed with manual posting (Grant/Liana approval)\n');
   

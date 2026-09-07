@@ -82,35 +82,21 @@ function generateWelcomeContent(
   lines.push('---');
   lines.push('');
 
-  // Welcome stub (warm, practical, Dullstroom tone)
+  // PORTAL-FIRST LAW (Grant 2026-09-07):
+  // Guest-facing WhatsApp = SHORT STUB with name + check-in + portal link ONLY
+  // NO Wi-Fi, access codes, parking, rates, or other details in WA body
+  // Full info lives in magic-link portal once it's working
+
   lines.push('Hi there,');
   lines.push('');
   lines.push(`Looking forward to welcoming you to The Browns in Dullstroom on ${formatDate(booking.checkInDate)}!`);
   lines.push('');
-
-  // Add known facts if available
-  if (facts?.preferences) {
-    lines.push(`We've noted: ${facts.preferences}`);
-    lines.push('');
-  }
-
-  if (facts?.allergies) {
-    lines.push(`⚠️ Dietary: ${facts.allergies}`);
-    lines.push('');
-  }
-
-  // NEVER include rate cards or guest phone in guest-facing WhatsApp draft body
-  // Missing rate → ops-only tracking (missing-fields.md); never mentioned in guest message
-  // Missing phone → hold/flag in queue + missing-fields.md; omit phone line from guest body OR leave draft offline
-
-  // Booking notes
-  if (booking.notes) {
-    lines.push('**Notes:**');
-    lines.push(booking.notes);
-    lines.push('');
-  }
-
-  lines.push('Let us know if you have any questions ahead of your stay.');
+  lines.push('🔗 Your digital welcome pack:');
+  lines.push('[PORTAL_URL]');
+  lines.push('');
+  lines.push('(All check-in details, Wi-Fi, access codes, and property info are in your portal)');
+  lines.push('');
+  lines.push('Questions? Just reply to this message.');
   lines.push('');
   lines.push('Warm regards,');
   lines.push('The Browns Team');
