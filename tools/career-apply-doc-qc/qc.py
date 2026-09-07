@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Career Apply Doc QC - Fail-closed offline gate for career application documents.
-Owning desk: Career (Efficiency maintains gate)
+Career Apply Doc QC - Fail-closed offline gate (Efficiency maintains).
+Exit 0 = PASS (apply allowed). Exit 1 = FAIL (do not apply).
+No LLM. No browser. Deterministic checks only.
 """
 
 import argparse
@@ -13,53 +14,77 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
+# Forbidden patterns - FAIL immediately if found
+FORBIDDEN = [
+    "Employee-Owner",
+    "ESOP",
+    "MBA Candidate",
+    "701-470-4908",  # Retired phone number
+    "Liana",
+    "TODO",
+    "TBD",
+    "XXX",
+    "[COMPANY]",
+    "[ROLE]",
+]
+
+# Required resume content - must all be present
+REQUIRED_RESUME = [
+    "Grant",
+    "Brown", 
+    "grant830318@gmail.com",
+    "512-406-4300",  # Will check multiple formats
+]
+
+# PDF page limit
+PDF_MAX_PAGES = 3
+
+
 class QCResult:
     """Container for QC check results."""
     
     def __init__(self):
         self.status = "PASS"
-        self.checks: Dict[str, str] = {}
-        self.warnings: List[str] = []
         self.errors: List[str] = []
+        self.warnings: List[str] = []
+        self.checks: Dict[str, str] = {}
         self.metadata: Dict[str, any] = {}
     
-    def add_check(self, name: str, status: str):
-        """Add a check result."""
-        self.checks[name] = status
-        if status == "FAIL":
-            self.status = "FAIL"
-    
-    def add_warning(self, message: str):
-        """Add a warning (doesn't fail QC)."""
-        self.warnings.append(message)
-    
-    def add_error(self, message: str):
-        """Add an error (fails QC)."""
+    def fail(self, message: str):
+        """Add error and set status to FAIL."""
         self.errors.append(message)
         self.status = "FAIL"
     
+    def warn(self, message: str):
+        """Add warning (doesn't fail)."""
+        self.warnings.append(message)
+    
+    def add_check(self, name: str, status: str):
+        """Record check result."""
+        self.checks[name] = status
+    
     def to_dict(self) -> dict:
-        """Convert to dictionary for JSON output."""
+        """Convert to dictionary."""
         return {
             "status": self.status,
-            "checks": self.checks,
-            "warnings": self.warnings,
             "errors": self.errors,
+            "warnings": self.warnings,
+            "checks": self.checks,
             "metadata": self.metadata
         }
 
 
-def extract_text(file_path: Path) -> Tuple[Optional[str], Optional[str]]:
+def extract_text(file_path: Path) -> Tuple[Optional[str], Optional[str], Optional[int]]:
     """
-    Extract text from a file based on its extension.
-    Returns (text, error_message).
+    Extract text from file. Returns (text, error_message, page_count).
+    page_count is only for PDFs, None otherwise.
     """
     ext = file_path.suffix.lower()
     
     try:
         if ext in ['.txt', '.md']:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read(), None
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read(), None, None
         
         elif ext == '.pdf':
             try:
@@ -67,261 +92,176 @@ def extract_text(file_path: Path) -> Tuple[Optional[str], Optional[str]]:
                 text_parts = []
                 with open(file_path, 'rb') as f:
                     reader = PyPDF2.PdfReader(f)
+                    page_count = len(reader.pages)
                     for page in reader.pages:
-                        text_parts.append(page.extract_text())
-                return '\n'.join(text_parts), None
+                        text_parts.append(page.extract_text() or '')
+                return '\n'.join(text_parts), None, page_count
             except ImportError:
-                return None, "PyPDF2 library not available. Install with: pip install PyPDF2"
+                return None, "PyPDF2 not available (pip install PyPDF2)", None
             except Exception as e:
-                return None, f"PDF extraction failed: {str(e)}"
+                return None, f"PDF extraction failed: {str(e)}", None
         
         elif ext == '.docx':
             try:
                 import docx
                 doc = docx.Document(str(file_path))
                 text_parts = [para.text for para in doc.paragraphs]
-                return '\n'.join(text_parts), None
+                return '\n'.join(text_parts), None, None
             except ImportError:
-                return None, "python-docx library not available. Install with: pip install python-docx"
+                return None, "python-docx not available (pip install python-docx)", None
             except Exception as e:
-                return None, f"DOCX extraction failed: {str(e)}"
+                return None, f"DOCX extraction failed: {str(e)}", None
         
         else:
-            return None, f"Unsupported file format: {ext}"
+            return None, f"Unsupported format: {ext}", None
     
     except Exception as e:
-        return None, f"File read error: {str(e)}"
+        return None, f"Read error: {str(e)}", None
 
 
-def normalize_text(text: str) -> str:
-    """Normalize text for comparison (lowercase, strip punctuation)."""
-    # Convert to lowercase
-    text = text.lower()
-    # Remove common punctuation but keep spaces
-    text = re.sub(r'[^\w\s]', ' ', text)
-    # Collapse multiple spaces
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
-
-
-def check_file_exists(file_path: Path, file_type: str, result: QCResult) -> bool:
-    """Check if file exists and is readable."""
-    check_name = f"{file_type}_exists"
+def check_forbidden(text: str, file_type: str, result: QCResult) -> bool:
+    """Check for forbidden patterns. Returns True if clean, False if forbidden found."""
+    text_lower = text.lower()
+    found = []
     
-    if not file_path.exists():
-        result.add_check(check_name, "FAIL")
-        result.add_error(f"{file_type.capitalize()} file not found: {file_path}")
+    for pattern in FORBIDDEN:
+        # Case-insensitive check
+        if pattern.lower() in text_lower:
+            found.append(pattern)
+    
+    if found:
+        result.fail(f"{file_type}: Forbidden pattern(s) found: {', '.join(found)}")
         return False
     
-    if not file_path.is_file():
-        result.add_check(check_name, "FAIL")
-        result.add_error(f"{file_type.capitalize()} path is not a file: {file_path}")
-        return False
-    
-    if not os.access(file_path, os.R_OK):
-        result.add_check(check_name, "FAIL")
-        result.add_error(f"{file_type.capitalize()} file is not readable: {file_path}")
-        return False
-    
-    result.add_check(check_name, "PASS")
     return True
 
 
-def check_file_format(file_path: Path, file_type: str, result: QCResult) -> bool:
-    """Check if file has recognized extension."""
-    check_name = f"{file_type}_format"
-    valid_extensions = ['.pdf', '.docx', '.md', '.txt']
+def check_required_resume(text: str, result: QCResult) -> bool:
+    """Check resume has required content. Returns True if all present."""
+    missing = []
+    text_lower = text.lower()
     
-    ext = file_path.suffix.lower()
-    if ext not in valid_extensions:
-        result.add_check(check_name, "FAIL")
-        result.add_error(
-            f"{file_type.capitalize()} has unrecognized format: {ext}. "
-            f"Allowed: {', '.join(valid_extensions)}"
-        )
+    for required in REQUIRED_RESUME:
+        required_lower = required.lower()
+        
+        # Normalize phone format for checking (allow 512-406-4300, 512 406 4300, etc)
+        if "512" in required_lower:
+            # Check various phone formats (case doesn't matter for numbers)
+            patterns = [
+                "512-406-4300",
+                "512 406 4300",
+                "512.406.4300",
+                "(512) 406-4300",
+            ]
+            # Check in original text since numbers are case-insensitive
+            if not any(p in text for p in patterns):
+                missing.append(required)
+        elif required_lower not in text_lower:
+            missing.append(required)
+    
+    if missing:
+        result.fail(f"Resume missing required content: {', '.join(missing)}")
         return False
     
-    result.add_check(check_name, "PASS")
     return True
 
 
-def check_content(
-    file_path: Path,
-    file_type: str,
-    min_length: int,
-    result: QCResult
-) -> Optional[str]:
-    """
-    Extract and validate content from file.
-    Returns content text if successful, None otherwise.
-    """
-    check_readable = f"{file_type}_readable"
-    check_length = f"{file_type}_length"
+def check_format_smells(text: str, file_type: str, result: QCResult):
+    """Check for suspicious formatting issues (warnings, not failures)."""
+    # Check for excessive whitespace/empty lines
+    lines = text.split('\n')
+    non_empty = [line for line in lines if line.strip()]
     
-    # Extract text
-    content, error = extract_text(file_path)
+    if len(lines) > 100 and len(non_empty) < len(lines) * 0.3:
+        result.warn(f"{file_type}: Suspicious whitespace ratio")
     
-    if error:
-        result.add_check(check_readable, "FAIL")
-        result.add_error(f"{file_type.capitalize()}: {error}")
-        return None
-    
-    result.add_check(check_readable, "PASS")
-    
-    # Check minimum length
-    if not content or len(content.strip()) < min_length:
-        result.add_check(check_length, "FAIL")
-        result.add_error(
-            f"{file_type.capitalize()} content too short: "
-            f"{len(content.strip()) if content else 0} chars "
-            f"(minimum {min_length} required)"
-        )
-        return None
-    
-    result.add_check(check_length, "PASS")
-    result.metadata[f"{file_type}_chars"] = len(content.strip())
-    
-    return content
+    # Check for very long lines (>200 chars) that might indicate formatting issues
+    long_lines = [line for line in lines if len(line) > 200]
+    if len(long_lines) > 5:
+        result.warn(f"{file_type}: {len(long_lines)} very long lines (possible format issue)")
 
 
-def check_company_role_mention(
-    content: str,
-    company: Optional[str],
-    role: Optional[str],
-    result: QCResult
-):
-    """
-    Soft check for company/role mentions in cover letter.
-    Warns but doesn't fail if not found.
-    """
-    normalized_content = normalize_text(content)
+def check_cover_customization(text: str, company: Optional[str], role: Optional[str], result: QCResult):
+    """Check if cover letter mentions company/role. Warns if not found."""
+    text_lower = text.lower()
     
-    # Check company mention
     if company:
-        normalized_company = normalize_text(company)
-        if normalized_company in normalized_content:
-            result.add_check("company_mention", "PASS")
-        else:
-            result.add_check("company_mention", "WARN")
-            result.add_warning(f"Company name '{company}' not found in cover letter")
+        company_lower = company.lower()
+        if company_lower not in text_lower:
+            result.warn(f"Cover: Company '{company}' not found")
     
-    # Check role mention (keyword-based)
     if role:
-        normalized_role = normalize_text(role)
-        role_keywords = normalized_role.split()
+        role_lower = role.lower()
+        # Check for role keywords (any word from role title)
+        role_words = [w for w in re.split(r'\W+', role_lower) if len(w) > 3]
+        found_words = [w for w in role_words if w in text_lower]
         
-        # Check if any role keywords appear in content
-        found_keywords = [kw for kw in role_keywords if kw in normalized_content]
-        
-        if found_keywords:
-            result.add_check("role_mention", "PASS")
-        else:
-            result.add_check("role_mention", "WARN")
-            result.add_warning(f"Role keywords '{role}' not found in cover letter")
+        if not found_words:
+            result.warn(f"Cover: Role '{role}' keywords not found")
 
 
-def write_report_json(result: QCResult, outdir: Path):
-    """Write structured JSON report."""
-    report_path = outdir / "qc-report.json"
-    with open(report_path, 'w', encoding='utf-8') as f:
-        json.dump(result.to_dict(), f, indent=2)
-
-
-def write_report_markdown(result: QCResult, outdir: Path):
-    """Write human-readable markdown report."""
-    report_path = outdir / "qc-report.md"
+def write_outputs(result: QCResult, outdir: Path):
+    """Write qc.json and qc.md output files."""
+    outdir.mkdir(parents=True, exist_ok=True)
     
+    # Write JSON
+    json_path = outdir / "qc.json"
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(result.to_dict(), f, indent=2)
+    
+    # Write Markdown
+    md_path = outdir / "qc.md"
     lines = [
-        "# Career Apply Doc QC Report",
+        f"# QC Result: {result.status}",
         "",
-        f"**Status:** {result.status}",
-        "",
-        "## Checks",
-        ""
     ]
     
-    for check_name, check_status in result.checks.items():
-        emoji = "✅" if check_status == "PASS" else "⚠️" if check_status == "WARN" else "❌"
-        lines.append(f"- {emoji} **{check_name}**: {check_status}")
-    
-    if result.warnings:
-        lines.extend(["", "## Warnings", ""])
-        for warning in result.warnings:
-            lines.append(f"- ⚠️ {warning}")
-    
     if result.errors:
-        lines.extend(["", "## Errors", ""])
+        lines.append("## Errors")
+        lines.append("")
         for error in result.errors:
             lines.append(f"- ❌ {error}")
+        lines.append("")
     
-    lines.extend(["", "## Metadata", ""])
-    for key, value in result.metadata.items():
-        lines.append(f"- **{key}**: {value}")
+    if result.warnings:
+        lines.append("## Warnings")
+        lines.append("")
+        for warning in result.warnings:
+            lines.append(f"- ⚠️ {warning}")
+        lines.append("")
     
-    lines.append("")
+    if result.checks:
+        lines.append("## Checks")
+        lines.append("")
+        for check, status in result.checks.items():
+            emoji = "✅" if status == "PASS" else "❌"
+            lines.append(f"- {emoji} {check}: {status}")
+        lines.append("")
     
-    with open(report_path, 'w', encoding='utf-8') as f:
+    if result.metadata:
+        lines.append("## Metadata")
+        lines.append("")
+        for key, value in result.metadata.items():
+            lines.append(f"- {key}: {value}")
+        lines.append("")
+    
+    with open(md_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines))
-
-
-def write_gate_status(result: QCResult, outdir: Path):
-    """Write simple gate status file."""
-    gate_path = outdir / "APPLY-GATE.txt"
-    with open(gate_path, 'w', encoding='utf-8') as f:
-        f.write(f"{result.status}\n")
-        if result.status == "FAIL":
-            f.write("\nDO NOT APPLY - QC checks failed.\n")
-            if result.errors:
-                f.write("\nErrors:\n")
-                for error in result.errors:
-                    f.write(f"  - {error}\n")
-        else:
-            f.write("\nQC PASS - Apply allowed (Career bot final decision).\n")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fail-closed offline QC gate for career application documents",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Career Apply Doc QC - Fail-closed gate (Efficiency maintains)"
     )
-    
-    parser.add_argument(
-        '--resume',
-        required=True,
-        help='Path to resume file (PDF, DOCX, MD, TXT)'
-    )
-    
-    parser.add_argument(
-        '--cover',
-        help='Path to cover letter file (PDF, DOCX, MD, TXT) [optional]'
-    )
-    
-    parser.add_argument(
-        '--company',
-        help='Target company name for soft-check [optional]'
-    )
-    
-    parser.add_argument(
-        '--role',
-        help='Target role for soft-check [optional]'
-    )
-    
-    parser.add_argument(
-        '--outdir',
-        default='./out',
-        help='Output directory for QC reports [default: ./out]'
-    )
+    parser.add_argument('--resume', required=True, help='Resume file path')
+    parser.add_argument('--cover', help='Cover letter file path (optional)')
+    parser.add_argument('--company', help='Target company for cover check')
+    parser.add_argument('--role', help='Target role for cover check')
+    parser.add_argument('--outdir', default='./out', help='Output directory')
     
     args = parser.parse_args()
     
-    # Initialize result
     result = QCResult()
-    
-    # Setup output directory
-    outdir = Path(args.outdir)
-    outdir.mkdir(parents=True, exist_ok=True)
-    
-    # Store metadata
     result.metadata['resume_file'] = args.resume
     if args.cover:
         result.metadata['cover_file'] = args.cover
@@ -333,77 +273,114 @@ def main():
     # Check resume
     resume_path = Path(args.resume)
     
-    if not check_file_exists(resume_path, "resume", result):
-        write_report_json(result, outdir)
-        write_report_markdown(result, outdir)
-        write_gate_status(result, outdir)
-        print(f"QC FAIL: Resume file not found or unreadable", file=sys.stderr)
+    if not resume_path.exists():
+        result.fail(f"Resume file not found: {args.resume}")
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: Resume not found", file=sys.stderr)
         sys.exit(1)
     
-    if not check_file_format(resume_path, "resume", result):
-        write_report_json(result, outdir)
-        write_report_markdown(result, outdir)
-        write_gate_status(result, outdir)
-        print(f"QC FAIL: Resume format not recognized", file=sys.stderr)
+    # Extract resume text
+    resume_text, resume_error, resume_pages = extract_text(resume_path)
+    
+    if resume_error:
+        result.fail(f"Resume: {resume_error}")
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: {resume_error}", file=sys.stderr)
         sys.exit(1)
     
-    # Extract and validate resume content (minimum 500 chars)
-    resume_content = check_content(resume_path, "resume", 500, result)
-    if resume_content is None:
-        write_report_json(result, outdir)
-        write_report_markdown(result, outdir)
-        write_gate_status(result, outdir)
-        print(f"QC FAIL: Resume content validation failed", file=sys.stderr)
+    if not resume_text or len(resume_text.strip()) < 200:
+        result.fail(f"Resume too short: {len(resume_text.strip()) if resume_text else 0} chars")
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: Resume too short", file=sys.stderr)
         sys.exit(1)
+    
+    result.metadata['resume_chars'] = len(resume_text.strip())
+    if resume_pages:
+        result.metadata['resume_pages'] = resume_pages
+        if resume_pages > PDF_MAX_PAGES:
+            result.fail(f"Resume PDF too long: {resume_pages} pages (max {PDF_MAX_PAGES})")
+    
+    result.add_check("resume_extracted", "PASS")
+    
+    # Check forbidden patterns in resume
+    if not check_forbidden(resume_text, "Resume", result):
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: Forbidden pattern in resume", file=sys.stderr)
+        sys.exit(1)
+    
+    result.add_check("resume_no_forbidden", "PASS")
+    
+    # Check required content in resume
+    if not check_required_resume(resume_text, result):
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: Missing required resume content", file=sys.stderr)
+        sys.exit(1)
+    
+    result.add_check("resume_required_content", "PASS")
+    
+    # Format smells (warnings only)
+    check_format_smells(resume_text, "Resume", result)
     
     # Check cover letter if provided
-    cover_content = None
     if args.cover:
         cover_path = Path(args.cover)
         
-        if not check_file_exists(cover_path, "cover", result):
-            write_report_json(result, outdir)
-            write_report_markdown(result, outdir)
-            write_gate_status(result, outdir)
-            print(f"QC FAIL: Cover letter file not found or unreadable", file=sys.stderr)
+        if not cover_path.exists():
+            result.fail(f"Cover file not found: {args.cover}")
+            write_outputs(result, Path(args.outdir))
+            print(f"QC FAIL: Cover not found", file=sys.stderr)
             sys.exit(1)
         
-        if not check_file_format(cover_path, "cover", result):
-            write_report_json(result, outdir)
-            write_report_markdown(result, outdir)
-            write_gate_status(result, outdir)
-            print(f"QC FAIL: Cover letter format not recognized", file=sys.stderr)
+        cover_text, cover_error, cover_pages = extract_text(cover_path)
+        
+        if cover_error:
+            result.fail(f"Cover: {cover_error}")
+            write_outputs(result, Path(args.outdir))
+            print(f"QC FAIL: {cover_error}", file=sys.stderr)
             sys.exit(1)
         
-        # Extract and validate cover content (minimum 100 chars)
-        cover_content = check_content(cover_path, "cover", 100, result)
-        if cover_content is None:
-            write_report_json(result, outdir)
-            write_report_markdown(result, outdir)
-            write_gate_status(result, outdir)
-            print(f"QC FAIL: Cover letter content validation failed", file=sys.stderr)
+        if not cover_text or len(cover_text.strip()) < 100:
+            result.fail(f"Cover too short: {len(cover_text.strip()) if cover_text else 0} chars")
+            write_outputs(result, Path(args.outdir))
+            print(f"QC FAIL: Cover too short", file=sys.stderr)
             sys.exit(1)
         
-        # Soft check for company/role mentions (only warns, doesn't fail)
-        if args.company or args.role:
-            check_company_role_mention(cover_content, args.company, args.role, result)
+        result.metadata['cover_chars'] = len(cover_text.strip())
+        if cover_pages:
+            result.metadata['cover_pages'] = cover_pages
+            if cover_pages > PDF_MAX_PAGES:
+                result.fail(f"Cover PDF too long: {cover_pages} pages (max {PDF_MAX_PAGES})")
+        
+        result.add_check("cover_extracted", "PASS")
+        
+        # Check forbidden in cover
+        if not check_forbidden(cover_text, "Cover", result):
+            write_outputs(result, Path(args.outdir))
+            print(f"QC FAIL: Forbidden pattern in cover", file=sys.stderr)
+            sys.exit(1)
+        
+        result.add_check("cover_no_forbidden", "PASS")
+        
+        # Check cover customization (warnings only)
+        check_cover_customization(cover_text, args.company, args.role, result)
+        
+        # Format smells
+        check_format_smells(cover_text, "Cover", result)
     
-    # Write reports
-    write_report_json(result, outdir)
-    write_report_markdown(result, outdir)
-    write_gate_status(result, outdir)
-    
-    # Final status
-    if result.status == "PASS":
-        print(f"QC PASS: All checks passed. Apply allowed.")
-        if result.warnings:
-            print(f"Warnings: {len(result.warnings)} (see report)")
-        sys.exit(0)
-    else:
-        print(f"QC FAIL: {len(result.errors)} error(s) found", file=sys.stderr)
+    # Final status check
+    if result.status == "FAIL":
+        write_outputs(result, Path(args.outdir))
+        print(f"QC FAIL: {len(result.errors)} error(s)", file=sys.stderr)
         for error in result.errors:
             print(f"  - {error}", file=sys.stderr)
         sys.exit(1)
+    
+    # Success
+    write_outputs(result, Path(args.outdir))
+    print(f"QC PASS: Apply allowed")
+    if result.warnings:
+        print(f"  ({len(result.warnings)} warning(s) - see qc.md)")
+    sys.exit(0)
 
 
 if __name__ == '__main__':

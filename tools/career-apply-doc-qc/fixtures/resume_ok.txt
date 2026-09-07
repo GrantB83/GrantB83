@@ -1,0 +1,51 @@
+GRANT ANGUS BROWN
+Operations Leader & Systems Builder
+
+Austin, TX | grant830318@gmail.com | 512 406 4300 | GitHub: @GrantB83
+
+SUMMARY
+Strategic operations manager with 15+ years optimizing remote multi-site business operations across hospitality, logistics, and SaaS. Proven track record building automation systems, implementing fail-closed quality gates, and driving operational excellence in distributed teams. MBA coursework in progress (degree not yet awarded).
+
+EXPERIENCE
+
+Operations Manager | Perfect Water & Heavy Metal | 2015 - Present
+Austin, TX (managing SA operations remotely)
+
+- Reduced daily administrative overhead 70% through structured intake pipelines, automated digest generation, and exception-based management
+- Implemented multi-site inventory system with real-time stock tracking across 2 retail locations
+- Built automated bank reconciliation tools matching till vs deposits for daily cash-up operations
+- Designed POD tracking, driver scheduling, and quote-to-invoice pipeline for logistics operations
+- Maintained fail-closed quality gates ensuring zero missed compliance deadlines
+
+Business Operations Lead | Hospitality Partners | 2012 - Present
+Austin, TX
+
+- Manage luxury accommodation booking pipeline from inquiry through checkout across multiple properties
+- Achieved consistent 2-hour inquiry response SLA through intelligent automation and calendar integration
+- Reduced housekeeping coordination time 80% via automated run-sheet generation
+- Integrated OTA reservations (Booking.com) into unified calendar system eliminating double-bookings
+- Maintained 4.8+ star rating through systematic review request sequences and quality monitoring
+
+Technology Operations | Previous Roles | 2008 - 2012
+
+- Built data pipeline automation reducing manual ETL work by 60%
+- Implemented monitoring systems catching production issues before customer impact
+- Led cross-functional teams shipping features under aggressive timelines
+
+TECHNICAL SKILLS
+Automation: Gmail filters, WhatsApp Cloud API, workflow orchestration, document automation
+Engineering: Python, TypeScript, Node.js, NestJS, Next.js, Prisma, Supabase, Google Apps Script
+Systems: CRM design, inventory management, bank reconciliation, compliance tracking, SLA monitoring
+Process: Exception-based operations, fail-closed gates, remote team coordination, scalable workflows
+
+POLITICAL EXPERIENCE
+Volunteer Field Organizer | Abrams for Governor Campaign | 2018
+Georgia
+
+- Coordinated 50+ volunteer shifts during get-out-the-vote operations
+- Managed voter contact database ensuring accurate targeting and follow-up
+- Contributed to record turnout in assigned precincts through systematic volunteer deployment
+
+EDUCATION
+MBA Coursework | University of Suffolk | In Progress (degree not yet awarded)
+BS Computer Science | Previous Institution | 2007
