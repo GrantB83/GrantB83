@@ -14,7 +14,7 @@ POST https://guestflow.thebrowns.co.za/api/public/contact
 ```
 
 ### Features Implemented
-✅ JSON contract: `{ name, email, phone?, message, company? }`  
+✅ JSON contract: `{ name, email, phone?, subject?, message, company? }`  
 ✅ Honeypot field (`company`) - non-empty → 400 (bot detection)  
 ✅ Validation: name/email/message required, basic email format check  
 ✅ Rate limiting: 5 requests/hour per IP → 429  

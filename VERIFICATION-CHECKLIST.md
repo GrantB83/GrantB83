@@ -15,7 +15,7 @@
 - [x] Path matches frontend default: `https://guestflow.thebrowns.co.za/api/public/contact`
 
 ### Contract & Validation
-- [x] JSON contract: `{ name, email, phone?, message, company? }`
+- [x] JSON contract: `{ name, email, phone?, subject?, message, company? }`
 - [x] `company` field is honeypot - non-empty → 400 (bot detection)
 - [x] Validates name/email/message as required
 - [x] Basic email format validation (regex)

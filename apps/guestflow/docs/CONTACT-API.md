@@ -31,6 +31,7 @@ Content-Type: application/json
   "name": "John Smith",
   "email": "john@example.com",
   "phone": "+27 82 123 4567",
+  "subject": "Booking Inquiry - December Dates",
   "message": "I would like to inquire about availability...",
   "company": ""
 }
@@ -43,6 +44,7 @@ Content-Type: application/json
 | `name` | string | Yes | Contact's full name |
 | `email` | string | Yes | Contact's email address (validated) |
 | `phone` | string | No | Contact's phone number |
+| `subject` | string | No | Inquiry subject line (for stay@ triage) |
 | `message` | string | Yes | Inquiry message |
 | `company` | string | No | **Honeypot field** - must be empty or form is rejected |
 
@@ -162,6 +164,7 @@ CONTACT_RECIPIENT_EMAIL=stay@thebrowns.co.za
   <input type="text" name="name" required placeholder="Your Name">
   <input type="email" name="email" required placeholder="Your Email">
   <input type="tel" name="phone" placeholder="Phone (optional)">
+  <input type="text" name="subject" placeholder="Subject (optional)">
   <textarea name="message" required placeholder="Your Message"></textarea>
   
   <!-- Honeypot field (hidden from users) -->
@@ -184,6 +187,7 @@ form.addEventListener('submit', async (e) => {
     name: formData.get('name'),
     email: formData.get('email'),
     phone: formData.get('phone') || '',
+    subject: formData.get('subject') || '',
     message: formData.get('message'),
     company: formData.get('company') || '' // honeypot
   };
@@ -223,6 +227,7 @@ export default function ContactForm() {
     name: '',
     email: '',
     phone: '',
+    subject: '',
     message: '',
     company: '' // honeypot
   })
@@ -247,7 +252,7 @@ export default function ContactForm() {
 
       if (response.ok) {
         setMessage(result.message)
-        setFormData({ name: '', email: '', phone: '', message: '', company: '' })
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '', company: '' })
       } else {
         setMessage(result.error || 'Something went wrong')
       }
@@ -279,6 +284,12 @@ export default function ContactForm() {
         value={formData.phone}
         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         placeholder="Phone (optional)"
+      />
+      <input
+        type="text"
+        value={formData.subject}
+        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+        placeholder="Subject (optional)"
       />
       <textarea
         value={formData.message}
@@ -318,6 +329,7 @@ curl -X POST https://guestflow.thebrowns.co.za/api/public/contact \
     "name": "John Smith",
     "email": "john@example.com",
     "phone": "+27 82 123 4567",
+    "subject": "December Availability",
     "message": "I would like to inquire about availability in December.",
     "company": ""
   }'

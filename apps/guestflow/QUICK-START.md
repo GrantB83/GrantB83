@@ -39,6 +39,7 @@ curl -X POST http://localhost:3100/api/public/contact \
     "name": "John Smith",
     "email": "john@example.com",
     "phone": "+27 82 123 4567",
+    "subject": "December Availability",
     "message": "I would like to inquire about availability in December",
     "company": ""
   }'
@@ -345,7 +346,7 @@ vercel --prod
 # Contact API
 curl -X POST https://guestflow.thebrowns.co.za/api/public/contact \
   -H "Content-Type: application/json" \
-  -d '{"name":"Test","email":"test@example.com","message":"Test","company":""}'
+  -d '{"name":"Test","email":"test@example.com","subject":"General Inquiry","message":"Test","company":""}'
 
 # Generate magic link (requires staff auth)
 curl -X POST https://guestflow.thebrowns.co.za/api/bookings/1/generate-link \

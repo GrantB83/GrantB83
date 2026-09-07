@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const body = await req.json()
-    const { name, email, phone, message, company } = body
+    const { name, email, phone, subject, message, company } = body
 
     // Honeypot check - if company field is filled, it's likely a bot
     if (company && company.trim() !== '') {
@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       email: email.trim(),
       phone: phone?.trim() || '',
+      subject: subject?.trim() || '',
       message: message.trim(),
     })
 
@@ -170,9 +171,16 @@ async function sendContactNotification(data: {
   name: string
   email: string
   phone: string
+  subject: string
   message: string
 }): Promise<boolean> {
   const recipient = process.env.CONTACT_RECIPIENT_EMAIL || 'stay@thebrowns.co.za'
+
+  // Build email subject line
+  // If subject provided, use it; otherwise default to generic inquiry subject
+  const emailSubject = data.subject 
+    ? `Contact: ${data.subject}` 
+    : `New Contact Inquiry from ${data.name}`
 
   // Try Resend first (if configured)
   if (process.env.RESEND_API_KEY) {
@@ -186,12 +194,13 @@ async function sendContactNotification(data: {
         body: JSON.stringify({
           from: process.env.RESEND_FROM_EMAIL || 'noreply@guestflow.thebrowns.co.za',
           to: recipient,
-          subject: `New Contact Inquiry from ${data.name}`,
+          subject: emailSubject,
           html: `
             <h2>New Contact Form Submission</h2>
             <p><strong>Name:</strong> ${data.name}</p>
             <p><strong>Email:</strong> ${data.email}</p>
             ${data.phone ? `<p><strong>Phone:</strong> ${data.phone}</p>` : ''}
+            ${data.subject ? `<p><strong>Subject:</strong> ${data.subject}</p>` : ''}
             <p><strong>Message:</strong></p>
             <p>${data.message.replace(/\n/g, '<br>')}</p>
           `,
