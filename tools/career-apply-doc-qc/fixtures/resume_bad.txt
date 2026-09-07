@@ -1,29 +1,3 @@
-TODO - UPDATE THIS RESUME
-
-JOHN DOE
-Employee-Owner | Operations Manager
-
-Contact: 701-470-4908
-
-SUMMARY
-TODO - write actual summary here
-
-EXPERIENCE
-
-[COMPANY NAME] | Employee-Owner | 2020 - Present
-- TODO: fill in details
-- Managed ESOP transition
-- TODO: add more bullet points
-
-[PREVIOUS ROLE] | [DATES]
-- TODO
-- TODO
-- TODO
-
-SKILLS
-- Operations
-- TODO: list technical skills
-- TODO: add more
-
-EDUCATION
-MBA Candidate | [SCHOOL] | Expected [YEAR]
+TODO insert company
+Employee-Owner
+701-470-4908
