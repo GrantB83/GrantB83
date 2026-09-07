@@ -6,11 +6,15 @@ An offline CLI tool that orchestrates Browns same-day guest packs for SA Ops / C
 2. **browns-late-checkin-queue** (default ON)  
 3. **browns-daily-ops-brief** (default OFF)
 
-**Purpose:** One dated pipeline pack from `bookings.json` (adapter output) → welcome draft stubs + late/after-hours check-in queue (+ optional daily ops brief). Wire into existing CT morning / 09:00 after-hours flows. Never invents guest phone or ETA. Never mentions rates in guest-facing draft bodies. Never auto-sends WhatsApp/email. Offline only. Dullstroom The Browns Luxury Guest Suites only.
+**Purpose:** One dated pipeline pack from `bookings.json` (adapter output) → welcome draft link stubs + late/after-hours check-in queue (+ optional daily ops brief). Wire into existing CT morning / 09:00 after-hours flows. 
+
+**Portal-First Law (Grant 2026-09-07):** Guest-facing WhatsApp = **short human-gated stub** with name + check-in date + magic portal URL **only**. NO Wi-Fi, access codes, parking, rates in WA body. Never invents guest phone, ETA, or portal URLs. Never auto-sends WhatsApp/email. Offline only. Dullstroom The Browns Luxury Guest Suites only.
 
 ## Features
 
 - 🎯 **Pipeline orchestration** - Wires welcome-draft-pack → late-checkin-queue → optional daily-ops-brief
+- 🔗 **Portal-first link stubs** - Welcome drafts are short stubs (name + date + portal URL placeholder only)
+- 🚫 **NO property details in WA** - No Wi-Fi, access codes, parking, or rates in guest-facing message body
 - 📦 **Auto-build siblings** - Builds sibling tools automatically if `dist/` missing
 - 🔧 **Optional stages** - Run welcome (default ON), late (default ON), daily-ops (default OFF)
 - ✅ **Flexible boolean parsing** - `--run-daily-ops`, `--no-run-welcome`, `--run-late=false`, etc.
@@ -122,15 +126,17 @@ npm run test:fixtures
 
 **Trigger:** Enabled by default, disable with `--no-run-welcome`
 
-**Purpose:** Generate welcome message stubs for same-day check-ins
+**Purpose:** Generate welcome message **link stubs** for same-day check-ins (Portal-First Law — Grant 2026-09-07)
 
 **Tool:** `browns-welcome-draft-pack`
 
 **Outputs:**
 - `queue.md` → copied as `welcome-queue.md`
-- `drafts/*.md` → copied as `welcome-*.md`
+- `drafts/*.md` → copied as `welcome-*.md` (link stubs: name + date + `[PORTAL_URL]` placeholder only)
 - `missing-fields.md` → copied as `welcome-missing-fields.md`
 - `APPROVAL.md` → copied as `welcome-APPROVAL.md`
+
+**Portal-First:** Guest-facing drafts are **short stubs**. NO Wi-Fi, access codes, parking, or rates in WA body. All property details live in magic-link portal.
 
 ### Stage 2: browns-late-checkin-queue (Default ON)
 
@@ -189,10 +195,12 @@ The CLI generates outputs in `<outdir>/pack-<YYYY-MM-DD>/`:
 
 ### 3. Welcome Draft Pack Outputs (if `--run-welcome`)
 
-- `welcome-queue.md` - Numbered welcome message queue
-- `welcome-*.md` - Individual guest welcome stubs
-- `welcome-missing-fields.md` - Data quality report
+- `welcome-queue.md` - Numbered welcome message queue (link stubs only, Portal-First Law)
+- `welcome-*.md` - Individual guest welcome **link stubs** (name + date + `[PORTAL_URL]` placeholder)
+- `welcome-missing-fields.md` - Data quality report (missing phone blocks delivery)
 - `welcome-APPROVAL.md` - Welcome-specific approval checklist
+
+**Portal-First (Grant 2026-09-07):** Welcome drafts are **short stubs**. NO Wi-Fi, access codes, parking, or rates in WA body. `[PORTAL_URL]` must be replaced with actual magic-link portal URL before send.
 
 ### 4. Late Check-In Queue Outputs (if `--run-late`)
 
@@ -360,16 +368,16 @@ tools/browns-welcome-late-pipeline-pack/
 └── README.md                   # This file
 ```
 
-## Safety & Constraints (Grant Law — CoS 6 Sep 2026)
+## Safety & Constraints (Portal-First Law — Grant 2026-09-07)
 
 ### What This Tool Never Does
 
 - ❌ **No auto-send** - All outputs are drafts for manual review and send
 - ❌ **No WhatsApp API** - Does not connect to WhatsApp Business API
 - ❌ **No email sending** - Does not send emails
-- ❌ **No data invention** - Never fabricates guest phones or ETAs
-- ❌ **No rate mentions in guest drafts** - Rate cards are ops/pricing only; never in guest-facing WhatsApp draft text
-- ❌ **No placeholders in guest bodies** - Guest welcome drafts never contain `[GUEST_PHONE]` or `[RATE CARD REQUIRED]`
+- ❌ **No data invention** - Never fabricates guest phones, ETAs, or portal URLs
+- ❌ **No property details in WA** - No Wi-Fi, access codes, parking, rates in guest-facing message body
+- ❌ **No placeholders except portal URL** - Guest welcome drafts only contain `[PORTAL_URL]` (all other data resolved or blocked)
 - ❌ **No browser automation** - Offline only
 - ❌ **No API calls** - Orchestrator calls local tools via npm run only
 
@@ -381,6 +389,21 @@ tools/browns-welcome-late-pipeline-pack/
 - ✅ **Generates PACK.md** with pipeline summary
 - ✅ **Copies tool outputs** into one dated pipeline pack folder
 - ✅ **Produces manifest.json** for machine-readable inventory (PR #116 accuracy)
+- ✅ **Generates link stubs** - Short welcome messages (name + date + portal URL placeholder only)
+
+### Portal-First Law (Grant 2026-09-07)
+
+**Guest-facing WhatsApp = short human-gated stub:**
+- ✅ Guest name
+- ✅ Check-in date
+- ✅ `[PORTAL_URL]` placeholder (replaced with actual magic-link portal URL before send)
+- ❌ NO Wi-Fi, access codes, parking
+- ❌ NO rates, pricing, or financial details
+- ❌ NO detailed property information
+
+**All stay packet content (check-in details, access codes, property info) lives in the magic-link portal.**
+
+**Missing phone → BLOCKED:** Ops queue blocks send until phone resolved from NightsBridge booking detail or Browns/stay inbox. Cannot deliver link without guest phone.
 
 ### Data Privacy
 
@@ -393,11 +416,13 @@ tools/browns-welcome-late-pipeline-pack/
 
 ### browns-welcome-draft-pack
 
-**Purpose:** Generate welcome message stubs for same-day check-ins
+**Purpose:** Generate welcome message **link stubs** for same-day check-ins (Portal-First Law — Grant 2026-09-07)
 
 **Invoked with:** Enabled by default (disable with `--no-run-welcome`)
 
-**Outputs copied:** `queue.md`, `drafts/*.md`, `missing-fields.md`, `APPROVAL.md`
+**Outputs copied:** `queue.md`, `drafts/*.md` (link stubs: name + date + `[PORTAL_URL]` only), `missing-fields.md`, `APPROVAL.md`
+
+**Portal-First:** Guest-facing drafts are **short stubs**. NO Wi-Fi, access codes, parking, or rates in WA body. All property details live in magic-link portal.
 
 **Status:** Default ON
 
@@ -540,4 +565,4 @@ GitHub: [@GrantB83](https://github.com/GrantB83)
 
 ---
 
-**Remember:** All outputs are **DRAFTS ONLY**. Review `APPROVAL.md` and `PACK.md` before every send. CoS owns WhatsApp. Never auto-send. Never invent guest phones/rates/ETAs. Dullstroom / The Browns only.
+**Remember:** All outputs are **DRAFTS ONLY**. Review `APPROVAL.md` and `PACK.md` before every send. CoS owns WhatsApp. Never auto-send. Never invent guest phones/ETAs/portal URLs. **Portal-First Law (Grant 2026-09-07):** Guest-facing WA = name + check-in + portal link stub ONLY. NO Wi-Fi/access/parking/rates in WA body. Dullstroom / The Browns only.
