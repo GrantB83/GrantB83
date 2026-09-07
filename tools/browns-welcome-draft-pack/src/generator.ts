@@ -12,13 +12,14 @@ export function generateWelcomeStubs(
     const normalizedName = normalizeGuestName(booking.guestName);
     const facts = guestFactsMap.get(normalizedName);
 
-    // Check for phone and rate
+    // Check for phone (only phone can block; rate is ops-only and never blocks)
     const hasPhone = !!(booking.guestPhone || facts?.phone);
     const hasRate = !!(booking.ratePerNight && booking.currency);
 
+    // Grant Law: Only missing phone blocks CoS Admin post
+    // Missing rate is ops-only tracking; never blocks, never mentioned in guest body
     const placeholders: string[] = [];
     if (!hasPhone) placeholders.push('[GUEST_PHONE]');
-    if (!hasRate) placeholders.push('[RATE CARD REQUIRED]');
 
     // Generate safe filename
     const safeName = generateSafeName(booking.guestName, booking.checkInDate);

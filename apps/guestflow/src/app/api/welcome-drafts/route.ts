@@ -8,6 +8,7 @@ interface Booking {
   id: number
   tenant_id: number
   guest_name: string
+  guest_phone: string | null
   check_in: string
   check_out: string
   room_number: string | null
@@ -37,11 +38,12 @@ function generateWelcomeMessage(booking: Booking, property: Property | null): { 
   
   // Grant Law (CoS 6 Sep 2026): NEVER include [GUEST_PHONE] or [RATE CARD REQUIRED] in guest-facing WhatsApp draft bodies
   // Missing phone → track in missingFields for ops; resolve from NB booking detail before CoS Admin post
-  // Missing rate → ops-only; rate cards never mentioned in guest welcome messages
+  // Missing rate → not tracked in welcome drafts at all; rate cards are ops/pricing only, not a welcome gap
   
-  // Track missing data for ops (queue.md + missing-fields.md) but NOT in guest message body
-  missingFields.push('guest_phone')
-  missingFields.push('rate_card')
+  // Track missing phone ONLY when actually missing (for blocking in queue)
+  if (!booking.guest_phone || booking.guest_phone.trim() === '') {
+    missingFields.push('guest_phone')
+  }
 
   const checkInDate = parseISO(booking.check_in)
   const checkOutDate = parseISO(booking.check_out)

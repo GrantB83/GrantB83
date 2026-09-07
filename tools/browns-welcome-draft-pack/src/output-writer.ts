@@ -59,13 +59,12 @@ function writeQueueFile(stubs: WelcomeStub[], outdir: string): void {
       lines.push(`## ${idx + 1}. ${stub.guestName} — ${formatDate(stub.checkInDate)}`);
       lines.push('');
       
-      if (stub.placeholders.length > 0) {
-        lines.push(`**🚫 BLOCKED:** ${stub.placeholders.join(', ')}`);
+      // Only missing phone blocks; missing rate is ops-only and never blocks
+      if (!stub.hasPhone) {
+        lines.push(`**🚫 BLOCKED:** Missing guest phone`);
         lines.push('');
-        if (!stub.hasPhone) {
-          lines.push('⚠️ Resolve guest phone from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.');
-          lines.push('');
-        }
+        lines.push('⚠️ Resolve guest phone from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.');
+        lines.push('');
       }
 
       lines.push(`See: \`drafts/${stub.safeName}.md\``);
@@ -94,6 +93,7 @@ function writeMissingFieldsFile(stubs: WelcomeStub[], outdir: string): void {
   lines.push(`## 🚫 Missing Guest Phone — BLOCKED (${missingPhone.length})`);
   lines.push('');
   lines.push('**Action required:** Resolve from NightsBridge booking detail or Browns/stay inbox before CoS Admin post.');
+  lines.push('**Blocks CoS Admin post:** YES — do not send until phone resolved.');
   lines.push('');
   if (missingPhone.length === 0) {
     lines.push('_None._');
@@ -104,9 +104,10 @@ function writeMissingFieldsFile(stubs: WelcomeStub[], outdir: string): void {
   }
   lines.push('');
 
-  lines.push(`## Missing Rate Card — Ops-only (${missingRate.length})`);
+  lines.push(`## Missing Rate Card — Ops-only tracking (${missingRate.length})`);
   lines.push('');
   lines.push('**Note:** Rate cards are ops/pricing only. Never mentioned in guest welcome WhatsApp drafts.');
+  lines.push('**Blocks CoS Admin post:** NO — rate gaps do not block guest welcome messages.');
   lines.push('');
   if (missingRate.length === 0) {
     lines.push('_None._');
