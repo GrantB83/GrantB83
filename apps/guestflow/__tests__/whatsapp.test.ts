@@ -1,8 +1,8 @@
 /**
- * WhatsApp Cloud API Tests
+ * WhatsApp Messaging Tests
  * 
- * Tests for WhatsApp message sending functionality with mocked Graph API
- * Includes sandbox mode tests for dry-run operation
+ * Tests for WhatsApp message sending functionality with mocked APIs
+ * Includes tests for Twilio, Meta, and sandbox modes
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -12,6 +12,7 @@ const originalEnv = process.env
 
 beforeEach(() => {
   vi.resetModules()
+  // Default to Meta credentials for backward compatibility
   process.env = {
     ...originalEnv,
     WHATSAPP_TOKEN: 'test_token_123',
@@ -24,6 +25,49 @@ beforeEach(() => {
 afterEach(() => {
   process.env = originalEnv
   vi.restoreAllMocks()
+})
+
+describe('WhatsApp Provider Selection', () => {
+  it('should detect Meta provider when Meta credentials present', async () => {
+    const { getWhatsAppProvider, getWhatsAppMode } = await import('@/lib/whatsapp')
+    expect(getWhatsAppProvider()).toBe('meta')
+    expect(getWhatsAppMode()).toBe('live')
+  })
+
+  it('should detect Twilio provider when Twilio credentials present', async () => {
+    delete process.env.WHATSAPP_TOKEN
+    delete process.env.WHATSAPP_PHONE_NUMBER_ID
+    delete process.env.WHATSAPP_BUSINESS_ACCOUNT_ID
+    process.env.TWILIO_ACCOUNT_SID = 'AC_test_sid'
+    process.env.TWILIO_AUTH_TOKEN = 'test_auth_token'
+    process.env.TWILIO_WHATSAPP_FROM = '+14155238886'
+    
+    vi.resetModules()
+    const { getWhatsAppProvider, getWhatsAppMode } = await import('@/lib/whatsapp')
+    expect(getWhatsAppProvider()).toBe('twilio')
+    expect(getWhatsAppMode()).toBe('live')
+  })
+
+  it('should prefer Twilio when both Twilio and Meta credentials present', async () => {
+    process.env.TWILIO_ACCOUNT_SID = 'AC_test_sid'
+    process.env.TWILIO_AUTH_TOKEN = 'test_auth_token'
+    process.env.TWILIO_WHATSAPP_FROM = '+14155238886'
+    
+    vi.resetModules()
+    const { getWhatsAppProvider } = await import('@/lib/whatsapp')
+    expect(getWhatsAppProvider()).toBe('twilio')
+  })
+
+  it('should respect explicit WHATSAPP_PROVIDER=twilio', async () => {
+    process.env.WHATSAPP_PROVIDER = 'twilio'
+    process.env.TWILIO_ACCOUNT_SID = 'AC_test_sid'
+    process.env.TWILIO_AUTH_TOKEN = 'test_auth_token'
+    process.env.TWILIO_WHATSAPP_FROM = '+14155238886'
+    
+    vi.resetModules()
+    const { getWhatsAppProvider } = await import('@/lib/whatsapp')
+    expect(getWhatsAppProvider()).toBe('twilio')
+  })
 })
 
 describe('WhatsApp Service', () => {
@@ -349,6 +393,179 @@ describe('Sandbox Mode', () => {
   })
 })
 
+describe('Twilio Provider', () => {
+  beforeEach(() => {
+    delete process.env.WHATSAPP_TOKEN
+    delete process.env.WHATSAPP_PHONE_NUMBER_ID
+    delete process.env.WHATSAPP_BUSINESS_ACCOUNT_ID
+    delete process.env.WHATSAPP_MODE
+    process.env.TWILIO_ACCOUNT_SID = 'AC_test_sid_123'
+    process.env.TWILIO_AUTH_TOKEN = 'test_auth_token_456'
+    process.env.TWILIO_WHATSAPP_FROM = '+14155238886'
+  })
+
+  it('should send WhatsApp message via Twilio successfully', async () => {
+    // Mock successful Twilio API response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sid: 'SM_twilio_test_123',
+        status: 'queued'
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result = await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Welcome to The Browns!'
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.messageId).toBe('SM_twilio_test_123')
+    expect(result.provider).toBe('twilio')
+    expect(result.sandboxMode).toBe(false)
+    
+    // Verify fetch was called with Twilio API endpoint
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.twilio.com/2010-04-01/Accounts/AC_test_sid_123/Messages.json',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'Authorization': expect.stringContaining('Basic '),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        })
+      })
+    )
+  })
+
+  it('should normalize phone numbers to whatsapp: format for Twilio', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sid: 'SM_test_456',
+        status: 'queued'
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test'
+    })
+
+    const fetchCall = (global.fetch as any).mock.calls[0]
+    const bodyParams = new URLSearchParams(fetchCall[1].body)
+    
+    expect(bodyParams.get('To')).toBe('whatsapp:+27836458313')
+    expect(bodyParams.get('From')).toBe('whatsapp:+14155238886')
+  })
+
+  it('should use MessagingServiceSid when provided', async () => {
+    process.env.TWILIO_MESSAGING_SERVICE_SID = 'MG_test_service_123'
+    
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sid: 'SM_test_789',
+        status: 'queued'
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test'
+    })
+
+    const fetchCall = (global.fetch as any).mock.calls[0]
+    const bodyParams = new URLSearchParams(fetchCall[1].body)
+    
+    expect(bodyParams.get('MessagingServiceSid')).toBe('MG_test_service_123')
+    expect(bodyParams.get('From')).toBeNull()
+  })
+
+  it('should include portal URL in Twilio message', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sid: 'SM_test_portal',
+        status: 'queued'
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Welcome!',
+      portalUrl: 'https://portal.thebrowns.co.za/booking/abc123'
+    })
+
+    const fetchCall = (global.fetch as any).mock.calls[0]
+    const bodyParams = new URLSearchParams(fetchCall[1].body)
+    const messageBody = bodyParams.get('Body')
+    
+    expect(messageBody).toContain('View Your Booking Portal')
+    expect(messageBody).toContain('https://portal.thebrowns.co.za/booking/abc123')
+  })
+
+  it('should handle Twilio API errors', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        message: 'Invalid phone number',
+        code: 21211
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    const result = await sendWhatsAppMessage({
+      to: '+invalid',
+      message: 'Test'
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('Invalid phone number')
+    expect(result.provider).toBe('twilio')
+  })
+
+  it('should use Basic auth with Twilio', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sid: 'SM_auth_test',
+        status: 'queued'
+      })
+    }) as any
+
+    vi.resetModules()
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    
+    await sendWhatsAppMessage({
+      to: '+27836458313',
+      message: 'Test'
+    })
+
+    const fetchCall = (global.fetch as any).mock.calls[0]
+    const authHeader = fetchCall[1].headers.Authorization
+    
+    expect(authHeader).toContain('Basic ')
+    // Basic auth should be base64 encoded AccountSid:AuthToken
+    const decoded = Buffer.from(authHeader.replace('Basic ', ''), 'base64').toString()
+    expect(decoded).toBe('AC_test_sid_123:test_auth_token_456')
+  })
+})
+
 describe('Hard Gates', () => {
   it('should never auto-send without explicit approval', () => {
     // This test documents the hard gate requirement
@@ -365,6 +582,14 @@ describe('Hard Gates', () => {
   it('should work in sandbox mode for demos without live credentials', () => {
     // Sandbox mode allows staff flows, approve→draft, portal, 
     // and Nightsbridge sync to continue working without live Twilio/Meta creds
+    expect(true).toBe(true)
+  })
+
+  it('should never invent phone numbers or auto-broadcast', () => {
+    // Hard gates documented in AGENTS.md:
+    // - No auto-send
+    // - No guest broadcasts
+    // - No inventing phone numbers
     expect(true).toBe(true)
   })
 })

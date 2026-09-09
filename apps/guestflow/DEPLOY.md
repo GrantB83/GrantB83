@@ -509,14 +509,16 @@ GuestFlow ops console is ready for Browns Dullstroom.
 
 **Note on WhatsApp Configuration:**
 - **Optional:** WhatsApp works in sandbox mode (dry-run) when credentials missing
-- **Sandbox mode (default):** All send actions log dry-run attempts without calling Meta API; safe for demos/testing
-- **Live mode:** Set `WHATSAPP_MODE=live` + credentials to enable real message sending
-- **Setup required for live:** Meta Business Manager account, WhatsApp Business API approval, phone number registration
+- **Sandbox mode (default):** All send actions log dry-run attempts without calling external API; safe for demos/testing
+- **Live mode:** Provide Twilio OR Meta credentials to enable real message sending
+- **Twilio (recommended):** Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`
+- **Meta (original):** Set `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID`
+- **Setup required for live:** Approved WhatsApp Business Profile from Twilio or Meta
 - **See:** WhatsApp Setup section below for full configuration instructions
 
 ---
 
-## WhatsApp Cloud API Setup (Optional)
+## WhatsApp Messaging Setup (Optional)
 
 ### Overview
 
@@ -526,7 +528,16 @@ GuestFlow includes **human-approved WhatsApp send functionality** for welcome me
 - ✅ **Sandbox mode (default)** — Safe dry-run operation for demos, testing, and development
 - ✅ **NEVER auto-sends** — Requires explicit "Approve & Send" button click + confirmation dialog (both modes)
 - ✅ **Gracefully degraded** — Clear UI messaging showing current mode (sandbox vs live)
-- ✅ **Production-ready** — Uses Meta WhatsApp Cloud API (official, no third-party) when in live mode
+- ✅ **Production-ready** — Uses Twilio Messaging API or Meta WhatsApp Cloud API (official providers) when in live mode
+- ✅ **Provider flexibility** — Auto-detects which provider to use based on available credentials
+
+### Provider Selection
+
+GuestFlow automatically selects the WhatsApp provider based on available credentials:
+
+1. **WHATSAPP_MODE=sandbox** OR no credentials → Sandbox dry-run
+2. **WHATSAPP_PROVIDER=twilio** OR Twilio credentials present → Twilio Messaging API (live)
+3. **Meta credentials present** (no Twilio) → Meta WhatsApp Cloud API (live)
 
 ### Sandbox vs Live Mode
 
@@ -552,13 +563,40 @@ GuestFlow includes **human-approved WhatsApp send functionality** for welcome me
 
 #### LIVE MODE (After Approval)
 
+**Provider Option 1: Twilio (Recommended)**
+
 **When active:**
-- All credentials configured (TOKEN, PHONE_NUMBER_ID, BUSINESS_ACCOUNT_ID), AND
-- `WHATSAPP_MODE=live` set (or mode omitted with credentials present)
+- Twilio credentials configured (ACCOUNT_SID, AUTH_TOKEN, WHATSAPP_FROM), OR
+- `WHATSAPP_PROVIDER=twilio` set
+
+**Behavior:**
+- ✅ Calls Twilio Messaging API
+- ✅ Sends real messages to guest phone numbers
+- ✅ No template approval required (unlike Meta)
+- ⚠️ Requires approved Twilio WhatsApp Business Profile
+- ⚠️ Requires purchased/verified phone number from Twilio
+
+**Setup checklist:**
+1. Sign up for Twilio account (https://www.twilio.com/try-twilio)
+2. Submit WhatsApp Business Profile for approval (typically 1-3 days)
+3. Purchase WhatsApp-enabled phone number or use Messaging Service
+4. Get credentials from Twilio Console:
+   - TWILIO_ACCOUNT_SID
+   - TWILIO_AUTH_TOKEN
+   - TWILIO_WHATSAPP_FROM (e.g., whatsapp:+14155238886 or +14155238886)
+5. Add credentials to environment variables
+6. Test with your own WhatsApp number first
+
+**Provider Option 2: Meta (Original)**
+
+**When active:**
+- Meta credentials configured (TOKEN, PHONE_NUMBER_ID, BUSINESS_ACCOUNT_ID)
+- Twilio credentials NOT present
 
 **Behavior:**
 - ✅ Calls Meta WhatsApp Cloud API
 - ✅ Sends real messages to guest phone numbers
+- ⚠️ Requires template approval for out-of-24h messages
 - ⚠️ Requires Business Profile approval (typically 1-3 days)
 - ⚠️ Requires purchased/verified SA phone number
 
@@ -566,12 +604,23 @@ GuestFlow includes **human-approved WhatsApp send functionality** for welcome me
 1. Complete Meta Business Profile approval
 2. Purchase SA phone number from approved provider
 3. Link number to WhatsApp Business Account
-4. Test with Twilio magic number (+15005550006) first
-5. Set `WHATSAPP_MODE=live` + credentials in environment
+4. Get credentials from Meta Business Manager
+5. Submit message templates for approval (if needed)
+6. Add credentials to environment variables
 
 ### Prerequisites
 
-Before configuring WhatsApp in GuestFlow, you need:
+**Option 1: Twilio (Recommended)**
+
+Before configuring Twilio WhatsApp in GuestFlow, you need:
+
+1. **Twilio Account** ([twilio.com](https://www.twilio.com/try-twilio))
+2. **Approved WhatsApp Business Profile** (submit via Twilio Console)
+3. **WhatsApp-enabled phone number** (purchase from Twilio or use Messaging Service)
+
+**Option 2: Meta (Original)**
+
+Before configuring Meta WhatsApp in GuestFlow, you need:
 
 1. **Meta Business Manager Account** ([business.facebook.com](https://business.facebook.com))
 2. **WhatsApp Business Account** (created within Meta Business Manager)
@@ -580,10 +629,121 @@ Before configuring WhatsApp in GuestFlow, you need:
 
 **⚠️ CRITICAL:** The Browns' Dullstroom has a **new WhatsApp Business number** (not +27836458313). Contact Grant for:
 - Display name: **The Browns' Dullstroom**
-- Meta legal entity: **TheBrowns Group (Pty) Ltd**
-- Old number: Entry point only (do not register as Cloud API line)
+- Legal entity: **TheBrowns Group (Pty) Ltd**
+- Old number: Entry point only (do not register as new Cloud API line)
 
-### Step 1: Access Meta Business Manager
+### Twilio Setup (Option 1 - Recommended)
+
+#### Step 1: Create Twilio Account
+
+1. Go to [twilio.com/try-twilio](https://www.twilio.com/try-twilio)
+2. Sign up for a new account (free trial available)
+3. Verify your email and phone number
+4. Access the Twilio Console: [console.twilio.com](https://console.twilio.com)
+
+#### Step 2: Submit WhatsApp Business Profile
+
+1. In Twilio Console, go to **Messaging** → **Try it out** → **Send a WhatsApp message**
+2. Click **Set up your WhatsApp Business Profile**
+3. Fill in business details:
+   - **Business Display Name:** The Browns' Dullstroom
+   - **Business Description:** Luxury accommodation in Dullstroom, South Africa
+   - **Business Category:** Lodging
+   - **Business Website:** thebrowns.co.za (or your website)
+4. Submit for approval (typically 1-3 business days)
+5. Wait for approval email from Twilio
+
+#### Step 3: Get WhatsApp-Enabled Phone Number
+
+**Option A: Use Twilio Sandbox (Testing Only)**
+```
+From: whatsapp:+14155238886 (Twilio sandbox)
+Note: Requires guests to opt-in first - not suitable for production
+```
+
+**Option B: Purchase WhatsApp-Enabled Number (Production)**
+1. Go to **Phone Numbers** → **Buy a number**
+2. Select country (US numbers recommended for WhatsApp)
+3. Check **MMS** and **SMS** capabilities
+4. Purchase number
+5. Enable WhatsApp on the number:
+   - Go to **Phone Numbers** → **Manage** → [your number]
+   - Under **Messaging**, enable WhatsApp
+
+**Option C: Use Messaging Service (Recommended for Scale)**
+1. Go to **Messaging** → **Services** → **Create Messaging Service**
+2. Add WhatsApp sender to the service
+3. Use `TWILIO_MESSAGING_SERVICE_SID` instead of `TWILIO_WHATSAPP_FROM`
+
+#### Step 4: Get Credentials
+
+1. In Twilio Console, go to [console.twilio.com](https://console.twilio.com)
+2. Find your Account SID and Auth Token on the dashboard:
+
+```bash
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+# Or just: TWILIO_WHATSAPP_FROM=+14155238886 (auto-normalized)
+```
+
+**Optional: Messaging Service**
+```bash
+TWILIO_MESSAGING_SERVICE_SID=MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+#### Step 5: Add to Environment Variables
+
+**Vercel:**
+```bash
+vercel env add TWILIO_ACCOUNT_SID
+# Paste your Account SID
+
+vercel env add TWILIO_AUTH_TOKEN
+# Paste your Auth Token
+
+vercel env add TWILIO_WHATSAPP_FROM
+# Paste your WhatsApp sender (e.g., +14155238886)
+
+# Optional: Messaging Service
+vercel env add TWILIO_MESSAGING_SERVICE_SID
+# Paste your Messaging Service SID
+
+# Redeploy
+vercel --prod
+```
+
+**Fly.io:**
+```bash
+fly secrets set TWILIO_ACCOUNT_SID=ACxxxxxxxx
+fly secrets set TWILIO_AUTH_TOKEN=your_token
+fly secrets set TWILIO_WHATSAPP_FROM=+14155238886
+
+# Restart
+fly deploy
+```
+
+**Local Development:**
+```bash
+# Add to apps/guestflow/.env.local
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=your_token
+TWILIO_WHATSAPP_FROM=+14155238886
+```
+
+#### Step 6: Verify Twilio Configuration
+
+1. Visit `https://guestflow.thebrowns.co.za/ops/welcome-drafts`
+2. Check status banner:
+   - ✅ Green = "WhatsApp configured via Twilio"
+   - ⚠️ Amber = "WhatsApp not configured"
+3. Test send with your own WhatsApp number first
+
+---
+
+### Meta Setup (Option 2 - Original)
+
+#### Step 1: Access Meta Business Manager
 
 1. Go to [business.facebook.com](https://business.facebook.com)
 2. Login with TheBrowns Group account credentials
