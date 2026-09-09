@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendWhatsAppMessage, isWhatsAppConfigured, getWhatsAppMode, isWhatsAppSandboxMode } from '@/lib/whatsapp'
+import { sendWhatsAppMessage, isWhatsAppConfigured, getWhatsAppMode, isWhatsAppSandboxMode, getWhatsAppProvider } from '@/lib/whatsapp'
 import { getDb } from '@/lib/db'
 
 interface SendRequest {
@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
         messageId: result.messageId,
         timestamp: result.timestamp,
         sandboxMode: result.sandboxMode,
+        provider: result.provider,
         message: result.sandboxMode 
           ? 'WhatsApp message dry-run successful (SANDBOX MODE - not sent to guest)'
-          : 'WhatsApp message sent successfully'
+          : `WhatsApp message sent successfully via ${result.provider === 'twilio' ? 'Twilio' : 'Meta'}`
       })
     } else {
       return NextResponse.json(
@@ -130,7 +131,8 @@ export async function POST(request: NextRequest) {
           success: false,
           error: result.error,
           timestamp: result.timestamp,
-          sandboxMode: result.sandboxMode
+          sandboxMode: result.sandboxMode,
+          provider: result.provider
         },
         { status: 500 }
       )
@@ -155,23 +157,29 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   const mode = getWhatsAppMode()
+  const provider = getWhatsAppProvider()
   const configured = isWhatsAppConfigured()
   const isSandbox = isWhatsAppSandboxMode()
   
-  return NextResponse.json({
+  const providerInfo: Record<string, any> = {
     mode,
+    provider,
     configured,
     sandboxMode: isSandbox,
-    message: isSandbox
-      ? 'WhatsApp is in SANDBOX MODE (dry-run only, safe for demos/testing)'
-      : 'WhatsApp is configured and ready to send (LIVE MODE)',
-    requiredForLive: [
-      'WHATSAPP_TOKEN',
-      'WHATSAPP_PHONE_NUMBER_ID', 
-      'WHATSAPP_BUSINESS_ACCOUNT_ID'
-    ],
-    note: isSandbox 
-      ? 'Set WHATSAPP_MODE=live and provide credentials to enable live sending'
-      : 'Live mode enabled - messages will be sent to guests'
-  })
+  }
+
+  if (provider === 'sandbox') {
+    providerInfo.message = 'WhatsApp is in SANDBOX MODE (dry-run only, safe for demos/testing)'
+    providerInfo.note = 'Provide Twilio or Meta credentials to enable live sending'
+    providerInfo.twilioRequired = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM']
+    providerInfo.metaRequired = ['WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_BUSINESS_ACCOUNT_ID']
+  } else if (provider === 'twilio') {
+    providerInfo.message = 'WhatsApp is configured via Twilio (LIVE MODE)'
+    providerInfo.note = 'Messages will be sent via Twilio Messaging API'
+  } else if (provider === 'meta') {
+    providerInfo.message = 'WhatsApp is configured via Meta (LIVE MODE)'
+    providerInfo.note = 'Messages will be sent via Meta WhatsApp Cloud API'
+  }
+  
+  return NextResponse.json(providerInfo)
 }
