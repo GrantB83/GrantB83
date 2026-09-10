@@ -411,6 +411,8 @@ Expected response (400):
    ```
 5. Test with curl or from the frontend
 
+**Production Note:** Environment variables for the contact API (RESEND_API_KEY, RESEND_FROM_EMAIL, CONTACT_RECIPIENT_EMAIL) are configured externally in the Vercel dashboard for the browns-guestflow project. No secret values are committed to the repository.
+
 ## Monitoring
 
 Check Vercel logs or your hosting platform's logs to monitor:
