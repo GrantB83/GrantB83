@@ -203,6 +203,67 @@ TTL: Auto
 
 ---
 
+## Guest Portal Domain Split (Optional)
+
+**Context:** By default, the guest portal (magic stay links) is served on the same host as staff ops (`guestflow.thebrowns.co.za`). For better guest UX and separation of concerns, you can split the guest portal onto a dedicated domain like `stay.thebrowns.co.za`.
+
+**Benefits:**
+- ✅ Guest-friendly URL (`stay.thebrowns.co.za` instead of `guestflow.thebrowns.co.za`)
+- ✅ Staff CRM routes are blocked on the guest domain (no accidental leakage)
+- ✅ Both hosts continue to work (backwards compatible with existing links)
+
+### Step 1: Add DNS Record for Guest Portal (Afrihost/DNS Provider)
+
+In your DNS provider (Afrihost for thebrowns.co.za):
+
+```
+Type: CNAME
+Name: stay
+Target: <your-vercel-url>.vercel.app  (same target as guestflow)
+TTL: Auto
+```
+
+**Example:**
+- Name: `stay`
+- Target: `browns-guestflow-abc123.vercel.app`
+- Result: `stay.thebrowns.co.za` → Vercel app
+
+### Step 2: Add Custom Domain in Vercel
+
+1. Go to Vercel project settings → Domains
+2. Add `stay.thebrowns.co.za`
+3. Vercel will verify DNS and provision SSL
+4. Wait 5-10 minutes for propagation
+
+### Step 3: Configure Portal Base URL
+
+Set the environment variable in Vercel to tell GuestFlow to use the new guest domain for magic links:
+
+```bash
+vercel env add NEXT_PUBLIC_PORTAL_BASE_URL
+# Enter: https://stay.thebrowns.co.za
+
+# Redeploy to apply
+vercel --prod
+```
+
+**What this does:**
+- All magic links generated will use `https://stay.thebrowns.co.za/guest/[token]`
+- When someone visits `stay.thebrowns.co.za`, only guest portal routes are served
+- Staff routes (`/ops/*`, `/staff-login`, etc.) return 404 on the guest domain
+- `guestflow.thebrowns.co.za` continues to work for both staff ops and guest portal
+
+### Step 4: Verify Setup
+
+1. Visit `https://stay.thebrowns.co.za/guest/test-code` (should show "Invalid access link" - correct behavior)
+2. Try visiting `https://stay.thebrowns.co.za/ops` (should show 404 - correct behavior for guest host)
+3. Try visiting `https://guestflow.thebrowns.co.za/ops` (should redirect to login - correct behavior for staff host)
+4. Generate a new magic link from `/ops/bookings` (should use `stay.thebrowns.co.za` domain)
+
+**Note:** Existing magic links with `guestflow.thebrowns.co.za` will continue to work. New links will use `stay.thebrowns.co.za` once the environment variable is set.
+
+---
+
 ## Option B: Fly.io Deployment (with SQLite)
 
 ### Step 1: Install Fly CLI
@@ -1273,6 +1334,7 @@ Add to cron (localhost or Fly.io):
 
 ## Grant's One-Time DNS Checklist
 
+### Base Deployment
 - [ ] Choose deployment platform (recommend Vercel + Turso)
 - [ ] Deploy app and note final URL
 - [ ] Add CNAME record: `guestflow` → deployment URL
@@ -1281,6 +1343,14 @@ Add to cron (localhost or Fly.io):
 - [ ] Test staff login with `STAFF_PASSWORD`
 - [ ] Share password with SA Ops team securely
 - [ ] Document password in Browns password manager
+
+### Guest Portal Domain Split (Optional but Recommended)
+- [ ] Add CNAME record: `stay` → same Vercel deployment URL
+- [ ] Add `stay.thebrowns.co.za` domain in Vercel
+- [ ] Set `NEXT_PUBLIC_PORTAL_BASE_URL=https://stay.thebrowns.co.za`
+- [ ] Redeploy with new environment variable
+- [ ] Verify guest portal works on `stay.thebrowns.co.za`
+- [ ] Verify staff routes return 404 on guest domain
 
 ---
 

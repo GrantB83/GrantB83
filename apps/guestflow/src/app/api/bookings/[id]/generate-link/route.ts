@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
 import { generateGuestToken, hashToken, calculateTokenExpiry } from '@/lib/token'
+import { getGuestPortalUrl } from '@/lib/portal-url'
 
 /**
  * Generate (or regenerate) a magic link for a booking
@@ -58,14 +59,10 @@ export async function POST(
       VALUES (?, ?, ?)
     `).run(bookingId, hash, expiresAt.toISOString())
 
-    // Generate the magic link URL
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL 
-      ? process.env.NEXT_PUBLIC_BASE_URL
-      : 'https://guestflow.thebrowns.co.za'
-    
-    const magicLink = `${baseUrl}/guest/${token}`
+    // Generate the magic link URL using portal URL helper
+    // This respects NEXT_PUBLIC_PORTAL_BASE_URL if set, enabling domain split
+    const host = req.headers.get('host')
+    const magicLink = getGuestPortalUrl(token, host || undefined)
 
     // Generate WhatsApp stub text
     const checkInDate = new Date(booking.checkIn).toLocaleDateString('en-ZA', {

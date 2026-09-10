@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Copy, CheckCircle, ExternalLink } from 'lucide-rea
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import { useTenant } from '@/components/TenantContext'
+import { getClientGuestPortalUrl } from '@/lib/portal-url'
 
 interface Booking {
   id: number
@@ -53,7 +54,7 @@ export default function BookingsPage() {
   }
 
   const copyPortalLink = async (bookingId: number) => {
-    const portalUrl = `${window.location.origin}/guest/${bookingId}`
+    const portalUrl = getClientGuestPortalUrl(bookingId.toString())
     try {
       await navigator.clipboard.writeText(portalUrl)
       setCopiedId(bookingId)
@@ -174,7 +175,7 @@ export default function BookingsPage() {
                           )}
                         </button>
                         <a
-                          href={`/guest/${booking.id}`}
+                          href={getClientGuestPortalUrl(booking.id.toString())}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
