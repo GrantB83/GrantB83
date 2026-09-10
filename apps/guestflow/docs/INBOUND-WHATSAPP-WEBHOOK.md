@@ -38,11 +38,49 @@ GuestFlow provides a **solid core ingest/classify/draft/ops queue pipeline** tha
 POST https://guestflow.thebrowns.co.za/api/inbound/webhook
 ```
 
-**Authentication:** Bearer token in `Authorization` header
+**Authentication:** Supports TWO modes:
+
+### 1. JSON with Bearer Token (CoS bridge / manual paste)
 
 ```bash
 Authorization: Bearer <INBOUND_WEBHOOK_SECRET>
+Content-Type: application/json
 ```
+
+### 2. Twilio form-urlencoded (native Twilio webhooks)
+
+```bash
+Content-Type: application/x-www-form-urlencoded
+X-Twilio-Signature: <computed HMAC-SHA1 signature>
+```
+
+Twilio signature is validated using `TWILIO_AUTH_TOKEN` environment variable.
+
+---
+
+## Twilio Webhook Setup (Native Inbound)
+
+**For Twilio WhatsApp / SMS inbound messages:**
+
+1. Configure your Twilio phone number's webhook URL in [Twilio Console](https://console.twilio.com):
+   - **When a message comes in:** `https://guestflow.thebrowns.co.za/api/inbound/webhook`
+   - **HTTP Method:** `POST`
+
+2. Ensure `TWILIO_AUTH_TOKEN` is set in your environment (same token used for outbound sends)
+
+3. Twilio will POST form-urlencoded data with fields:
+   - `From`: Sender phone number (e.g., `whatsapp:+27821234567` or `+27821234567`)
+   - `To`: Your Twilio number
+   - `Body`: Message text
+   - `MessageSid`: Unique message ID (used for deduplication)
+   - `NumMedia`: Number of media attachments
+   - `MediaUrl0`, `MediaUrl1`, etc.: URLs to attached media
+
+4. GuestFlow will:
+   - Validate `X-Twilio-Signature` header
+   - Map Twilio fields to internal format
+   - Process message through classifier and queue
+   - Return empty 200 response (no auto-replies to guests)
 
 ---
 
@@ -183,8 +221,8 @@ curl -X POST https://guestflow.thebrowns.co.za/api/inbound/webhook \
 
 ## Bridge Options (CoS Confirmed Priority)
 
-**Preferred Path:** Twilio/WABA webhooks on NEW number (when live) → GuestFlow webhook  
-**Migration Path:** Manual paste or optional CoS forwarder for old number → GuestFlow webhook
+**⭐ Preferred Path:** Native Twilio webhooks (see Twilio Webhook Setup above)  
+**Migration Path:** Manual paste or optional CoS forwarder for old number → GuestFlow webhook (JSON + Bearer token)
 
 ### ✅ Option A: Manual Paste (Immediate, Migration Only)
 
@@ -264,7 +302,7 @@ async function forwardWhatsAppMessage(msg) {
 
 ---
 
-### 📧 Option D: Email Forward (Manual Fallback)
+### 📧 Option E: Email Forward (Manual Fallback)
 
 Forward WhatsApp screenshots or copy-paste to monitored email, then parse and POST.
 

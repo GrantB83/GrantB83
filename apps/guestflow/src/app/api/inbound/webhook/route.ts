@@ -3,6 +3,7 @@ import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { generateTicketDrafts } from '@/lib/ticket-playbooks'
 import { processCheckinEvent } from '@/lib/checkin-inference'
+import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +36,7 @@ interface InboundMessagePayload {
 }
 
 /**
- * Verify webhook secret
+ * Verify webhook secret (for JSON Bearer token auth)
  */
 function verifyWebhookSecret(request: NextRequest): boolean {
   const secret = process.env.INBOUND_WEBHOOK_SECRET
@@ -52,24 +53,121 @@ function verifyWebhookSecret(request: NextRequest): boolean {
 }
 
 /**
+ * Verify Twilio request signature
+ * https://www.twilio.com/docs/usage/security#validating-requests
+ */
+function verifyTwilioSignature(
+  signature: string,
+  url: string,
+  params: Record<string, string>
+): boolean {
+  const authToken = process.env.TWILIO_AUTH_TOKEN
+  
+  if (!authToken) {
+    console.warn('TWILIO_AUTH_TOKEN not configured - Twilio signature validation skipped')
+    return true // Allow in development mode
+  }
+
+  // Build the signature string: URL + sorted params
+  const sortedKeys = Object.keys(params).sort()
+  let data = url
+  for (const key of sortedKeys) {
+    data += key + params[key]
+  }
+
+  // Compute HMAC-SHA1
+  const hmac = crypto.createHmac('sha1', authToken)
+  hmac.update(data)
+  const expectedSignature = hmac.digest('base64')
+
+  return signature === expectedSignature
+}
+
+/**
+ * Parse Twilio form-urlencoded body into key-value object
+ */
+async function parseTwilioBody(request: NextRequest): Promise<Record<string, string>> {
+  const text = await request.text()
+  const params: Record<string, string> = {}
+  
+  const pairs = text.split('&')
+  for (const pair of pairs) {
+    const [key, value] = pair.split('=')
+    if (key && value !== undefined) {
+      params[decodeURIComponent(key)] = decodeURIComponent(value.replace(/\+/g, ' '))
+    }
+  }
+  
+  return params
+}
+
+/**
  * POST /api/inbound/webhook
  * 
  * Accept inbound message, classify, persist, generate draft reply
+ * 
+ * Supports TWO authentication modes:
+ * 1. JSON payload with Bearer token (CoS bridge / manual)
+ * 2. Twilio form-urlencoded with X-Twilio-Signature validation
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const TIMEOUT_MS = 30000 // 30 seconds
 
   try {
-    // Verify webhook secret
-    if (!verifyWebhookSecret(request)) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized - invalid webhook secret' },
-        { status: 401 }
-      )
-    }
+    const contentType = request.headers.get('content-type') || ''
+    const isTwilioRequest = contentType.includes('application/x-www-form-urlencoded')
+    
+    let payload: InboundMessagePayload
+    let isTwilio = false
 
-    const payload: InboundMessagePayload = await request.json()
+    if (isTwilioRequest) {
+      // Twilio webhook: parse form-urlencoded and validate signature
+      const twilioSignature = request.headers.get('x-twilio-signature')
+      
+      if (!twilioSignature) {
+        return NextResponse.json(
+          { success: false, error: 'Missing X-Twilio-Signature header' },
+          { status: 401 }
+        )
+      }
+
+      // Parse Twilio body
+      const twilioParams = await parseTwilioBody(request)
+      
+      // Validate Twilio signature
+      const url = request.url
+      if (!verifyTwilioSignature(twilioSignature, url, twilioParams)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid Twilio signature' },
+          { status: 401 }
+        )
+      }
+
+      // Map Twilio fields to GuestFlow payload format
+      payload = {
+        from: twilioParams.From || '',
+        text: twilioParams.Body || '',
+        timestamp: new Date().toISOString(),
+        source: twilioParams.From?.startsWith('whatsapp:') ? 'twilio_whatsapp' : 'twilio_sms',
+        externalMessageId: twilioParams.MessageSid || undefined,
+        mediaRefs: twilioParams.NumMedia && parseInt(twilioParams.NumMedia) > 0 
+          ? Array.from({ length: parseInt(twilioParams.NumMedia) }, (_, i) => twilioParams[`MediaUrl${i}`]).filter(Boolean)
+          : undefined
+      }
+      
+      isTwilio = true
+    } else {
+      // JSON payload: verify Bearer token
+      if (!verifyWebhookSecret(request)) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized - invalid webhook secret' },
+          { status: 401 }
+        )
+      }
+
+      payload = await request.json()
+    }
 
     // Validate required fields
     if (!payload.from || !payload.text || !payload.timestamp) {
@@ -482,23 +580,30 @@ The Browns Team`
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      messageId,
-      threadId: thread.id,
-      classification: {
-        intent: classification.intent,
-        confidence: classification.confidence,
-        extractedData: classification.extractedData,
-        missingFields: classification.missingFields
-      },
-      draftReply,
-      checkinEvent,
-      ticket,
-      exception,
-      queuedForApproval: thread.status === 'drafted',
-      status: thread.status
-    })
+    // Return response based on source
+    if (isTwilio) {
+      // Twilio expects empty 200 or TwiML response (no auto-replies to guests)
+      return new NextResponse('', { status: 200 })
+    } else {
+      // JSON response for CoS bridge / manual paste / debugging
+      return NextResponse.json({
+        success: true,
+        messageId,
+        threadId: thread.id,
+        classification: {
+          intent: classification.intent,
+          confidence: classification.confidence,
+          extractedData: classification.extractedData,
+          missingFields: classification.missingFields
+        },
+        draftReply,
+        checkinEvent,
+        ticket,
+        exception,
+        queuedForApproval: thread.status === 'drafted',
+        status: thread.status
+      })
+    }
 
   } catch (error) {
     console.error('Inbound webhook error:', error)
