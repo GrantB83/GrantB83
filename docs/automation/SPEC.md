@@ -95,7 +95,7 @@ Full product/cost contract: `RUNTIME.md`. Do not collapse **Grok 4.6 (model)**, 
 Zero-token Gmail filters ──► labelled queues only
         │
         ▼
-Grok Bot team (weekly meter)     existing Bots amended to Family · Ops Chief · specialists
+Grok Bot desktop (weekly meter)  one live Bot already set up — https://x.ai/bot
   routines: 06:20 CT family digest, 06:30 CT ops digest, 16:00 SAST run-sheet
         │ exceptions / new code
         ▼
@@ -682,7 +682,7 @@ Store in Cursor Cloud environment secrets. Never in git.
 Grok asks for these with the exact approval phrases. Do not nag more than once per item.
 
 1. `APPROVE REPO ACCESS` for any private PW / Browns / booking repo that should be extended.
-2. `BOT ROSTER:` mapping of live Grok Bots (`G8`). Amend; do not duplicate.
+2. Live Grok Bot is the desktop Bot already set up (`bot-roster.yaml`, `G8` optional `LIVE BOT:` name or share URL). Do not recreate the retired six-role team.
 3. `APPROVE GOOGLE ACCOUNT <email> gmail,drive,calendar` for **every** login in `google-accounts.yaml` (not hub-only). Extra names via `GOOGLE ACCOUNTS:`.
 3. `APPROVE WA COEXISTENCE` + `APPROVE WA HOST <url>` before any live WhatsApp.
 4. Rate cards: hospitality, Perfect Water, Heavy Metal (files Grant drops in Drive `_Inbox`).
@@ -745,4 +745,4 @@ Ship labour cuts first, not architecture.
 4. `phase-02-drive-taxonomy` (parallel).
 5. `phase-01b-wa-slots` on PR #2.
 
-If Grant says “continue”: **amend existing Grok Bots** (`GROK-BOT-AMENDMENTS.md`) and **link every Google account** (`GOOGLE-ACCOUNTS.md`), then **10a then 1a then 1d/10b**. Do not rebuild Aquabuddy first. Do not create Family / Ops Chief if those Bots already exist — map with `BOT ROSTER:` (`G8`).
+If Grant says “continue”: use the **already-set-up desktop Grok Bot** (`GROK-BOT-AMENDMENTS.md`, [x.ai/bot](https://x.ai/bot)) and **link every Google account** (`GOOGLE-ACCOUNTS.md`), then **10a then 1a then 1d/10b**. Do not rebuild Aquabuddy first. Do not recreate the retired six-role team.

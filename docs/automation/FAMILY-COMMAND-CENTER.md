@@ -37,7 +37,7 @@ Inbound Gmail
     ├─ Action heuristics   →  Family/Action  (stays in inbox)
     │   due, sign, permission, volunteer, appointment, pay, overdue
     │
-    └─ Grok Bot "Family" routine (labelled mail ONLY)
+    └─ Desktop Grok Bot routine (labelled mail ONLY)
           ├─ file attachments → 10_Household / existing The Browns USA
           ├─ calendar events  → Family calendar (school + appt times)
           ├─ budget lines     → Budget sheet totals / bill due list
@@ -98,7 +98,7 @@ Use existing **The Browns USA** tree. Do not create a second household vault.
 | Medical PDFs | existing medical area **by filename only**; agent does not open |
 | Bills / bank CSV | `Finance/` + `Receipts 2026` pattern |
 | Budget | existing `Budget` spreadsheet (totals / due list tab) |
-| Unknown | `Scratch/` then Family Bot proposes a move |
+| Unknown | `Scratch/` then the desktop Grok Bot proposes a move |
 
 Naming: `YYYY-MM-DD__household__school|medical|bill__{counterparty}__{ref}`.
 
@@ -125,19 +125,19 @@ Existing Drive `Budget` sheet stays the SoR.
 
 - Incoming household bills → due-date row (payee, amount, due, source thread).
 - Phase 3 household categories feed **monthly totals only** into the sheet (no family narrative).
-- Grok Bot Family does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
+- The desktop Grok Bot does not “give financial advice”. It flags over-budget **totals** if Grant has set a cap cell.
 
 ---
 
-## 9. Grok Bot “Family” standing instructions
+## 9. Desktop Grok Bot — family lane
 
-Amend the **existing** household / school / calendar Bot (`GROK-BOT-AMENDMENTS.md` §3.2). Do not create a second Family Bot.
+Use the **already-set-up** desktop Grok Bot (`bot-roster.yaml`, [x.ai/bot](https://x.ai/bot)). Do not create a second Family Bot.
 
 Gmail plugin on the hub is **not** enough. Also sign in `thebrownsusa@gmail.com` (and any Liana login) on the Bot computer — AISD is not on `grant830318@gmail.com`. Create `family-filters.yaml` filters on **that** mailbox too.
 
 ```text
-You are Family. You only read Gmail labels Family/School, Family/Medical,
-Family/Finance, Family/Budget, Family/Action.
+You are the Brown desktop Grok Bot. For family work you only read Gmail labels
+Family/School, Family/Medical, Family/Finance, Family/Budget, Family/Action.
 
 06:20 America/Chicago every weekday (and Sunday 17:00 CT weekly):
 1. Do not search the whole inbox.
@@ -145,7 +145,7 @@ Family/Finance, Family/Budget, Family/Action.
 3. File FYI attachments by filename into The Browns USA. Do not open medical PDFs.
 4. Propose or create Family calendar events only if standing approval S11 is on.
 5. Draft the Family digest to Grant and Liana. Do not send medical body text.
-6. If something looks like a business thread, leave it and tell Ops Chief.
+6. If something looks like a business thread, leave it on the business labels.
 
 Never: pay, give medical advice, email a school, quote a lab result, use X.
 ```

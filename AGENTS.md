@@ -6,7 +6,7 @@ Employment-related workflows are out of scope. Do not add them.
 
 ## Who may act
 
-- **Grok Bot** is the only orchestrator. Amend Bots that already exist (`docs/automation/GROK-BOT-AMENDMENTS.md`); do not spawn a parallel team. It reads `docs/automation/BUSINESS-REQUIREMENTS.md` and `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md`, and launches one specialised Cursor Cloud agent per phase or work package.
+- **Grok Bot** is the only orchestrator. The live Bot is the one Grant already set up in the Grok Bot desktop app (`docs/automation/bot-roster.yaml`, [x.ai/bot](https://x.ai/bot)). Do not recreate the retired six-role team. It reads `docs/automation/BUSINESS-REQUIREMENTS.md` and `docs/automation/SPEC.md`, updates `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md`, and launches one specialised Cursor Cloud agent per phase or work package.
 - **Google identities** are many. Agents must use every approved login in `docs/automation/google-accounts.yaml` (Gmail, Drive, Calendar). Hub-only (`grant830318@gmail.com`) is not sufficient — school and several Drive roots live elsewhere.
 - **Cursor Cloud agents** implement a single assigned work package, then stop.
 - **Humans** (Grant, Liana) approve anything in `docs/automation/approval-gates.md`. Agents never bypass a gate.
