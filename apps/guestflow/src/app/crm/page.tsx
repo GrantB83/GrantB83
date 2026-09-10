@@ -43,6 +43,9 @@ export default function CRMPage() {
           View inquiry intake submissions saved to local SQLite for Browns Dullstroom properties. 
           This is NOT a CRM for sale—it's internal draft history only.
         </p>
+        <p className="text-xs text-gray-600 mt-2">
+          💡 Click on any row to view details and quick actions (WEBDIRECT link, status updates, WhatsApp drafts)
+        </p>
       </div>
 
       {loading ? (
@@ -73,7 +76,11 @@ export default function CRMPage() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-slate-50">
+                  <tr 
+                    key={lead.id} 
+                    onClick={() => window.location.href = `/crm/${lead.id}`}
+                    className="hover:bg-slate-50 cursor-pointer transition"
+                  >
                     <td className="px-4 py-3 text-sm text-gray-900">{lead.name || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{lead.email || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{lead.property_name || '—'}</td>

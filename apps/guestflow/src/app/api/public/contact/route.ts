@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -143,6 +144,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Store lead in database for staff follow-up
+    try {
+      await storeContactLead({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone?.trim() || '',
+        subject: subject?.trim() || '',
+        message: message.trim(),
+      })
+    } catch (dbError) {
+      // Log but don't fail if database storage fails
+      console.error('Failed to store contact lead:', dbError)
+    }
+
     // Success response
     return NextResponse.json(
       { 
@@ -231,4 +246,40 @@ async function sendContactNotification(data: {
   }
 
   return false
+}
+
+async function storeContactLead(data: {
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+}): Promise<void> {
+  const db = getDb()
+  
+  // Get default tenant (Browns)
+  const tenant = db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
+  const tenantId = tenant?.id || 1
+
+  // Store in waitlist table as a new lead
+  const stmt = db.prepare(`
+    INSERT INTO waitlist (
+      tenant_id, name, email, phone, property_name, room_count, 
+      current_system, subject, message, notes, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `)
+
+  stmt.run(
+    tenantId,
+    data.name,
+    data.email,
+    data.phone || null,
+    'Contact Form Inquiry', // Default property name for web inquiries
+    '1', // Default room count
+    'web-contact-form',
+    data.subject || null,
+    data.message,
+    `Web contact form submission\n${data.subject ? `Subject: ${data.subject}\n` : ''}Message: ${data.message}`,
+    'new'
+  )
 }
