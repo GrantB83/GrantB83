@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { isGuestPortalHost, isGuestRoute } from '@/lib/portal-url'
 
 // Edge-compatible base64 encoding (Buffer is not available in Edge Runtime)
 function base64Encode(str: string): string {
@@ -7,6 +8,24 @@ function base64Encode(str: string): string {
 }
 
 export function middleware(request: NextRequest) {
+  const host = request.headers.get('host')
+  const pathname = request.nextUrl.pathname
+
+  // Host-aware routing: if this is the dedicated guest portal host (e.g., stay.thebrowns.co.za),
+  // only serve guest-facing routes and block staff/ops routes to prevent CRM leakage
+  if (isGuestPortalHost(host || undefined)) {
+    if (isGuestRoute(pathname)) {
+      // Allow guest routes on the portal host
+      return NextResponse.next()
+    } else {
+      // Block staff/ops routes on the portal host
+      return NextResponse.json(
+        { error: 'Not found' },
+        { status: 404 }
+      )
+    }
+  }
+
   // Skip auth for static files and API routes that don't need auth
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
