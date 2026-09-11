@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { format, parseISO, addDays, isWithinInterval } from 'date-fns'
+import { generateGuestToken, calculateTokenExpiry } from '@/lib/token'
+import { getGuestPortalUrl } from '@/lib/portal-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,9 +33,10 @@ interface WelcomeDraft {
   roomNumber: string | null
   message: string
   missingFields: string[]
+  portalUrl?: string
 }
 
-function generateWelcomeMessage(booking: Booking, property: Property | null): { message: string, missingFields: string[] } {
+function generateWelcomeMessage(booking: Booking, property: Property | null, portalUrl?: string): { message: string, missingFields: string[] } {
   const missingFields: string[] = []
   
   // Grant Law (CoS 6 Sep 2026): NEVER include [GUEST_PHONE] or [RATE CARD REQUIRED] in guest-facing WhatsApp draft bodies
@@ -54,7 +57,7 @@ function generateWelcomeMessage(booking: Booking, property: Property | null): { 
   const location = property?.location || 'Dullstroom'
   
   // Guest-facing message body: NEVER includes [GUEST_PHONE] or [RATE CARD REQUIRED] placeholders
-  const message = `# Welcome Message Stub — ${booking.guest_name}
+  let message = `# Welcome Message Stub — ${booking.guest_name}
 
 **Check-in:** ${checkInFormatted}
 **Check-out:** ${checkOutFormatted}
@@ -67,7 +70,19 @@ Hi there,
 
 Looking forward to welcoming you to ${propertyName} in ${location} on ${checkInFormatted}!
 
-We're preparing everything for your arrival and want to make sure your stay is comfortable.
+We're preparing everything for your arrival and want to make sure your stay is comfortable.`
+
+  // Add portal section if URL is provided
+  if (portalUrl) {
+    message += `
+
+🔗 Your digital welcome pack:
+${portalUrl}
+
+(All check-in details, Wi-Fi, access codes, and property info are in your portal)`
+  }
+
+  message += `
 
 If you have any questions or special requests ahead of your stay, please don't hesitate to reach out.
 
@@ -119,7 +134,45 @@ export async function GET(request: NextRequest) {
       }
       
       const property = booking.property_id ? propertiesMap.get(booking.property_id) : null
-      const { message, missingFields } = generateWelcomeMessage(booking, property || null)
+      
+      // Mint portal magic link for this booking
+      let portalUrl: string | undefined = undefined
+      try {
+        // Revoke any existing active tokens for this booking
+        db.prepare(`
+          UPDATE guest_tokens 
+          SET revoked = 1 
+          WHERE booking_id = ? AND revoked = 0
+        `).run(booking.id)
+        
+        // Generate new token
+        const { token, hash } = generateGuestToken()
+        
+        // Calculate expiry (use check_out if available, otherwise check_in + 14 days)
+        const expiryDate = booking.check_out 
+          ? calculateTokenExpiry(booking.check_out)
+          : calculateTokenExpiry(addDays(parseISO(booking.check_in), 14).toISOString().split('T')[0])
+        
+        // Store token hash in database
+        db.prepare(`
+          INSERT INTO guest_tokens (booking_id, token_hash, expires_at)
+          VALUES (?, ?, ?)
+        `).run(booking.id, hash, expiryDate.toISOString())
+        
+        // Construct portal URL
+        const host = request.headers.get('host')
+        portalUrl = getGuestPortalUrl(token, host || undefined)
+      } catch (error) {
+        console.error(`Failed to generate portal link for booking ${booking.id}:`, error)
+        // Continue generating draft but mark portal_url as missing
+      }
+      
+      const { message, missingFields } = generateWelcomeMessage(booking, property || null, portalUrl)
+      
+      // Add portal_url to missingFields if generation failed
+      if (!portalUrl) {
+        missingFields.push('portal_url')
+      }
       
       drafts.push({
         id: booking.id,
@@ -129,7 +182,8 @@ export async function GET(request: NextRequest) {
         property: property?.name || 'Unknown Property',
         roomNumber: booking.room_number,
         message,
-        missingFields
+        missingFields,
+        portalUrl
       })
     }
 
