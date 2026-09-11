@@ -39,6 +39,13 @@ interface Thread {
     missingFields: string[]
   } | null
   metadata: Record<string, any>
+  sendHistory?: Array<{
+    timestamp: string
+    provider: 'meta' | 'twilio' | 'sandbox'
+    messageId: string | null
+    error: string | null
+    outcome: 'success' | 'failed'
+  }>
 }
 
 interface Stats {
@@ -88,6 +95,7 @@ export default function InboundQueuePage() {
   const [filterStatus, setFilterStatus] = useState<string>('')
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<'messages' | 'tickets' | 'late_checkin'>('messages')
+  const [sending, setSending] = useState(false) // T019: Add sending state
 
   const fetchQueue = async (showRefresh = false) => {
     try {
@@ -135,6 +143,59 @@ export default function InboundQueuePage() {
       }
     } catch (err) {
       console.error('Failed to update status:', err)
+    }
+  }
+
+  // T019-T023: Send message via WhatsApp
+  const sendMessage = async (thread: Thread) => {
+    if (!thread.latestMessage?.draftReply) {
+      alert('No draft reply to send')
+      return
+    }
+
+    try {
+      // T020: Show confirmation dialog with recipient, mode, and message preview
+      const mode = process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox' ? 'Sandbox' : 'Live'
+      const preview = thread.latestMessage.draftReply.slice(0, 100)
+      const confirmed = window.confirm(
+        `Send via WhatsApp?\n\nTo: ${thread.fromNumber}\nMode: ${mode}\n\n${preview}${thread.latestMessage.draftReply.length > 100 ? '...' : ''}\n\n${
+          mode === 'Sandbox' 
+            ? 'Sandbox mode: Message will be logged but not sent' 
+            : 'Live mode: This will send a real WhatsApp message'
+        }`
+      )
+
+      if (!confirmed) return
+
+      // T021: Prevent double-send by setting sending state
+      setSending(true)
+
+      const response = await fetch('/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: thread.threadId })
+      })
+
+      const result = await response.json()
+
+      // T023: Handle result - show success/error alert and refresh queue
+      if (result.success) {
+        if (result.data.sandboxMode) {
+          alert(`Sandbox Mode: Message logged but not sent\n\nProvider: ${result.data.provider}\nMessage ID: ${result.data.messageId}`)
+        } else {
+          alert(`Message sent via ${result.data.provider}\n\nMessage ID: ${result.data.messageId}`)
+        }
+        setSelectedThread(null)
+        await fetchQueue(true)
+      } else {
+        alert(`Send failed: ${result.error}${result.details ? `\n\nDetails: ${result.details}` : ''}`)
+      }
+    } catch (err) {
+      alert('Network error: Could not send message')
+      console.error('Send error:', err)
+    } finally {
+      // T021: Reset sending state in finally block
+      setSending(false)
     }
   }
 
@@ -474,8 +535,90 @@ export default function InboundQueuePage() {
                 </div>
               )}
 
+              {/* T028: Send History */}
+              {selectedThread.sendHistory && selectedThread.sendHistory.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-sm text-gray-700 mb-2">Send History</h3>
+                  <div className="space-y-2">
+                    {selectedThread.sendHistory.map((entry, index) => (
+                      <div key={index} className={`p-3 rounded-lg border ${
+                        entry.outcome === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}>
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {entry.outcome === 'success' ? '✓' : '✗'}
+                            </span>
+                            <span className="text-sm font-medium">
+                              {entry.outcome === 'success' ? 'Sent' : 'Failed'}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              entry.provider === 'sandbox' ? 'bg-gray-200 text-gray-700' :
+                              entry.provider === 'twilio' ? 'bg-green-200 text-green-700' :
+                              'bg-blue-200 text-blue-700'
+                            }`}>
+                              {entry.provider}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-600">
+                            {format(parseISO(entry.timestamp), 'MMM d, h:mm a')}
+                          </span>
+                        </div>
+                        {entry.outcome === 'success' && entry.messageId && (
+                          <p className="text-xs text-gray-600 ml-6">
+                            Message ID: {entry.messageId}
+                          </p>
+                        )}
+                        {entry.outcome === 'failed' && entry.error && (
+                          <>
+                            <p className="text-xs text-red-700 ml-6 mb-2">
+                              Error: {entry.error}
+                            </p>
+                            {/* T029: Retry button for failed sends */}
+                            {selectedThread.status === 'failed' && (
+                              <button
+                                onClick={() => sendMessage(selectedThread)}
+                                disabled={sending}
+                                className="ml-6 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {sending ? 'Retrying...' : 'Retry'}
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {/* T030: Show attempt number if multiple sends */}
+                        {selectedThread.sendHistory!.length > 1 && (
+                          <p className="text-xs text-gray-500 ml-6 mt-1">
+                            Attempt {selectedThread.sendHistory!.length - index} of {selectedThread.sendHistory!.length}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">
+                {/* T022: Send via WhatsApp button */}
+                {(selectedThread.status === 'drafted' || selectedThread.status === 'approved') && 
+                 selectedThread.latestMessage?.draftReply && (
+                  <button
+                    onClick={() => sendMessage(selectedThread)}
+                    disabled={sending}
+                    className={`flex-1 px-4 py-2 rounded-lg font-medium ${
+                      process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox'
+                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {sending ? 'Sending...' : (
+                      process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox'
+                        ? '⚠️ Send via WhatsApp (Sandbox Mode)'
+                        : 'Send via WhatsApp'
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     updateThreadStatus(selectedThread.threadId, 'approved')
