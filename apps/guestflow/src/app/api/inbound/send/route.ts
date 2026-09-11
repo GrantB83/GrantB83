@@ -82,24 +82,30 @@ export async function POST(request: NextRequest) {
       // Use transaction to insert outbound message + update thread status atomically
       await db.batch([
         // Insert outbound message
-        db.prepare(`
-          INSERT INTO inbound_messages (
-            thread_id, message_text, message_timestamp, tenant_id,
-            direction, whatsapp_provider, whatsapp_message_id
-          ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
-        `).bind(
-          threadId,
-          draftReply,
-          sendResult.timestamp,
-          sendResult.provider,
-          sendResult.messageId
-        ),
+        {
+          sql: `
+            INSERT INTO inbound_messages (
+              thread_id, message_text, message_timestamp, tenant_id,
+              direction, whatsapp_provider, whatsapp_message_id
+            ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
+          `,
+          args: [
+            threadId,
+            draftReply,
+            sendResult.timestamp,
+            sendResult.provider,
+            sendResult.messageId
+          ]
+        },
         // Update thread status to 'sent' and last_message_at
-        db.prepare(`
-          UPDATE inbound_threads 
-          SET status = 'sent', last_message_at = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).bind(sendResult.timestamp, threadId)
+        {
+          sql: `
+            UPDATE inbound_threads 
+            SET status = 'sent', last_message_at = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `,
+          args: [sendResult.timestamp, threadId]
+        }
       ])
 
       return NextResponse.json({
@@ -121,24 +127,30 @@ export async function POST(request: NextRequest) {
       // Use transaction to insert outbound message with error + update thread status
       await db.batch([
         // Insert outbound message with send_error populated
-        db.prepare(`
-          INSERT INTO inbound_messages (
-            thread_id, message_text, message_timestamp, tenant_id,
-            direction, whatsapp_provider, send_error
-          ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
-        `).bind(
-          threadId,
-          draftReply,
-          sendResult.timestamp,
-          sendResult.provider,
-          errorMessage
-        ),
+        {
+          sql: `
+            INSERT INTO inbound_messages (
+              thread_id, message_text, message_timestamp, tenant_id,
+              direction, whatsapp_provider, send_error
+            ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
+          `,
+          args: [
+            threadId,
+            draftReply,
+            sendResult.timestamp,
+            sendResult.provider,
+            errorMessage
+          ]
+        },
         // Update thread status to 'failed'
-        db.prepare(`
-          UPDATE inbound_threads 
-          SET status = 'failed', updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).bind(threadId)
+        {
+          sql: `
+            UPDATE inbound_threads 
+            SET status = 'failed', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `,
+          args: [threadId]
+        }
       ])
 
       return NextResponse.json({
