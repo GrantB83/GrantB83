@@ -173,6 +173,17 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_guest_tokens_expires ON guest_tokens(expires_at);
 `
 
+/**
+ * Split a multi-statement SQL string into individual statements.
+ * Handles semicolons carefully - skips empty statements and trims whitespace.
+ */
+function splitSqlStatements(sql: string): string[] {
+  return sql
+    .split(';')
+    .map(stmt => stmt.trim())
+    .filter(stmt => stmt.length > 0)
+}
+
 function createSqliteClient(): DbClient {
   const dbDir = path.join(process.cwd(), 'data')
   
@@ -261,7 +272,12 @@ function createTursoClient(url: string, authToken: string): DbClient {
       return statement
     },
     exec: async (sql: string) => {
-      await tursoClient.execute(sql)
+      // Turso rejects multi-statement exec with SQL_MANY_STATEMENTS error.
+      // Split and execute statements individually.
+      const statements = splitSqlStatements(sql)
+      for (const stmt of statements) {
+        await tursoClient.execute(stmt)
+      }
     },
     batch: async (statements: (BatchStatement | DbStatement)[]) => {
       const batchStatements = []
