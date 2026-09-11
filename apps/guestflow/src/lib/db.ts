@@ -9,11 +9,18 @@ interface DbStatement {
   run: (...params: any[]) => any | Promise<any>
   get: (...params: any[]) => any | Promise<any>
   all: (...params: any[]) => any[] | Promise<any[]>
+  bind?: (...params: any[]) => DbStatement
+}
+
+interface BatchStatement {
+  sql: string
+  args?: any[]
 }
 
 interface DbClient {
   prepare: (sql: string) => DbStatement
   exec: (sql: string) => void | Promise<void>
+  batch: (statements: (BatchStatement | DbStatement)[]) => void | Promise<void>
   close?: () => void
   type: 'sqlite' | 'turso'
 }
@@ -177,9 +184,41 @@ function createSqliteClient(): DbClient {
   const sqliteDb = new Database(dbPath)
   
   return {
-    prepare: (sql: string) => sqliteDb.prepare(sql),
+    prepare: (sql: string) => {
+      const stmt = sqliteDb.prepare(sql)
+      return {
+        run: (...params: any[]) => stmt.run(...params),
+        get: (...params: any[]) => stmt.get(...params),
+        all: (...params: any[]) => stmt.all(...params),
+        bind: (...params: any[]) => {
+          const bound = stmt.bind(...params)
+          return {
+            run: (...p: any[]) => bound.run(...p),
+            get: (...p: any[]) => bound.get(...p),
+            all: (...p: any[]) => bound.all(...p),
+          }
+        },
+      }
+    },
     exec: (sql: string) => {
       sqliteDb.exec(sql)
+    },
+    batch: (statements: (BatchStatement | DbStatement)[]) => {
+      const transaction = sqliteDb.transaction(() => {
+        for (const stmt of statements) {
+          if ('sql' in stmt) {
+            const prepared = sqliteDb.prepare(stmt.sql)
+            if (stmt.args && stmt.args.length > 0) {
+              prepared.run(...stmt.args)
+            } else {
+              prepared.run()
+            }
+          } else {
+            stmt.run()
+          }
+        }
+      })
+      transaction()
     },
     close: () => sqliteDb.close(),
     type: 'sqlite' as const,
@@ -193,25 +232,50 @@ function createTursoClient(url: string, authToken: string): DbClient {
   })
 
   return {
-    prepare: (sql: string) => ({
-      run: async (...params: any[]) => {
-        const result = await tursoClient.execute({ sql, args: params })
-        return {
-          changes: result.rowsAffected,
-          lastInsertRowid: result.lastInsertRowid,
-        }
-      },
-      get: async (...params: any[]) => {
-        const result = await tursoClient.execute({ sql, args: params })
-        return result.rows[0] as any
-      },
-      all: async (...params: any[]) => {
-        const result = await tursoClient.execute({ sql, args: params })
-        return result.rows as any[]
-      },
-    }),
+    prepare: (sql: string) => {
+      let boundArgs: any[] = []
+      const statement: DbStatement = {
+        run: async (...params: any[]) => {
+          const args = boundArgs.length > 0 ? boundArgs : params
+          const result = await tursoClient.execute({ sql, args })
+          return {
+            changes: result.rowsAffected,
+            lastInsertRowid: result.lastInsertRowid,
+          }
+        },
+        get: async (...params: any[]) => {
+          const args = boundArgs.length > 0 ? boundArgs : params
+          const result = await tursoClient.execute({ sql, args })
+          return result.rows[0] as any
+        },
+        all: async (...params: any[]) => {
+          const args = boundArgs.length > 0 ? boundArgs : params
+          const result = await tursoClient.execute({ sql, args })
+          return result.rows as any[]
+        },
+        bind: (...params: any[]) => {
+          boundArgs = params
+          return statement
+        },
+      }
+      return statement
+    },
     exec: async (sql: string) => {
       await tursoClient.execute(sql)
+    },
+    batch: async (statements: (BatchStatement | DbStatement)[]) => {
+      const batchStatements = []
+      for (const stmt of statements) {
+        if ('sql' in stmt) {
+          batchStatements.push({
+            sql: stmt.sql,
+            args: stmt.args || [],
+          })
+        } else {
+          throw new Error('Turso batch requires statements with sql and args properties. Use { sql: "...", args: [...] } format.')
+        }
+      }
+      await tursoClient.batch(batchStatements, 'write')
     },
     close: () => tursoClient.close(),
     type: 'turso' as const,
