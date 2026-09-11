@@ -392,6 +392,70 @@ Result: `guestflow.thebrowns.co.za` → Staff-only ops console
 
 ---
 
+## WhatsApp Send Configuration
+
+### Environment Variables
+
+**Required for Live WhatsApp Sending:**
+
+```bash
+# WhatsApp Mode (default: sandbox)
+WHATSAPP_MODE=sandbox  # or 'live' for production sends
+
+# Twilio Provider (recommended - preferred after KYC approval)
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_WHATSAPP_FROM=+14155238886  # or whatsapp:+14155238886
+
+# OR Meta Provider (alternative)
+WHATSAPP_TOKEN=EAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+WHATSAPP_PHONE_NUMBER_ID=123456789012345
+WHATSAPP_BUSINESS_ACCOUNT_ID=123456789012345
+```
+
+**Modes:**
+
+- **Sandbox Mode** (`WHATSAPP_MODE=sandbox` or no credentials):
+  - Logs all send attempts without calling live WhatsApp API
+  - Safe for development, testing, and demos
+  - No real messages sent to guests
+  - Default until TWILIO_* or WHATSAPP_* credentials configured
+
+- **Live Mode** (`WHATSAPP_MODE=live` + credentials):
+  - Sends real WhatsApp messages via Twilio or Meta
+  - Requires approved Business Profile (Twilio WABA or Meta)
+  - Only enable after KYC clearance
+
+**Provider Selection:**
+
+1. If `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_WHATSAPP_FROM` are set → Twilio (preferred)
+2. Else if `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and `WHATSAPP_BUSINESS_ACCOUNT_ID` are set → Meta
+3. Else → Sandbox mode (dry-run)
+
+**Testing:**
+
+Run database migration first:
+```bash
+npm run db:migrate:send
+```
+
+Then test in sandbox mode:
+```bash
+# .env.local
+WHATSAPP_MODE=sandbox
+
+npm run dev
+# Visit http://localhost:3100/ops/inbound-queue
+# Click "Send via WhatsApp (Sandbox Mode)" to test dry-run
+```
+
+**Documentation:**
+- Full smoke test guide: `specs/001-whatsapp-approve-send/quickstart.md`
+- API contract: `specs/001-whatsapp-approve-send/contracts/send-api.md`
+- Build summary: `docs/INBOUND-WHATSAPP-BUILD-SUMMARY.md`
+
+---
+
 ## Support
 
 **Owner:** Grant Brown ([@GrantB83](https://github.com/GrantB83))  

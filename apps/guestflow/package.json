@@ -15,6 +15,7 @@
     "db:init": "node scripts/init-db.js",
     "db:migrate": "node scripts/migrate-add-status.js",
     "db:migrate:inbound": "node scripts/migrate-add-inbound-whatsapp.js",
+    "db:migrate:send": "node scripts/migrate-add-inbound-send.js",
     "db:migrate:tickets": "node scripts/migrate-add-guest-tickets.js",
     "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js",
     "db:migrate:lead-dates": "node scripts/migrate-add-lead-dates.js",

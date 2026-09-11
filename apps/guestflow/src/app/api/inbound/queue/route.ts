@@ -84,6 +84,18 @@ export async function GET(request: NextRequest) {
           LIMIT 1
         `).get(thread.thread_id) as any
 
+        // T027: Get send history (all outbound messages)
+        const sendHistory = await db.prepare(`
+          SELECT 
+            message_timestamp as timestamp,
+            whatsapp_provider as provider,
+            whatsapp_message_id as messageId,
+            send_error as error
+          FROM inbound_messages
+          WHERE thread_id = ? AND direction = 'outbound'
+          ORDER BY message_timestamp DESC
+        `).all(thread.thread_id) as any[]
+
         return {
           threadId: thread.thread_id,
           fromNumber: thread.from_number,
@@ -111,7 +123,14 @@ export async function GET(request: NextRequest) {
             missingFields: latestClassification.missing_fields ?
               JSON.parse(latestClassification.missing_fields) : []
           } : null,
-          metadata: thread.metadata ? JSON.parse(thread.metadata) : {}
+          metadata: thread.metadata ? JSON.parse(thread.metadata) : {},
+          sendHistory: sendHistory.map(entry => ({
+            timestamp: entry.timestamp,
+            provider: entry.provider,
+            messageId: entry.messageId,
+            error: entry.error,
+            outcome: entry.error ? 'failed' : 'success'
+          }))
         }
       })
     )
