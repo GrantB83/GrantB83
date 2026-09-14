@@ -278,7 +278,16 @@ Email: test@example.com`;
   console.log(colors.dim + '-'.repeat(60) + colors.reset);
   
   await testRoute('/ops/daily-brief', 'Daily brief page loads', {
-    checkContent: ['Daily', 'Brief']
+    checkContent: ['Daily', 'Brief', 'Draft only']
+  });
+
+  await testRoute('/ops/daily-brief', 'Daily brief - no auto-send buttons', {
+    checkNotContent: ['Send WhatsApp', 'Auto-Send', 'Send to Guest']
+  });
+
+  await testRoute('/api/daily-brief?tenant_id=1', 'Daily brief API returns structured data', {
+    expectedStatus: 200,
+    checkContent: ['success', 'briefText']
   });
   
   // Phase 9: Database Smoke

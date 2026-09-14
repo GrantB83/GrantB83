@@ -542,11 +542,24 @@ Expected output:
 GuestFlow ops console is ready for Browns Dullstroom.
 ```
 
-### 6. Test CLI Export
+### 6. Daily Ops Brief (Staff Ops Hub)
 
-1. Visit `/ops/daily-brief`
-2. Click export
-3. Verify markdown/HTML download works
+**Path:** `/ops/daily-brief`
+
+1. Log in at `/staff-login` (production) or open directly in local dev
+2. Open **Ops Hub** → **Daily Ops Brief**
+3. Review today/tomorrow arrivals, departures, in-house, and exception flags (late check-in, missing data, empty suites)
+4. Click **Copy for WhatsApp** to copy draft text for the internal staff group
+5. Or download Text/Markdown export
+
+**Hard gates:**
+- **Draft only — no auto-send.** Human must approve before any staff WhatsApp post (H11).
+- Brief never invents rates, payment amounts, or guest data. Empty DB shows empty state.
+- Data comes from GuestFlow `bookings` (NightsBridge ingest or seed) — no live NB scrape.
+
+**API:** `GET /api/daily-brief?tenant_id=1&date=YYYY-MM-DD`
+
+**Unit tests:** `npm test -- src/lib/__tests__/daily-brief.test.ts`
 
 ---
 
