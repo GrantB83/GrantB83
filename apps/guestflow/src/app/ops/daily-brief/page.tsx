@@ -1,97 +1,117 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Users, Clock, CheckCircle2, Download, FileText, Mail, StickyNote, MessageSquare } from 'lucide-react'
-import { useState, useEffect, Suspense } from 'react'
+import {
+  ArrowLeft,
+  Calendar,
+  Users,
+  Clock,
+  CheckCircle2,
+  Download,
+  FileText,
+  Copy,
+  AlertTriangle,
+  Home,
+} from 'lucide-react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useTenant } from '@/components/TenantContext'
 import { format } from 'date-fns'
 import { useSearchParams } from 'next/navigation'
+import type { DailyBriefBooking, DailyBriefSnapshot } from '@/lib/daily-brief'
 
 export const dynamic = 'force-dynamic'
-
-interface Booking {
-  id: number
-  guest_name: string
-  property_name: string
-  check_in: string
-  check_out: string
-  room_number: string
-  derivedStatus: string
-  lateCheckIn: boolean
-  missingFields: string[]
-  adults?: number
-  children?: number
-  pets?: boolean
-  special_requests?: string
-}
 
 function DailyBriefContent() {
   const searchParams = useSearchParams()
   const { selectedTenantId, tenants } = useTenant()
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [snapshot, setSnapshot] = useState<DailyBriefSnapshot | null>(null)
+  const [briefText, setBriefText] = useState('')
   const [targetDate, setTargetDate] = useState(
     searchParams.get('date') || format(new Date(), 'yyyy-MM-dd')
   )
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  const activeTenant = tenants.find(t => t.id === selectedTenantId)
+  const activeTenant = tenants.find((t) => t.id === selectedTenantId)
 
   useEffect(() => {
     const urlDate = searchParams.get('date')
-    if (urlDate) {
-      setTargetDate(urlDate)
-    }
+    if (urlDate) setTargetDate(urlDate)
   }, [searchParams])
 
-  useEffect(() => {
-    if (selectedTenantId) {
-      fetchBookings()
-    }
-  }, [selectedTenantId, targetDate])
-
-  const fetchBookings = async () => {
+  const fetchBrief = useCallback(async () => {
     if (!selectedTenantId) return
     setLoading(true)
+    setError(null)
     try {
-      const response = await fetch(`/api/bookings?tenant_id=${selectedTenantId}&date=${targetDate}`)
+      const response = await fetch(
+        `/api/daily-brief?tenant_id=${selectedTenantId}&date=${targetDate}`
+      )
       const data = await response.json()
-      
+
       if (data.success) {
-        setBookings(data.bookings)
+        setSnapshot({
+          tenantId: data.tenantId,
+          tenantName: data.tenantName,
+          targetDate: data.targetDate,
+          tomorrowDate: data.tomorrowDate,
+          today: data.today,
+          tomorrow: data.tomorrow,
+          exceptions: data.exceptions,
+          generatedAt: data.generatedAt,
+        })
+        setBriefText(data.briefText || '')
+      } else {
+        setSnapshot(null)
+        setBriefText('')
+        setError(data.error || 'Failed to load daily brief')
       }
     } catch (err) {
-      console.error('Error fetching bookings:', err)
+      console.error('Error fetching daily brief:', err)
+      setError('Failed to load daily brief')
+      setSnapshot(null)
     } finally {
       setLoading(false)
     }
+  }, [selectedTenantId, targetDate])
+
+  useEffect(() => {
+    fetchBrief()
+  }, [fetchBrief])
+
+  const hasOperations =
+    snapshot &&
+    (snapshot.today.arrivals.length > 0 ||
+      snapshot.today.departures.length > 0 ||
+      snapshot.today.inHouse.length > 0 ||
+      snapshot.tomorrow.arrivals.length > 0)
+
+  const handleCopy = async () => {
+    if (!briefText) return
+    try {
+      await navigator.clipboard.writeText(briefText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Copy failed:', err)
+    }
   }
 
-  const handleExport = async (format: 'markdown' | 'text') => {
+  const handleExport = async (exportFormat: 'markdown' | 'text') => {
+    if (!snapshot || !activeTenant) return
     setExporting(true)
     try {
       const response = await fetch('/api/daily-brief/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenantName: activeTenant?.name,
+          tenantName: activeTenant.name,
           targetDate,
-          bookings: bookings.map(b => ({
-            guestName: b.guest_name,
-            propertyName: b.property_name,
-            roomNumber: b.room_number,
-            checkIn: b.check_in,
-            checkOut: b.check_out,
-            status: b.derivedStatus,
-            lateCheckIn: b.lateCheckIn,
-            missingFields: b.missingFields,
-            adults: b.adults,
-            children: b.children,
-            pets: b.pets,
-            specialRequests: b.special_requests
-          })),
-          format
-        })
+          snapshot,
+          format: exportFormat,
+        }),
       })
 
       if (response.ok) {
@@ -99,7 +119,7 @@ function DailyBriefContent() {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `daily-brief-${targetDate}.${format === 'markdown' ? 'md' : 'txt'}`
+        a.download = `daily-brief-${targetDate}.${exportFormat === 'markdown' ? 'md' : 'txt'}`
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
@@ -112,31 +132,43 @@ function DailyBriefContent() {
     }
   }
 
-  const arrivals = bookings.filter(b => b.derivedStatus === 'arriving')
-  const inHouse = bookings.filter(b => b.derivedStatus === 'inhouse')
-  const departures = bookings.filter(b => b.derivedStatus === 'departing')
-  
-  const redAlerts = bookings.filter(b => b.lateCheckIn && b.derivedStatus === 'arriving')
-  const amberWarnings = bookings.filter(b => b.missingFields.length > 0 || (b.special_requests && !b.lateCheckIn))
+  const today = snapshot?.today
+  const tomorrow = snapshot?.tomorrow
+  const exceptions = snapshot?.exceptions
+
+  const redAlerts = exceptions?.lateCheckIns ?? []
+  const amberWarnings = exceptions?.missingData ?? []
+  const emptySuites = exceptions?.emptySuites ?? []
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link href="/demo/bookings-board" className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6">
+      <Link
+        href="/ops"
+        className="inline-flex items-center text-primary-600 hover:text-primary-700 mb-6"
+      >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Bookings Board
+        Back to Ops Hub
       </Link>
 
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-6 bg-amber-50 border-2 border-amber-400 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium mb-3">
-              Phase 17 🎉
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Daily Operations Brief
-            </h1>
+            <h3 className="font-bold text-gray-900">Draft only — no auto-send</h3>
+            <p className="text-sm text-gray-700 mt-1">
+              Copy or export this brief for the internal staff WhatsApp group. A human must
+              approve before any post (H11). Never includes invented rates or payment amounts.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Operations Brief</h1>
             <p className="text-gray-600">
-              Generated from {activeTenant?.name || 'demo tenant'} bookings
+              {activeTenant?.name || 'Browns Dullstroom'} — from GuestFlow bookings
             </p>
           </div>
           <div className="text-right">
@@ -153,205 +185,185 @@ function DailyBriefContent() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
           <p className="text-gray-600 mt-4">Loading brief...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-red-50 rounded-xl border border-red-200">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <p className="text-red-800 font-medium">{error}</p>
+          <button
+            onClick={fetchBrief}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-sm"
+          >
+            Retry
+          </button>
         </div>
       ) : (
         <>
-          <div className="grid lg:grid-cols-3 gap-6 mb-8">
-            <StatCard
-              icon={<Users className="w-6 h-6 text-blue-600" />}
-              label="Arrivals"
-              value={arrivals.length}
-              color="blue"
-            />
-            <StatCard
-              icon={<Calendar className="w-6 h-6 text-green-600" />}
-              label="In-House"
-              value={inHouse.length}
-              color="green"
-            />
-            <StatCard
-              icon={<Clock className="w-6 h-6 text-orange-600" />}
-              label="Departures"
-              value={departures.length}
-              color="orange"
-            />
-          </div>
+          {today && (
+            <div className="grid lg:grid-cols-4 gap-4 mb-8">
+              <StatCard icon={<Users className="w-6 h-6 text-blue-600" />} label="Arrivals Today" value={today.arrivals.length} color="blue" />
+              <StatCard icon={<Home className="w-6 h-6 text-green-600" />} label="In-House" value={today.inHouse.length} color="green" />
+              <StatCard icon={<Clock className="w-6 h-6 text-orange-600" />} label="Departures Today" value={today.departures.length} color="orange" />
+              <StatCard icon={<Calendar className="w-6 h-6 text-purple-600" />} label="Arrivals Tomorrow" value={tomorrow?.arrivals.length ?? 0} color="purple" />
+            </div>
+          )}
 
-          <div className="mb-6 flex gap-3">
+          <div className="mb-6 flex flex-wrap gap-3">
             <button
-              onClick={() => handleExport('markdown')}
-              disabled={exporting || bookings.length === 0}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50"
+              onClick={handleCopy}
+              disabled={!briefText}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              Download Markdown
+              <Copy className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Copy for WhatsApp'}
             </button>
             <button
               onClick={() => handleExport('text')}
-              disabled={exporting || bookings.length === 0}
+              disabled={exporting || !hasOperations}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              Download Text
+            </button>
+            <button
+              onClick={() => handleExport('markdown')}
+              disabled={exporting || !hasOperations}
               className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50"
             >
               <FileText className="w-4 h-4" />
-              Download Text
+              Download Markdown
             </button>
           </div>
 
           <div className="space-y-6">
             {redAlerts.length > 0 && (
-              <Section title="🔴 RED - Action Required" color="red">
-                {redAlerts.map(booking => (
+              <Section title="🔴 RED — Late Check-ins" color="red">
+                {redAlerts.map((booking) => (
                   <AlertItem
                     key={booking.id}
-                    title={`${booking.guest_name} - ${booking.property_name}`}
-                    details={`Late check-in expected. Room: ${booking.room_number || 'TBD'}`}
-                    action={`Confirm arrival time and after-hours access`}
+                    title={`${booking.guestName} — ${booking.propertyName}`}
+                    details={`Late check-in flagged. Suite: ${booking.suiteOrUnit}`}
+                    action="Confirm arrival timing and after-hours access"
                   />
                 ))}
               </Section>
             )}
 
-            {amberWarnings.length > 0 && (
-              <Section title="🟡 AMBER - Today's Priorities" color="amber">
-                {amberWarnings.map(booking => (
+            {(amberWarnings.length > 0 || emptySuites.length > 0) && (
+              <Section title="🟡 AMBER — Exceptions" color="amber">
+                {amberWarnings.map((booking) => (
                   <BriefItem
-                    key={booking.id}
-                    title={`${booking.guest_name} - ${booking.property_name}`}
-                    details={
-                      booking.missingFields.length > 0
-                        ? `Missing: ${booking.missingFields.join(', ')}`
-                        : booking.special_requests || 'Special request noted'
-                    }
-                    time={`${booking.derivedStatus === 'arriving' ? 'Check-in' : 'In-house'}`}
+                    key={`missing-${booking.id}`}
+                    title={`${booking.guestName} — ${booking.propertyName}`}
+                    details={`Missing: ${booking.missingFields.join(', ')}`}
+                    time={booking.derivedStatus === 'arriving' ? 'Arriving' : 'In ops window'}
+                  />
+                ))}
+                {emptySuites.map((flag, idx) => (
+                  <BriefItem
+                    key={`empty-${idx}`}
+                    title={`${flag.propertyName} — ${flag.unit}`}
+                    details={flag.reason}
+                    time="Turnover / empty suite"
                   />
                 ))}
               </Section>
             )}
 
-            {arrivals.length > 0 && (
-              <Section title={`Arrivals Today (${arrivals.length})`} color="blue">
-                {arrivals.map(booking => (
+            {today && today.arrivals.length > 0 && (
+              <Section title={`Arrivals Today (${today.arrivals.length})`} color="blue">
+                {today.arrivals.map((booking) => (
                   <GuestCard key={booking.id} booking={booking} />
                 ))}
               </Section>
             )}
 
-            {inHouse.length > 0 && (
-              <Section title={`In-House Guests (${inHouse.length})`} color="green">
-                {inHouse.map(booking => (
+            {today && today.inHouse.length > 0 && (
+              <Section title={`In-House (${today.inHouse.length})`} color="green">
+                {today.inHouse.map((booking) => (
                   <GuestCard key={booking.id} booking={booking} />
                 ))}
               </Section>
             )}
 
-            {departures.length > 0 && (
-              <Section title={`Departures Today (${departures.length})`} color="orange">
-                {departures.map(booking => (
+            {today && today.departures.length > 0 && (
+              <Section title={`Departures Today (${today.departures.length})`} color="orange">
+                {today.departures.map((booking) => (
                   <div key={booking.id} className="text-sm text-gray-600">
-                    • {booking.guest_name} - {booking.property_name} (Room {booking.room_number || 'TBD'}) - checkout {booking.check_out}
+                    • {booking.guestName} — {booking.propertyName} (Suite {booking.suiteOrUnit}) — checkout {booking.checkOut}
                   </div>
                 ))}
               </Section>
             )}
 
-            {bookings.length === 0 && (
+            {tomorrow && (tomorrow.arrivals.length > 0 || tomorrow.departures.length > 0) && (
+              <Section title={`Tomorrow Preview (${snapshot?.tomorrowDate})`} color="purple">
+                {tomorrow.arrivals.map((booking) => (
+                  <div key={`tm-in-${booking.id}`} className="text-sm text-gray-700 mb-2">
+                    <span className="font-medium text-purple-800">IN:</span> {booking.guestName} — {booking.suiteOrUnit}
+                  </div>
+                ))}
+                {tomorrow.departures.map((booking) => (
+                  <div key={`tm-out-${booking.id}`} className="text-sm text-gray-700 mb-2">
+                    <span className="font-medium text-orange-800">OUT:</span> {booking.guestName} — {booking.suiteOrUnit}
+                  </div>
+                ))}
+              </Section>
+            )}
+
+            {!hasOperations && (
               <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
                 <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 font-medium">No bookings for {targetDate}</p>
-                <p className="text-sm text-gray-500 mt-2">Try a different date or run demo seed</p>
+                <p className="text-gray-600 font-medium">No operations for {targetDate}</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Import NightsBridge bookings or run demo seed — no guest data is invented.
+                </p>
               </div>
             )}
 
-            {bookings.length > 0 && (
+            {today && (today.departures.length > 0 || today.arrivals.length > 0) && (
               <Section title="Housekeeping Schedule" color="gray">
-                {departures.map((booking, idx) => (
+                {today.departures.map((booking, idx) => (
                   <TaskItem
                     key={`depart-${idx}`}
-                    task={`Morning: ${booking.property_name} Room ${booking.room_number || 'TBD'} (departure)`}
-                    status="pending"
+                    task={`Morning: ${booking.propertyName} ${booking.suiteOrUnit} (departure)`}
                   />
                 ))}
-                {arrivals.map((booking, idx) => (
+                {today.arrivals.map((booking, idx) => (
                   <TaskItem
                     key={`arrive-${idx}`}
-                    task={`Afternoon: ${booking.property_name} Room ${booking.room_number || 'TBD'} (arrival prep)`}
-                    status="pending"
+                    task={`Afternoon: ${booking.propertyName} ${booking.suiteOrUnit} (arrival prep)`}
                   />
                 ))}
               </Section>
             )}
           </div>
+
+          {briefText && (
+            <div className="mt-8">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">WhatsApp preview (draft)</h3>
+              <pre className="bg-gray-900 text-gray-100 text-xs p-4 rounded-lg overflow-x-auto whitespace-pre-wrap max-h-64">
+                {briefText}
+              </pre>
+            </div>
+          )}
         </>
       )}
 
-      <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-2">Daily Brief Features (Phase 17)</h3>
-        <ul className="space-y-2 text-sm text-gray-700">
-          <li>✅ Generated from tenant bookings in SQLite fixtures</li>
-          <li>✅ RED/AMBER/GREEN priority system for fast scanning</li>
-          <li>✅ Late check-in badges and missing-fields warnings</li>
-          <li>✅ Housekeeping task list per arrival/departure</li>
-          <li>✅ Export as Markdown or plain text for leave-behind</li>
-          <li>✅ Never invents guest data—blanks stay flagged</li>
-          <li>⚠️ Draft-only: team WhatsApp send requires H11 approval</li>
-        </ul>
-      </div>
-
-      <div className="mt-6 bg-indigo-50 border border-indigo-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-3">📦 Phase 20: Demo CT-Pack Assembly</h3>
-        <p className="text-sm text-gray-700 mb-4">
-          Assemble this daily brief + welcome stubs + late-checkin queue into one dated CT pack (timed checklist flavor with 20:00 / 09:00 / 21:00 CT demo copy).
-        </p>
-        <Link
-          href="/demo/ct-pack"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
-        >
-          <StickyNote className="w-4 h-4" />
-          Assemble CT Pack
-        </Link>
-      </div>
-
-      <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-3">🚨 Phase 19: Late / After-Hours Check-In Queue</h3>
-        <p className="text-sm text-gray-700 mb-4">
-          View late check-ins and after-hours arrivals from today's bookings board (mirrors tools/browns-late-checkin-queue).
-        </p>
-        <Link
-          href="/demo/late-checkin-queue"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition"
-        >
-          <MessageSquare className="w-4 h-4" />
-          View Late Check-In Queue
-        </Link>
-      </div>
-
-      <div className="mt-6 bg-rose-50 border border-rose-200 rounded-xl p-6">
-        <h3 className="font-semibold text-gray-900 mb-3">🎯 Phase 18: Welcome Message Drafts</h3>
-        <p className="text-sm text-gray-700 mb-4">
-          Generate welcome message stubs for today's and upcoming arrivals from your bookings board.
-        </p>
-        <Link
-          href="/demo/welcome-drafts"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition"
-        >
-          <Mail className="w-4 h-4" />
-          View Welcome Drafts
-        </Link>
-      </div>
-
       <div className="mt-8 flex gap-4 justify-center">
         <Link
-          href="/demo/bookings-board"
-          className="inline-block px-8 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+          href="/ops/bookings"
+          className="inline-block px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
         >
-          Back to Bookings Board
+          View Bookings
         </Link>
         <Link
-          href="/demo"
-          className="inline-block px-8 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+          href="/ops/late-checkin-queue"
+          className="inline-block px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
         >
-          Demo Hub
+          Late Check-in Queue
         </Link>
       </div>
     </div>
@@ -360,21 +372,40 @@ function DailyBriefContent() {
 
 export default function DailyBriefPage() {
   return (
-    <Suspense fallback={
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          <p className="text-gray-600 mt-4">Loading brief...</p>
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+            <p className="text-gray-600 mt-4">Loading brief...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <DailyBriefContent />
     </Suspense>
   )
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: number, color: string }) {
-  const bgColor = color === 'blue' ? 'bg-blue-50' : color === 'green' ? 'bg-green-50' : 'bg-orange-50'
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode
+  label: string
+  value: number
+  color: string
+}) {
+  const bgColor =
+    color === 'blue'
+      ? 'bg-blue-50'
+      : color === 'green'
+        ? 'bg-green-50'
+        : color === 'orange'
+          ? 'bg-orange-50'
+          : 'bg-purple-50'
   return (
     <div className={`${bgColor} p-6 rounded-xl border border-gray-200`}>
       <div className="flex items-center gap-3">
@@ -388,26 +419,47 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label:
   )
 }
 
-function Section({ title, color, children }: { title: string, color: string, children: React.ReactNode }) {
-  const borderColor = 
-    color === 'red' ? 'border-red-200' :
-    color === 'amber' ? 'border-amber-200' :
-    color === 'blue' ? 'border-blue-200' :
-    color === 'green' ? 'border-green-200' :
-    color === 'orange' ? 'border-orange-200' :
-    'border-gray-200'
-  
+function Section({
+  title,
+  color,
+  children,
+}: {
+  title: string
+  color: string
+  children: React.ReactNode
+}) {
+  const borderColor =
+    color === 'red'
+      ? 'border-red-200'
+      : color === 'amber'
+        ? 'border-amber-200'
+        : color === 'blue'
+          ? 'border-blue-200'
+          : color === 'green'
+            ? 'border-green-200'
+            : color === 'orange'
+              ? 'border-orange-200'
+              : color === 'purple'
+                ? 'border-purple-200'
+                : 'border-gray-200'
+
   return (
     <div className={`bg-white border-2 ${borderColor} rounded-xl p-6`}>
       <h2 className="text-lg font-bold text-gray-900 mb-4">{title}</h2>
-      <div className="space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   )
 }
 
-function AlertItem({ title, details, action }: { title: string, details: string, action: string }) {
+function AlertItem({
+  title,
+  details,
+  action,
+}: {
+  title: string
+  details: string
+  action: string
+}) {
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
       <h3 className="font-semibold text-red-900 mb-1">{title}</h3>
@@ -417,7 +469,15 @@ function AlertItem({ title, details, action }: { title: string, details: string,
   )
 }
 
-function BriefItem({ title, details, time }: { title: string, details: string, time: string }) {
+function BriefItem({
+  title,
+  details,
+  time,
+}: {
+  title: string
+  details: string
+  time: string
+}) {
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
       <h3 className="font-semibold text-amber-900 mb-1">{title}</h3>
@@ -427,11 +487,11 @@ function BriefItem({ title, details, time }: { title: string, details: string, t
   )
 }
 
-function GuestCard({ booking }: { booking: Booking }) {
+function GuestCard({ booking }: { booking: DailyBriefBooking }) {
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-semibold text-gray-900">{booking.guest_name}</h3>
+        <h3 className="font-semibold text-gray-900">{booking.guestName}</h3>
         <div className="flex gap-2">
           {booking.lateCheckIn && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">LATE</span>
@@ -444,24 +504,24 @@ function GuestCard({ booking }: { booking: Booking }) {
         </div>
       </div>
       <p className="text-sm text-gray-700 mb-1">
-        {booking.property_name} · Room {booking.room_number || 'TBD'}
+        {booking.propertyName} · Suite {booking.suiteOrUnit}
       </p>
       <p className="text-sm text-gray-600 mb-2">
         {booking.adults || 0} adult{(booking.adults || 0) !== 1 ? 's' : ''}
         {booking.children ? `, ${booking.children} child${booking.children !== 1 ? 'ren' : ''}` : ''}
         {booking.pets && ' 🐾'}
       </p>
-      {booking.special_requests && (
-        <p className="text-xs text-gray-500 italic">{booking.special_requests}</p>
+      {booking.specialRequests && (
+        <p className="text-xs text-gray-500 italic">{booking.specialRequests}</p>
       )}
     </div>
   )
 }
 
-function TaskItem({ task, status }: { task: string, status: string }) {
+function TaskItem({ task }: { task: string }) {
   return (
     <div className="flex items-center gap-2">
-      <CheckCircle2 className={`w-5 h-5 ${status === 'complete' ? 'text-green-600' : 'text-gray-300'}`} />
+      <CheckCircle2 className="w-5 h-5 text-gray-300" />
       <span className="text-sm text-gray-700">{task}</span>
     </div>
   )
