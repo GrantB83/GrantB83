@@ -12,6 +12,7 @@ import {
   Copy,
   AlertTriangle,
   Home,
+  Info,
 } from 'lucide-react'
 import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useTenant } from '@/components/TenantContext'
@@ -33,6 +34,9 @@ function DailyBriefContent() {
   const [error, setError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [enqueueSupported, setEnqueueSupported] = useState(false)
+  const [enqueueBlocker, setEnqueueBlocker] = useState<string | null>(null)
+  const [approvalQueuePath, setApprovalQueuePath] = useState('/needs-approval')
 
   const activeTenant = tenants.find((t) => t.id === selectedTenantId)
 
@@ -63,9 +67,14 @@ function DailyBriefContent() {
           generatedAt: data.generatedAt,
         })
         setBriefText(data.briefText || '')
+        setEnqueueSupported(Boolean(data.enqueueSupported))
+        setEnqueueBlocker(data.enqueueBlocker ?? null)
+        setApprovalQueuePath(data.approvalQueuePath || '/needs-approval')
       } else {
         setSnapshot(null)
         setBriefText('')
+        setEnqueueSupported(false)
+        setEnqueueBlocker(null)
         setError(data.error || 'Failed to load daily brief')
       }
     } catch (err) {
@@ -162,6 +171,26 @@ function DailyBriefContent() {
           </div>
         </div>
       </div>
+
+      {!enqueueSupported && enqueueBlocker && (
+        <div className="mb-6 bg-slate-50 border-2 border-slate-300 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-gray-900">Enqueue to approval queue — not available</h3>
+              <p className="text-sm text-gray-700 mt-1">{enqueueBlocker}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                Use <strong>Copy for WhatsApp</strong> below, then post manually after H11 approval.
+                Guest approval queues at{' '}
+                <Link href={approvalQueuePath} className="text-primary-600 hover:underline">
+                  {approvalQueuePath}
+                </Link>{' '}
+                are for guest messages only — not staff-group daily briefs.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         <div className="flex items-center justify-between flex-wrap gap-4">
