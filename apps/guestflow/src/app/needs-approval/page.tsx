@@ -6,13 +6,17 @@ import { CheckCircle, X, Edit, AlertTriangle, MessageSquare, FileText, Calendar,
 
 interface ApprovalItem {
   id: number
-  type: 'inbound' | 'welcome' | 'quote' | 'ticket_guest' | 'ticket_staff'
+  type: 'inbound' | 'welcome' | 'quote' | 'ticket_guest' | 'ticket_staff' | 'staff_ops' | 'late_checkin'
   guest: string
   draftContent: string
   source: string
   metadata: Record<string, any>
   createdAt: string
   priority: 'high' | 'medium' | 'low'
+}
+
+function isCopyOnlyItem(item: ApprovalItem): boolean {
+  return item.type === 'staff_ops' || Boolean(item.metadata?.copy_only)
 }
 
 export default function NeedsApprovalPage() {
@@ -22,6 +26,8 @@ export default function NeedsApprovalPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [editedContent, setEditedContent] = useState('')
+  const [approvedCopyContent, setApprovedCopyContent] = useState<string | null>(null)
+  const [copySuccess, setCopySuccess] = useState(false)
 
   const fetchApprovals = async (showRefresh = false) => {
     try {
@@ -68,26 +74,39 @@ export default function NeedsApprovalPage() {
   }, [selectedItem])
 
   const handleAction = async (action: string, itemId: number, content?: string) => {
+    if (!selectedItem) return null
+
     try {
       const response = await fetch('/api/approvals', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          itemId, 
+        body: JSON.stringify({
+          itemId,
+          type: selectedItem.type,
           action,
           content,
-          actor: 'Grant' // TODO: Get from session
-        })
+          actor: 'Grant',
+        }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        await fetchApprovals(true)
-        setSelectedItem(null)
-        setEditMode(false)
+        if (action === 'approve' && isCopyOnlyItem(selectedItem) && data.copyContent) {
+          setApprovedCopyContent(data.copyContent)
+        } else {
+          await fetchApprovals(true)
+          setSelectedItem(null)
+          setEditMode(false)
+          setApprovedCopyContent(null)
+        }
+        return data
       }
     } catch (error) {
       console.error(`Failed to ${action}:`, error)
     }
+
+    return null
   }
 
   const handleApprove = () => {
@@ -97,7 +116,7 @@ export default function NeedsApprovalPage() {
   }
 
   const handleSend = async () => {
-    if (!selectedItem) return
+    if (!selectedItem || isCopyOnlyItem(selectedItem)) return
     
     const confirmed = confirm(
       `Send this message via WhatsApp?\n\n` +
@@ -159,6 +178,23 @@ export default function NeedsApprovalPage() {
       if (reason) {
         handleAction('reject', selectedItem.id, reason)
       }
+    }
+  }
+
+  const handleCopyApprovedText = async () => {
+    const text = approvedCopyContent || selectedItem?.draftContent
+    if (!text) return
+
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+      await fetchApprovals(true)
+      setSelectedItem(null)
+      setApprovedCopyContent(null)
+    } catch (error) {
+      console.error('Copy failed:', error)
+      alert('Failed to copy text to clipboard')
     }
   }
 
@@ -230,10 +266,15 @@ export default function NeedsApprovalPage() {
           <div className="grid gap-4">
             {items.map((item) => (
               <div
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
+                key={`${item.type}-${item.id}`}
+                onClick={() => {
+                  setSelectedItem(item)
+                  setApprovedCopyContent(null)
+                  setCopySuccess(false)
+                  setEditMode(false)
+                }}
                 className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition ${
-                  selectedItem?.id === item.id
+                  selectedItem?.id === item.id && selectedItem?.type === item.type
                     ? 'border-blue-500 shadow-lg'
                     : 'border-gray-200 hover:border-blue-300'
                 }`}
@@ -244,12 +285,16 @@ export default function NeedsApprovalPage() {
                       item.type === 'inbound' ? 'bg-blue-100' :
                       item.type === 'welcome' ? 'bg-green-100' :
                       item.type === 'quote' ? 'bg-purple-100' :
+                      item.type === 'staff_ops' ? 'bg-teal-100' :
                       'bg-amber-100'
                     }`}>
                       {item.type === 'inbound' && <MessageSquare className="w-5 h-5 text-blue-600" />}
                       {item.type === 'welcome' && <Calendar className="w-5 h-5 text-green-600" />}
                       {item.type === 'quote' && <FileText className="w-5 h-5 text-purple-600" />}
-                      {(item.type === 'ticket_guest' || item.type === 'ticket_staff') && <AlertTriangle className="w-5 h-5 text-amber-600" />}
+                      {item.type === 'staff_ops' && <FileText className="w-5 h-5 text-teal-600" />}
+                      {(item.type === 'ticket_guest' || item.type === 'ticket_staff' || item.type === 'late_checkin') && (
+                        <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      )}
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900">
@@ -258,6 +303,8 @@ export default function NeedsApprovalPage() {
                         {item.type === 'quote' && 'Quote Draft'}
                         {item.type === 'ticket_guest' && 'Guest Exception'}
                         {item.type === 'ticket_staff' && 'Staff Brief'}
+                        {item.type === 'staff_ops' && 'Staff Ops Brief'}
+                        {item.type === 'late_checkin' && 'Late Check-in Draft'}
                       </div>
                       <div className="text-sm text-gray-600">{item.guest}</div>
                     </div>
@@ -274,11 +321,14 @@ export default function NeedsApprovalPage() {
                   </div>
                 </div>
 
-                {selectedItem?.id === item.id && (
+                {selectedItem?.id === item.id && selectedItem?.type === item.type && (
                   <div className="mt-4 pt-4 border-t">
                     {/* Source */}
                     <div className="mb-3 text-xs text-gray-500">
                       Source: {item.source}
+                      {isCopyOnlyItem(item) && (
+                        <span className="ml-2 text-teal-700 font-medium">Copy-only — no WhatsApp Send</span>
+                      )}
                     </div>
 
                     {/* Draft Content */}
@@ -308,13 +358,15 @@ export default function NeedsApprovalPage() {
                           <CheckCircle className="w-4 h-4" />
                           Approve (A)
                         </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEditAndApprove(); }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          {editMode ? 'Save & Approve (E)' : 'Edit & approve (E)'}
-                        </button>
+                        {!isCopyOnlyItem(item) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEditAndApprove(); }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            {editMode ? 'Save & Approve (E)' : 'Edit & approve (E)'}
+                          </button>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleReject(); }}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"
@@ -322,28 +374,49 @@ export default function NeedsApprovalPage() {
                           <X className="w-4 h-4" />
                           Reject (R)
                         </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEscalate(); }}
-                          className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition flex items-center gap-2"
-                        >
-                          <AlertTriangle className="w-4 h-4" />
-                          Escalate (X)
-                        </button>
+                        {!isCopyOnlyItem(item) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEscalate(); }}
+                            className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition flex items-center gap-2"
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                            Escalate (X)
+                          </button>
+                        )}
                       </div>
 
-                      {/* Send Button (after approval) */}
-                      <div className="pt-2 border-t">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleSend(); }}
-                          className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2"
-                        >
-                          <MessageSquare className="w-5 h-5" />
-                          Send via WhatsApp (Human-Gated)
-                        </button>
-                        <p className="text-xs text-gray-500 mt-2 text-center">
-                          ⚠️ Sandbox mode: Logs send without calling Meta API until WABA live
-                        </p>
-                      </div>
+                      {isCopyOnlyItem(item) && (
+                        <div className="pt-2 border-t">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCopyApprovedText(); }}
+                            disabled={!approvedCopyContent}
+                            className="w-full px-4 py-3 bg-teal-700 text-white rounded-lg font-bold hover:bg-teal-800 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            <FileText className="w-5 h-5" />
+                            {copySuccess ? 'Copied!' : 'Copy WhatsApp text'}
+                          </button>
+                          <p className="text-xs text-gray-500 mt-2 text-center">
+                            {approvedCopyContent
+                              ? 'Approved — copy for manual H11 staff WhatsApp post. Never auto-sent.'
+                              : 'Approve first, then copy for manual H11 staff WhatsApp post. Never auto-sent.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {!isCopyOnlyItem(item) && (
+                        <div className="pt-2 border-t">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                            className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2"
+                          >
+                            <MessageSquare className="w-5 h-5" />
+                            Send via WhatsApp (Human-Gated)
+                          </button>
+                          <p className="text-xs text-gray-500 mt-2 text-center">
+                            ⚠️ Sandbox mode: Logs send without calling Meta API until WABA live
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-3 text-xs text-gray-500">

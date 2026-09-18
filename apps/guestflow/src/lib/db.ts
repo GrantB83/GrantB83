@@ -17,7 +17,7 @@ interface BatchStatement {
   args?: any[]
 }
 
-interface DbClient {
+export interface DbClient {
   prepare: (sql: string) => DbStatement
   exec: (sql: string) => void | Promise<void>
   batch: (statements: (BatchStatement | DbStatement)[]) => void | Promise<void>

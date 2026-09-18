@@ -5,8 +5,8 @@ import {
   APPROVAL_QUEUE_PATH,
 } from '../daily-brief-enqueue'
 
-describe('getStaffOpsEnqueueGate', () => {
-  it('reports enqueue unsupported (fail-closed)', () => {
+describe('getStaffOpsEnqueueGate (sync fallback)', () => {
+  it('reports enqueue unsupported without DB context', () => {
     const gate = getStaffOpsEnqueueGate()
     expect(gate.enqueueSupported).toBe(false)
     expect(gate.enqueueBlocker).toBe(ENQUEUE_BLOCKER_REASON)
