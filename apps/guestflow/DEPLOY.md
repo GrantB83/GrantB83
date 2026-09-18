@@ -559,14 +559,27 @@ GuestFlow ops console is ready for Browns Dullstroom.
 
 **API:** `GET /api/daily-brief?tenant_id=1&date=YYYY-MM-DD`
 
-Response includes `enqueueSupported` (currently `false`) and `enqueueBlocker` when staff-ops approval enqueue is not safe.
+**Enqueue to approval queue:** Available when `staff_ops_drafts` table is wired (auto-created on first enqueue or via `node scripts/migrate-add-staff-ops-drafts.js`).
 
-**Enqueue to approval queue:** Not available in this release. GuestFlow `/api/approvals` has no staff-ops daily-brief type; existing queues target guest-phone Send paths. Use copy/export + manual H11 post. See `specs/003-daily-brief-staff-enqueue/research.md`.
+1. Open `/ops/daily-brief` — click **Enqueue draft** (requires bookings for the date)
+2. Open `/needs-approval` — approve the **Staff Ops Brief** item (type `staff_ops`)
+3. Click **Copy WhatsApp text** — paste manually into internal staff WhatsApp (H11)
+
+**Hard gates:**
+- **Copy-only — never auto-send.** No `/api/whatsapp/send` for staff_ops rows; Send button hidden.
+- `enqueueSupported` is `true` only when `staff_ops_drafts` exists and path is wired.
+- Idempotent: one pending draft per tenant+date unless `force: true` on enqueue.
+- Brief content = server-side `generateWhatsAppBrief()` only.
+
+**API:** `POST /api/daily-brief/enqueue` with `{ tenant_id, target_date, force? }`
+
+Prior blocked research preserved in `specs/003-daily-brief-staff-enqueue/`. Implementation spec: `specs/004-staff-ops-copy-only-approvals/`.
 
 **Unit tests:**
 ```bash
 npm test -- src/lib/__tests__/daily-brief.test.ts
 npm test -- src/lib/__tests__/daily-brief-enqueue.test.ts
+npm test -- src/lib/__tests__/staff-ops-drafts.test.ts
 ```
 
 ---

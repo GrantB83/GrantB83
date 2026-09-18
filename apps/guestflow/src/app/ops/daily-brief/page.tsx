@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Home,
   Info,
+  ListPlus,
 } from 'lucide-react'
 import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useTenant } from '@/components/TenantContext'
@@ -37,6 +38,8 @@ function DailyBriefContent() {
   const [enqueueSupported, setEnqueueSupported] = useState(false)
   const [enqueueBlocker, setEnqueueBlocker] = useState<string | null>(null)
   const [approvalQueuePath, setApprovalQueuePath] = useState('/needs-approval')
+  const [enqueuing, setEnqueuing] = useState(false)
+  const [enqueueMessage, setEnqueueMessage] = useState<string | null>(null)
 
   const activeTenant = tenants.find((t) => t.id === selectedTenantId)
 
@@ -108,6 +111,38 @@ function DailyBriefContent() {
     }
   }
 
+  const handleEnqueue = async () => {
+    if (!selectedTenantId || !briefText || !enqueueSupported) return
+    setEnqueuing(true)
+    setEnqueueMessage(null)
+    try {
+      const response = await fetch('/api/daily-brief/enqueue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: selectedTenantId,
+          target_date: targetDate,
+          actor: 'Staff',
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        setEnqueueMessage(
+          data.existing
+            ? `Draft already pending (id ${data.draftId}). Review at ${approvalQueuePath}.`
+            : `Draft enqueued (id ${data.draftId}). Review at ${approvalQueuePath}.`
+        )
+      } else {
+        setEnqueueMessage(data.error || 'Failed to enqueue draft')
+      }
+    } catch (err) {
+      console.error('Enqueue failed:', err)
+      setEnqueueMessage('Failed to enqueue draft')
+    } finally {
+      setEnqueuing(false)
+    }
+  }
+
   const handleExport = async (exportFormat: 'markdown' | 'text') => {
     if (!snapshot || !activeTenant) return
     setExporting(true)
@@ -172,24 +207,40 @@ function DailyBriefContent() {
         </div>
       </div>
 
-      {!enqueueSupported && enqueueBlocker && (
-        <div className="mb-6 bg-slate-50 border-2 border-slate-300 rounded-xl p-4">
+      {enqueueSupported ? (
+        <div className="mb-6 bg-teal-50 border-2 border-teal-300 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
+            <ListPlus className="w-5 h-5 text-teal-700 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-bold text-gray-900">Enqueue to approval queue — not available</h3>
-              <p className="text-sm text-gray-700 mt-1">{enqueueBlocker}</p>
-              <p className="text-sm text-gray-600 mt-2">
-                Use <strong>Copy for WhatsApp</strong> below, then post manually after H11 approval.
-                Guest approval queues at{' '}
+              <h3 className="font-bold text-gray-900">Enqueue to approval queue — available</h3>
+              <p className="text-sm text-gray-700 mt-1">
+                Enqueue saves this brief as a copy-only <strong>staff_ops</strong> draft at{' '}
                 <Link href={approvalQueuePath} className="text-primary-600 hover:underline">
                   {approvalQueuePath}
-                </Link>{' '}
-                are for guest messages only — not staff-group daily briefs.
+                </Link>
+                . Approve there, then copy for manual H11 post. Never auto-sent.
               </p>
+              {enqueueMessage && (
+                <p className="text-sm text-teal-800 mt-2 font-medium">{enqueueMessage}</p>
+              )}
             </div>
           </div>
         </div>
+      ) : (
+        enqueueBlocker && (
+          <div className="mb-6 bg-slate-50 border-2 border-slate-300 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-gray-900">Enqueue to approval queue — not available</h3>
+                <p className="text-sm text-gray-700 mt-1">{enqueueBlocker}</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Use <strong>Copy for WhatsApp</strong> below, then post manually after H11 approval.
+                </p>
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       <div className="mb-8">
@@ -240,6 +291,16 @@ function DailyBriefContent() {
           )}
 
           <div className="mb-6 flex flex-wrap gap-3">
+            {enqueueSupported && (
+              <button
+                onClick={handleEnqueue}
+                disabled={enqueuing || !briefText || !hasOperations}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-teal-700 text-white rounded-lg font-semibold hover:bg-teal-800 transition disabled:opacity-50"
+              >
+                <ListPlus className="w-4 h-4" />
+                {enqueuing ? 'Enqueuing…' : 'Enqueue draft'}
+              </button>
+            )}
             <button
               onClick={handleCopy}
               disabled={!briefText}

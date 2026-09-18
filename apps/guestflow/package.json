@@ -18,7 +18,7 @@
     "db:migrate:send": "node scripts/migrate-add-inbound-send.js",
     "db:migrate:tickets": "node scripts/migrate-add-guest-tickets.js",
     "db:migrate:phase4": "node scripts/migrate-phase4-rate-cards.js",
-    "db:migrate:lead-dates": "node scripts/migrate-add-lead-dates.js",
+    "db:migrate:staff-ops": "node scripts/migrate-add-staff-ops-drafts.js",
     "seed:browns": "node scripts/seed-browns-data.js",
     "db:export": "node scripts/export-data.js",
     "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts"
