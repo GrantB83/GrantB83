@@ -4,7 +4,9 @@
 
 **Created**: 2026-09-18
 
-**Status**: Blocked (fail-closed)
+**Status**: Unblocked by `specs/004-staff-ops-copy-only-approvals/` (staff_ops_drafts + copy-only approve)
+
+**Prior blocked state (preserved)**: See convergence notes below and `research.md`.
 
 **Input**: Extend PR #187 staff/ops daily brief so staff can enqueue WhatsApp-ready brief text into an existing staff approval queue for human Approve before any send. Default remains view + export if enqueue is not evidenced. Never auto-send.
 
