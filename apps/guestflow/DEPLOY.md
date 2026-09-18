@@ -559,7 +559,15 @@ GuestFlow ops console is ready for Browns Dullstroom.
 
 **API:** `GET /api/daily-brief?tenant_id=1&date=YYYY-MM-DD`
 
-**Unit tests:** `npm test -- src/lib/__tests__/daily-brief.test.ts`
+Response includes `enqueueSupported` (currently `false`) and `enqueueBlocker` when staff-ops approval enqueue is not safe.
+
+**Enqueue to approval queue:** Not available in this release. GuestFlow `/api/approvals` has no staff-ops daily-brief type; existing queues target guest-phone Send paths. Use copy/export + manual H11 post. See `specs/003-daily-brief-staff-enqueue/research.md`.
+
+**Unit tests:**
+```bash
+npm test -- src/lib/__tests__/daily-brief.test.ts
+npm test -- src/lib/__tests__/daily-brief-enqueue.test.ts
+```
 
 ---
 

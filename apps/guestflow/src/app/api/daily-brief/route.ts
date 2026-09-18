@@ -9,6 +9,7 @@ import {
   addDaysToDate,
   type RawBookingRow,
 } from '@/lib/daily-brief'
+import { getStaffOpsEnqueueGate } from '@/lib/daily-brief-enqueue'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
     const snapshot = buildDailyBriefSnapshot(tenant.id, tenant.name, targetDate, rows)
     const briefText = generateWhatsAppBrief(snapshot)
     const bookings = flattenBookingsForDate(rows, targetDate)
+    const enqueueGate = getStaffOpsEnqueueGate()
 
     return NextResponse.json({
       success: true,
@@ -94,6 +96,10 @@ export async function GET(req: NextRequest) {
       briefText,
       bookings,
       generatedAt: snapshot.generatedAt,
+      enqueueSupported: enqueueGate.enqueueSupported,
+      enqueueBlocker: enqueueGate.enqueueBlocker,
+      approvalQueuePath: enqueueGate.approvalQueuePath,
+      fallbackActions: enqueueGate.fallbackActions,
     })
   } catch (error) {
     console.error('GET daily-brief error:', error)
