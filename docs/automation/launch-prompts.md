@@ -4,7 +4,7 @@ Grok copies one block into a **new** Cursor Cloud agent. Fill the repo/branch. D
 
 Every prompt already includes the safety contract. Do not soften it.
 
-**Grok Bots already exist.** Do not launch a Cloud Agent to “create Family / Ops Chief”. Grant amends live Bots with `GROK-BOT-AMENDMENTS.md` and replies `BOT ROSTER:`. Cloud Agents only update `bot-roster.yaml` / STATUS after that reply.
+**One desktop Grok Bot is already set up** ([x.ai/bot](https://x.ai/bot)). Do not launch a Cloud Agent to create Family / Ops Chief or any parallel team. Cloud Agents only write `bot-roster.yaml` / STATUS if Grant pastes `LIVE BOT:`.
 
 **Google:** every phase that touches mail, Drive, or calendar must use `google-accounts.yaml`. Stop with `BLOCKED: G1` if a required login is unlinked. Hub-only is not “all accounts”.
 
@@ -14,23 +14,24 @@ Every prompt already includes the safety contract. Do not soften it.
 
 **Repo:** `GrantB83/GrantB83` (docs only)  
 **Role:** `docs-steward`  
-**Use when:** Grant pasted `BOT ROSTER:` and/or `APPROVE GOOGLE ACCOUNT` lines.
+**Use when:** Grant pasted `LIVE BOT:` and/or `APPROVE GOOGLE ACCOUNT` lines.
 
 ```text
 You are docs-steward. Do not create Grok Bots (no API). Do not open the Grok Bot UI.
+Do not recreate the retired six-role team.
 
 Required reading: GROK-BOT-AMENDMENTS.md, bot-roster.yaml, GOOGLE-ACCOUNTS.md,
 google-accounts.yaml, approval-gates G1/G8, STATUS.md.
 
 Work package:
-1. Parse Grant's BOT ROSTER: and APPROVE GOOGLE ACCOUNT / GOOGLE ACCOUNTS: lines.
-2. Fill bot-roster.yaml existing_name fields. Do not invent names.
+1. Parse Grant's LIVE BOT: and APPROVE GOOGLE ACCOUNT / GOOGLE ACCOUNTS: lines.
+2. Fill bot-roster.yaml live.existing_name and/or live.share_url only if Grant pasted them. Do not invent names or URLs.
 3. Set google-accounts.yaml link.* to live|missing|partial from what Grant stated.
 4. Update STATUS Now + decision log.
 5. If a required family/school login is still missing, leave BLOCKED: G1.
 
-Commit: docs(ops): record live Grok Bot roster and Google account links.
-Draft PR or update PR #3. Stop.
+Commit: docs(ops): record live desktop Grok Bot and Google account links.
+Draft PR. Stop.
 ```
 
 ---

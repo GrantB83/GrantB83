@@ -297,11 +297,13 @@ mcp:
     - Loyverse / NightsBridge / QuickBooks APIs
 
 grok_bots:
-  policy: amend_existing
+  policy: single_desktop_bot
   roster_file: docs/automation/bot-roster.yaml
   amendments_file: docs/automation/GROK-BOT-AMENDMENTS.md
+  product_url: https://x.ai/bot
+  docs_url: https://docs.x.ai/grok-bot/bots
   names_observed_in_this_environment: []
-  note: No Grok Bot API on this Cloud Agent. Grant replies BOT ROSTER:.
+  note: Live Bot is already set up on the Grok Bot desktop app. No Grok Bot API on this Cloud Agent. Do not invent a sidebar name. Optional Grant line LIVE BOT:.
 
 existing_stack_from_profile:
   - HubSpot

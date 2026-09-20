@@ -16,4 +16,4 @@ BUDGET
 - MTD household total vs Budget sheet cap: {total} / {cap or TBD}
 ```
 
-First live fill: pending Grok Bot Family routine or `phase-10b`.
+First live fill: pending desktop Grok Bot routine or `phase-10b`.
