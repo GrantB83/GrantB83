@@ -21,6 +21,7 @@
     "db:migrate:staff-ops": "node scripts/migrate-add-staff-ops-drafts.js",
     "db:migrate:send-jobs": "node scripts/migrate-add-send-jobs.js",
     "db:migrate:phase0": "node scripts/migrate-phase0-safety.js",
+    "db:migrate:outbound-redirect": "node scripts/migrate-outbound-redirect.js",
     "seed:browns": "node scripts/seed-browns-data.js",
     "db:export": "node scripts/export-data.js",
     "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts"

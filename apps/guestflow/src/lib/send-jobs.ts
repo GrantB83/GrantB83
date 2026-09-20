@@ -15,6 +15,7 @@ export const SEND_JOBS_DDL = `
     claimed_at DATETIME,
     completed_at DATETIME,
     error_code TEXT,
+    metadata TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -45,6 +46,7 @@ export interface SendJobRow {
   claimed_at: string | null
   completed_at: string | null
   error_code: string | null
+  metadata: string | null
   created_at: string
   updated_at: string
 }
@@ -57,8 +59,36 @@ export interface CreateQueuedJobInput {
   subject?: string | null
 }
 
+/**
+ * Check if a table has a specific column
+ */
+async function tableHasColumn(db: DbClient, tableName: string, columnName: string): Promise<boolean> {
+  try {
+    const rows = await db.prepare(`PRAGMA table_info(${tableName})`).all()
+    return rows.some((row: any) => row.name === columnName)
+  } catch {
+    return false
+  }
+}
+
 export async function ensureSendJobsTable(db: DbClient): Promise<void> {
   await db.exec(SEND_JOBS_DDL)
+  
+  // Runtime migration: Add metadata column if missing (Turso-safe)
+  // Production send_jobs may exist without metadata column
+  const hasMetadata = await tableHasColumn(db, 'send_jobs', 'metadata')
+  if (!hasMetadata) {
+    try {
+      await db.exec(`ALTER TABLE send_jobs ADD COLUMN metadata TEXT`)
+    } catch (error) {
+      // Column may have been added by another process (race condition in concurrent creates)
+      // Verify it exists now
+      const verified = await tableHasColumn(db, 'send_jobs', 'metadata')
+      if (!verified) {
+        throw error // Re-throw if column still missing
+      }
+    }
+  }
 }
 
 export async function createQueuedJob(
@@ -74,19 +104,55 @@ export async function createQueuedJob(
     throw new Error('Job to_address is required')
   }
 
+  // OUTBOUND REDIRECT: Resolve recipient (may redirect to test sink or throw if misconfigured)
+  let effectiveToAddress = input.toAddress.trim()
+  let metadata: any = {}
+
+  try {
+    const { resolveOutboundRecipient } = await import('./outbound-redirect')
+    
+    // Map channel to resolver channel ('whatsapp_web' → 'whatsapp' for resolver)
+    const resolverChannel = input.channel === 'whatsapp_web' ? 'whatsapp' : input.channel
+    
+    const resolution = resolveOutboundRecipient({
+      channel: resolverChannel,
+      intendedTo: input.toAddress.trim()
+    })
+    
+    // Override to_address with resolved recipient
+    effectiveToAddress = resolution.to
+    
+    // Build metadata JSON with redirect audit fields
+    metadata = {
+      intended_to: resolution.intendedTo,
+      redirect_enabled: resolution.redirected,
+      mode: resolution.mode
+    }
+    
+    // Log redirect metadata for audit
+    if (resolution.redirected) {
+      console.log(`[OUTBOUND REDIRECT] Job ${input.channel} queued with redirect: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
+    }
+  } catch (resolverError) {
+    // Resolver threw (missing sink or live mode without CLEAR)
+    // Propagate error to caller (API route will return 503)
+    throw resolverError
+  }
+
   const inserted = await db
     .prepare(
       `
-      INSERT INTO send_jobs (channel, status, thread_id, to_address, body_text, subject)
-      VALUES (?, 'queued', ?, ?, ?, ?)
+      INSERT INTO send_jobs (channel, status, thread_id, to_address, body_text, subject, metadata)
+      VALUES (?, 'queued', ?, ?, ?, ?, ?)
     `
     )
     .run(
       input.channel,
       input.threadId,
-      input.toAddress.trim(),
+      effectiveToAddress,
       input.bodyText,
-      input.subject ?? null
+      input.subject ?? null,
+      JSON.stringify(metadata)
     )
 
   const row = await getJob(db, Number(inserted.lastInsertRowid))
