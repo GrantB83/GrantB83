@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS property_access_codes (
   tenant TEXT NOT NULL DEFAULT 'browns-dullstroom',
   property TEXT NOT NULL,           -- 'cottage' | 'main-house' | etc.
   code_type TEXT NOT NULL,          -- 'gate_pinpad' | 'lockbox'
-  suite TEXT,                       -- Required for lockbox, null for gate
+  suite TEXT NOT NULL DEFAULT '',   -- Empty string '' for gates, actual suite name for lockboxes
   code_value TEXT NOT NULL,         -- The actual access code (encrypted at rest by Turso)
   last_updated_at TEXT NOT NULL,    -- ISO 8601 timestamp
   last_updated_by TEXT NOT NULL,    -- Staff ID or email
@@ -30,33 +30,36 @@ CREATE INDEX IF NOT EXISTS idx_access_codes_lookup
 - `tenant` always `'browns-dullstroom'` for now, future-proofs multi-tenant
 - `property` examples: `'cottage'` (278 Blue Crane), `'main-house'` (279 Blue Crane)
 - `code_type` enum: `'gate_pinpad'` for gate entry, `'lockbox'` for suite key lockboxes
-- `suite` examples: `'Suite 1'`, `'Suite 2'`, `'Suite 3'`, `null` for gate codes
+- `suite` **empty string `''` for gates** (NOT NULL to avoid SQLite UNIQUE+NULL multiple-row issue), actual suite name for lockboxes (e.g., `'Suite 1'`, `'Suite 2'`, etc.)
+- Suite names are **free-text staff-entered**, not hardcoded dropdown, must exactly match `booking.room` or `booking.suite` strings
 - `code_value` stored in plain text (Turso encrypts at rest), or optionally AES-encrypted with app-level key if Grant requires
-- `UNIQUE` constraint ensures one active code per property+type+suite combination
+- `UNIQUE` constraint ensures one active code per property+type+suite combination (empty string for gates prevents duplicate gate rows)
 - Last write wins if multiple staff edit simultaneously
 - No soft deletes; row update is atomic replace
 
 **Sample rows**:
 
 ```sql
--- Cottage gate
+-- Cottage gate (suite = empty string '')
 INSERT INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at)
-VALUES ('browns-dullstroom', 'cottage', 'gate_pinpad', NULL, 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
+VALUES ('browns-dullstroom', 'cottage', 'gate_pinpad', '', 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
 
--- Main house gate
+-- Main house gate (suite = empty string '')
 INSERT INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at)
-VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', NULL, 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
+VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', '', 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
 
--- Main house Suite 1 lockbox
+-- Main house Suite 1 lockbox (suite = actual room name)
 INSERT INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at)
 VALUES ('browns-dullstroom', 'main-house', 'lockbox', 'Suite 1', 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
 
--- Main house Suite 2 lockbox
+-- Main house Suite 2 lockbox (suite = actual room name)
 INSERT INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at)
 VALUES ('browns-dullstroom', 'main-house', 'lockbox', 'Suite 2', 'REDACTED', '2026-09-20T15:30:00Z', 'staff@example.com', '2026-09-20T15:30:00Z');
 ```
 
 **NOT stored**: old code values, expiration dates, rotation schedules (out of scope for this phase)
+
+**IMPORTANT - Empty string sentinel**: Gates use `suite=''` (empty string), NOT `NULL`, to avoid SQLite UNIQUE constraint issue where multiple NULL values are allowed. This ensures only one gate row per property+type.
 
 ---
 
@@ -108,14 +111,17 @@ VALUES ('browns-dullstroom', 'main-house', 'lockbox', 'Suite 1', '2026-09-21T10:
 
 ## Environment Variables (Fallback)
 
-**Existing env vars** (continue to function as fallback when DB is empty):
+**Existing env vars** (global fallback for migration continuity ONLY when NO DB row exists for that property+type):
 
 ```bash
-# Gate codes (one per property, or single code for all gates)
-PROPERTY_GATE_CODE=****         # Fallback if DB empty
+# Gate codes (global fallback, not per-property)
+PROPERTY_GATE_CODE=****         # Fallback ONLY if NO DB row exists for property+gate
 
-# Door/lockbox codes (single fallback, not suite-specific)
-PROPERTY_DOOR_CODE=****         # Fallback if DB empty
+# Door/lockbox codes (global fallback, not suite-specific)
+PROPERTY_DOOR_CODE=****         # Fallback ONLY if NO DB row exists for property+lockbox
+
+# WARNING: Single global env vars cannot safely back both cottage and main-house long-term.
+# Once DB rows exist for a property, env vars are ignored for that property (no cross-property bleed).
 ```
 
 **New env vars** (optional, for app-level encryption):
@@ -125,10 +131,12 @@ PROPERTY_DOOR_CODE=****         # Fallback if DB empty
 ACCESS_CODE_ENCRYPTION_KEY=****  # AES-256 key, never log
 ```
 
-**Resolution order**:
-1. **DB query** for property+type+suite → if found, return `code_value`
-2. **Env var fallback** → if DB empty, return `process.env.PROPERTY_GATE_CODE` or `PROPERTY_DOOR_CODE`
+**Resolution order** (per property+type+suite):
+1. **DB query** for specific property+type+suite → if **row exists**, return `code_value` (even if empty → `'[ASK STAFF]'`)
+2. **Env var fallback** → if **NO DB row exists** for that key, return global `process.env.PROPERTY_GATE_CODE` or `PROPERTY_DOOR_CODE` (migration continuity only)
 3. **Fail-closed** → if both empty, return `'[ASK STAFF]'`
+
+**CRITICAL**: Once a DB row exists for a property+type, that property NEVER falls back to env vars. Env vars do NOT bleed across properties. Example: If cottage has a gate row in DB, cottage uses DB (even if code_value is empty). If main-house has NO gate row, main-house falls back to global env var.
 
 ---
 
@@ -150,9 +158,11 @@ ACCESS_CODE_ENCRYPTION_KEY=****  # AES-256 key, never log
 **Suite identifiers** must match booking data. Examples:
 - `'Suite 1'`, `'Suite 2'`, `'Suite 3'` (Main House)
 - `'Cottage'` (if cottage is single suite with lockbox)
-- `null` (for gate codes, which are not suite-specific)
+- `''` (empty string for gate codes, which are not suite-specific - NOT NULL)
 
 **Source of truth for suite names**: Existing booking schema (`booking.room` or `booking.suite` field). Must match exactly for resolution to work.
+
+**Staff UI**: Suite field is **free-text input** (not hardcoded dropdown of Suite 1/2/3 only) so staff can enter exact strings that match booking data. Staff-addable, not pre-seeded.
 
 ---
 
@@ -201,25 +211,34 @@ console.log('✅ Access codes SoR migration complete');
 
 ```javascript
 // Run ONLY with APPROVE SEED FROM ENV
+// WARNING: Do NOT blindly insert same PROPERTY_GATE_CODE into both cottage and main-house.
+// Prefer empty tables + staff manual entry.
+
 if (process.env.SEED_ACCESS_CODES === 'APPROVE') {
-  const gateCode = process.env.PROPERTY_GATE_CODE;
-  const doorCode = process.env.PROPERTY_DOOR_CODE;
+  // Option 1: Per-property env vars (preferred if seeding)
+  const cottageGateCode = process.env.COTTAGE_GATE_CODE;
+  const mainHouseGateCode = process.env.MAIN_HOUSE_GATE_CODE;
   
-  if (gateCode) {
-    // Insert cottage gate
-    db.run(`INSERT OR IGNORE INTO property_access_codes (...) VALUES (...)`);
-    // Insert main house gate
-    db.run(`INSERT OR IGNORE INTO property_access_codes (...) VALUES (...)`);
-    // Audit log entries
-    db.run(`INSERT INTO access_code_audit_log (...) VALUES (...)`);
+  if (cottageGateCode) {
+    db.run(`INSERT OR IGNORE INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at) 
+            VALUES ('browns-dullstroom', 'cottage', 'gate_pinpad', '', ?, datetime('now'), 'system', datetime('now'))`, [cottageGateCode]);
+    db.run(`INSERT INTO access_code_audit_log (tenant, property, code_type, suite, changed_at, changed_by, action, notes) 
+            VALUES ('browns-dullstroom', 'cottage', 'gate_pinpad', '', datetime('now'), 'system', 'create', 'Seeded from COTTAGE_GATE_CODE env var')`);
   }
   
-  if (doorCode) {
-    // Insert lockbox codes for each suite (staff will update suite-specific later)
-    db.run(`INSERT OR IGNORE INTO property_access_codes (...) VALUES (...)`);
+  if (mainHouseGateCode) {
+    db.run(`INSERT OR IGNORE INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at) 
+            VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', '', ?, datetime('now'), 'system', datetime('now'))`, [mainHouseGateCode]);
+    db.run(`INSERT INTO access_code_audit_log (tenant, property, code_type, suite, changed_at, changed_by, action, notes) 
+            VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', '', datetime('now'), 'system', 'create', 'Seeded from MAIN_HOUSE_GATE_CODE env var')`);
   }
+  
+  // Option 2: No seed, staff enter manually via /ops/access-codes (preferred)
+  console.log('Seed complete. Staff should verify codes at /ops/access-codes');
 }
 ```
+
+**IMPORTANT**: Do NOT use single global `PROPERTY_GATE_CODE` to seed both gates. Prefer per-property env vars or empty tables with staff manual entry.
 
 **Rollback**: If migration fails, drop tables and retry (idempotent, safe to re-run)
 
@@ -273,7 +292,7 @@ FROM property_access_codes
 WHERE tenant = 'browns-dullstroom'
   AND property = 'cottage'
   AND code_type = 'gate_pinpad'
-  AND suite IS NULL
+  AND suite = ''  -- Empty string, not NULL
 LIMIT 1;
 ```
 
@@ -293,13 +312,15 @@ LIMIT 1;
 
 ```sql
 INSERT INTO property_access_codes (tenant, property, code_type, suite, code_value, last_updated_at, last_updated_by, created_at)
-VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', NULL, 'NEW_CODE', '2026-09-21T10:00:00Z', 'staff@example.com', '2026-09-21T10:00:00Z')
+VALUES ('browns-dullstroom', 'main-house', 'gate_pinpad', '', 'NEW_CODE', '2026-09-21T10:00:00Z', 'staff@example.com', '2026-09-21T10:00:00Z')
 ON CONFLICT(tenant, property, code_type, suite)
 DO UPDATE SET
   code_value = excluded.code_value,
   last_updated_at = excluded.last_updated_at,
   last_updated_by = excluded.last_updated_by;
 ```
+
+**Note**: Gates use `suite=''` (empty string), lockboxes use actual suite name.
 
 ### Recent audit log (last 90 days)
 
@@ -318,8 +339,8 @@ LIMIT 100;
 
 1. **At-rest encryption**: Turso encrypts data at rest. If app-level encryption is required, use `crypto.createCipheriv` with `ACCESS_CODE_ENCRYPTION_KEY` env var.
 2. **In-transit encryption**: All API routes are HTTPS (Vercel enforces).
-3. **Redaction**: All API responses, logs, and UI display code values as `****` or `[REDACTED]` except in the specific staff edit input (which is masked by default with toggle to reveal).
-4. **Staff auth**: Access codes management route requires authenticated staff session (middleware check).
+3. **Redaction**: Server logs, CI output, PR descriptions, chat messages, test fixtures, and console.log statements never print actual code values. Authorized staff edit API responses and time-gated guest portal API responses over HTTPS MAY contain plaintext codes as required for edit/display functionality.
+4. **Staff auth**: `/ops/access-codes` route requires authenticated staff session (middleware check).
 5. **No code values in audit log**: Audit log stores metadata only, never the actual codes.
 6. **Test fixtures**: All test data uses `'REDACTED'` or `'****'` as placeholder code values, never real codes.
 
@@ -335,26 +356,27 @@ Guest Portal / Template Request
          |
          v
    Query DB: property_access_codes
+   WHERE property=? AND code_type=? AND suite=?
          |
     +----+----+
     |         |
-   Found    Empty
+  Row      NO row
+  exists   exists
     |         |
     v         v
- Return    Env Vars
- DB code  (PROPERTY_GATE_CODE, etc.)
-    |         |
-    +----+----+
-         |
-    +----+----+
-    |         |
-   Found    Empty
-    |         |
-    v         v
- Return    Return
- Env code '[ASK STAFF]'
-    |         |
-    +----+----+
+ Return    Global Env Vars
+ code_val (PROPERTY_GATE_CODE, etc.)
+ (even if  (fallback ONLY)
+  empty)      |
+    |    +----+----+
+    |    |         |
+    | Found    Empty
+    |    |         |
+    |    v         v
+    | Return    Return
+    | Env code '[ASK STAFF]'
+    |    |         |
+    +----+----+----+
          |
          v
   Apply time-gate
@@ -363,6 +385,8 @@ Guest Portal / Template Request
          v
   Return to caller
 ```
+
+**CRITICAL**: Once a DB row exists for property+type+suite, env vars are NEVER used for that key. Env fallback is ONLY for keys that have NO DB row.
 
 ---
 

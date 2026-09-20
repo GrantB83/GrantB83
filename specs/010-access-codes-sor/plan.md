@@ -9,14 +9,14 @@
 Move property access codes (gate pinpads + lockbox) from env vars to database SoR. Add staff UI at `/staff/access-codes` to view/edit codes grouped by property. Audit trail logs who changed what/when (metadata only, no actual codes). Guest portal, templates, and playbooks read DB-first with env fallback, fail-closed to `[ASK STAFF]` if both empty. Never invent codes. Redact live codes in console/logs/tests. Scope: 2 gate pinpads (Cottage = 278 Blue Crane, Main = 279 Blue Crane) + lockbox codes (one per suite per property).
 
 **Technical approach**:
-- New tables: `property_access_codes`, `access_code_audit_log`
+- New tables: `property_access_codes` (suite='' empty string for gates), `access_code_audit_log`
 - Idempotent migration script: `scripts/migrate-access-codes-sor.js`
-- Staff UI: Next.js App Router page at `src/app/staff/access-codes/page.tsx`
-- API routes: `POST /api/staff/access-codes/upsert`, `GET /api/staff/access-codes/audit`
-- Lib: `src/lib/access-codes.ts` for DB-first resolution logic
+- Staff UI: Next.js App Router page at `src/app/ops/access-codes/page.tsx`
+- API routes: `POST /api/ops/access-codes/upsert`, `GET /api/ops/access-codes/audit`
+- Lib: `src/lib/access-codes.ts` for DB-first resolution logic (per property+type+suite, env fallback ONLY when NO DB row)
 - Update guest portal route to use new resolution
 - Update template engines (welcome drafts, late-check-in, playbooks) to use new resolution
-- Tests first on resolution logic (DB / env / fail-closed / redaction)
+- Tests first on resolution logic (DB row exists / NO row exists + env / fail-closed / redaction)
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Move property access codes (gate pinpads + lockbox) from env vars to database So
 
 **Primary Dependencies**: React 18.3, Next.js route handlers, `@libsql/client` 0.18, better-sqlite3 (local), Vitest 1.0, existing staff auth middleware
 
-**Storage**: Turso (production) / local SQLite. New tables `property_access_codes`, `access_code_audit_log`. Code values stored with app-level encryption (simple XOR or AES if required) or rely on Turso at-rest encryption.
+**Storage**: Turso (production) / local SQLite. New tables `property_access_codes` (suite NOT NULL, empty string '' for gates to avoid UNIQUE+NULL issue), `access_code_audit_log`. Code values stored with app-level encryption (simple XOR or AES if required) or rely on Turso at-rest encryption.
 
 **Testing**: Vitest (`apps/guestflow` `npm test`) with mocked DB. Redaction tests in `__tests__/access-codes.test.ts`.
 
@@ -36,13 +36,15 @@ Move property access codes (gate pinpads + lockbox) from env vars to database So
 
 **Constraints**:
 - NEVER invent codes
-- NEVER log/print live codes in tests, CI, PR body, console
-- DB-first, env-fallback, fail-closed to `[ASK STAFF]`
-- Staff auth required for management UI
+- NEVER log/print live codes in server logs, tests, CI, PR body, console.log (authorized API responses over HTTPS may contain plaintext for edit/display)
+- DB-first: if DB row exists for property+type+suite, use it (even if empty); env fallback ONLY when NO DB row exists
+- Staff auth required for `/ops/access-codes`
 - Time-gate still applies (24h before check-in through checkout)
 - Named env secrets only
 - Turso migrations one statement at a time
 - No production deploy / no apply migration without Grant `APPROVE APPLY MIGRATION`
+- Suite field free-text staff-entered (not hardcoded Suite 1/2/3 only)
+- Do NOT seed same env var into both cottage and main-house gates
 
 **Scale/Scope**: Single Browns Dullstroom tenant; 2 gate pinpads + ~5-10 lockbox codes (one per suite); staff edits are infrequent (weekly at most, typically monthly or on-demand)
 
@@ -88,10 +90,10 @@ apps/guestflow/
 ├── scripts/migrate-access-codes-sor.js
 ├── src/lib/access-codes.ts
 ├── src/lib/__tests__/access-codes.test.ts
-├── src/app/staff/access-codes/
+├── src/app/ops/access-codes/
 │   ├── page.tsx
 │   └── AccessCodesManager.tsx (client component)
-├── src/app/api/staff/access-codes/
+├── src/app/api/ops/access-codes/
 │   ├── upsert/route.ts
 │   └── audit/route.ts
 ├── src/app/api/guest-portal/[code]/route.ts  (UPDATE)
@@ -203,27 +205,28 @@ apps/guestflow/
 
 ### Phase 3: Staff UI + API Routes
 
-**Goal**: Staff can view and edit codes, audit log populates
+**Goal**: Staff can view and edit codes at `/ops/access-codes`, audit log populates
 
 **Tasks**:
-1. Create `src/app/staff/access-codes/page.tsx` (server component, staff auth check)
-2. Create `src/app/staff/access-codes/AccessCodesManager.tsx` (client component):
+1. Create `src/app/ops/access-codes/page.tsx` (server component, staff auth check)
+2. Create `src/app/ops/access-codes/AccessCodesManager.tsx` (client component):
    - Fetch codes on mount
    - Group by property
    - Inline edit (text inputs, masked by default with toggle to reveal)
    - Save button per row
-   - Audit log section (last 90 days, redacted)
-3. Create `src/app/api/staff/access-codes/upsert/route.ts`:
-   - POST with `{ property, type, suite?, code }`
+   - Audit log section (last 90 days, metadata only)
+   - Suite field free-text input for lockboxes (not hardcoded dropdown)
+3. Create `src/app/api/ops/access-codes/upsert/route.ts`:
+   - POST with `{ property, type, suite, code }`
    - Validate non-empty, trimmed
-   - Upsert code
+   - Upsert code (suite='' for gates, actual name for lockboxes)
    - Insert audit log entry (property, type, suite, changed_at, staff_id)
-4. Create `src/app/api/staff/access-codes/audit/route.ts`:
+4. Create `src/app/api/ops/access-codes/audit/route.ts`:
    - GET audit log, last 90 days
-   - Redact code values in response
+   - Metadata only (no code values in response)
 5. Write `__tests__/access-codes-audit.test.ts`
 
-**Acceptance**: Staff can edit codes, audit log records changes, redaction in UI/API
+**Acceptance**: Staff can edit codes at `/ops/access-codes`, audit log records changes, metadata only
 
 ### Phase 4: Guest Portal Integration
 

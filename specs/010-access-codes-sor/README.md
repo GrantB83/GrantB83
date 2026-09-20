@@ -12,7 +12,7 @@
 
 ## Executive Summary
 
-Move property access codes (gate pinpads + lockbox) from env vars to database source of record. Staff edit codes via UI at `/staff/access-codes`. Guest portal, templates, and playbooks read DB-first with env fallback, fail-closed to `[ASK STAFF]` if both empty. Audit trail logs who changed what/when. Never invent codes. Redact live codes in console/logs/tests.
+Move property access codes (gate pinpads + lockbox) from env vars to database source of record. Staff edit codes via UI at `/ops/access-codes`. Guest portal, templates, and playbooks read DB-first with env fallback (ONLY when NO DB row exists for that property+type+suite), fail-closed to `[ASK STAFF]` if both empty. Audit trail logs who changed what/when (metadata only). Never invent codes. Redact live codes in server logs/tests.
 
 **Ritual removed**: "Emergency Vercel deploy to rotate compromised code" → "Staff edit in UI, save, done"
 
@@ -22,12 +22,12 @@ Move property access codes (gate pinpads + lockbox) from env vars to database so
 
 **In scope**:
 - 2 gate pinpads (Cottage entrance = 278 Blue Crane; Main house entrance = 279 Blue Crane)
-- Lockbox codes (one active code per room/suite at each property)
-- Staff UI to view/edit codes
-- Audit trail (who, when, metadata only)
-- DB-first resolution with env fallback
-- Fail-closed to `[ASK STAFF]` when both empty
-- Redaction enforcement (no live codes in logs/tests/PR)
+- Lockbox codes (one active code per suite, staff-addable via free-text input)
+- Staff UI at `/ops/access-codes` to view/edit codes
+- Audit trail (who, when, metadata only - no code values stored)
+- DB-first resolution: if DB row exists for property+type+suite, use it (even if empty); env fallback ONLY when NO DB row exists
+- Fail-closed to `[ASK STAFF]` when both empty (no cross-property env bleed)
+- Redaction enforcement (no live codes in server logs/tests/PR)
 
 **Out of scope**:
 - Auto-send of messages with codes (still requires Phase 0 approval)
@@ -71,14 +71,14 @@ Move property access codes (gate pinpads + lockbox) from env vars to database so
 
 ## Success Criteria
 
-- **SC-001**: Staff can change a gate or lockbox code from UI and see change reflected in guest portal within 5 seconds (no deploy required)
-- **SC-002**: 100% of guest portal access code displays resolve from DB when codes exist
-- **SC-003**: 100% of template generations use DB-first resolution with `[ASK STAFF]` fallback
-- **SC-004**: Zero live access codes appear in browser DevTools, test fixtures, CI logs, or PR descriptions
-- **SC-005**: Every code change has a corresponding audit log entry
-- **SC-006**: Staff can view change history for last 90 days without seeing actual code values
-- **SC-007**: System handles DB unavailability gracefully, falling back to env vars
-- **SC-008**: Ritual removed: "emergency deploy for code rotation" → "staff edit in UI"
+- **SC-001**: Staff can change a gate or lockbox code from UI at `/ops/access-codes` and see change reflected in guest portal within 5 seconds (no deploy required)
+- **SC-002**: 100% of guest portal access code displays resolve from DB when DB row exists for that property+type+suite
+- **SC-003**: 100% of template generations use DB-first resolution (per property+type+suite) with `[ASK STAFF]` fallback
+- **SC-004**: Zero live access codes appear in server logs, test fixtures, CI logs, PR descriptions, or console.log (authorized HTTPS responses may contain plaintext for edit/display)
+- **SC-005**: Every code change has a corresponding audit log entry (metadata only, no code values)
+- **SC-006**: Staff can view change history for last 90 days without seeing actual code values (audit log stores metadata only)
+- **SC-007**: System handles DB unavailability gracefully, falling back to env vars when NO DB row exists
+- **SC-008**: Ritual removed: "emergency deploy for code rotation" → "staff edit in UI at `/ops/access-codes`"
 
 ---
 
@@ -87,7 +87,7 @@ Move property access codes (gate pinpads + lockbox) from env vars to database so
 ### `property_access_codes`
 - `property` (cottage | main-house)
 - `code_type` (gate_pinpad | lockbox)
-- `suite` (nullable, required for lockbox)
+- `suite` (empty string '' for gates, actual suite name for lockboxes - NOT NULL to avoid UNIQUE+NULL issue)
 - `code_value` (encrypted at rest)
 - `last_updated_at`, `last_updated_by`
 - UNIQUE constraint on (tenant, property, code_type, suite)
@@ -111,26 +111,27 @@ Guest Portal / Template Request
          |
          v
    Query DB: property_access_codes
+   WHERE property=? AND code_type=? AND suite=?
          |
     +----+----+
     |         |
-   Found    Empty
+  Row      NO row
+  exists   exists
     |         |
     v         v
- Return    Env Vars
- DB code  (PROPERTY_GATE_CODE, etc.)
-    |         |
-    +----+----+
-         |
-    +----+----+
-    |         |
-   Found    Empty
-    |         |
-    v         v
- Return    Return
- Env code '[ASK STAFF]'
-    |         |
-    +----+----+
+ Return    Global Env Vars
+ code_val (PROPERTY_GATE_CODE, etc.)
+ (even if  (fallback ONLY)
+  empty)      |
+    |    +----+----+
+    |    |         |
+    | Found    Empty
+    |    |         |
+    |    v         v
+    | Return    Return
+    | Env code '[ASK STAFF]'
+    |    |         |
+    +----+----+----+
          |
          v
   Apply time-gate
@@ -139,6 +140,8 @@ Guest Portal / Template Request
          v
   Return to caller
 ```
+
+**CRITICAL**: Once a DB row exists for property+type+suite, env vars are NEVER used for that key.
 
 ---
 

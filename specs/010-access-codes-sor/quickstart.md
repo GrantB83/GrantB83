@@ -80,7 +80,7 @@ Visit `http://localhost:3000`
 
 ### Step 4: Test staff access
 
-1. Open `http://localhost:3000/staff/access-codes`
+1. Open `http://localhost:3000/ops/access-codes`
 2. Log in as staff (use existing staff auth)
 3. You should see the Access Codes Manager page
 
@@ -90,10 +90,10 @@ Visit `http://localhost:3000`
 
 ### View Current Codes
 
-1. Navigate to `/staff/access-codes`
+1. Navigate to `/ops/access-codes`
 2. Codes are grouped by property:
-   - **Cottage (278 Blue Crane)**: Gate pinpad
-   - **Main House (279 Blue Crane)**: Gate pinpad + lockbox codes per suite
+   - **Cottage (278 Blue Crane)**: Gate pinpad (suite='')
+   - **Main House (279 Blue Crane)**: Gate pinpad (suite='') + lockbox codes per suite
 
 Each row shows:
 - Code type (Gate / Lockbox)
@@ -131,9 +131,9 @@ Shows last 90 days of changes:
 
 ### Add a New Lockbox Code
 
-1. If a suite doesn't have a lockbox code yet, you'll see a placeholder row or an "Add" button
+1. If a suite doesn't have a lockbox code yet, you'll see an "Add" button or placeholder row
 2. Click **Add lockbox code**
-3. Select suite
+3. **Enter suite name as free text** (not dropdown) - must exactly match booking.room or booking.suite
 4. Enter code
 5. Save
 
@@ -179,40 +179,55 @@ Lockbox Code:  5678
 ### Test 1: DB code exists, guest within time-gate
 
 **Setup**:
-1. Run migration + seed
-2. Edit gate code via staff UI: `TEST_GATE_9999`
+1. Run migration + seed (or manually add via `/ops/access-codes`)
+2. Edit gate code via staff UI: `TEST_GATE_9999` (suite='')
 3. Create test booking with check-in = today
 4. Generate magic link for that booking
 
 **Expected result**:
 - Guest portal shows `TEST_GATE_9999`
-- Env var is ignored (DB wins)
+- Env var is ignored (DB row exists, so DB wins)
 
 ---
 
-### Test 2: DB empty, env fallback
+### Test 2: NO DB row, env fallback
 
 **Setup**:
-1. Clear DB codes (or don't seed)
+1. Clear DB row for cottage gate (DELETE or never create)
 2. Set env var: `PROPERTY_GATE_CODE=ENV_FALLBACK_1234`
-3. Same test booking as above
+3. Same test booking for cottage
 
 **Expected result**:
 - Guest portal shows `ENV_FALLBACK_1234`
-- Audit log shows no DB entries (env fallback used)
+- Env fallback used because NO DB row exists for cottage gate
 
 ---
 
 ### Test 3: Both empty, fail-closed
 
 **Setup**:
-1. Clear DB codes
-2. Clear env vars (or set to empty string)
-3. Same test booking
+1. Clear DB row for main-house gate
+2. Clear env var (or set to empty string)
+3. Test booking for main-house
 
 **Expected result**:
 - Guest portal shows `[ASK STAFF]`
 - Message: "Please contact reception for access details"
+
+---
+
+### Test 4: No cross-property env bleed
+
+**Setup**:
+1. Add DB row for cottage gate: `COTTAGE_DB_CODE` (suite='')
+2. NO DB row for main-house gate
+3. Set env var: `PROPERTY_GATE_CODE=GLOBAL_ENV_CODE`
+4. Create two bookings: one for cottage, one for main-house
+
+**Expected result**:
+- Cottage portal shows `COTTAGE_DB_CODE` (DB row exists, env ignored)
+- Main-house portal shows `GLOBAL_ENV_CODE` (NO DB row, env used)
+- No cross-property bleed ✅
 
 ---
 
@@ -271,16 +286,17 @@ Lockbox Code:  5678
 
 ---
 
-### Test 8: Redaction in DevTools
+### Test 8: Redaction in server logs
 
 **Setup**:
-1. Open Chrome DevTools (F12) on `/staff/access-codes` page
-2. Edit a code and save
+1. Tail server logs: `tail -f logs/server.log` (or wherever your logs go)
+2. Open `/ops/access-codes` as staff
+3. Edit a code and save
 
 **Expected result**:
-- Console tab: No live codes visible (check for `console.log` output)
-- Network tab: API responses show `****` or redacted values for `code_value` field
-- Elements tab: Input fields are `type="password"` by default
+- Server logs never print actual code values
+- Authorized HTTPS API responses may contain plaintext codes (required for edit/display)
+- console.log statements never print actual codes
 
 ---
 
@@ -312,6 +328,7 @@ cat .env.local | grep PROPERTY_
 **Possible causes**:
 1. **Not authenticated**: Staff session expired or not logged in.
 2. **Migration not run**: Tables don't exist.
+3. **Wrong path**: Use `/ops/access-codes`, not `/staff/access-codes`.
 
 **Debug steps**:
 ```bash
@@ -357,28 +374,30 @@ sqlite3 .guestflow.db "INSERT INTO access_code_audit_log (...) VALUES (...);"
 
 ---
 
-### Problem: Live codes visible in browser DevTools
+### Problem: Live codes visible in server logs
 
 **This is a bug! Report immediately.**
 
 **Expected behavior**:
-- Console: No `console.log` with actual codes
-- Network: API responses redact `code_value` as `****`
-- Elements: Inputs are `type="password"` by default
+- Server logs never print actual codes (check with `grep` for patterns like `1234`)
+- Authorized HTTPS API responses may contain plaintext codes (required for edit/display)
+- console.log statements never print actual codes
 
-**If you see live codes**:
-- Check `src/app/api/staff/access-codes/upsert/route.ts`: Response should NOT include `code_value`
-- Check `src/app/staff/access-codes/AccessCodesManager.tsx`: Console logs should use `'****'`
+**If you see live codes in logs**:
+- Check `src/app/api/ops/access-codes/upsert/route.ts`: No `console.log(code)`
+- Check `src/lib/access-codes.ts`: Use DEBUG mode with redaction if needed
 
 ---
 
 ## Environment Variables
 
-**Required** (for fallback):
+**Required** (global fallback for migration, used ONLY when NO DB row exists):
 ```bash
-PROPERTY_GATE_CODE=****       # Fallback if DB empty
-PROPERTY_DOOR_CODE=****       # Fallback if DB empty
+PROPERTY_GATE_CODE=****       # Global fallback if NO DB row
+PROPERTY_DOOR_CODE=****       # Global fallback if NO DB row
 ```
+
+**WARNING**: Single global env vars cannot safely back both cottage and main-house long-term. Once DB rows exist for properties, env vars are ignored for those properties (no cross-property bleed).
 
 **Optional** (for seeding):
 ```bash
@@ -407,7 +426,7 @@ SEED_ACCESS_CODES=APPROVE node scripts/seed-access-codes.js
 
 ### Step 4: Verify staff can edit codes
 - Log in to production as staff
-- Navigate to `/staff/access-codes`
+- Navigate to `/ops/access-codes`
 - Edit a test code (non-critical property if available)
 - Verify audit log entry
 
