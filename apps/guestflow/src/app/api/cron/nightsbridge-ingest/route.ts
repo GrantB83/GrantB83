@@ -283,7 +283,9 @@ export async function POST(request: NextRequest) {
           all: (...params: any[]) => stmt.all(...params),
         }
       },
-      exec: (sql: string) => db.exec(sql),
+      exec: (sql: string) => {
+        db.exec(sql)
+      },
       batch: () => {},
       type: 'sqlite' as const,
     }
