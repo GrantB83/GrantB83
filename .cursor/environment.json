@@ -1,0 +1,17 @@
+{
+  "name": "GrantB83 Profile README",
+  "install": "python3 -m pip install --user --quiet --upgrade-strategy only-if-needed grip pymarkdownlnt",
+  "terminals": [
+    {
+      "name": "readme-preview",
+      "command": "python3 -m grip README.md 0.0.0.0:6419",
+      "description": "GitHub-accurate live preview of README.md (grip). Renders via GitHub's markdown API and serves on port 6419; refreshes on save."
+    }
+  ],
+  "ports": [
+    {
+      "name": "readme preview",
+      "port": 6419
+    }
+  ]
+}
