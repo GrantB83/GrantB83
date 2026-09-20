@@ -33,6 +33,17 @@ The stub rejects a missing secret, a wrong secret, and `CRON_SECRET` even when t
 
 `guest_contacts` upserts on every A&D ingest. Null-tolerant. Never invent phones. Retention **5 years after last stay then DELETE**.
 
+## Message Status (Durable State)
+
+`inbound_messages.status` column added for Phase 0 workflow:
+- **`new`** (default): Unread message
+- **`seen`**: Staff viewed
+- **`archived`**: Completed/closed
+
+**Production hotfix**: Grant manually ALTER'd Production Turso 20 Sep 2026 after SQL_INPUT_ERROR in Approve&Send. Now durable in code via `PHASE0_COLUMN_STATEMENTS` and standalone migration script `migrate-add-inbound-message-status.js`.
+
+**Run migration**: `npm run db:migrate:inbound-status`
+
 ## HOLD
 
 Resend inbound webhook dashboard remains HOLD. Email code already uses the shared ingest path. See `EMAIL-CONTROL-CENTER.md`.
