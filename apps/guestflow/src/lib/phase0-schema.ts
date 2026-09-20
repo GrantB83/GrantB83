@@ -69,6 +69,11 @@ export const PHASE0_COLUMN_STATEMENTS: Array<{ table: string; column: string; sq
     column: 'draft_source',
     sql: `ALTER TABLE inbound_messages ADD COLUMN draft_source TEXT DEFAULT 'heuristic'`,
   },
+  {
+    table: 'inbound_messages',
+    column: 'status',
+    sql: `ALTER TABLE inbound_messages ADD COLUMN status TEXT DEFAULT 'new'`,
+  },
 ]
 
 export async function tableHasColumn(

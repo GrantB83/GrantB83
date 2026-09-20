@@ -64,11 +64,19 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   const timestamp = new Date().toISOString()
   const from = getResendFromEmail()
 
-  if (!process.env.RESEND_API_KEY || !from) {
+  if (!process.env.RESEND_API_KEY) {
     return {
       success: false,
       timestamp,
-      error: 'Email is not configured (RESEND_API_KEY / RESEND_FROM_EMAIL)',
+      error: 'RESEND_API_KEY environment variable not configured',
+    }
+  }
+
+  if (!from) {
+    return {
+      success: false,
+      timestamp,
+      error: 'RESEND_FROM_EMAIL environment variable not configured',
     }
   }
 
