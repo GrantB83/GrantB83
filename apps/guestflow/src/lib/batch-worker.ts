@@ -373,16 +373,8 @@ export async function upsertDraft(
     throw new Error(`Upsert failed (${response.status}): ${error}`)
   }
 
-  // After successful upsert, set thread status to 'drafted' for Approve & Send queue
-  await db
-    .prepare(
-      `
-    UPDATE inbound_threads
-    SET status = 'drafted', updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `
-    )
-    .run(threadId)
+  // Message status and thread status are both set by the /api/drafts/upsert route
+  // No additional updates needed here
 }
 
 /**

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         .prepare(
           `
           UPDATE inbound_messages
-          SET draft_reply = ?, draft_source = 'llm'
+          SET draft_reply = ?, draft_source = 'llm', status = 'drafted'
           WHERE id = ? AND thread_id = ?
         `
         )
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         .prepare(
           `
           UPDATE inbound_messages
-          SET draft_reply = ?, draft_source = 'llm'
+          SET draft_reply = ?, draft_source = 'llm', status = 'drafted'
           WHERE id = (
             SELECT id FROM inbound_messages
             WHERE thread_id = ?
@@ -72,6 +72,17 @@ export async function POST(request: NextRequest) {
         )
         .run(draftReply, threadId)
     }
+
+    // Set thread status to 'drafted' for Needs Approval queue
+    await db
+      .prepare(
+        `
+        UPDATE inbound_threads
+        SET status = 'drafted', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `
+      )
+      .run(threadId)
 
     return NextResponse.json({
       success: true,
