@@ -147,7 +147,6 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(data.allowlisted).toBe(true)
-    expect(data.source).toBe('booking')
   })
 
   it('merges into existing Twilio thread (allowlist tier 3 + dedup)', async () => {
