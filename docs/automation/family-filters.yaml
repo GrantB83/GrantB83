@@ -1,8 +1,8 @@
 # Zero-token Gmail routing for the Family Command Center.
-# Agents create these labels/filters; they do not LLM-classify every school email.
-# Do not add Trash or Spam actions.
+# Filters only put mail into Family/* lanes. Family Bot AI decides Action / This Week / FYI.
+# Do not add Trash or Spam actions. Do not LLM-scan the whole inbox.
 schema_version: 1
-updated: 2026-08-22
+updated: 2026-08-23
 skip_inbox_default: false   # flip to true only after APPROVE FAMILY FILE (S10)
 
 labels:
@@ -14,21 +14,32 @@ labels:
   - Family/FileOnly
   - Family/Action
 
+classify:
+  grant_phrase: "DIGEST CLASSIFY: ai"
+  this_week_phrase: "DIGEST THIS WEEK: yes"
+  by: family_bot
+  on: labelled_family_lanes_only
+  not: [full_inbox, action_word_lists]
+  reads: subject_and_snippet_first
+  open_body_when: needed_to_decide_action_or_date
+  never_quote_in_chat: [medical_body, school_pdf_text, lab_results]
+  if_unsure: action
+  outputs:
+    - FamilyAction cards (sign | pay | attend | reply | buy)
+    - This Week attend (date in the next 7 days, even if S11 is off)
+    - FYI collapse (newsletters with no parent action)
+  apply_label: Family/Action when carded
+  calendar_write: only_after_S11
+  calendar_read: always   # empty Family calendar is still a read
+  unlabelled_senders: still_need_a_from_filter   # Remind / ParentSquare never reach AI until routed
+
 filters:
   - id: school-aisd
     criteria:
       from: austinisd.org
     action:
       add_labels: [Family/School]
-    notes: Mills and other AISD campuses observed in Drive shares. Create this filter on thebrownsusa@gmail.com (and Liana if separate) — not only on grant830318@gmail.com. Hub has zero austinisd.org in 90d.
-
-  - id: school-action-words
-    criteria:
-      from: austinisd.org
-      containWords: [permission, volunteer, due, signup, sign-up, conference, IEP]
-    action:
-      add_labels: [Family/School, Family/Action]
-    notes: Keep in inbox. False positives are acceptable.
+    notes: Mills and other AISD campuses. Create on thebrownsusa@gmail.com (and Liana if separate) — not only on grant830318@gmail.com. Hub has zero austinisd.org in 90d. Routing only; Family AI classifies.
 
   - id: household-wesbank
     criteria:
@@ -36,6 +47,15 @@ filters:
     action:
       add_labels: [Family/Finance]
     notes: Vehicle finance already arriving on grant@thebrowns.co.za.
+
+  - id: household-bell-flash
+    mailbox: thebrownsusa@gmail.com
+    criteria:
+      from: donotreply@customercenter.net
+    action:
+      add_labels: [Family/Finance]
+    skip_inbox: false
+    notes: Grant 2026-08-22 BELL FILTER from-only. Daily Bell Bank flash only. Do not create on the hub. Family Bot reads Family/Finance on the thebrownsusa avatar.
 
   - id: household-budget-sheet
     criteria:
@@ -46,6 +66,13 @@ filters:
 
 disabled:
   - household-budget-sheet
+  - school-action-words   # Grant 2026-08-23 DIGEST CLASSIFY: ai. Keyword lists missed forms and meetings.
+
+deprecated:
+  school-action-words:
+    retired: 2026-08-23
+    was: from austinisd.org AND permission|volunteer|due|signup|conference|IEP → Family/Action
+    why: missed real actions (forms, meetings). Family Bot classifies labelled Family/School instead.
 
 standing_approval_to_skip_inbox:
-  - school-aisd   # only the FYI filter, never school-action-words
+  - school-aisd   # only the FYI routing filter, never AI-applied Family/Action

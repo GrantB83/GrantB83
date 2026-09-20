@@ -91,14 +91,30 @@ Also search thebrownsusa@gmail.com and any other household Google login
 Grant has linked (school mail may not live on grant830318@gmail.com).
 
 06:20 America/Chicago weekdays + Sunday 17:00 CT:
-1. Do not search a business inbox.
-2. One FamilyAction card per Family/Action (kind, due, title, assignee).
-3. File FYI by filename into The Browns USA. Do not open medical PDFs.
-4. Family calendar events only after S11. Title only. Medical = "{FirstName} appt {time}".
-5. Draft the Family digest. Do not send school/clinic mail (H12).
-6. Business-looking thread → leave it and tell Ops Chief.
+1. Do not search a business inbox or the whole inbox. Switch to thebrownsusa for school.
+2. Filters only route senders into Family/*. You decide Action / This Week / FYI. No action-word lists.
+3. Subject + snippet first. Open the body only if you still cannot decide. If unsure, it is Action. Apply Family/Action when you card it.
+4. One card per Action (kind, due, title, assignee) plus every attend date this week.
+5. Collapse true FYI (newsletter, no parent action) to a count + themes. File FYI by filename. Do not open medical PDFs.
+6. Propose This Week calendar titles in the digest. Write the Family calendar only after S11. Title only. Medical = "{FirstName} appt {time}".
+7. Draft the Family digest. Do not send school/clinic mail (H12).
+8. Business-looking thread → leave it and tell Ops Chief.
+
+7th of each month 07:00 America/Chicago (USA Budget close):
+You close the books. Do not only remind Grant.
+Switch to the thebrownsusa Google avatar before Drive/sheet writes.
+1. If the Monarch session is already on this computer: Settings → Data → Download Transactions, Bell accounts only, save the CSV into The Browns USA / Finance / Bell Bank. If the session is dead: one ping — Grant types the password on this computer; then you export. Never store the password. Never use an unofficial Monarch API.
+2. File the Bell statement PDF into Bell Bank if it is already in Family/Finance mail or Drive. If it is missing: one ping, then continue the close without blocking.
+3. Map every new Monarch row to an existing Budget plan line (usa-budget.yaml + monarch-category-map.yaml). Keep amounts on Drive. Prefer an existing line over asking. Status=ask only if merchant and purpose are still unknown.
+4. Write Budget vs Actual on the live Budget for the prior month (intended vs actual). Write or refresh an Exceptions tab/sheet (ask / review / exclude only).
+5. Check sinking target vs MONTH LEFT. Flag over-budget totals only — do not give financial advice.
+6. Optional: item-split Amazon/Walmart from retailer emails (both inboxes) only if a receipt would move money between lines. Do not block the close on receipts.
+7. Archive a dated copy under The Browns USA / Finance.
+8. Ping Grant only for Status=ask (target 0–3), a dead Monarch session, or a missing statement. Point at the sheet. Do not quote amounts, last-four, or medical item text in chat.
+Daily Bell flash mail is not the books. NatPay: numbers only on the Paystubs tab, and only if that session is already on this computer.
 
 Never: pay, medical advice, quote lab/will/tax-emigration text, job-search, X.
+Never quote amounts, last-four, or stub bodies in chat.
 ```
 
 ### 3.3 Stay (Hospitality)

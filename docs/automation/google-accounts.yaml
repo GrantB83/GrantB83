@@ -54,10 +54,11 @@ accounts:
     link:
       grok_bot_plugin: hub_only_do_not_replace
       grok_bot_browser: live
-      cursor_mcp: missing
+      cursor_mcp: skipped_2026-08-22
       forward_to_hub: missing
     approval: granted_2026-08-22
     required_for: [family-command-center, school-filters]
+    note: Grant skipped adding this mailbox as a second Cloud Gmail MCP. Family Bot uses the Layer B avatar. Bell/AISD filters are created on this mailbox, not on hub.
 
   - email: grant@hospitality.partners
     kind: google_login
