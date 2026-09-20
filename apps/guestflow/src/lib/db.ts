@@ -171,6 +171,55 @@ const schema = `
   CREATE INDEX IF NOT EXISTS idx_guest_tokens_booking ON guest_tokens(booking_id);
   CREATE INDEX IF NOT EXISTS idx_guest_tokens_hash ON guest_tokens(token_hash);
   CREATE INDEX IF NOT EXISTS idx_guest_tokens_expires ON guest_tokens(expires_at);
+
+  CREATE TABLE IF NOT EXISTS guest_contacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    normalized_phone TEXT,
+    email TEXT,
+    display_name TEXT,
+    last_stay_at DATETIME,
+    last_suite TEXT,
+    source TEXT NOT NULL CHECK(source IN ('nb', 'inbound', 'manual')),
+    nbid TEXT,
+    retention_years INTEGER NOT NULL DEFAULT 5,
+    retention_delete_after DATETIME,
+    last_activity_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_guest_contacts_tenant_phone
+    ON guest_contacts(tenant_id, normalized_phone)
+    WHERE normalized_phone IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS idx_guest_contacts_tenant_email
+    ON guest_contacts(tenant_id, email);
+
+  CREATE TABLE IF NOT EXISTS draft_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    thread_id INTEGER NOT NULL,
+    message_id INTEGER NOT NULL,
+    intent TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending', 'claimed', 'done', 'failed')),
+    attempts INTEGER NOT NULL DEFAULT 0,
+    error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_draft_jobs_open_message
+    ON draft_jobs(message_id)
+    WHERE status IN ('pending', 'claimed');
+
+  CREATE TABLE IF NOT EXISTS send_confirm_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL DEFAULT 1,
+    thread_id INTEGER NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    consumed_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `
 
 /**

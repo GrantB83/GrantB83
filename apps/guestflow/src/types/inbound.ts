@@ -8,6 +8,7 @@ export type SendChannel = 'whatsapp' | 'email' | 'whatsapp_web'
 
 export interface SendMessageRequest {
   threadId: number
+  confirmToken: string
   channel?: SendChannel
   to?: string
   subject?: string

@@ -3,6 +3,8 @@ import { getDbAsync } from '@/lib/db'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { sendEmail, isEmailAddress, extractEmailAddress } from '@/lib/email'
 import { createQueuedJob } from '@/lib/send-jobs'
+import { consumeConfirmToken, isSendEligible } from '@/lib/confirm-token'
+import { ensurePhase0Schema } from '@/lib/phase0-schema'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 
 export const dynamic = 'force-dynamic'
@@ -69,7 +71,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const confirmToken = typeof body.confirmToken === 'string' ? body.confirmToken.trim() : ''
+    if (!confirmToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'confirmToken is required. Approve the thread, confirm in the UI, then send.',
+        } as SendMessageResponse,
+        { status: 400 }
+      )
+    }
+
     const db = await getDbAsync()
+    await ensurePhase0Schema(db)
 
     const thread = (await db
       .prepare(
@@ -91,7 +105,7 @@ export async function POST(request: NextRequest) {
     const latestMessage = (await db
       .prepare(
         `
-      SELECT id, draft_reply
+      SELECT id, draft_reply, status, draft_source
       FROM inbound_messages
       WHERE thread_id = ?
       ORDER BY message_timestamp DESC
@@ -100,12 +114,40 @@ export async function POST(request: NextRequest) {
       )
       .get(threadId)) as any
 
+    if (!isSendEligible(thread.status, latestMessage?.status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Thread is not approved or ready. Approve before sending.',
+        } as SendMessageResponse,
+        { status: 400 }
+      )
+    }
+
     const outboundBody = (body.body || latestMessage?.draft_reply || '').trim()
     if (!outboundBody) {
       return NextResponse.json(
         { success: false, error: 'Thread has no draft reply to send' } as SendMessageResponse,
         { status: 400 }
       )
+    }
+
+    const consumed = await consumeConfirmToken(db, { threadId, confirmToken })
+    if (!consumed.ok) {
+      return NextResponse.json(
+        { success: false, error: consumed.error } as SendMessageResponse,
+        { status: 400 }
+      )
+    }
+
+    if (latestMessage?.id && body.body && body.body.trim() !== (latestMessage.draft_reply || '').trim()) {
+      try {
+        await db
+          .prepare(`UPDATE inbound_messages SET draft_reply = ?, draft_source = 'human' WHERE id = ?`)
+          .run(outboundBody, latestMessage.id)
+      } catch (error) {
+        console.warn('[Send] draft_source human update skipped:', error)
+      }
     }
 
     if (channel === 'email') {

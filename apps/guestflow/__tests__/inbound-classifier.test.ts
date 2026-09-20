@@ -317,3 +317,19 @@ describe('Edge Cases', () => {
     expect(result.extractedData.adults).toBe(2)
   })
 })
+
+describe('Phase 0 draft origin', () => {
+  it('heuristic writer still requires approval and does not call an LLM', () => {
+    const classification = classifyMessage({
+      messageText: 'What time is breakfast?',
+      fromNumber: '+27821234567',
+    })
+    const { draft, requiresApproval } = generateDraftReply(
+      classification,
+      'The Browns Luxury Guest Suites (Dullstroom)'
+    )
+    expect(draft.length).toBeGreaterThan(0)
+    expect(requiresApproval).toBe(true)
+    expect(classification.intent).toBeTruthy()
+  })
+})

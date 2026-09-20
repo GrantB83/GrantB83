@@ -365,6 +365,9 @@ A background job runs at 05:00 and 19:00 SAST and logs sync status to Vercel. Ch
 - Requires `CRON_SECRET` environment variable (contact Grant)
 - Never commit CRON_SECRET to git
 - Rotate quarterly or if compromised
+- **`DRAFT_WORKER_SECRET` is a different secret.** It authenticates `POST /api/drafts/upsert` only (Phase 0 stub, no LLM). That route **rejects `CRON_SECRET`**. Coding sets the Vercel value after merge. See `docs/PHASE0-SAFETY.md`.
+
+**Phase 0 send gate:** `POST /api/inbound/send` requires thread/message status `approved` or `ready` **and** a one-time `confirmToken` from `POST /api/inbound/confirm-token`. Needs Approval / Inbound Queue Approve&Send obtain the token after the confirm dialog. Never auto-send.
 
 **Full Documentation:** See `docs/SA-OPS-NIGHTSBRIDGE-RUNBOOK.md` Part 0
 
