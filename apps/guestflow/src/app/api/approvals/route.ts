@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       )
       .all(tenantId, tenantId)) as Record<string, unknown>[]
 
-    const ticketItems = (await db)
+    const ticketItems = (await db
       .prepare(
         `
       SELECT 
