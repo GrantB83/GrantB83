@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { TenantProvider } from '@/components/TenantContext'
+import { OutboundRedirectBanner } from '@/components/outbound-redirect-banner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <TenantProvider>
+          <OutboundRedirectBanner />
           <Navigation />
           <main className="min-h-screen">
             {children}

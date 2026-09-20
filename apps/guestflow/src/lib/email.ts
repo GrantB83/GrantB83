@@ -83,6 +83,32 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
   const subject = (input.subject || '').trim() || '(no subject)'
 
+  // OUTBOUND REDIRECT: Resolve recipient (may redirect to test sink or block if misconfigured)
+  let resolution
+  let effectiveTo = to
+  try {
+    const { resolveOutboundRecipient } = await import('./outbound-redirect')
+    resolution = resolveOutboundRecipient({
+      channel: 'email',
+      intendedTo: to
+    })
+    
+    // Override to with resolved recipient
+    effectiveTo = resolution.to
+    
+    // Log redirect metadata for audit
+    if (resolution.redirected) {
+      console.log(`[OUTBOUND REDIRECT] Email send redirected: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
+    }
+  } catch (resolverError) {
+    // Resolver threw (missing sink or live mode without CLEAR)
+    return {
+      success: false,
+      timestamp,
+      error: resolverError instanceof Error ? resolverError.message : 'Outbound redirect configuration error'
+    }
+  }
+
   try {
     const response = await fetch(RESEND_EMAILS_URL, {
       method: 'POST',
@@ -92,7 +118,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       },
       body: JSON.stringify({
         from,
-        to: [to],
+        to: [effectiveTo],
         subject,
         text: input.text,
       }),

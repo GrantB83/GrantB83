@@ -336,6 +336,33 @@ export async function sendWhatsAppMessage(
       }
     }
 
+    // OUTBOUND REDIRECT: Resolve recipient (may redirect to test sink or block if misconfigured)
+    let resolution
+    try {
+      const { resolveOutboundRecipient } = await import('./outbound-redirect')
+      resolution = resolveOutboundRecipient({
+        channel: 'whatsapp',
+        intendedTo: params.to
+      })
+      
+      // Override params.to with resolved recipient (sink in redirect mode, original in live mode)
+      params = { ...params, to: resolution.to }
+      
+      // Log redirect metadata for audit
+      if (resolution.redirected) {
+        console.log(`[OUTBOUND REDIRECT] WhatsApp send redirected: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
+      }
+    } catch (resolverError) {
+      // Resolver threw (missing sink or live mode without CLEAR)
+      return {
+        success: false,
+        error: resolverError instanceof Error ? resolverError.message : 'Outbound redirect configuration error',
+        timestamp,
+        sandboxMode: false,
+        provider
+      }
+    }
+
     // Build message text with optional portal link (for sandbox logging)
     let messageText = params.message
     if (params.portalUrl) {
