@@ -42,15 +42,19 @@ export async function checkWhatsAppWebAllowlist(
   }
 
   // Tier 2: Check bookings (active bookings only)
-  const booking = await db.prepare(`
-    SELECT id FROM bookings
-    WHERE tenant_id = ? AND guest_phone = ? AND status != 'cancelled'
-    LIMIT 1
-  `).get(tenantId, normalized) as any
+  // NOTE: NightsBridge phones often not E.164, so we normalize before compare
+  const bookings = await db.prepare(`
+    SELECT id, guest_phone FROM bookings
+    WHERE tenant_id = ? AND status != 'cancelled' AND guest_phone IS NOT NULL
+  `).all(tenantId) as any[]
 
-  if (booking) {
-    return { allowed: true, source: 'booking' }
+  for (const booking of bookings) {
+    const bookingPhone = normalizeZaE164(booking.guest_phone)
+    if (bookingPhone && bookingPhone === normalized) {
+      return { allowed: true, source: 'booking' }
+    }
   }
+  // No booking match after normalization
 
   // Tier 3: Check for open Twilio thread (for deduplication)
   const twilioThread = await db.prepare(`
