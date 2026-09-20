@@ -16,7 +16,7 @@ function readPresentedSecret(request: NextRequest): string | null {
   return bearer || null
 }
 
-export function isDraftWorkerAuthorized(request: NextRequest): { ok: true } | { ok: false; status: number; error: string } {
+function isDraftWorkerAuthorized(request: NextRequest): { ok: true } | { ok: false; status: number; error: string } {
   const expected = (process.env.DRAFT_WORKER_SECRET || '').trim()
   if (!expected) {
     return { ok: false, status: 401, error: 'DRAFT_WORKER_SECRET is not configured' }

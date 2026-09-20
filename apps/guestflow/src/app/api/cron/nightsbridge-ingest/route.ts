@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, type DbClient } from '@/lib/db'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { upsertGuestContact } from '@/lib/guest-contacts'
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantId = (tenant as any).id
-    const contactDb = {
+    const contactDb: DbClient = {
       prepare: (sql: string) => {
         const stmt = db.prepare(sql)
         return {
@@ -283,9 +283,11 @@ export async function POST(request: NextRequest) {
           all: (...params: any[]) => stmt.all(...params),
         }
       },
-      exec: (sql: string) => db.exec(sql),
+      exec: (sql: string) => {
+        db.exec(sql)
+      },
       batch: () => {},
-      type: 'sqlite' as const,
+      type: 'sqlite',
     }
 
     let inserted = 0
