@@ -41,12 +41,14 @@ interface Thread {
   metadata: Record<string, any>
   sendHistory?: Array<{
     timestamp: string
-    provider: 'meta' | 'twilio' | 'sandbox'
+    provider: 'meta' | 'twilio' | 'sandbox' | 'resend' | 'whatsapp_web' | null
     messageId: string | null
     error: string | null
     outcome: 'success' | 'failed'
   }>
 }
+
+type SendChannel = 'email' | 'whatsapp_web' | 'whatsapp'
 
 interface Stats {
   total: number
@@ -96,6 +98,13 @@ export default function InboundQueuePage() {
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<'messages' | 'tickets' | 'late_checkin'>('messages')
   const [sending, setSending] = useState(false) // T019: Add sending state
+  const [sendChannel, setSendChannel] = useState<SendChannel>('email')
+  const [emailTo, setEmailTo] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [waJobId, setWaJobId] = useState<number | null>(null)
+  const [waJobStatus, setWaJobStatus] = useState<string | null>(null)
+  const [waJobError, setWaJobError] = useState<string | null>(null)
 
   const fetchQueue = async (showRefresh = false) => {
     try {
@@ -130,6 +139,43 @@ export default function InboundQueuePage() {
     fetchQueue()
   }, [filterStatus])
 
+  const openThread = (thread: Thread) => {
+    const looksEmail = thread.fromNumber.includes('@')
+    setSelectedThread(thread)
+    setSendChannel(looksEmail || thread.source === 'email' || thread.source === 'email_forward' ? 'email' : 'whatsapp_web')
+    setEmailTo(looksEmail ? thread.fromNumber : '')
+    setEmailSubject(thread.metadata?.subject ? `Re: ${thread.metadata.subject}` : 'Message from The Browns')
+    setEmailBody(thread.latestMessage?.draftReply || '')
+    setWaJobId(null)
+    setWaJobStatus(thread.status === 'queued' ? 'queued' : null)
+    setWaJobError(null)
+  }
+
+  useEffect(() => {
+    if (!waJobId) return
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/inbound/send-jobs/${waJobId}`)
+        const data = await response.json()
+        if (cancelled || !data.success) return
+        setWaJobStatus(data.job.status)
+        setWaJobError(data.job.errorCode || null)
+        if (data.job.status === 'sent' || data.job.status === 'failed' || data.job.status === 'blocked') {
+          await fetchQueue(true)
+        }
+      } catch {
+        // keep last known status
+      }
+    }
+    poll()
+    const timer = setInterval(poll, 4000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [waJobId])
+
   const updateThreadStatus = async (threadId: number, newStatus: string) => {
     try {
       const response = await fetch('/api/inbound/queue', {
@@ -146,44 +192,74 @@ export default function InboundQueuePage() {
     }
   }
 
-  // T019-T023: Send message via WhatsApp
   const sendMessage = async (thread: Thread) => {
-    if (!thread.latestMessage?.draftReply) {
+    const body = emailBody || thread.latestMessage?.draftReply
+    if (!body) {
       alert('No draft reply to send')
       return
     }
 
     try {
-      // T020: Show confirmation dialog with recipient, mode, and message preview
-      const mode = process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox' ? 'Sandbox' : 'Live'
-      const preview = thread.latestMessage.draftReply.slice(0, 100)
-      const confirmed = window.confirm(
-        `Send via WhatsApp?\n\nTo: ${thread.fromNumber}\nMode: ${mode}\n\n${preview}${thread.latestMessage.draftReply.length > 100 ? '...' : ''}\n\n${
-          mode === 'Sandbox' 
-            ? 'Sandbox mode: Message will be logged but not sent' 
-            : 'Live mode: This will send a real WhatsApp message'
-        }`
-      )
+      let confirmed = false
+      if (sendChannel === 'email') {
+        confirmed = window.confirm(
+          `Send email now?\n\nTo: ${emailTo}\nSubject: ${emailSubject}\n\n${body.slice(0, 160)}${body.length > 160 ? '...' : ''}\n\nThis uses the existing GuestFlow From address. Cancel to stay in draft.`
+        )
+      } else if (sendChannel === 'whatsapp_web') {
+        confirmed = window.confirm(
+          `Queue Interim · WhatsApp Web send?\n\nTo: ${thread.fromNumber}\n\n${body.slice(0, 160)}${body.length > 160 ? '...' : ''}\n\nThis does NOT mark the message sent. CoS must claim and complete the job.`
+        )
+      } else {
+        const mode = process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox' ? 'Sandbox' : 'Live'
+        const preview = body.slice(0, 100)
+        confirmed = window.confirm(
+          `Send via WhatsApp?\n\nTo: ${thread.fromNumber}\nMode: ${mode}\n\n${preview}${body.length > 100 ? '...' : ''}\n\n${
+            mode === 'Sandbox'
+              ? 'Sandbox mode: Message will be logged but not sent'
+              : 'Live mode: This will send a real WhatsApp message'
+          }`
+        )
+      }
 
       if (!confirmed) return
 
-      // T021: Prevent double-send by setting sending state
       setSending(true)
+
+      const payload: Record<string, unknown> = {
+        threadId: thread.threadId,
+        channel: sendChannel,
+        body,
+      }
+      if (sendChannel === 'email') {
+        payload.to = emailTo
+        payload.subject = emailSubject
+      }
 
       const response = await fetch('/api/inbound/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId: thread.threadId })
+        body: JSON.stringify(payload)
       })
 
       const result = await response.json()
 
-      // T023: Handle result - show success/error alert and refresh queue
+      if (sendChannel === 'whatsapp_web') {
+        if (result.success && result.queued && result.data?.jobId) {
+          setWaJobId(result.data.jobId)
+          setWaJobStatus(result.data.jobStatus || 'queued')
+          setWaJobError(null)
+          await fetchQueue(true)
+        } else {
+          alert(`Could not queue WhatsApp Web job: ${result.error || 'unknown error'}`)
+        }
+        return
+      }
+
       if (result.success) {
-        if (result.data.sandboxMode) {
+        if (result.data?.sandboxMode) {
           alert(`Sandbox Mode: Message logged but not sent\n\nProvider: ${result.data.provider}\nMessage ID: ${result.data.messageId}`)
         } else {
-          alert(`Message sent via ${result.data.provider}\n\nMessage ID: ${result.data.messageId}`)
+          alert(`Message sent via ${result.data?.channel || result.data?.provider}\n\nMessage ID: ${result.data?.messageId || ''}`)
         }
         setSelectedThread(null)
         await fetchQueue(true)
@@ -194,7 +270,6 @@ export default function InboundQueuePage() {
       alert('Network error: Could not send message')
       console.error('Send error:', err)
     } finally {
-      // T021: Reset sending state in finally block
       setSending(false)
     }
   }
@@ -349,7 +424,7 @@ export default function InboundQueuePage() {
               <div
                 key={thread.threadId}
                 className="bg-white rounded-lg border hover:border-blue-300 transition-colors cursor-pointer"
-                onClick={() => setSelectedThread(thread)}
+                onClick={() => openThread(thread)}
               >
                 {/* Thread Header */}
                 <div className="p-4 border-b">
@@ -516,22 +591,88 @@ export default function InboundQueuePage() {
               )}
 
               {/* Draft Reply */}
-              {selectedThread.latestMessage?.draftReply && (
+              {(selectedThread.latestMessage?.draftReply || emailBody) && (
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-sm text-gray-700">Draft Reply</h3>
                     <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      ⚠️ Requires Approval
+                      ⚠️ Requires Approval — never auto-sent
                     </span>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                      {selectedThread.latestMessage.draftReply}
-                    </p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setSendChannel('email')}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                        sendChannel === 'email' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'
+                      }`}
+                    >
+                      Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSendChannel('whatsapp_web')}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                        sendChannel === 'whatsapp_web' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-700'
+                      }`}
+                    >
+                      Interim · WhatsApp Web
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSendChannel('whatsapp')}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                        sendChannel === 'whatsapp' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700'
+                      }`}
+                    >
+                      WhatsApp
+                    </button>
                   </div>
+                  {sendChannel === 'email' && (
+                    <div className="space-y-2 mb-3">
+                      <label className="block text-xs text-gray-600">To
+                        <input
+                          value={emailTo}
+                          onChange={(e) => setEmailTo(e.target.value)}
+                          className="mt-1 w-full border rounded px-2 py-1.5 text-sm"
+                          placeholder="guest@example.com"
+                        />
+                      </label>
+                      <label className="block text-xs text-gray-600">Subject
+                        <input
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          className="mt-1 w-full border rounded px-2 py-1.5 text-sm"
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <textarea
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    className="w-full bg-green-50 rounded-lg p-3 border border-green-200 text-sm min-h-[120px]"
+                  />
                   <p className="text-xs text-gray-600 mt-2">
-                    Review this draft and approve before sending to guest via WhatsApp
+                    Edit To / Subject / Body, then Send and confirm. Approve alone does not send.
                   </p>
+                  {sendChannel === 'whatsapp_web' && (
+                    <div className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm">
+                      <div className="font-medium text-amber-900">Interim · WhatsApp Web</div>
+                      <p className="text-amber-800 mt-1">
+                        Queue/pending is not success. Status: {waJobStatus || 'not queued'}
+                        {waJobId ? ` (job ${waJobId})` : ''}
+                      </p>
+                      {(waJobStatus === 'blocked' || waJobStatus === 'failed') && (
+                        <p className="text-red-700 font-medium mt-2">
+                          {waJobStatus === 'blocked' ? 'Blocked (QR / Aw Snap).' : 'Send failed.'}
+                          {waJobError ? ` ${waJobError}` : ''} This is not a live-carrier success.
+                        </p>
+                      )}
+                      {waJobStatus === 'sent' && (
+                        <p className="text-green-800 mt-2">Clicker reported sent.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -601,21 +742,25 @@ export default function InboundQueuePage() {
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">
                 {/* T022: Send via WhatsApp button */}
-                {(selectedThread.status === 'drafted' || selectedThread.status === 'approved') && 
-                 selectedThread.latestMessage?.draftReply && (
+                {(selectedThread.status === 'drafted' || selectedThread.status === 'approved' || selectedThread.status === 'queued') &&
+                 (emailBody || selectedThread.latestMessage?.draftReply) && (
                   <button
                     onClick={() => sendMessage(selectedThread)}
                     disabled={sending}
                     className={`flex-1 px-4 py-2 rounded-lg font-medium ${
-                      process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox'
-                        ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
+                      sendChannel === 'whatsapp_web'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : sendChannel === 'email'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {sending ? 'Sending...' : (
-                      process.env.NEXT_PUBLIC_WHATSAPP_MODE === 'sandbox'
-                        ? '⚠️ Send via WhatsApp (Sandbox Mode)'
-                        : 'Send via WhatsApp'
+                    {sending ? 'Working…' : (
+                      sendChannel === 'email'
+                        ? 'Send email'
+                        : sendChannel === 'whatsapp_web'
+                          ? 'Queue Interim · WhatsApp Web'
+                          : 'Send via WhatsApp'
                     )}
                   </button>
                 )}

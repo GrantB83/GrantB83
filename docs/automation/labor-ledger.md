@@ -4,6 +4,7 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 
 | Phase | Ritual removed | Est. hours/week before | Est. hours/week after | Actual before (Grant) | Actual after (Grant) | Live since | Evidence artefact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| GuestFlow P0/P1 | 07:00 copy guest reply into Gmail + paste WhatsApp Web | 3–5 (stay morning) | 0.5 review + confirm Send / clicker | | | 2026-09-20 coded | `apps/guestflow/docs/EMAIL-CONTROL-CENTER.md` |
 | 1a | Scan mixed inbox for “what is this?” | 5–8 | 1 review of `Queue/NeedsGrant` | | | | `samples/email-dry-run.md` |
 | 1b | Scroll WhatsApp to rebuild orders/quotes | 6–10 | 2 exception handoffs | | | | WA simulate log |
 | 1d | Reconstruct SA day every Texas morning | 7–10 | 0.5–1 digest review | | | | `samples/daily-digest.md` |

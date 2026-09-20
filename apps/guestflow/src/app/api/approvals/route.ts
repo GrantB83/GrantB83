@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         timestamp as created_at,
         'medium' as priority,
         from_number as guest_phone,
-        '{}' as metadata
+        json_object('thread_id', thread_id, 'from_number', from_number) as metadata
       FROM inbound_messages
       WHERE tenant_id = ? AND status = 'drafted' AND draft_reply IS NOT NULL
       ORDER BY timestamp DESC

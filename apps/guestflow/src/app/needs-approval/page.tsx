@@ -28,6 +28,14 @@ export default function NeedsApprovalPage() {
   const [editedContent, setEditedContent] = useState('')
   const [approvedCopyContent, setApprovedCopyContent] = useState<string | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [guestChannel, setGuestChannel] = useState<'email' | 'whatsapp_web' | 'whatsapp'>('email')
+  const [emailTo, setEmailTo] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [waJobId, setWaJobId] = useState<number | null>(null)
+  const [waJobStatus, setWaJobStatus] = useState<string | null>(null)
+  const [waJobError, setWaJobError] = useState<string | null>(null)
+  const [sendingGuest, setSendingGuest] = useState(false)
 
   const fetchApprovals = async (showRefresh = false) => {
     try {
@@ -47,6 +55,28 @@ export default function NeedsApprovalPage() {
       setRefreshing(false)
     }
   }
+
+  useEffect(() => {
+    if (!waJobId) return
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/inbound/send-jobs/${waJobId}`)
+        const data = await response.json()
+        if (cancelled || !data.success) return
+        setWaJobStatus(data.job.status)
+        setWaJobError(data.job.errorCode || null)
+      } catch {
+        // keep last status
+      }
+    }
+    poll()
+    const timer = setInterval(poll, 4000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [waJobId])
 
   useEffect(() => {
     fetchApprovals()
@@ -117,7 +147,59 @@ export default function NeedsApprovalPage() {
 
   const handleSend = async () => {
     if (!selectedItem || isCopyOnlyItem(selectedItem)) return
-    
+
+    const body = emailBody || (editMode ? editedContent : selectedItem.draftContent)
+
+    if (guestChannel === 'email' || guestChannel === 'whatsapp_web') {
+      const confirmed = confirm(
+        guestChannel === 'email'
+          ? `Send email now?\n\nTo: ${emailTo}\nSubject: ${emailSubject}\n\nThis uses the existing GuestFlow From address.`
+          : `Queue Interim · WhatsApp Web send?\n\nThis does NOT mark the message sent until the CoS clicker completes the job.`
+      )
+      if (!confirmed) return
+
+      const threadId = Number(selectedItem.metadata?.thread_id || selectedItem.id)
+      setSendingGuest(true)
+      try {
+        const response = await fetch('/api/inbound/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            threadId,
+            channel: guestChannel,
+            to: guestChannel === 'email' ? emailTo : selectedItem.metadata?.guest_phone || selectedItem.metadata?.from_number,
+            subject: emailSubject,
+            body,
+          }),
+        })
+        const data = await response.json()
+        if (guestChannel === 'whatsapp_web') {
+          if (data.success && data.queued && data.data?.jobId) {
+            setWaJobId(data.data.jobId)
+            setWaJobStatus(data.data.jobStatus || 'queued')
+            setWaJobError(null)
+          } else {
+            alert(`Could not queue WhatsApp Web job: ${data.error || 'unknown error'}`)
+          }
+          return
+        }
+        if (data.success) {
+          alert('Email sent')
+          await fetchApprovals(true)
+          setSelectedItem(null)
+          setEditMode(false)
+        } else {
+          alert(`Send failed: ${data.error}${data.details ? `\n${data.details}` : ''}`)
+        }
+      } catch (error) {
+        console.error('Send error:', error)
+        alert('Failed to send')
+      } finally {
+        setSendingGuest(false)
+      }
+      return
+    }
+
     const confirmed = confirm(
       `Send this message via WhatsApp?\n\n` +
       `To: ${selectedItem.guest}\n` +
@@ -127,7 +209,6 @@ export default function NeedsApprovalPage() {
     
     if (confirmed) {
       try {
-        // Extract phone from metadata
         const phone = selectedItem.metadata?.guest_phone || selectedItem.metadata?.from_number
         if (!phone) {
           alert('Error: Guest phone number not found')
@@ -272,6 +353,14 @@ export default function NeedsApprovalPage() {
                   setApprovedCopyContent(null)
                   setCopySuccess(false)
                   setEditMode(false)
+                  const phoneOrEmail = item.metadata?.guest_email || item.metadata?.from_number || ''
+                  setGuestChannel(String(phoneOrEmail).includes('@') ? 'email' : 'whatsapp_web')
+                  setEmailTo(String(phoneOrEmail).includes('@') ? String(phoneOrEmail) : '')
+                  setEmailSubject(item.metadata?.subject ? `Re: ${item.metadata.subject}` : 'Message from The Browns')
+                  setEmailBody(item.draftContent)
+                  setWaJobId(null)
+                  setWaJobStatus(null)
+                  setWaJobError(null)
                 }}
                 className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition ${
                   selectedItem?.id === item.id && selectedItem?.type === item.type
@@ -404,16 +493,88 @@ export default function NeedsApprovalPage() {
                       )}
 
                       {!isCopyOnlyItem(item) && (
-                        <div className="pt-2 border-t">
+                        <div className="pt-2 border-t space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setGuestChannel('email') }}
+                              className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                                guestChannel === 'email' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'
+                              }`}
+                            >
+                              Email
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setGuestChannel('whatsapp_web') }}
+                              className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                                guestChannel === 'whatsapp_web' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-700'
+                              }`}
+                            >
+                              Interim · WhatsApp Web
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setGuestChannel('whatsapp') }}
+                              className={`px-3 py-1.5 rounded text-xs font-medium border ${
+                                guestChannel === 'whatsapp' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700'
+                              }`}
+                            >
+                              WhatsApp
+                            </button>
+                          </div>
+                          {guestChannel === 'email' && (
+                            <div className="space-y-2">
+                              <input
+                                value={emailTo}
+                                onChange={(e) => setEmailTo(e.target.value)}
+                                className="w-full border rounded px-2 py-1.5 text-sm"
+                                placeholder="To"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <input
+                                value={emailSubject}
+                                onChange={(e) => setEmailSubject(e.target.value)}
+                                className="w-full border rounded px-2 py-1.5 text-sm"
+                                placeholder="Subject"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <textarea
+                                value={emailBody}
+                                onChange={(e) => setEmailBody(e.target.value)}
+                                className="w-full border rounded px-2 py-1.5 text-sm"
+                                rows={4}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          )}
+                          {guestChannel === 'whatsapp_web' && (
+                            <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                              Interim · WhatsApp Web — queued/claimed is not success.
+                              {waJobStatus ? ` Status: ${waJobStatus}` : ''}
+                              {waJobId ? ` (job ${waJobId})` : ''}
+                              {(waJobStatus === 'blocked' || waJobStatus === 'failed') && (
+                                <div className="text-red-700 font-medium mt-1">
+                                  {waJobStatus === 'blocked' ? 'Blocked (QR / Aw Snap).' : 'Failed.'}
+                                  {waJobError ? ` ${waJobError}` : ''}
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSend(); }}
-                            className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2"
+                            disabled={sendingGuest}
+                            className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2 disabled:opacity-50"
                           >
                             <MessageSquare className="w-5 h-5" />
-                            Send via WhatsApp (Human-Gated)
+                            {guestChannel === 'email'
+                              ? 'Send email (Human-Gated)'
+                              : guestChannel === 'whatsapp_web'
+                                ? 'Queue Interim · WhatsApp Web'
+                                : 'Send via WhatsApp (Human-Gated)'}
                           </button>
                           <p className="text-xs text-gray-500 mt-2 text-center">
-                            ⚠️ Sandbox mode: Logs send without calling Meta API until WABA live
+                            Confirm dialog required. Never auto-sent.
                           </p>
                         </div>
                       )}

@@ -32,6 +32,8 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/api/health') ||
     request.nextUrl.pathname.startsWith('/api/staff-auth') ||
     request.nextUrl.pathname.startsWith('/api/inbound/webhook') ||
+    request.nextUrl.pathname.startsWith('/api/inbound/email') ||
+    request.nextUrl.pathname.startsWith('/api/bridge') ||
     request.nextUrl.pathname.startsWith('/api/cron') ||
     request.nextUrl.pathname.startsWith('/api/public') ||
     request.nextUrl.pathname.startsWith('/api/guest-portal') ||
