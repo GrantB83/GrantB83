@@ -29,6 +29,7 @@ export interface ClaimedJob {
   thread_id: number
   message_id: number
   intent: string | null
+  created_at: string
 }
 
 export interface ProcessResult {
@@ -66,7 +67,45 @@ export function isWithinBatchWindow(): boolean {
 }
 
 /**
- * Get today's batch count from the database.
+ * Record a batch run in the database for soft-cap tracking.
+ */
+export async function recordBatchRun(
+  db: DbClient,
+  batchId: string,
+  jobsCount: number
+): Promise<void> {
+  try {
+    await db
+      .prepare(
+        `
+      INSERT INTO batch_runs (batch_id, jobs_count, created_at)
+      VALUES (?, ?, datetime('now'))
+    `
+      )
+      .run(batchId, jobsCount)
+  } catch (error) {
+    // Table may not exist in test DBs - create it
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS batch_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id TEXT NOT NULL,
+        jobs_count INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await db
+      .prepare(
+        `
+      INSERT INTO batch_runs (batch_id, jobs_count, created_at)
+      VALUES (?, ?, datetime('now'))
+    `
+      )
+      .run(batchId, jobsCount)
+  }
+}
+
+/**
+ * Get today's batch count (number of batch runs, not jobs) from the database.
  */
 export async function getTodayBatchCount(db: DbClient): Promise<number> {
   const today = new Date()
@@ -79,13 +118,22 @@ export async function getTodayBatchCount(db: DbClient): Promise<number> {
   const sastToday = sastDateFormatter.format(today).split('/').reverse().join('-') // YYYY-MM-DD
 
   try {
+    // Ensure table exists
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS batch_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id TEXT NOT NULL,
+        jobs_count INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+
     const result = (await db
       .prepare(
         `
       SELECT COUNT(*) as count
-      FROM draft_jobs
-      WHERE status = 'done'
-        AND DATE(updated_at) = ?
+      FROM batch_runs
+      WHERE DATE(created_at) = ?
     `
       )
       .get(sastToday)) as { count: number } | undefined
@@ -120,10 +168,12 @@ export async function isWorkerInFlight(db: DbClient): Promise<boolean> {
 
 /**
  * Claim pending draft jobs for processing.
+ * Claims if ≥minJobs exist OR oldest pending job is ≥maxWaitMinutes old.
  */
 export async function claimPendingJobs(
   db: DbClient,
-  minJobs: number = 5
+  minJobs: number = 5,
+  maxWaitMinutes: number = 20
 ): Promise<ClaimedJob[]> {
   const pending = (await db
     .prepare(
@@ -135,13 +185,34 @@ export async function claimPendingJobs(
     )
     .all()) as ClaimedJob[]
 
-  if (pending.length < minJobs) {
+  if (pending.length === 0) {
     return []
   }
 
-  const jobIds = pending.map((j) => j.id)
+  // Check if we should claim: either ≥minJobs OR oldest job ≥maxWaitMinutes old
+  let shouldClaim = pending.length >= minJobs
 
-  // Claim all pending jobs atomically
+  if (!shouldClaim && pending.length > 0) {
+    // Check oldest job age in Africa/Johannesburg timezone
+    const oldestJob = pending[0]
+    const oldestCreated = new Date(oldestJob.created_at as any)
+    const now = new Date()
+    const ageMinutes = (now.getTime() - oldestCreated.getTime()) / (1000 * 60)
+
+    if (ageMinutes >= maxWaitMinutes) {
+      shouldClaim = true
+    }
+  }
+
+  if (!shouldClaim) {
+    return []
+  }
+
+  // Claim up to 20 jobs max (soft limit)
+  const jobsToClaim = pending.slice(0, 20)
+  const jobIds = jobsToClaim.map((j) => j.id)
+
+  // Claim jobs atomically
   await db
     .prepare(
       `
@@ -152,7 +223,7 @@ export async function claimPendingJobs(
     )
     .run(...jobIds)
 
-  return pending
+  return jobsToClaim
 }
 
 /**
@@ -191,7 +262,7 @@ export async function fetchMessageContext(
 }
 
 /**
- * Generate draft using LLM (placeholder - expects Cursor Ultra environment).
+ * Generate draft using LLM (OpenAI-compatible API).
  */
 export async function generateDraftWithLLM(
   context: {
@@ -215,26 +286,69 @@ export async function generateDraftWithLLM(
     .replace('{confidence}', String(context.confidence || 0))
     .replace('{message_text}', context.messageText)
 
-  // In a real Cursor Ultra CA, this would call the LLM provider
-  // For now, return a placeholder that instructs to use Cursor Ultra
   if (config.dryRun) {
     return `[DRY RUN] Draft for message: "${context.messageText.substring(0, 50)}..."`
   }
 
-  // Placeholder: In Cursor Ultra CA, use the available LLM provider
-  // Example (not functional here):
-  // const response = await callLLM(prompt, config.llmProvider, config.llmApiKey)
-  // return response.text
+  // Real LLM call via OpenAI-compatible API
+  const apiKey = config.llmApiKey || process.env.OPENAI_API_KEY
+  const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1'
+  const model = process.env.LLM_MODEL || 'gpt-4o-mini'
 
-  throw new Error(
-    'LLM generation requires Cursor Ultra environment. Use this module in a Cursor Cloud Agent.'
-  )
+  if (!apiKey) {
+    throw new Error(
+      'LLM API key required: set OPENAI_API_KEY environment variable or pass llmApiKey in config'
+    )
+  }
+
+  try {
+    const response = await fetch(`${apiBase}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`LLM API error (${response.status}): ${error}`)
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>
+    }
+    const draft = data.choices?.[0]?.message?.content
+
+    if (!draft) {
+      throw new Error('LLM returned empty response')
+    }
+
+    return draft.trim()
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`LLM generation failed: ${error.message}`)
+    }
+    throw error
+  }
 }
 
 /**
- * Upsert draft via authenticated API.
+ * Upsert draft via authenticated API and update thread/message status.
  */
 export async function upsertDraft(
+  db: DbClient,
   threadId: number,
   messageId: number,
   draftReply: string,
@@ -258,6 +372,17 @@ export async function upsertDraft(
     const error = await response.text()
     throw new Error(`Upsert failed (${response.status}): ${error}`)
   }
+
+  // After successful upsert, set thread status to 'drafted' for Approve & Send queue
+  await db
+    .prepare(
+      `
+    UPDATE inbound_threads
+    SET status = 'drafted', updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `
+    )
+    .run(threadId)
 }
 
 /**
@@ -275,9 +400,9 @@ export async function processJob(
     // Generate draft with LLM
     const draftReply = await generateDraftWithLLM(context, config)
 
-    // Upsert draft via API
+    // Upsert draft via API and update thread status
     if (!config.dryRun) {
-      await upsertDraft(job.thread_id, job.message_id, draftReply, config)
+      await upsertDraft(db, job.thread_id, job.message_id, draftReply, config)
     }
 
     // Mark job as done
@@ -377,9 +502,10 @@ export async function runBatch(
     }
   }
 
-  // Claim jobs
+  // Claim jobs (≥minJobs OR oldest ≥maxWaitMinutes)
   const minJobs = config.minJobsForBatch || 5
-  const jobs = await claimPendingJobs(db, minJobs)
+  const maxWaitMinutes = config.maxWaitMinutes || 20
+  const jobs = await claimPendingJobs(db, minJobs, maxWaitMinutes)
 
   if (jobs.length === 0) {
     return {
@@ -391,9 +517,12 @@ export async function runBatch(
       jobsSucceeded: 0,
       jobsFailed: 0,
       results: [],
-      skippedReason: `Insufficient pending jobs (need ≥${minJobs})`
+      skippedReason: `No jobs ready (need ≥${minJobs} or oldest ≥${maxWaitMinutes}min)`
     }
   }
+
+  // Record batch run for soft-cap tracking
+  await recordBatchRun(db, batchId, jobs.length)
 
   // Process jobs
   const results: ProcessResult[] = []

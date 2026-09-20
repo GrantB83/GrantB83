@@ -41,10 +41,11 @@ The batch worker enforces these hard rules:
 | Rule | Value | Reason |
 |------|-------|--------|
 | **Minimum batch size** | ≥5 jobs | Amortize LLM setup cost |
-| **Max wait time** | 20 minutes | Ensure timely drafts |
+| **Max wait time** | 20 minutes | Ensure timely drafts (claims even if <5 jobs) |
+| **Max claim size** | 5-20 jobs | Soft limit per batch |
 | **Time window** | 07:00–21:00 SAST | Cost/availability control |
 | **One-in-flight** | 1 worker at a time | Avoid claim races |
-| **Soft cap** | ≤6 batches/day | Phase 1 pilot limit |
+| **Soft cap** | ≤6 batches/day | Phase 1 pilot limit (counts batch runs, not jobs) |
 
 ## Running the Batch Worker
 
@@ -55,10 +56,14 @@ The batch worker enforces these hard rules:
    - `DRAFT_WORKER_SECRET` - Draft worker authentication secret (distinct from `CRON_SECRET`)
    - `TURSO_DATABASE_URL` - Turso database URL
    - `TURSO_AUTH_TOKEN` - Turso auth token
+   - `OPENAI_API_KEY` - OpenAI API key (required for LLM calls, fail-closed if unset)
+   - `OPENAI_API_BASE` - Optional, defaults to `https://api.openai.com/v1`
+   - `LLM_MODEL` - Optional, defaults to `gpt-4o-mini`
 
-2. **LLM Provider** (Cursor Ultra Cloud Agent environment):
-   - The worker expects to run in a Cursor Cloud Agent with LLM access
-   - Default provider: OpenAI (extensible to Anthropic, etc.)
+2. **LLM Provider** (OpenAI-compatible API):
+   - The worker calls OpenAI-compatible chat completions endpoint
+   - Supports OpenAI, Azure OpenAI, or compatible providers via `OPENAI_API_BASE`
+   - Fail-closed: if `OPENAI_API_KEY` is unset, jobs fail immediately with clear error
 
 ### Manual Run
 
@@ -102,7 +107,8 @@ const agent = await cursor.cloudAgents.create({
     'GUESTFLOW_API_URL',
     'DRAFT_WORKER_SECRET',
     'TURSO_DATABASE_URL',
-    'TURSO_AUTH_TOKEN'
+    'TURSO_AUTH_TOKEN',
+    'OPENAI_API_KEY'  // Required for LLM calls
   ]
 })
 ```
@@ -239,16 +245,14 @@ No schema changes required for Phase 1 (schema added in Phase 0).
 
 ### Queries for Reporting
 
-#### Daily draft_job counts:
+#### Daily batch run counts (not job counts):
 
 ```sql
 SELECT 
   DATE(created_at) as date,
-  COUNT(*) as total_enqueued,
-  SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as succeeded,
-  SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
-  SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
-FROM draft_jobs
+  COUNT(*) as batch_runs,
+  SUM(jobs_count) as total_jobs
+FROM batch_runs
 WHERE DATE(created_at) >= DATE('now', '-7 days')
 GROUP BY DATE(created_at)
 ORDER BY date DESC
@@ -302,13 +306,19 @@ WHERE draft_source = 'human'
 
 **Solution**: Another batch worker is currently claiming/processing jobs. Wait for it to complete (usually 2–5 minutes per batch).
 
-### "Skipped: Insufficient pending jobs"
+### "Skipped: No jobs ready"
 
-**Solution**: Fewer than 5 pending jobs exist. Wait 20 minutes for the next batch window or send more test messages to reach the minimum.
+**Solution**: Fewer than 5 pending jobs exist AND oldest job is less than 20 minutes old. The batch worker waits for either condition: ≥5 jobs OR oldest job ≥20 minutes.
 
 ### "LLM generation requires Cursor Ultra environment"
 
-**Solution**: The batch worker must run in a Cursor Cloud Agent with LLM provider access. It cannot run locally without an LLM API key.
+**Old error** (pre-fix). Now uses real OpenAI-compatible API.
+
+**Solution**: Set `OPENAI_API_KEY` environment variable. The worker now calls OpenAI chat completions (or compatible API via `OPENAI_API_BASE`).
+
+### "LLM API key required"
+
+**Solution**: Set `OPENAI_API_KEY` in environment variables or Cursor Cloud Agent secrets. Worker fails closed if unset.
 
 ### Failed jobs with "Upsert failed (401)"
 
