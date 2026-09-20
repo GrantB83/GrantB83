@@ -27,6 +27,12 @@ Approve-only does **not** send. Cron does **not** send.
 
 Morning E2E (Grant): send a test to `grant830318@gmail.com`. Confirm it arrives from the existing From address.
 
+## HOLD — Resend inbound webhook (Phase 0)
+
+Resend dashboard webhook URL / event / secret wiring is **HOLD**. This phase does not invent dashboard steps. `POST /api/inbound/email` remains coded and uses the same `ingestInboundMessage` path as WhatsApp (thread + classify + heuristic draft + `draft_jobs` enqueue). Mail will not appear until CoS/Grant paste the webhook.
+
+Phase 0 send gate: Email Send also requires **approved/ready + confirmToken**. Approve-only still does not send.
+
 ## Inbound path
 
 `POST https://guestflow.thebrowns.co.za/api/inbound/email`

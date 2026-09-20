@@ -225,8 +225,42 @@ export default function InboundQueuePage() {
 
       setSending(true)
 
+      if (thread.status !== 'approved' && thread.status !== 'ready') {
+        const approveRes = await fetch('/api/inbound/queue', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            threadId: thread.threadId,
+            status: 'approved',
+            draftReply: body,
+          }),
+        })
+        if (!approveRes.ok) {
+          alert('Could not approve thread before send')
+          return
+        }
+      } else if (body !== thread.latestMessage?.draftReply) {
+        await fetch('/api/inbound/queue', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threadId: thread.threadId, draftReply: body }),
+        })
+      }
+
+      const tokenRes = await fetch('/api/inbound/confirm-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: thread.threadId }),
+      })
+      const tokenData = await tokenRes.json()
+      if (!tokenData.success || !tokenData.confirmToken) {
+        alert(`Could not confirm send: ${tokenData.error || 'not approved'}`)
+        return
+      }
+
       const payload: Record<string, unknown> = {
         threadId: thread.threadId,
+        confirmToken: tokenData.confirmToken,
         channel: sendChannel,
         body,
       }
@@ -757,10 +791,10 @@ export default function InboundQueuePage() {
                   >
                     {sending ? 'Working…' : (
                       sendChannel === 'email'
-                        ? 'Send email'
+                        ? 'Approve & Send email'
                         : sendChannel === 'whatsapp_web'
-                          ? 'Queue Interim · WhatsApp Web'
-                          : 'Send via WhatsApp'
+                          ? 'Approve & Queue WhatsApp Web'
+                          : 'Approve & Send WhatsApp'
                     )}
                   </button>
                 )}

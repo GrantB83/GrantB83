@@ -161,11 +161,25 @@ export default function NeedsApprovalPage() {
       const threadId = Number(selectedItem.metadata?.thread_id || selectedItem.id)
       setSendingGuest(true)
       try {
+        if (selectedItem.type === 'inbound') {
+          await handleAction('approve', selectedItem.id, editMode ? editedContent : undefined)
+        }
+        const tokenRes = await fetch('/api/inbound/confirm-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threadId }),
+        })
+        const tokenData = await tokenRes.json()
+        if (!tokenData.success || !tokenData.confirmToken) {
+          alert(`Could not confirm send: ${tokenData.error || 'not approved'}`)
+          return
+        }
         const response = await fetch('/api/inbound/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             threadId,
+            confirmToken: tokenData.confirmToken,
             channel: guestChannel,
             to: guestChannel === 'email' ? emailTo : selectedItem.metadata?.guest_phone || selectedItem.metadata?.from_number,
             subject: emailSubject,
@@ -204,41 +218,51 @@ export default function NeedsApprovalPage() {
       `Send this message via WhatsApp?\n\n` +
       `To: ${selectedItem.guest}\n` +
       `Type: ${selectedItem.type}\n\n` +
-      `Sandbox mode: Message will be logged but not sent to guest.`
+      `Requires approve + one-time confirmToken. Never auto-sent.`
     )
     
-    if (confirmed) {
-      try {
-        const phone = selectedItem.metadata?.guest_phone || selectedItem.metadata?.from_number
-        if (!phone) {
-          alert('Error: Guest phone number not found')
-          return
-        }
+    if (!confirmed) return
 
-        const response = await fetch('/api/whatsapp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            draftId: selectedItem.id,
-            guestPhone: phone,
-            message: editMode ? editedContent : selectedItem.draftContent
-          })
-        })
-
-        const data = await response.json()
-
-        if (data.success) {
-          alert(data.message || 'Message sent successfully')
-          await fetchApprovals(true)
-          setSelectedItem(null)
-          setEditMode(false)
-        } else {
-          alert(`Send failed: ${data.error}`)
-        }
-      } catch (error) {
-        console.error('Send error:', error)
-        alert('Failed to send message')
+    const threadId = Number(selectedItem.metadata?.thread_id || selectedItem.id)
+    setSendingGuest(true)
+    try {
+      if (selectedItem.type === 'inbound') {
+        await handleAction('approve', selectedItem.id, editMode ? editedContent : undefined)
       }
+      const tokenRes = await fetch('/api/inbound/confirm-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId }),
+      })
+      const tokenData = await tokenRes.json()
+      if (!tokenData.success || !tokenData.confirmToken) {
+        alert(`Could not confirm send: ${tokenData.error || 'not approved'}`)
+        return
+      }
+      const response = await fetch('/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId,
+          confirmToken: tokenData.confirmToken,
+          channel: 'whatsapp',
+          body,
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(data.message || 'Message sent successfully')
+        await fetchApprovals(true)
+        setSelectedItem(null)
+        setEditMode(false)
+      } else {
+        alert(`Send failed: ${data.error}${data.details ? `\n${data.details}` : ''}`)
+      }
+    } catch (error) {
+      console.error('Send error:', error)
+      alert('Failed to send message')
+    } finally {
+      setSendingGuest(false)
     }
   }
 
@@ -568,13 +592,13 @@ export default function NeedsApprovalPage() {
                           >
                             <MessageSquare className="w-5 h-5" />
                             {guestChannel === 'email'
-                              ? 'Send email (Human-Gated)'
+                              ? 'Approve & Send email'
                               : guestChannel === 'whatsapp_web'
-                                ? 'Queue Interim · WhatsApp Web'
-                                : 'Send via WhatsApp (Human-Gated)'}
+                                ? 'Approve & Queue WhatsApp Web'
+                                : 'Approve & Send WhatsApp'}
                           </button>
                           <p className="text-xs text-gray-500 mt-2 text-center">
-                            Confirm dialog required. Never auto-sent.
+                            Confirm dialog issues a one-time token. Never auto-sent.
                           </p>
                         </div>
                       )}

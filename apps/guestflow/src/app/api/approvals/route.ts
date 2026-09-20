@@ -245,15 +245,40 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'approve') {
-      await db
-        .prepare(
-          `
-        UPDATE inbound_messages
-        SET status = 'approved'
-        WHERE id = ?
-      `
-        )
-        .run(itemId)
+      if (content) {
+        await db
+          .prepare(
+            `
+          UPDATE inbound_messages
+          SET status = 'approved', draft_reply = ?, draft_source = 'human'
+          WHERE id = ?
+        `
+          )
+          .run(content, itemId)
+      } else {
+        await db
+          .prepare(
+            `
+          UPDATE inbound_messages
+          SET status = 'approved'
+          WHERE id = ?
+        `
+          )
+          .run(itemId)
+      }
+      try {
+        await db
+          .prepare(
+            `
+          UPDATE inbound_threads
+          SET status = 'approved', updated_at = CURRENT_TIMESTAMP
+          WHERE id = (SELECT thread_id FROM inbound_messages WHERE id = ?)
+        `
+          )
+          .run(itemId)
+      } catch (error) {
+        console.warn('thread approve sync skipped:', error)
+      }
     } else if (action === 'reject') {
       await db
         .prepare(

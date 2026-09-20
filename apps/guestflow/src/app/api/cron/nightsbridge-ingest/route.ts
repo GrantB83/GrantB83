@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInDays } from 'date-fns'
+import { upsertGuestContact } from '@/lib/guest-contacts'
 
 export const dynamic = 'force-dynamic'
 
@@ -263,7 +264,10 @@ export async function POST(request: NextRequest) {
     const db = getDb()
     
     // Get Browns tenant ID (hardcoded as per existing codebase)
-    const tenant = db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
+    let tenant = db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
+    if (!tenant) {
+      tenant = db.prepare(`SELECT id FROM tenants WHERE name LIKE ? LIMIT 1`).get('%Browns%')
+    }
     
     if (!tenant) {
       return NextResponse.json(
@@ -273,6 +277,19 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantId = (tenant as any).id
+    const contactDb = {
+      prepare: (sql: string) => {
+        const stmt = db.prepare(sql)
+        return {
+          run: (...params: any[]) => stmt.run(...params),
+          get: (...params: any[]) => stmt.get(...params),
+          all: (...params: any[]) => stmt.all(...params),
+        }
+      },
+      exec: (sql: string) => db.exec(sql),
+      batch: () => {},
+      type: 'sqlite' as const,
+    }
 
     let inserted = 0
     const errors: string[] = []
@@ -300,6 +317,20 @@ export async function POST(request: NextRequest) {
           booking.status
         )
         inserted++
+        try {
+          await upsertGuestContact(contactDb, {
+            tenantId,
+            phone: booking.guestPhone || booking.guestPhone2 || null,
+            email: booking.guestEmail || booking.guestEmail2 || null,
+            displayName: booking.guestName || null,
+            lastStayAt: booking.checkOutDate || booking.checkInDate || null,
+            lastSuite: booking.suiteOrUnit || null,
+            source: 'nb',
+            nbid: booking.bookingId || null,
+          })
+        } catch (contactErr: any) {
+          console.warn(`guest_contacts upsert skipped for ${booking.guestName}:`, contactErr.message)
+        }
       } catch (err: any) {
         errors.push(`${booking.guestName}: ${err.message}`)
       }

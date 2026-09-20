@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { threadId, status, assignedTo } = body
+    const { threadId, status, assignedTo, draftReply } = body
 
     if (!threadId) {
       return NextResponse.json(
@@ -200,23 +200,46 @@ export async function PATCH(request: NextRequest) {
       params.push(assignedTo)
     }
 
-    if (updates.length === 0) {
+    if (typeof draftReply === 'string' && draftReply.trim()) {
+      try {
+        await db
+          .prepare(
+            `
+          UPDATE inbound_messages
+          SET draft_reply = ?, draft_source = 'human'
+          WHERE id = (
+            SELECT id FROM inbound_messages
+            WHERE thread_id = ?
+            ORDER BY message_timestamp DESC
+            LIMIT 1
+          )
+        `
+          )
+          .run(draftReply.trim(), threadId)
+      } catch (error) {
+        console.warn('draft_source human update skipped:', error)
+      }
+    }
+
+    if (updates.length === 0 && !(typeof draftReply === 'string' && draftReply.trim())) {
       return NextResponse.json(
         { success: false, error: 'No updates provided' },
         { status: 400 }
       )
     }
 
-    updates.push('updated_at = CURRENT_TIMESTAMP')
+    if (updates.length > 0) {
+      updates.push('updated_at = CURRENT_TIMESTAMP')
 
-    const query = `
+      const query = `
       UPDATE inbound_threads 
       SET ${updates.join(', ')}
       WHERE id = ?
     `
-    params.push(threadId)
+      params.push(threadId)
 
-    await db.prepare(query).run(...params)
+      await db.prepare(query).run(...params)
+    }
 
     return NextResponse.json({ success: true })
 

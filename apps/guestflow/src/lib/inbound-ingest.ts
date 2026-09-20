@@ -1,5 +1,6 @@
 import type { DbClient } from '@/lib/db'
 import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
+import { enqueueDraftJob } from '@/lib/draft-jobs'
 
 export interface IngestPayload {
   from: string
@@ -205,7 +206,7 @@ export async function ingestInboundMessage(
       .prepare(
         `
       UPDATE inbound_messages
-      SET draft_reply = ?
+      SET draft_reply = ?, draft_source = 'heuristic'
       WHERE id = ?
     `
       )
@@ -237,6 +238,17 @@ export async function ingestInboundMessage(
       `
         )
         .run(thread.id)
+    }
+
+    try {
+      await enqueueDraftJob(db, {
+        tenantId,
+        threadId: thread.id,
+        messageId: Number(messageId),
+        intent: classification.intent,
+      })
+    } catch (error) {
+      console.warn('[inbound-ingest] draft_jobs enqueue skipped:', error)
     }
   }
 

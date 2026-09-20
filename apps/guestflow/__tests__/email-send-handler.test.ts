@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SendMessageResponse } from '@/types/inbound'
 
-const { mockDb, sendEmail, createQueuedJob } = vi.hoisted(() => ({
+const { mockDb, sendEmail, createQueuedJob, consumeConfirmToken } = vi.hoisted(() => ({
   mockDb: {
     prepare: vi.fn(),
     batch: vi.fn(),
@@ -9,6 +9,7 @@ const { mockDb, sendEmail, createQueuedJob } = vi.hoisted(() => ({
   },
   sendEmail: vi.fn(),
   createQueuedJob: vi.fn(),
+  consumeConfirmToken: vi.fn(),
 }))
 
 vi.mock('@/lib/whatsapp', () => ({
@@ -23,6 +24,16 @@ vi.mock('@/lib/email', () => ({
 
 vi.mock('@/lib/send-jobs', () => ({
   createQueuedJob,
+}))
+
+vi.mock('@/lib/confirm-token', () => ({
+  consumeConfirmToken,
+  isSendEligible: (thread?: string | null, message?: string | null) =>
+    thread === 'approved' || thread === 'ready' || message === 'approved' || message === 'ready',
+}))
+
+vi.mock('@/lib/phase0-schema', () => ({
+  ensurePhase0Schema: vi.fn(async () => {}),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -45,17 +56,13 @@ function stubThreadAndDraft(thread: Record<string, unknown>, message: Record<str
 describe('POST /api/inbound/send email + whatsapp_web', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    consumeConfirmToken.mockResolvedValue({ ok: true })
   })
 
-  it('sends email via mocked Resend and writes sent status', async () => {
-    sendEmail.mockResolvedValue({
-      success: true,
-      messageId: 're_abc',
-      timestamp: '2026-09-20T12:00:00.000Z',
-    })
+  it('rejects email send without confirmToken and does not call Resend', async () => {
     stubThreadAndDraft(
-      { id: 1, from_number: 'guest@example.com', status: 'drafted', metadata: '{}' },
-      { id: 9, draft_reply: 'Hi guest' }
+      { id: 1, from_number: 'guest@example.com', status: 'approved', metadata: '{}' },
+      { id: 9, draft_reply: 'Hi guest', status: 'approved' }
     )
 
     const { POST } = await import('@/app/api/inbound/send/route')
@@ -73,10 +80,41 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
       }) as any
     )
     const data = (await response.json()) as SendMessageResponse
+    expect(response.status).toBe(400)
+    expect(data.error).toContain('confirmToken')
+    expect(sendEmail).not.toHaveBeenCalled()
+  })
+
+  it('sends email via mocked Resend after approved + token', async () => {
+    sendEmail.mockResolvedValue({
+      success: true,
+      messageId: 're_abc',
+      timestamp: '2026-09-20T12:00:00.000Z',
+    })
+    stubThreadAndDraft(
+      { id: 1, from_number: 'guest@example.com', status: 'approved', metadata: '{}' },
+      { id: 9, draft_reply: 'Hi guest', status: 'approved' }
+    )
+
+    const { POST } = await import('@/app/api/inbound/send/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: 1,
+          confirmToken: 'email-token',
+          channel: 'email',
+          to: 'grant830318@gmail.com',
+          subject: 'Test',
+          body: 'Hello from GuestFlow',
+        }),
+      }) as any
+    )
+    const data = (await response.json()) as SendMessageResponse
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
-    expect(data.queued).toBeUndefined()
     expect(data.data?.channel).toBe('email')
     expect(data.data?.threadStatus).toBe('sent')
     expect(sendEmail).toHaveBeenCalledWith({
@@ -86,7 +124,7 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
     })
   })
 
-  it('queues WhatsApp Web and does not report delivered', async () => {
+  it('queues WhatsApp Web only after token consume', async () => {
     createQueuedJob.mockResolvedValue({
       id: 44,
       channel: 'whatsapp_web',
@@ -103,8 +141,8 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
       updated_at: '2026-09-20T12:00:00.000Z',
     })
     stubThreadAndDraft(
-      { id: 2, from_number: '+27821234567', status: 'drafted', metadata: '{}' },
-      { id: 10, draft_reply: 'Hi' }
+      { id: 2, from_number: '+27821234567', status: 'approved', metadata: '{}' },
+      { id: 10, draft_reply: 'Hi', status: 'approved' }
     )
 
     const { POST } = await import('@/app/api/inbound/send/route')
@@ -112,7 +150,7 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
       new Request('http://localhost:3100/api/inbound/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId: 2, channel: 'whatsapp_web' }),
+        body: JSON.stringify({ threadId: 2, channel: 'whatsapp_web', confirmToken: 'wa-web-token' }),
       }) as any
     )
     const data = (await response.json()) as SendMessageResponse
@@ -121,13 +159,17 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
     expect(data.queued).toBe(true)
     expect(data.data?.jobStatus).toBe('queued')
     expect(data.data?.threadStatus).toBe('queued')
-    expect(data.data?.threadStatus).not.toBe('sent')
+    expect(createQueuedJob).toHaveBeenCalled()
   })
 
-  it('rejects email send without a To address', async () => {
+  it('does not queue WhatsApp Web when token is reused', async () => {
+    consumeConfirmToken.mockResolvedValue({
+      ok: false,
+      error: 'confirmToken is missing, invalid, expired, or already used',
+    })
     stubThreadAndDraft(
-      { id: 3, from_number: '+27821234567', status: 'drafted', metadata: '{}' },
-      { id: 11, draft_reply: 'Hi' }
+      { id: 2, from_number: '+27821234567', status: 'approved', metadata: '{}' },
+      { id: 10, draft_reply: 'Hi', status: 'approved' }
     )
 
     const { POST } = await import('@/app/api/inbound/send/route')
@@ -135,7 +177,25 @@ describe('POST /api/inbound/send email + whatsapp_web', () => {
       new Request('http://localhost:3100/api/inbound/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId: 3, channel: 'email', body: 'Hi' }),
+        body: JSON.stringify({ threadId: 2, channel: 'whatsapp_web', confirmToken: 'used' }),
+      }) as any
+    )
+    expect(response.status).toBe(400)
+    expect(createQueuedJob).not.toHaveBeenCalled()
+  })
+
+  it('rejects email send without a To address', async () => {
+    stubThreadAndDraft(
+      { id: 3, from_number: '+27821234567', status: 'approved', metadata: '{}' },
+      { id: 11, draft_reply: 'Hi', status: 'approved' }
+    )
+
+    const { POST } = await import('@/app/api/inbound/send/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: 3, channel: 'email', body: 'Hi', confirmToken: 'tok' }),
       }) as any
     )
     const data = (await response.json()) as SendMessageResponse
