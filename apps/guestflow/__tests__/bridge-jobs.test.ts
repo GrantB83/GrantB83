@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NextRequest } from 'next/server'
 
 const job = {
   id: 44,
@@ -53,10 +54,10 @@ describe('bridge job API', () => {
     const { listJobs, publicJob } = await import('@/lib/send-jobs')
     vi.mocked(listJobs).mockResolvedValue([job])
     const { GET } = await import('@/app/api/bridge/jobs/route')
-    const request = new Request('http://localhost:3100/api/bridge/jobs?status=queued', {
+    const request = new NextRequest('http://localhost:3100/api/bridge/jobs?status=queued', {
       headers: { Authorization: 'Bearer bridge-secret' },
     })
-    const response = await GET(request as any)
+    const response = await GET(request)
     const data = await response.json()
     expect(data.success).toBe(true)
     expect(data.jobs[0]).toEqual(publicJob(job))

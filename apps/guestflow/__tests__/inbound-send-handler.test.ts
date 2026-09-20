@@ -15,19 +15,22 @@ vi.mock('@/lib/whatsapp', () => ({
   isWhatsAppSandboxMode: vi.fn(() => true)
 }))
 
-// Mock the database
-vi.mock('@/lib/db', () => ({
-  getDbAsync: vi.fn(async () => ({
+const { mockDb } = vi.hoisted(() => ({
+  mockDb: {
     prepare: vi.fn((query: string) => ({
       get: vi.fn(),
       all: vi.fn(),
       run: vi.fn(),
-      bind: vi.fn(function(this: any, ...args: any[]) {
+      bind: vi.fn(function (this: any, ...args: any[]) {
         return this
-      })
+      }),
     })),
-    batch: vi.fn()
-  }))
+    batch: vi.fn(),
+  },
+}))
+
+vi.mock('@/lib/db', () => ({
+  getDbAsync: vi.fn(async () => mockDb),
 }))
 
 describe('POST /api/inbound/send', () => {
@@ -59,7 +62,7 @@ describe('POST /api/inbound/send', () => {
   it('returns 400 when thread not found', async () => {
     // Test case T007: Validate thread existence
     const { getDbAsync } = await import('@/lib/db')
-    const mockDb = await getDbAsync()
+    await getDbAsync()
     
     // Mock database to return no thread
     vi.mocked(mockDb.prepare).mockReturnValue({
@@ -88,7 +91,7 @@ describe('POST /api/inbound/send', () => {
   it('returns 400 when thread has no draft reply', async () => {
     // Test case T008: Validate draft exists
     const { getDbAsync } = await import('@/lib/db')
-    const mockDb = await getDbAsync()
+    await getDbAsync()
     
     // Mock database to return thread without draft reply
     const mockThread = {
@@ -133,7 +136,7 @@ describe('POST /api/inbound/send', () => {
     // Test case T009: Mock sendWhatsAppMessage to return sandbox result
     const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
     const { getDbAsync } = await import('@/lib/db')
-    const mockDb = await getDbAsync()
+    await getDbAsync()
 
     // Mock successful sandbox send
     vi.mocked(sendWhatsAppMessage).mockResolvedValue({
@@ -197,7 +200,7 @@ describe('POST /api/inbound/send', () => {
     // Test case T010: Mock sendWhatsAppMessage to throw error
     const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
     const { getDbAsync } = await import('@/lib/db')
-    const mockDb = await getDbAsync()
+    await getDbAsync()
 
     // Mock failed send
     vi.mocked(sendWhatsAppMessage).mockResolvedValue({

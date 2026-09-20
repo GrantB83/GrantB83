@@ -211,6 +211,20 @@ export async function ingestInboundMessage(
       )
       .run(draft, messageId)
 
+    try {
+      await db
+        .prepare(
+          `
+        UPDATE inbound_messages
+        SET status = 'drafted'
+        WHERE id = ?
+      `
+        )
+        .run(messageId)
+    } catch {
+      // older thread-only schemas have no inbound_messages.status
+    }
+
     draftReply = { text: draft, requiresApproval, missingInfo }
 
     if (classification.confidence >= 0.6) {
