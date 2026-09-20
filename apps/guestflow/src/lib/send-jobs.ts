@@ -59,8 +59,36 @@ export interface CreateQueuedJobInput {
   subject?: string | null
 }
 
+/**
+ * Check if a table has a specific column
+ */
+async function tableHasColumn(db: DbClient, tableName: string, columnName: string): Promise<boolean> {
+  try {
+    const rows = await db.prepare(`PRAGMA table_info(${tableName})`).all()
+    return rows.some((row: any) => row.name === columnName)
+  } catch {
+    return false
+  }
+}
+
 export async function ensureSendJobsTable(db: DbClient): Promise<void> {
   await db.exec(SEND_JOBS_DDL)
+  
+  // Runtime migration: Add metadata column if missing (Turso-safe)
+  // Production send_jobs may exist without metadata column
+  const hasMetadata = await tableHasColumn(db, 'send_jobs', 'metadata')
+  if (!hasMetadata) {
+    try {
+      await db.exec(`ALTER TABLE send_jobs ADD COLUMN metadata TEXT`)
+    } catch (error) {
+      // Column may have been added by another process (race condition in concurrent creates)
+      // Verify it exists now
+      const verified = await tableHasColumn(db, 'send_jobs', 'metadata')
+      if (!verified) {
+        throw error // Re-throw if column still missing
+      }
+    }
+  }
 }
 
 export async function createQueuedJob(
