@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
         )
         inserted++
         try {
-          await upsertGuestContact(contactDb, {
+          await upsertGuestContact(contactDb as any, {
             tenantId,
             phone: booking.guestPhone || booking.guestPhone2 || null,
             email: booking.guestEmail || booking.guestEmail2 || null,
