@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare, Send, CheckCircle, XCircle } from 'lucide-react'
+import { Mail, Download, Printer, Calendar, AlertCircle, Package, ArrowLeft, MessageSquare, Copy, CheckCircle, XCircle } from 'lucide-react'
 import { useTenant } from '@/components/TenantContext'
 import { format, parseISO } from 'date-fns'
 import { PackGenerator } from '@/components/PackGenerator'
@@ -37,8 +37,8 @@ export default function WelcomeDraftsPage() {
   const [exporting, setExporting] = useState(false)
   const [whatsappConfigured, setWhatsappConfigured] = useState(false)
   const [whatsappSandboxMode, setWhatsappSandboxMode] = useState(true)
-  const [sendingDraftId, setSendingDraftId] = useState<number | null>(null)
-  const [sendResults, setSendResults] = useState<Record<number, { success: boolean, error?: string }>>({})
+  const [copyingDraftId, setCopyingDraftId] = useState<number | null>(null)
+  const [copyResults, setCopyResults] = useState<Record<number, { success: boolean, error?: string }>>({})
 
   const activeTenant = tenants.find(t => t.id === selectedTenantId)
 
@@ -124,68 +124,23 @@ export default function WelcomeDraftsPage() {
     }
   }
 
-  const handleWhatsAppSend = async (draft: WelcomeDraft) => {
-    // Require confirmation
-    const guestPhone = draft.guestPhone || prompt(
-      `Enter guest phone number for ${draft.guestName} (international format, e.g., +27836458313):`
-    )
-
-    if (!guestPhone) {
-      return // User cancelled
-    }
-
-    const confirmed = window.confirm(
-      `⚠️ SEND WHATSAPP MESSAGE?\n\n` +
-      `To: ${guestPhone}\n` +
-      `Guest: ${draft.guestName}\n` +
-      `Property: ${draft.property}\n\n` +
-      `This will send a real WhatsApp message. Continue?`
-    )
-
-    if (!confirmed) {
-      return // User cancelled
-    }
-
-    setSendingDraftId(draft.id)
-
+  const handleCopyDraft = async (draft: WelcomeDraft) => {
+    setCopyingDraftId(draft.id)
     try {
-      const response = await fetch('/api/whatsapp/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          draftId: draft.id,
-          guestPhone: guestPhone,
-          message: draft.message,
-          portalUrl: draft.portalUrl
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setSendResults(prev => ({
-          ...prev,
-          [draft.id]: { success: true }
-        }))
-        alert(`✅ WhatsApp message sent successfully to ${guestPhone}`)
-      } else {
-        setSendResults(prev => ({
-          ...prev,
-          [draft.id]: { success: false, error: result.error }
-        }))
-        alert(`❌ Failed to send WhatsApp message:\n\n${result.error}`)
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      setSendResults(prev => ({
+      await navigator.clipboard.writeText(draft.message)
+      setCopyResults((prev) => ({
         ...prev,
-        [draft.id]: { success: false, error: errorMsg }
+        [draft.id]: { success: true },
       }))
-      alert(`❌ Error sending WhatsApp message:\n\n${errorMsg}`)
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Copy failed'
+      setCopyResults((prev) => ({
+        ...prev,
+        [draft.id]: { success: false, error: errorMsg },
+      }))
+      alert(`Failed to copy draft:\n\n${errorMsg}`)
     } finally {
-      setSendingDraftId(null)
+      setCopyingDraftId(null)
     }
   }
 
@@ -293,11 +248,11 @@ export default function WelcomeDraftsPage() {
                 WhatsApp Status: {whatsappSandboxMode ? 'SANDBOX MODE' : whatsappConfigured ? 'LIVE MODE' : 'NOT CONFIGURED'}
               </h3>
               <p className={`text-sm ${whatsappSandboxMode ? 'text-blue-800' : whatsappConfigured ? 'text-green-800' : 'text-amber-800'}`}>
-                {whatsappSandboxMode 
-                  ? '🧪 Sandbox mode active (safe for demos/testing). "Approve & Send" buttons will log dry-run attempts without sending real messages to guests. Staff flows, portal, and Nightsbridge sync continue working. Set WHATSAPP_MODE=live + credentials to enable live sending.'
-                  : whatsappConfigured 
-                    ? '✅ WhatsApp is configured and ready for LIVE sending. Use "Approve & Send (WhatsApp)" buttons below to send real messages to guests after confirmation.'
-                    : '⚠️ WhatsApp not configured. Missing environment variables. Send buttons will be disabled until configured.'}
+                {whatsappSandboxMode
+                  ? 'Copy-only on this page. POST /api/whatsapp/send is retired (410). Guest send is approve + one-time confirmToken on Needs Approval / inbound/send. Sandbox mode is status only.'
+                  : whatsappConfigured
+                    ? 'WhatsApp is live, but this page does not send. Copy the draft, then send from Needs Approval after approve + confirmToken.'
+                    : 'WhatsApp not configured. Copy drafts only. Guest send still requires inbound/send + confirmToken.'}
               </p>
             </div>
           </div>
@@ -371,7 +326,7 @@ export default function WelcomeDraftsPage() {
           <h2 className="text-2xl font-bold text-gray-900">Generated Welcome Stubs</h2>
           
           {drafts.map((draft, index) => {
-            const sendResult = sendResults[draft.id]
+            const copyResult = copyResults[draft.id]
             return (
               <div key={draft.id} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between mb-4 gap-4">
@@ -381,17 +336,17 @@ export default function WelcomeDraftsPage() {
                       <h3 className="text-xl font-semibold text-gray-900">
                         {index + 1}. {draft.guestName}
                       </h3>
-                      {sendResult && (
-                        <span className={`flex items-center gap-1 text-sm ${sendResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                          {sendResult.success ? (
+                      {copyResult && (
+                        <span className={`flex items-center gap-1 text-sm ${copyResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                          {copyResult.success ? (
                             <>
                               <CheckCircle className="w-4 h-4" />
-                              Sent
+                              Copied
                             </>
                           ) : (
                             <>
                               <XCircle className="w-4 h-4" />
-                              Failed
+                              Copy failed
                             </>
                           )}
                         </span>
@@ -410,20 +365,18 @@ export default function WelcomeDraftsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleWhatsAppSend(draft)}
-                    disabled={sendingDraftId === draft.id || sendResult?.success}
-                    className={`flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] ${
-                      whatsappSandboxMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
-                    }`}
-                    title={sendResult?.success ? 'Already sent' : whatsappSandboxMode ? 'Send WhatsApp message (sandbox dry-run)' : 'Send WhatsApp message'}
+                    onClick={() => handleCopyDraft(draft)}
+                    disabled={copyingDraftId === draft.id}
+                    className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] bg-gray-700 hover:bg-gray-800"
+                    title="Copy draft. This page does not send WhatsApp."
                   >
-                    <Send className="w-4 h-4" />
+                    <Copy className="w-4 h-4" />
                     <span className="whitespace-nowrap">
-                      {sendingDraftId === draft.id 
-                        ? 'Sending...' 
-                        : whatsappSandboxMode 
-                          ? 'Approve & Send (Sandbox)' 
-                          : 'Approve & Send (WhatsApp)'}
+                      {copyingDraftId === draft.id
+                        ? 'Copying...'
+                        : copyResult?.success
+                          ? 'Copy again'
+                          : 'Copy draft'}
                     </span>
                   </button>
                 </div>
@@ -438,12 +391,12 @@ export default function WelcomeDraftsPage() {
                   </div>
                 )}
 
-                {sendResult && !sendResult.success && (
+                {copyResult && !copyResult.success && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                     <div className="flex items-center gap-2 text-red-800 text-sm">
                       <XCircle className="w-4 h-4" />
-                      <span className="font-medium">Send Error:</span>
-                      <span>{sendResult.error}</span>
+                      <span className="font-medium">Copy error:</span>
+                      <span>{copyResult.error}</span>
                     </div>
                   </div>
                 )}
@@ -541,16 +494,14 @@ export default function WelcomeDraftsPage() {
       )}
 
       <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-6">
-        <h3 className="font-semibold text-red-900 mb-3">⚠️ Hard Gates (Phase 18 + WhatsApp Send)</h3>
+        <h3 className="font-semibold text-red-900 mb-3">Hard Gates (Phase 0 + welcome drafts)</h3>
         <ul className="space-y-2 text-sm text-red-800">
-          <li>✅ <strong>NEVER auto-send</strong> — Staff must explicitly click "Approve & Send (WhatsApp)" + confirm dialog</li>
-          <li>✅ <strong>Disabled when not configured</strong> — Button disabled with clear message if env vars missing</li>
-          <li>✅ <strong>Never invents guest phone</strong> — Uses <code>[GUEST_PHONE]</code> placeholder when missing</li>
-          <li>✅ <strong>Never invents rates</strong> — Uses <code>[RATE CARD REQUIRED]</code> placeholder when missing</li>
-          <li>✅ <strong>Skips missing names</strong> — Bookings without guest_name are filtered out and listed separately</li>
-          <li>✅ <strong>Logs without storing bodies</strong> — Logs success/fail status only, not message content</li>
-          <li>✅ <strong>Portal links included</strong> — Automatically appends portal URL to message when available</li>
-          <li>✅ <strong>Local demo only</strong> — Export operations are local-only with no external storage</li>
+          <li>NEVER auto-send — this page is copy-only. POST /api/whatsapp/send is retired (410).</li>
+          <li>Guest send is Needs Approval / inbound queue: approve → confirm dialog → one-time confirmToken → POST /api/inbound/send.</li>
+          <li>Never invents guest phone — uses <code>[GUEST_PHONE]</code> placeholder when missing</li>
+          <li>Never invents rates — uses <code>[RATE CARD REQUIRED]</code> placeholder when missing</li>
+          <li>Skips missing names — bookings without guest_name are filtered out and listed separately</li>
+          <li>Local demo only — export operations are local-only with no external storage</li>
         </ul>
       </div>
 

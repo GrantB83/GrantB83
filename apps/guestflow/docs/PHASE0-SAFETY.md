@@ -16,6 +16,10 @@ Grant CLEAR 20 Sep 2026. **No auto-send. No Phase 1 LLM batch. No Gmail Contacts
 
 Applies to WhatsApp live, email, and WhatsApp Web queue on the same send route.
 
+## `/api/whatsapp/send` retired (P0)
+
+`POST /api/whatsapp/send` is **410 Gone**. It never calls the WhatsApp provider, even if a body or `confirmToken` is supplied. Welcome drafts (`/ops/welcome-drafts`) are **copy-only** — they must not POST that route. Guest send is only `POST /api/inbound/send` after approve + one-time `confirmToken`. `GET /api/whatsapp/send` is status-only (`sendRetired: true`).
+
 ## `DRAFT_WORKER_SECRET` ≠ `CRON_SECRET`
 
 | Secret | Used for |
