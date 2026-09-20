@@ -479,7 +479,7 @@ export async function POST(request: NextRequest) {
       const category = classification.extractedData.outlierCategory
 
       // Generate ticket drafts
-      const { guestReply, staffBrief, staffBriefReady, priority, askStaffFlags } = generateTicketDrafts(
+      const { guestReply, staffBrief, staffBriefReady, priority, askStaffFlags } = await generateTicketDrafts(
         category,
         {
           guestName: classification.extractedData.guestName,
