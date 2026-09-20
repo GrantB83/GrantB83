@@ -264,10 +264,7 @@ export async function POST(request: NextRequest) {
     const db = getDb()
     
     // Get Browns tenant ID (hardcoded as per existing codebase)
-    let tenant = db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
-    if (!tenant) {
-      tenant = db.prepare(`SELECT id FROM tenants WHERE name LIKE ? LIMIT 1`).get('%Browns%')
-    }
+    const tenant = db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
     
     if (!tenant) {
       return NextResponse.json(

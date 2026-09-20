@@ -94,7 +94,7 @@ export async function ensurePhase0Schema(db: DbClient): Promise<void> {
         await db.exec(col.sql)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        if (!/duplicate column/i.test(message)) throw error
+        if (!/duplicate column|no such table/i.test(message)) throw error
       }
     }
   }
