@@ -57,12 +57,14 @@ export async function checkWhatsAppWebAllowlist(
   // No booking match after normalization
 
   // Tier 3: Check for open Twilio thread (for deduplication)
+  // NOTE: Twilio stores from_number as 'whatsapp:+27...' format, so check both forms
   const twilioThread = await db.prepare(`
     SELECT id FROM inbound_threads
-    WHERE from_number = ? AND source = 'twilio_whatsapp' AND status != 'closed'
+    WHERE (from_number = ? OR from_number = ?)
+    AND source = 'twilio_whatsapp' AND status != 'closed'
     ORDER BY last_message_at DESC
     LIMIT 1
-  `).get(normalized) as any
+  `).get(normalized, `whatsapp:${normalized}`) as any
 
   if (twilioThread) {
     return { 

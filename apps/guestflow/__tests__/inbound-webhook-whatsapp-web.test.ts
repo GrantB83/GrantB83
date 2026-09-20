@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 let mockGuestContact: any = null
-let mockBooking: any = null
+let mockBookings: any[] = []
 let mockTwilioThread: any = null
 
 vi.mock('@/lib/db', () => ({
@@ -11,8 +11,8 @@ vi.mock('@/lib/db', () => ({
       if (query.includes('SELECT id FROM guest_contacts')) {
         return { get: vi.fn(() => mockGuestContact) }
       }
-      if (query.includes('SELECT id FROM bookings')) {
-        return { get: vi.fn(() => mockBooking) }
+      if (query.includes('SELECT id, guest_phone FROM bookings')) {
+        return { all: vi.fn(() => mockBookings) }
       }
       if (query.includes('SELECT id FROM inbound_threads') && query.includes('twilio_whatsapp')) {
         return { get: vi.fn(() => mockTwilioThread) }
@@ -69,7 +69,7 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
   beforeEach(() => {
     process.env.INBOUND_WEBHOOK_SECRET = 'whsec'
     mockGuestContact = null
-    mockBooking = null
+    mockBookings = []
     mockTwilioThread = null
     vi.resetModules()
   })
@@ -101,7 +101,7 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
   })
 
   it('accepts message from guest with booking (allowlist tier 2)', async () => {
-    mockBooking = { id: 456 }
+    mockBookings = [{ id: 456, guest_phone: '+27829876543' }]
     const { POST } = await import('@/app/api/inbound/webhook/route')
     const response = await POST(
       new Request('http://localhost:3100/api/inbound/webhook', {
@@ -122,6 +122,32 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(data.allowlisted).toBe(true)
+  })
+
+  it('accepts message from NB booking with non-E.164 phone (tier 2 + normalize)', async () => {
+    // NightsBridge often stores phones as 0821234567 instead of +27821234567
+    mockBookings = [{ id: 789, guest_phone: '0821234567' }]
+    const { POST } = await import('@/app/api/inbound/webhook/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer whsec',
+        },
+        body: JSON.stringify({
+          from: '+27821234567',  // Incoming is normalized E.164
+          timestamp: '2026-09-20T12:00:00.000Z',
+          source: 'whatsapp_web',
+          externalMessageId: 'waweb-nb1',
+        }),
+      }) as any
+    )
+    const data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data.success).toBe(true)
+    expect(data.allowlisted).toBe(true)
+    expect(data.source).toBe('booking')
   })
 
   it('merges into existing Twilio thread (allowlist tier 3 + dedup)', async () => {

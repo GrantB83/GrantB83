@@ -48,8 +48,7 @@ async function migrate() {
       console.log('📝 Adding inbound_messages.status column...')
       await db.execute(`
         ALTER TABLE inbound_messages 
-        ADD COLUMN status TEXT DEFAULT 'new' 
-        CHECK(status IN ('new', 'seen', 'archived'))
+        ADD COLUMN status TEXT DEFAULT 'new'
       `)
       console.log('✅ Added inbound_messages.status column')
     } else {

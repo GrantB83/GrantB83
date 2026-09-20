@@ -72,7 +72,7 @@ export const PHASE0_COLUMN_STATEMENTS: Array<{ table: string; column: string; sq
   {
     table: 'inbound_messages',
     column: 'status',
-    sql: `ALTER TABLE inbound_messages ADD COLUMN status TEXT DEFAULT 'new' CHECK(status IN ('new', 'seen', 'archived'))`,
+    sql: `ALTER TABLE inbound_messages ADD COLUMN status TEXT DEFAULT 'new'`,
   },
 ]
 
