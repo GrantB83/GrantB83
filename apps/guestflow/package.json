@@ -25,7 +25,8 @@
     "db:migrate:inbound-status": "node scripts/migrate-add-inbound-message-status.js",
     "seed:browns": "node scripts/seed-browns-data.js",
     "db:export": "node scripts/export-data.js",
-    "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts"
+    "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts",
+    "batch-worker": "tsx scripts/batch-worker.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

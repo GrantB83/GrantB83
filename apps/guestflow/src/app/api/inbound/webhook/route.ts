@@ -626,12 +626,54 @@ The Browns Team`
       }
     }
 
-    // Generate draft reply (for other intents: date_query, suite_preference, etc.)
+    // Phase 1: Enqueue draft jobs for batch LLM processing
+    // Intents: general_question, maintenance_other (outlier), or low-confidence (< 0.6)
+    let draftJobEnqueued = null
+    const shouldEnqueueDraftJob = (
+      classification.intent === 'general_question' ||
+      (classification.intent === 'outlier_exception' && 
+       classification.extractedData.outlierCategory === 'maintenance_other') ||
+      classification.confidence < 0.6
+    )
+
+    if (shouldEnqueueDraftJob && 
+        classification.intent !== 'spam' &&
+        classification.intent !== 'checkin_event' &&
+        classification.intent !== 'booking_inquiry') {
+      
+      // Phase 1: Enqueue draft_job for batch worker (no sync LLM)
+      const { enqueueDraftJob } = await import('@/lib/draft-jobs')
+      const jobResult = await enqueueDraftJob(db, {
+        tenantId,
+        threadId: thread.id,
+        messageId: Number(messageId),
+        intent: classification.intent
+      })
+
+      if (jobResult) {
+        draftJobEnqueued = {
+          jobId: jobResult.job.id,
+          existing: jobResult.existing,
+          status: jobResult.job.status
+        }
+      }
+
+      // Update thread status to queued (waiting for batch worker)
+      await db.prepare(`
+        UPDATE inbound_threads 
+        SET status = 'new'
+        WHERE id = ?
+      `).run(thread.id)
+    }
+
+    // Generate draft reply (for other intents not handled by Phase 1 batch)
+    // Skip if already handled by outlier_exception or booking_inquiry paths above
     let draftReply = null
-    if (classification.intent !== 'spam' && 
+    if (!shouldEnqueueDraftJob &&
+        classification.intent !== 'spam' && 
         classification.intent !== 'checkin_event' && 
         classification.intent !== 'outlier_exception' &&
-        classification.intent !== 'booking_inquiry') { // booking_inquiry handled above
+        classification.intent !== 'booking_inquiry') {
       const { draft, requiresApproval, missingInfo } = generateDraftReply(
         classification,
         'The Browns Luxury Guest Suites (Dullstroom)'
@@ -677,6 +719,7 @@ The Browns Team`
           missingFields: classification.missingFields
         },
         draftReply,
+        draftJobEnqueued,
         checkinEvent,
         ticket,
         exception,
