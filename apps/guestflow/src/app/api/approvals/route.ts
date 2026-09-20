@@ -58,13 +58,20 @@ export async function GET(request: NextRequest) {
         timestamp as created_at,
         'medium' as priority,
         from_number as guest_phone,
-        '{}' as metadata
+        json_object('thread_id', thread_id, 'from_number', from_number) as metadata
       FROM inbound_messages
-      WHERE tenant_id = ? AND status = 'drafted' AND draft_reply IS NOT NULL
+      WHERE tenant_id = ? AND draft_reply IS NOT NULL
+        AND (
+          status = 'drafted'
+          OR thread_id IN (
+            SELECT id FROM inbound_threads
+            WHERE tenant_id = ? AND status IN ('drafted', 'approved', 'queued')
+          )
+        )
       ORDER BY timestamp DESC
     `
       )
-      .all(tenantId)) as Record<string, unknown>[]
+      .all(tenantId, tenantId)) as Record<string, unknown>[]
 
     const ticketItems = (await db
       .prepare(

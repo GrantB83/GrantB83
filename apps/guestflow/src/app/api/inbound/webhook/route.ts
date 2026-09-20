@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
  *   from: string (phone number with +, or email)
  *   text: string (message body)
  *   timestamp: string (ISO8601)
- *   source: 'legacy_wa' | 'twilio_sms' | 'email_forward' | 'manual_paste'
+ *   source: 'legacy_wa' | 'twilio_sms' | 'email_forward' | 'manual_paste' | 'whatsapp_web' | 'email'
  *   mediaRefs?: string[] (optional media URLs)
  *   externalMessageId?: string (for deduplication)
  * }

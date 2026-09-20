@@ -6,6 +6,7 @@ Last orchestrator review: 2026-08-22 (proof samples done; hub Queue/Entity/GBP l
 
 ## Now
 
+- **GuestFlow Email control center + WA Web bridge** (overnight 19–20 Sep 2026, `cursor/email-wa-bridge-6cf2`): human-gated Email Send + inbound email ingest coded; Interim WhatsApp Web `send_jobs` claim/complete. Ritual removed: 07:00 copy-paste guest replies into Gmail / paste into WhatsApp Web. Artefacts: `apps/guestflow/docs/EMAIL-CONTROL-CENTER.md`, `apps/guestflow/docs/WA-WEB-BRIDGE-CONTRACT.md`. NeedsGrant/CoS: Resend inbound webhook URL + optional `APPROVE APPLY MIGRATION` for `send_jobs`. `staff_ops` still copy-only. No Twilio live / no number buy.
 - Control-plane spec + business evaluation live in this folder.
 - WhatsApp Cloud API agent exists as draft [PR #2](https://github.com/GrantB83/GrantB83/pull/2). It is **not** live (Coexistence + HTTPS host still Grant).
 - **RUNTIME received** (2026-08-22): `grok-bot=yes`, `cursor-plan=ultra`, `on-demand=yes`. Grok Bot routines are the daily ops surface; Cursor Cloud Agents are on-demand for phases/packages.

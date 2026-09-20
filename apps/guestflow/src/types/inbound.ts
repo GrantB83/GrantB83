@@ -4,18 +4,28 @@
  * Defines request/response shapes for the send API and related entities
  */
 
+export type SendChannel = 'whatsapp' | 'email' | 'whatsapp_web'
+
 export interface SendMessageRequest {
   threadId: number
+  channel?: SendChannel
+  to?: string
+  subject?: string
+  body?: string
 }
 
 export interface SendMessageResponse {
   success: boolean
+  queued?: boolean
   data?: {
-    messageId: string | null
-    timestamp: string
-    provider: 'meta' | 'twilio' | 'sandbox'
-    sandboxMode: boolean
-    threadStatus: 'sent' | 'failed'
+    messageId?: string | null
+    timestamp?: string
+    provider?: 'meta' | 'twilio' | 'sandbox' | 'resend' | 'whatsapp_web'
+    sandboxMode?: boolean
+    channel?: SendChannel
+    jobId?: number
+    jobStatus?: string
+    threadStatus: 'sent' | 'failed' | 'queued'
   }
   error?: string
   details?: string
