@@ -218,10 +218,10 @@ export default function BookingsPage() {
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-900 mb-2">Guest Portal Links</h3>
         <p className="text-sm text-gray-700 mb-3">
-          Each booking gets a unique portal link: <code className="bg-blue-100 px-1 rounded">/guest/[bookingId]</code>
+          Each booking gets a unique magic link token for secure guest portal access
         </p>
         <ul className="space-y-1 text-sm text-gray-700">
-          <li>✅ Guests authenticate with booking ref + last name</li>
+          <li>✅ Magic tokens generated via <code className="bg-blue-100 px-1 rounded">/api/bookings/[id]/generate-link</code></li>
           <li>✅ Portal shows standardized stay packet (WiFi, check-in times, house rules, directions)</li>
           <li>✅ Never invents WiFi passwords, phone numbers, or contact details</li>
           <li>✅ Missing data displays as [PLACEHOLDER] — never fabricated</li>

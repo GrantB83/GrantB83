@@ -100,8 +100,11 @@ export async function GET(
     // Extract property and suite from booking data
     const tenantId = await getDefaultTenantIdAsync()
     
-    // Determine property from propertyName (cottage vs main-house)
-    const property = booking.propertyName?.toLowerCase().includes('cottage') 
+    // Determine property from BOTH propertyName and suiteOrUnit (cottage vs main-house)
+    // Check both fields since propertyName might be generic while suite contains "Cottage Suites - X"
+    const propertyNameLower = booking.propertyName?.toLowerCase() || ''
+    const suiteLower = booking.suiteOrUnit?.toLowerCase() || ''
+    const property = (propertyNameLower.includes('cottage') || suiteLower.includes('cottage'))
       ? 'cottage' 
       : 'main-house'
     
