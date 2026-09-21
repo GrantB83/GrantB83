@@ -9,7 +9,7 @@ import {
   softCancelDisappearedBookings,
   type ParsedBooking as NbParsedBooking,
 } from '@/lib/nightsbridge-upsert'
-import { mapNbSectionRow } from '@/lib/nightsbridge-section-parse'
+import { mapNbSectionRow, type ParsedBooking } from '@/lib/nightsbridge-section-parse'
 import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
