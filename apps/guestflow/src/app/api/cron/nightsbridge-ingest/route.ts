@@ -9,28 +9,10 @@ import {
   softCancelDisappearedBookings,
   type ParsedBooking as NbParsedBooking,
 } from '@/lib/nightsbridge-upsert'
+import { mapNbSectionRow, type ParsedBooking } from '@/lib/nightsbridge-section-parse'
 import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
-
-interface ParsedBooking {
-  guestName: string
-  guest2?: string
-  suiteOrUnit: string
-  status: string
-  checkInDate: string
-  checkOutDate: string
-  lateCheckIn: boolean
-  adults?: number
-  children?: number
-  notes?: string
-  bookingId?: string
-  guestPhone?: string
-  guestEmail?: string
-  guestPhone2?: string
-  guestEmail2?: string
-  nights?: number
-}
 
 interface MissingField {
   guest: string
@@ -204,29 +186,7 @@ export async function POST(request: NextRequest) {
 
       // Parse data rows
       if (currentSection && currentSectionDate && currentHeaders.length > 0) {
-        const booking: any = {}
-
-        currentHeaders.forEach((header, index) => {
-          const value = row[index] ? String(row[index]).trim() : ''
-
-          if (header.includes('room') || header.includes('roomname')) {
-            booking.suiteOrUnit = value
-          } else if (header.includes('guestname') || (header.includes('guest') && !header.includes('2') && !header.includes('number'))) {
-            booking.guestName = value
-          } else if (header.includes('guest2')) {
-            booking.guest2 = value
-          } else if (header.includes('numberofguests') || header.includes('numberguests')) {
-            const num = parseInt(value) || 0
-            booking.adults = Math.max(1, num)
-            booking.children = 0
-          } else if (header.includes('bookingid') || header.includes('booking')) {
-            booking.bookingId = value
-          } else if (header.includes('note')) {
-            booking.notes = value
-          } else if (header.includes('night')) {
-            booking.nights = parseInt(value) || 0
-          }
-        })
+        const booking: any = mapNbSectionRow(currentHeaders, row)
 
         // Skip rows without required fields
         if (!booking.guestName || !booking.suiteOrUnit) {
