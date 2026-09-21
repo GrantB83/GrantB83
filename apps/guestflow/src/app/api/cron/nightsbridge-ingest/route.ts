@@ -277,17 +277,59 @@ export async function POST(request: NextRequest) {
     // 5. Save to database (async for Production Turso compatibility)
     const db = await getDbAsync()
     
-    // Get Browns tenant ID (hardcoded as per existing codebase)
-    const tenant = await db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
+    // Get Browns tenant ID with robust resolution strategy
+    type TenantRow = { id: number; name: string }
+    const KNOWN_ALIASES = [
+      'Browns Dullstroom',
+      'The Browns Luxury Guest Suites (Dullstroom)',
+      'The Browns Dullstroom'
+    ]
+    
+    // Try exact match on known aliases
+    let tenant: TenantRow | null = null
+    for (const alias of KNOWN_ALIASES) {
+      const result = await db.prepare('SELECT id, name FROM tenants WHERE name = ?').get(alias)
+      if (result) {
+        tenant = result as TenantRow
+        break
+      }
+    }
+    
+    // Fallback: LIKE pattern for Browns + Dullstroom
+    if (!tenant) {
+      const candidatesResult = await db.prepare(
+        "SELECT id, name FROM tenants WHERE name LIKE '%Browns%' AND name LIKE '%Dullstroom%'"
+      ).all()
+      
+      // Turso/DbClient .all() returns array directly, not { results: [...] }
+      const candidates = Array.isArray(candidatesResult) 
+        ? candidatesResult as TenantRow[]
+        : (candidatesResult as any).results as TenantRow[] || []
+      
+      if (candidates.length === 1) {
+        tenant = candidates[0]
+      } else if (candidates.length > 1) {
+        // Multiple matches - prefer the one with full suite name or use id=1
+        tenant = candidates.find((t: TenantRow) => t.id === 1) || candidates[0]
+      }
+    }
+    
+    // Final fallback: If no tenant found, try id=1 (confirmed single Browns tenant in production)
+    if (!tenant) {
+      const result = await db.prepare('SELECT id, name FROM tenants WHERE id = ?').get(1)
+      if (result) {
+        tenant = result as TenantRow
+      }
+    }
     
     if (!tenant) {
       return NextResponse.json(
-        { error: 'Browns Dullstroom tenant not found in database' },
+        { error: 'Browns Dullstroom tenant not found in database. No tenant with id=1 exists.' },
         { status: 500 }
       )
     }
 
-    const tenantId = (tenant as any).id
+    const tenantId = tenant.id
 
     // Phase 17: Replace INSERT OR REPLACE with UPSERT logic
     const importBatchId = randomUUID()
