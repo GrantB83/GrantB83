@@ -1,29 +1,16 @@
 # Test Documentation: Phone & Email Mapping
 
-## Synthetic Test Fixture
+## No Excel Fixture in Repo
 
-**File**: `nb-phone-email-synthetic.xlsx`
-**Contains**: Synthetic data ONLY (fake names, +2782XXXXXXX phones, @example.com emails)
+**Unit tests only** - no xlsx files in this fixtures directory.
 
-### Structure
+The unit tests in `phone-email-mapping.test.ts` cover all mapping scenarios by testing the `mapNbSectionRow` function directly with synthetic data arrays. No Excel file needed.
 
-1. **Arrival Section** with Phone Number + Email columns
-   - Guest: "Jane Test", Phone: "+27821111111", Email: "jane.test@example.com"
+**IMPORTANT**: All test data is synthetic (`@example.com`, `+2782XXXXXXX` phones only). No real guest PII in fixtures.
 
-2. **Departure Section** WITHOUT phone/email columns (tests no-crash behavior)
-   - Guest: "John Test" (no phone/email fields)
+## Testing Strategy
 
-3. **Arrival Section** with *2 variant columns
-   - Guests: "Alice & Bob Test", with phone2/email2 fields
-
-4. **Arrival Section** with local SA phone format
-   - Phone: "082 444 5555" (tests normalization to E.164)
-
-**IMPORTANT**: All data is synthetic. No real guest PII in fixtures.
-
-## Manual Testing Procedure
-
-### Unit Tests (Automated)
+### Unit Tests (Primary - Automated)
 
 Run via `npm test` or Vercel Preview:
 ```bash
@@ -31,13 +18,21 @@ cd apps/guestflow
 npm test  # Runs phone-email-mapping.test.ts
 ```
 
-Tests cover all mapping scenarios without needing Excel files.
+**Coverage**:
+- Phone Number / Email → guestPhone / guestEmail mapping
+- Phone Number *2 / Email *2 → guestPhone2 / guestEmail2 variants
+- Sections WITHOUT phone/email columns (tests no-crash behavior)
+- Local SA phone format normalization (e.g., "082 444 5555" → "+27824445555")
+- Empty/null/whitespace handling
+- Header normalization compatibility
+
+**No Excel file needed** - pure function testing with synthetic data.
 
 ### Integration Testing (Manual - SA Ops Only)
 
 **NEVER commit live A&D exports to git.**
 
-For manual smoke testing with real exports:
+For manual smoke testing with real Nightsbridge exports:
 
 1. SA Ops places latest `arr_and_dep.xlsx` in `/workspace/guestflow-nb-pull-YYYYMMDD/` **outside git**
 2. Upload via curl:
@@ -97,6 +92,15 @@ curl -X POST https://guestflow-production.vercel.app/api/cron/nightsbridge-inges
 ## Security Note
 
 **NEVER commit live NB exports containing real guest data to git.**
-- Use synthetic fixtures for unit tests
-- Manual integration tests use files **outside git** only
+- Unit tests use synthetic data only (no xlsx needed)
+- Manual integration tests use files **outside git** only (`/workspace/guestflow-nb-pull-*/`)
 - Production ingest runs via secure cron with CRON_SECRET
+
+## Optional: Synthetic Fixture for Future Manual Testing
+
+If a synthetic Excel fixture is needed in the future for manual integration testing (e.g., testing the full upload flow without real data):
+
+- Create multi-section xlsx with FAKE data only (`guest@example.com`, `+2782XXXXXXX`)
+- Include sections with/without phone/email columns
+- **Never** use real guest names, phones, or emails
+- Commit only if genuinely needed - current unit tests are sufficient
