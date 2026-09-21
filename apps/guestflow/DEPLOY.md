@@ -591,6 +591,7 @@ npm test -- src/lib/__tests__/staff-ops-drafts.test.ts
 | `STAFF_PASSWORD` | Yes (prod) | Password for staff access | `your-secure-password-here` |
 | `DATABASE_URL` | Vercel only | Turso/Postgres connection string | `libsql://browns-guestflow-...` |
 | `TURSO_AUTH_TOKEN` | Vercel + Turso | Turso authentication token | `eyJh...` |
+| `PROPERTY_EMAIL` | **Production** | Guest-facing contact email for welcome drafts, late check-in sign-offs, and guest portal error pages | `stay@thebrowns.co.za` |
 | `WHATSAPP_MODE` | Optional | WhatsApp operation mode: `sandbox` (dry-run) or `live` (real sends) | `sandbox` |
 | `WHATSAPP_TOKEN` | Optional | Meta WhatsApp Cloud API access token (live mode only) | `EAAl...` |
 | `WHATSAPP_PHONE_NUMBER_ID` | Optional | WhatsApp Business phone number ID (live mode only) | `123456789012345` |
@@ -601,6 +602,12 @@ npm test -- src/lib/__tests__/staff-ops-drafts.test.ts
 - **Local dev:** Not required (uses `data/guestflow.db` SQLite file automatically)
 - **Vercel:** Required if using Turso (or other remote DB)
 - **Without DATABASE_URL on Vercel:** App will show graceful error; rate cards must be uploaded per-session via `/ops/rate-cards` page
+
+**Note on PROPERTY_EMAIL:**
+- **Default:** `stay@thebrowns.co.za` (guest operations email, not personal Grant email)
+- **Used in:** Guest portal contact, welcome message drafts, late check-in queue sign-offs
+- **Vercel Production:** Set `PROPERTY_EMAIL=stay@thebrowns.co.za` in environment variables
+- **Code default:** Falls back to `stay@thebrowns.co.za` if not set (SSR-safe)
 
 **Note on WhatsApp Configuration:**
 - **Optional:** WhatsApp works in sandbox mode (dry-run) when credentials missing

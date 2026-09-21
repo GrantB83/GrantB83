@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { headers } from 'next/headers'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { TenantProvider } from '@/components/TenantContext'
@@ -17,6 +18,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // SSR-safe: read guest route flag from middleware header
+  const headersList = headers()
+  const isGuestRoute = headersList.get('x-is-guest-route') === 'true'
+
   return (
     <html lang="en">
       <head>
@@ -24,8 +29,12 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <TenantProvider>
-          <OutboundRedirectBanner />
-          <Navigation />
+          {!isGuestRoute && (
+            <>
+              <OutboundRedirectBanner />
+              <Navigation />
+            </>
+          )}
           <main className="min-h-screen">
             {children}
           </main>

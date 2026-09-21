@@ -131,8 +131,8 @@ export default function GuestPortalPage() {
 
           <div className="text-center text-sm text-gray-600">
             <p className="mb-2">Need help? Contact us at</p>
-            <a href="mailto:grant@thebrowns.co.za" className="text-primary-600 hover:text-primary-700 font-medium">
-              grant@thebrowns.co.za
+            <a href="mailto:stay@thebrowns.co.za" className="text-primary-600 hover:text-primary-700 font-medium">
+              stay@thebrowns.co.za
             </a>
           </div>
         </div>

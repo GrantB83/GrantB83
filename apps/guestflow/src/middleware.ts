@@ -11,12 +11,19 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host')
   const pathname = request.nextUrl.pathname
 
+  // Set guest route flag for SSR-safe layout rendering (forward on REQUEST, not response)
+  const isGuest = pathname.startsWith('/guest')
+  const requestHeaders = new Headers(request.headers)
+  if (isGuest) {
+    requestHeaders.set('x-is-guest-route', 'true')
+  }
+
   // Host-aware routing: if this is the dedicated guest portal host (e.g., stay.thebrowns.co.za),
   // only serve guest-facing routes and block staff/ops routes to prevent CRM leakage
   if (isGuestPortalHost(host || undefined)) {
     if (isGuestRoute(pathname)) {
-      // Allow guest routes on the portal host
-      return NextResponse.next()
+      // Allow guest routes on the portal host (preserve request headers)
+      return NextResponse.next({ request: { headers: requestHeaders } })
     } else {
       // Block staff/ops routes on the portal host
       return NextResponse.json(
@@ -41,7 +48,7 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/guest') ||
     request.nextUrl.pathname.includes('.')
   ) {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
   // Check if staff password is required (production only)
@@ -49,7 +56,7 @@ export function middleware(request: NextRequest) {
   
   // Skip auth in development if no password is set
   if (!staffPassword && process.env.NODE_ENV === 'development') {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
   // Check for auth cookie
@@ -57,7 +64,7 @@ export function middleware(request: NextRequest) {
   
   // Verify auth cookie matches password hash (simple approach for internal staff access)
   if (authCookie?.value === base64Encode(staffPassword || '')) {
-    return NextResponse.next()
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
   // Redirect to login page if not authenticated
@@ -67,7 +74,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next()
+  return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 export const config = {
