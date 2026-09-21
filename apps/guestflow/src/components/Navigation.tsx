@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CheckCircle, AlertTriangle, Calendar, MessageSquare, Menu, X } from 'lucide-react'
+import { Home, CheckCircle, AlertTriangle, Calendar, MessageSquare, Menu, X, ArrowLeftRight } from 'lucide-react'
 import { useState } from 'react'
 
 export default function Navigation() {
@@ -42,6 +42,9 @@ export default function Navigation() {
             </NavLink>
             <NavLink href="/ops/bookings" icon={<Calendar className="w-4 h-4" />} active={isActive('/ops/bookings')}>
               Live bookings
+            </NavLink>
+            <NavLink href="/ops/arrivals-departures" icon={<ArrowLeftRight className="w-4 h-4" />} active={isActive('/ops/arrivals-departures')}>
+              Arrivals & Departures
             </NavLink>
             <NavLink href="/comms" icon={<MessageSquare className="w-4 h-4" />} active={isActive('/comms')}>
               Comms
@@ -101,6 +104,14 @@ export default function Navigation() {
                 onClick={closeMobileMenu}
               >
                 Live bookings
+              </MobileNavLink>
+              <MobileNavLink 
+                href="/ops/arrivals-departures" 
+                icon={<ArrowLeftRight className="w-5 h-5" />} 
+                active={isActive('/ops/arrivals-departures')}
+                onClick={closeMobileMenu}
+              >
+                Arrivals & Departures
               </MobileNavLink>
               <MobileNavLink 
                 href="/comms" 
