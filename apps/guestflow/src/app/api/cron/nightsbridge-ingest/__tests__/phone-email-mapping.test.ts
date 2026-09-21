@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mapNbSectionRow } from '../route'
+import { mapNbSectionRow } from '@/lib/nightsbridge-section-parse'
 
 describe('mapNbSectionRow - Phone/Email Mapping (Phase 014)', () => {
   describe('Phone Number mapping', () => {
