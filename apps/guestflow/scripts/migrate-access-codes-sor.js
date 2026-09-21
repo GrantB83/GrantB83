@@ -28,7 +28,7 @@ const statements = [
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id INTEGER NOT NULL DEFAULT 1,
     property TEXT NOT NULL,
-    code_type TEXT NOT NULL CHECK(code_type IN ('gate_pinpad', 'lockbox')),
+    code_type TEXT NOT NULL CHECK(code_type IN ('gate_pinpad', 'lockbox', 'wifi_network', 'wifi_password')),
     suite TEXT NOT NULL DEFAULT '',
     code_value TEXT NOT NULL,
     last_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

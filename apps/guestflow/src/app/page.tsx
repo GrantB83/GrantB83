@@ -112,7 +112,7 @@ export default function TodayPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Priority Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Needs Approval */}
           <Link 
             href="/needs-approval"
@@ -157,6 +157,29 @@ export default function TodayPage() {
                 )}
               </div>
             )}
+          </Link>
+
+          {/* Arrivals & Departures */}
+          <Link 
+            href="/ops/arrivals-departures"
+            className="bg-white rounded-xl border-2 border-green-200 hover:border-green-400 p-6 transition group cursor-pointer"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <Calendar className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 group-hover:text-green-600">
+                  Arrivals & Departures
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Staff dashboard
+                </p>
+              </div>
+            </div>
+            <p className="text-gray-600 text-sm">
+              View check-ins and check-outs by date range. Filter by property, arrival status, and more.
+            </p>
           </Link>
 
           {/* Exceptions */}
