@@ -114,12 +114,14 @@ function generateMarkdown(
     }
     
     // Include access codes from DB SoR (fail-closed to [ASK STAFF])
-    if (booking.gateCode || booking.doorCode || booking.lockboxCode) {
+    if (booking.gateCode || booking.doorCode || booking.lockboxCode || booking.wifiNetwork) {
       lines.push(``)
       lines.push(`**Access Codes (DB SoR):**`)
       if (booking.gateCode) lines.push(`- Gate: ${booking.gateCode}`)
       if (booking.doorCode) lines.push(`- Door: ${booking.doorCode}`)
       if (booking.lockboxCode) lines.push(`- Lockbox: ${booking.lockboxCode}`)
+      if (booking.wifiNetwork && booking.wifiNetwork !== '[ASK STAFF]') lines.push(`- WiFi Network: ${booking.wifiNetwork}`)
+      if (booking.wifiPassword && booking.wifiPassword !== '[ASK STAFF]') lines.push(`- WiFi Password: ${booking.wifiPassword}`)
     }
     
     if (booking.notes) {
@@ -203,12 +205,14 @@ function generateText(
     }
     
     // Include access codes from DB SoR (fail-closed to [ASK STAFF])
-    if (booking.gateCode || booking.doorCode || booking.lockboxCode) {
+    if (booking.gateCode || booking.doorCode || booking.lockboxCode || booking.wifiNetwork) {
       lines.push(``)
       lines.push(`Access Codes (DB SoR):`)
       if (booking.gateCode) lines.push(`  Gate: ${booking.gateCode}`)
       if (booking.doorCode) lines.push(`  Door: ${booking.doorCode}`)
       if (booking.lockboxCode) lines.push(`  Lockbox: ${booking.lockboxCode}`)
+      if (booking.wifiNetwork && booking.wifiNetwork !== '[ASK STAFF]') lines.push(`  WiFi Network: ${booking.wifiNetwork}`)
+      if (booking.wifiPassword && booking.wifiPassword !== '[ASK STAFF]') lines.push(`  WiFi Password: ${booking.wifiPassword}`)
     }
     
     if (booking.notes) {

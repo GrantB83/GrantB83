@@ -65,10 +65,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [P] [US2] Update `apps/guestflow/src/app/api/guest-portal/[code]/route.ts` to replace direct env var reads (`process.env.WIFI_NETWORK`, `process.env.WIFI_PASSWORD`) with `const { wifi } = await resolveAccessCodes(db, tenantId, property, suite)` and return `wifi` in `stayPacket` response
-- [ ] T014 [P] [US2] Update `apps/guestflow/src/app/api/welcome-drafts/route.ts` to use `resolveAccessCodes()` for WiFi instead of direct env var reads, replace template placeholders `{{wifi.network}}` and `{{wifi.password}}` with resolved values (if `[ASK STAFF]`, show placeholder text in template)
-- [ ] T015 [P] [US2] Update `apps/guestflow/src/lib/draft-jobs.ts` (or late-checkin template logic) to use `resolveAccessCodes()` for WiFi, ensure WiFi line only appears when credentials are available (not `[ASK STAFF]`)
-- [ ] T016 [P] [US2] Update `apps/guestflow/src/lib/ticket-playbooks.ts` to replace `wifiPassword: '[WIFI PASSWORD - ASK STAFF]'` with dynamic resolution via `resolveAccessCodes()`
+- [x] T013 [P] [US2] Update `apps/guestflow/src/app/api/guest-portal/[code]/route.ts` to replace direct env var reads (`process.env.WIFI_NETWORK`, `process.env.WIFI_PASSWORD`) with `const { wifi } = await resolveAccessCodes(db, tenantId, property, suite)` and return `wifi` in `stayPacket` response
+- [x] T014 [P] [US2] Update `apps/guestflow/src/app/api/welcome-drafts/route.ts` to use `resolveAccessCodes()` for WiFi instead of direct env var reads, replace template placeholders `{{wifi.network}}` and `{{wifi.password}}` with resolved values (if `[ASK STAFF]`, show placeholder text in template)
+- [x] T015 [P] [US2] Update `apps/guestflow/src/lib/draft-jobs.ts` (or late-checkin template logic) to use `resolveAccessCodes()` for WiFi, ensure WiFi line only appears when credentials are available (not `[ASK STAFF]`)
+- [x] T016 [P] [US2] Update `apps/guestflow/src/lib/ticket-playbooks.ts` to replace `wifiPassword: '[WIFI PASSWORD - ASK STAFF]'` with dynamic resolution via `resolveAccessCodes()`
 - [ ] T017 [US2] Add integration test `apps/guestflow/__tests__/guest-portal-wifi.test.ts` to verify: (1) DB has WiFi → returned in stayPacket, (2) NO DB row + env set → env returned, (3) both empty → `[ASK STAFF]` returned
 - [ ] T018 [P] [US2] Add unit tests for welcome-drafts WiFi resolution: DB, env fallback, placeholder cases
 - [ ] T019 [P] [US2] Add unit tests for late-checkin WiFi resolution: DB, env fallback, placeholder cases

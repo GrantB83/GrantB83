@@ -492,6 +492,271 @@ export default function AccessCodesManager() {
             </div>
           </div>
 
+          {/* WiFi Credentials Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+              </svg>
+              WiFi Credentials
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              WiFi network name (SSID) and password per property. Property-wide, not suite-specific.
+            </p>
+            
+            <div className="space-y-6">
+              {['cottage', 'main-house'].map(property => {
+                const propertyData = groupedCodes[property]
+                const wifiNetwork = propertyData?.wifiNetworks[0]
+                const wifiPassword = propertyData?.wifiPasswords[0]
+
+                return (
+                  <div key={property} className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="font-semibold text-gray-900 mb-4 capitalize">
+                      {property.replace('-', ' ')} WiFi
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      {/* WiFi Network Name */}
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">Network Name (SSID)</div>
+                        {wifiNetwork ? (
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              {editingCode?.id === wifiNetwork.id ? (
+                                <input
+                                  type="text"
+                                  value={editingCode.code}
+                                  onChange={(e) => setEditingCode({ ...editingCode, code: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                  placeholder="Enter WiFi network name"
+                                  maxLength={32}
+                                  autoFocus
+                                />
+                              ) : (
+                                <div>
+                                  <span className="font-mono text-lg">
+                                    {wifiNetwork.code_value_hint || '****'}
+                                  </span>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Last updated: {new Date(wifiNetwork.last_updated_at).toLocaleString()}
+                                    {wifiNetwork.last_updated_by && ` by ${wifiNetwork.last_updated_by}`}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {editingCode?.id === wifiNetwork.id ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSave}
+                                  disabled={saving === wifiNetwork.id || !editingCode.code.trim()}
+                                  className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                                >
+                                  <Save className="w-4 h-4" />
+                                  {saving === wifiNetwork.id ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                  onClick={() => setEditingCode(null)}
+                                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingCode({
+                                  id: wifiNetwork.id,
+                                  property: wifiNetwork.property,
+                                  code_type: 'wifi_network',
+                                  suite: '',
+                                  code: '',
+                                })}
+                                className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            {editingCode?.property === property && editingCode.code_type === 'wifi_network' ? (
+                              <div className="space-y-4">
+                                <input
+                                  type="text"
+                                  value={editingCode.code}
+                                  onChange={(e) => setEditingCode({ ...editingCode, code: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                  placeholder="Enter WiFi network name"
+                                  maxLength={32}
+                                  autoFocus
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={handleSave}
+                                    disabled={saving === -1 || !editingCode.code.trim()}
+                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                                  >
+                                    <Save className="w-4 h-4" />
+                                    {saving === -1 ? 'Saving...' : 'Save'}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingCode(null)}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingCode({
+                                  property,
+                                  code_type: 'wifi_network',
+                                  suite: '',
+                                  code: '',
+                                })}
+                                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Add Network Name
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* WiFi Password */}
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">WiFi Password</div>
+                        {wifiPassword ? (
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              {editingCode?.id === wifiPassword.id ? (
+                                <input
+                                  type="text"
+                                  value={editingCode.code}
+                                  onChange={(e) => setEditingCode({ ...editingCode, code: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                  placeholder="Enter WiFi password"
+                                  minLength={8}
+                                  maxLength={63}
+                                  autoFocus
+                                />
+                              ) : (
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-lg">
+                                      {revealedCodes.has(wifiPassword.id) 
+                                        ? wifiPassword.code_value_hint || '****'
+                                        : '****'}
+                                    </span>
+                                    <button
+                                      onClick={() => toggleReveal(wifiPassword.id)}
+                                      className="text-gray-500 hover:text-gray-700"
+                                    >
+                                      {revealedCodes.has(wifiPassword.id) ? (
+                                        <EyeOff className="w-4 h-4" />
+                                      ) : (
+                                        <Eye className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Last updated: {new Date(wifiPassword.last_updated_at).toLocaleString()}
+                                    {wifiPassword.last_updated_by && ` by ${wifiPassword.last_updated_by}`}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {editingCode?.id === wifiPassword.id ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSave}
+                                  disabled={saving === wifiPassword.id || !editingCode.code.trim() || editingCode.code.length < 8}
+                                  className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                                >
+                                  <Save className="w-4 h-4" />
+                                  {saving === wifiPassword.id ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                  onClick={() => setEditingCode(null)}
+                                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingCode({
+                                  id: wifiPassword.id,
+                                  property: wifiPassword.property,
+                                  code_type: 'wifi_password',
+                                  suite: '',
+                                  code: '',
+                                })}
+                                className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            {editingCode?.property === property && editingCode.code_type === 'wifi_password' ? (
+                              <div className="space-y-4">
+                                <input
+                                  type="password"
+                                  value={editingCode.code}
+                                  onChange={(e) => setEditingCode({ ...editingCode, code: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                  placeholder="Enter WiFi password (min 8 characters)"
+                                  minLength={8}
+                                  maxLength={63}
+                                  autoFocus
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={handleSave}
+                                    disabled={saving === -1 || !editingCode.code.trim() || editingCode.code.length < 8}
+                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                                  >
+                                    <Save className="w-4 h-4" />
+                                    {saving === -1 ? 'Saving...' : 'Save'}
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingCode(null)}
+                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingCode({
+                                  property,
+                                  code_type: 'wifi_password',
+                                  suite: '',
+                                  code: '',
+                                })}
+                                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Add Password
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Audit Log */}
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Change History (Last 90 days)</h2>
