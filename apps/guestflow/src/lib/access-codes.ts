@@ -20,6 +20,37 @@ import {
 } from './access-codes-schema'
 
 /**
+ * Normalize suite name for matching
+ * Removes common prefixes and normalizes whitespace
+ */
+function normalizeSuiteName(suite: string): string {
+  if (!suite) return ''
+  
+  return suite
+    .toLowerCase()
+    .replace(/^cottage\s+suites?\s*-?\s*/i, '') // Remove "Cottage Suite(s) -" prefix
+    .replace(/^main\s+house\s*-?\s*/i, '') // Remove "Main House -" prefix
+    .trim()
+}
+
+/**
+ * Check if a suite name matches the target suite
+ * Uses normalized contains matching
+ */
+function suiteMatches(dbSuite: string, targetSuite: string): boolean {
+  if (!dbSuite || !targetSuite) return false
+  
+  const normalizedDb = normalizeSuiteName(dbSuite)
+  const normalizedTarget = normalizeSuiteName(targetSuite)
+  
+  // Exact match after normalization
+  if (normalizedDb === normalizedTarget) return true
+  
+  // Contains match (e.g., "Falcon" contains in "Cottage Suites - Falcon")
+  return normalizedDb.includes(normalizedTarget) || normalizedTarget.includes(normalizedDb)
+}
+
+/**
  * Get a single access code from DB for property+type+suite
  * Returns { found: boolean, value: string | null }
  * - found=true, value=string → DB has code
@@ -34,16 +65,32 @@ export async function getAccessCode(
   suite: string = ''
 ): Promise<{ found: boolean; value: string | null }> {
   try {
-    const row = await db
+    // First try exact match
+    const exactRow = await db
       .prepare(
         `SELECT code_value FROM property_access_codes 
          WHERE tenant_id = ? AND property = ? AND code_type = ? AND suite = ?`
       )
       .get(tenantId, property, codeType, suite) as PropertyAccessCode | undefined
 
-    if (row) {
-      // DB row exists → use code_value (even if empty)
-      return { found: true, value: row.code_value || null }
+    if (exactRow) {
+      return { found: true, value: exactRow.code_value || null }
+    }
+
+    // If suite provided and no exact match, try normalized matching for lockbox codes
+    if (suite && codeType === 'lockbox') {
+      const allSuites = await db
+        .prepare(
+          `SELECT suite, code_value FROM property_access_codes 
+           WHERE tenant_id = ? AND property = ? AND code_type = ?`
+        )
+        .all(tenantId, property, codeType) as PropertyAccessCode[]
+
+      for (const row of allSuites) {
+        if (suiteMatches(row.suite, suite)) {
+          return { found: true, value: row.code_value || null }
+        }
+      }
     }
 
     // NO DB row → caller should check env fallback
