@@ -99,9 +99,17 @@ export async function GET(
     // Resolve access codes from DB-first with env fallback
     // Extract property and suite from booking data
     const tenantId = await getDefaultTenantIdAsync()
-    const property = booking.propertyName?.toLowerCase().includes('cottage') 
+    
+    // Determine property from BOTH propertyName and suiteOrUnit (cottage vs main-house)
+    // Check both fields since propertyName might be generic while suite contains "Cottage Suites - X"
+    const propertyNameLower = booking.propertyName?.toLowerCase() || ''
+    const suiteLower = booking.suiteOrUnit?.toLowerCase() || ''
+    const property = (propertyNameLower.includes('cottage') || suiteLower.includes('cottage'))
       ? 'cottage' 
       : 'main-house'
+    
+    // Extract suite - use suiteOrUnit directly for matching
+    // The resolveAccessCodes function will handle normalization
     const suite = booking.suiteOrUnit || ''
     
     const accessCodes = await resolveAccessCodes(db, tenantId, property, suite || undefined)

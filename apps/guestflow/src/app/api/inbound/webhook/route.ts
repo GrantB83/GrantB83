@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           triaged: true,
-          ticketId,
+          ticketId: Number(ticketId),
           reason: 'Sender not in allowlist (guest_contacts, bookings, or open Twilio threads)'
         })
       }
@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
       messageMetadata
     )
 
-    const messageId = messageInsert.lastInsertRowid
+    const messageId = Number(messageInsert.lastInsertRowid)
 
     // WhatsApp Web metadata-only: skip classification (no body to classify)
     if (source === 'whatsapp_web') {
@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
         threadId: thread.id,
         timeout: true,
         exception: {
-          id: timeoutException.lastInsertRowid,
+          id: Number(timeoutException.lastInsertRowid),
           category: 'timeout',
           reason: `Processing exceeded ${TIMEOUT_MS}ms`
         }
@@ -464,7 +464,7 @@ export async function POST(request: NextRequest) {
       )
 
       checkinEvent = {
-        id: eventInsert.lastInsertRowid,
+        id: Number(eventInsert.lastInsertRowid),
         ...event,
         matchedBooking: matchedBooking ? {
           id: matchedBooking.id,
@@ -511,7 +511,7 @@ export async function POST(request: NextRequest) {
       )
 
       ticket = {
-        id: ticketInsert.lastInsertRowid,
+        id: Number(ticketInsert.lastInsertRowid),
         category,
         priority,
         guestDraftReply: guestReply,
@@ -580,7 +580,7 @@ export async function POST(request: NextRequest) {
         )
 
         exception = {
-          id: exceptionInsert.lastInsertRowid,
+          id: Number(exceptionInsert.lastInsertRowid),
           category: 'missing_rate_card',
           reason: 'No rate card available for requested dates'
         }

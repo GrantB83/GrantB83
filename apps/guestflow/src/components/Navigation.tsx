@@ -9,6 +9,11 @@ export default function Navigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Hide navigation on guest portal routes
+  if (pathname?.startsWith('/guest')) {
+    return null
+  }
+
   const isActive = (path: string) => pathname === path
 
   const closeMobileMenu = () => setMobileMenuOpen(false)

@@ -5,7 +5,6 @@ import { ArrowLeft, Calendar, Copy, CheckCircle, ExternalLink, Plane, Home } fro
 import { useState, useEffect } from 'react'
 import { format, parseISO, addDays } from 'date-fns'
 import { useTenant } from '@/components/TenantContext'
-import { getClientGuestPortalUrl } from '@/lib/portal-url'
 
 interface Booking {
   id: number
@@ -77,9 +76,18 @@ export default function ArrivalsDeparturesPage() {
   }
 
   const copyPortalLink = async (bookingId: number) => {
-    const portalUrl = getClientGuestPortalUrl(bookingId.toString())
     try {
-      await navigator.clipboard.writeText(portalUrl)
+      const res = await fetch(`/api/bookings/${bookingId}/generate-link`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      
+      if (!res.ok || !data.magicLink) {
+        alert('Failed to generate portal link')
+        return
+      }
+      
+      await navigator.clipboard.writeText(data.magicLink)
       setCopiedId(bookingId)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (err) {
@@ -190,15 +198,28 @@ export default function ArrivalsDeparturesPage() {
                             </>
                           )}
                         </button>
-                        <a
-                          href={getClientGuestPortalUrl(booking.id.toString())}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/bookings/${booking.id}/generate-link`, {
+                                method: 'POST'
+                              })
+                              const data = await res.json()
+                              
+                              if (res.ok && data.magicLink) {
+                                window.open(data.magicLink, '_blank', 'noopener,noreferrer')
+                              } else {
+                                alert('Failed to generate portal link')
+                              }
+                            } catch (err) {
+                              alert('Failed to preview portal')
+                            }
+                          }}
                           className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                           title="Preview guest portal"
                         >
                           <ExternalLink className="w-4 h-4" />
-                        </a>
+                        </button>
                       </div>
                     </td>
                   </tr>
