@@ -278,6 +278,7 @@ export async function POST(request: NextRequest) {
     const db = await getDbAsync()
     
     // Get Browns tenant ID with robust resolution strategy
+    type TenantRow = { id: number; name: string }
     const KNOWN_ALIASES = [
       'Browns Dullstroom',
       'The Browns Luxury Guest Suites (Dullstroom)',
@@ -285,29 +286,40 @@ export async function POST(request: NextRequest) {
     ]
     
     // Try exact match on known aliases
-    let tenant: any = null
+    let tenant: TenantRow | null = null
     for (const alias of KNOWN_ALIASES) {
-      tenant = await db.prepare('SELECT id, name FROM tenants WHERE name = ?').get(alias)
-      if (tenant) break
+      const result = await db.prepare('SELECT id, name FROM tenants WHERE name = ?').get(alias)
+      if (result) {
+        tenant = result as TenantRow
+        break
+      }
     }
     
     // Fallback: LIKE pattern for Browns + Dullstroom
     if (!tenant) {
-      const candidates = await db.prepare(
+      const candidatesResult = await db.prepare(
         "SELECT id, name FROM tenants WHERE name LIKE '%Browns%' AND name LIKE '%Dullstroom%'"
       ).all()
       
-      if (candidates.results && candidates.results.length === 1) {
-        tenant = candidates.results[0]
-      } else if (candidates.results && candidates.results.length > 1) {
+      // Turso/DbClient .all() returns array directly, not { results: [...] }
+      const candidates = Array.isArray(candidatesResult) 
+        ? candidatesResult as TenantRow[]
+        : (candidatesResult as any).results as TenantRow[] || []
+      
+      if (candidates.length === 1) {
+        tenant = candidates[0]
+      } else if (candidates.length > 1) {
         // Multiple matches - prefer the one with full suite name or use id=1
-        tenant = candidates.results.find((t: any) => t.id === 1) || candidates.results[0]
+        tenant = candidates.find((t: TenantRow) => t.id === 1) || candidates[0]
       }
     }
     
     // Final fallback: If no tenant found, try id=1 (confirmed single Browns tenant in production)
     if (!tenant) {
-      tenant = await db.prepare('SELECT id, name FROM tenants WHERE id = ?').get(1)
+      const result = await db.prepare('SELECT id, name FROM tenants WHERE id = ?').get(1)
+      if (result) {
+        tenant = result as TenantRow
+      }
     }
     
     if (!tenant) {
