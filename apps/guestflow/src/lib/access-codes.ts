@@ -21,6 +21,10 @@ import {
 
 /**
  * Get a single access code from DB for property+type+suite
+ * Returns { found: boolean, value: string | null }
+ * - found=true, value=string → DB has code
+ * - found=true, value=null → DB has row but empty (use [ASK STAFF])
+ * - found=false → NO DB row (try env fallback)
  */
 export async function getAccessCode(
   db: DbClient,
@@ -28,7 +32,7 @@ export async function getAccessCode(
   property: string,
   codeType: 'gate_pinpad' | 'lockbox',
   suite: string = ''
-): Promise<string | null> {
+): Promise<{ found: boolean; value: string | null }> {
   try {
     const row = await db
       .prepare(
@@ -39,15 +43,15 @@ export async function getAccessCode(
 
     if (row) {
       // DB row exists → use code_value (even if empty)
-      return row.code_value || null
+      return { found: true, value: row.code_value || null }
     }
 
     // NO DB row → caller should check env fallback
-    return null
+    return { found: false, value: null }
   } catch (error) {
-    // DB query failed → return null so caller can try env fallback
+    // DB query failed → return not found so caller can try env fallback
     console.error(`[access-codes] DB query failed for ${property}/${codeType}/${suite}:`, error)
-    return null
+    return { found: false, value: null }
   }
 }
 
@@ -61,34 +65,49 @@ export async function resolveAccessCodes(
   property: string,
   suite?: string
 ): Promise<ResolvedAccessCodes> {
-  // Resolve gate code
-  let gateCode: string | null = await getAccessCode(db, tenantId, property, 'gate_pinpad', '')
+  // Resolve gate code (gate_pinpad with suite='')
+  const gateResult = await getAccessCode(db, tenantId, property, 'gate_pinpad', '')
+  let gateCode: string
   
-  if (gateCode === null) {
+  if (gateResult.found) {
+    // DB row exists → use value (even if empty → [ASK STAFF])
+    gateCode = gateResult.value || ACCESS_CODE_PLACEHOLDER
+  } else {
     // NO DB row → check env fallback
-    gateCode = process.env.PROPERTY_GATE_CODE?.trim() || null
+    gateCode = process.env.PROPERTY_GATE_CODE?.trim() || ACCESS_CODE_PLACEHOLDER
   }
 
-  // Resolve door code (currently same as gate for most properties)
-  let doorCode: string | null = await getAccessCode(db, tenantId, property, 'gate_pinpad', '')
+  // Resolve door code (lockbox with suite='' OR env PROPERTY_DOOR_CODE)
+  // Per spec: doorCode is separate from gate (not a duplicate gate_pinpad read)
+  const doorResult = await getAccessCode(db, tenantId, property, 'lockbox', '')
+  let doorCode: string
   
-  if (doorCode === null) {
-    doorCode = process.env.PROPERTY_DOOR_CODE?.trim() || process.env.PROPERTY_GATE_CODE?.trim() || null
+  if (doorResult.found) {
+    // DB row exists for lockbox with suite='' → use it
+    doorCode = doorResult.value || ACCESS_CODE_PLACEHOLDER
+  } else {
+    // NO DB row → check env fallback (PROPERTY_DOOR_CODE, then PROPERTY_GATE_CODE as fallback)
+    doorCode = process.env.PROPERTY_DOOR_CODE?.trim() || 
+               process.env.PROPERTY_GATE_CODE?.trim() || 
+               ACCESS_CODE_PLACEHOLDER
   }
 
   // Resolve suite-specific lockbox code (if applicable)
   let lockboxCode: string | null = null
   if (suite) {
-    lockboxCode = await getAccessCode(db, tenantId, property, 'lockbox', suite)
-    if (lockboxCode === null) {
+    const lockboxResult = await getAccessCode(db, tenantId, property, 'lockbox', suite)
+    if (lockboxResult.found) {
+      // DB row exists → use value (even if empty → [ASK STAFF])
+      lockboxCode = lockboxResult.value || ACCESS_CODE_PLACEHOLDER
+    } else {
       // NO DB row for suite-specific lockbox → fail-closed (no env fallback for lockboxes)
       lockboxCode = ACCESS_CODE_PLACEHOLDER
     }
   }
 
   return {
-    gateCode: gateCode || ACCESS_CODE_PLACEHOLDER,
-    doorCode: doorCode || ACCESS_CODE_PLACEHOLDER,
+    gateCode,
+    doorCode,
     ...(lockboxCode !== null ? { lockboxCode } : {}),
   }
 }

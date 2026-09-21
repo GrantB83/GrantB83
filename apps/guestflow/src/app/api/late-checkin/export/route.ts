@@ -1,20 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDbAsync } from '@/lib/db'
+import { resolveAccessCodes } from '@/lib/access-codes'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { tenantName, targetDate, afterHoursThreshold, lateBookings, stats, format } = body
+    const { tenantId, tenantName, targetDate, afterHoursThreshold, lateBookings, stats, format } = body
 
     if (!lateBookings || !Array.isArray(lateBookings)) {
       return NextResponse.json({ error: 'Invalid late bookings data' }, { status: 400 })
     }
 
+    // Resolve access codes for each booking server-side
+    const db = await getDbAsync()
+    const bookingsWithCodes = await Promise.all(
+      lateBookings.map(async (booking: any) => {
+        const propertyKey = booking.propertyName.toLowerCase().includes('cottage') ? 'cottage' : 'main-house'
+        const suite = booking.suiteOrUnit || booking.roomNumber || ''
+        
+        try {
+          const codes = await resolveAccessCodes(db, tenantId, propertyKey, suite || undefined)
+          return {
+            ...booking,
+            gateCode: codes.gateCode,
+            doorCode: codes.doorCode,
+            lockboxCode: codes.lockboxCode
+          }
+        } catch (error) {
+          console.error(`[late-checkin-export] Failed to resolve access codes for ${booking.guestName}:`, error)
+          return booking
+        }
+      })
+    )
+
     let content = ''
 
     if (format === 'markdown') {
-      content = generateMarkdown(tenantName, targetDate, afterHoursThreshold, lateBookings, stats)
+      content = generateMarkdown(tenantName, targetDate, afterHoursThreshold, bookingsWithCodes, stats)
     } else {
-      content = generateText(tenantName, targetDate, afterHoursThreshold, lateBookings, stats)
+      content = generateText(tenantName, targetDate, afterHoursThreshold, bookingsWithCodes, stats)
     }
 
     const contentType = format === 'markdown' ? 'text/markdown' : 'text/plain'
@@ -85,6 +109,15 @@ function generateMarkdown(
     
     if (booking.missingFields && booking.missingFields.length > 0) {
       lines.push(`- **⚠️ Missing:** ${booking.missingFields.join(', ')}`)
+    }
+    
+    // Include access codes from DB SoR (fail-closed to [ASK STAFF])
+    if (booking.gateCode || booking.doorCode || booking.lockboxCode) {
+      lines.push(``)
+      lines.push(`**Access Codes (DB SoR):**`)
+      if (booking.gateCode) lines.push(`- Gate: ${booking.gateCode}`)
+      if (booking.doorCode) lines.push(`- Door: ${booking.doorCode}`)
+      if (booking.lockboxCode) lines.push(`- Lockbox: ${booking.lockboxCode}`)
     }
     
     if (booking.notes) {
@@ -165,6 +198,15 @@ function generateText(
     
     if (booking.missingFields && booking.missingFields.length > 0) {
       lines.push(`⚠️ Missing: ${booking.missingFields.join(', ')}`)
+    }
+    
+    // Include access codes from DB SoR (fail-closed to [ASK STAFF])
+    if (booking.gateCode || booking.doorCode || booking.lockboxCode) {
+      lines.push(``)
+      lines.push(`Access Codes (DB SoR):`)
+      if (booking.gateCode) lines.push(`  Gate: ${booking.gateCode}`)
+      if (booking.doorCode) lines.push(`  Door: ${booking.doorCode}`)
+      if (booking.lockboxCode) lines.push(`  Lockbox: ${booking.lockboxCode}`)
     }
     
     if (booking.notes) {
