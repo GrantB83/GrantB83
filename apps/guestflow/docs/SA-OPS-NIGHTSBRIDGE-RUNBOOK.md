@@ -1,6 +1,6 @@
 # SA Ops Runbook: Nightsbridge → GuestFlow Data Sync
 
-**Version:** 2.0  
+**Version:** 3.0 (Phase 17 - Incremental Updates)  
 **Date:** September 2026  
 **Property:** The Browns Dullstroom (Nightsbridge Property ID 24299)  
 **Audience:** SA Operations staff
@@ -12,6 +12,12 @@
 This runbook documents how to sync bookings and rate cards from Nightsbridge to GuestFlow for guest portal access and operational packs.
 
 **Important:** This is a **one-way import**. Data flows from Nightsbridge → GuestFlow. GuestFlow does NOT write back to Nightsbridge.
+
+**Phase 17 Update (Sept 2026):** Import logic now uses **incremental updates** (UPSERT) instead of replacing all bookings. This means:
+- ✅ **Stable booking counts**: Re-importing the same file does NOT create duplicates
+- ✅ **Updates in place**: Changes in Nightsbridge (phone, notes, status) update existing bookings
+- ✅ **Soft-cancel tracking**: Bookings that disappear from Nightsbridge are marked as `cancelled` (not deleted)
+- ✅ **Import history**: Each booking tracks when it was last imported and which batch it came from
 
 ### Sync Methods
 
@@ -57,16 +63,38 @@ curl -X POST \
 **Query Parameters:**
 - `date` (optional) — Target date for status derivation (default: today, format: YYYY-MM-DD)
 
-**Response:**
+**Response (Phase 17 - Enhanced Summary):**
 ```json
 {
   "success": true,
   "targetDate": "2026-09-20",
   "parsed": 12,
-  "inserted": 12,
-  "message": "Successfully imported 12 of 12 bookings"
+  "inserted": 5,
+  "updated": 4,
+  "cancelled": 1,
+  "unchanged": 2,
+  "message": "Successfully imported 12 bookings (5 new, 4 updated, 1 cancelled, 2 unchanged)",
+  "summary": {
+    "importBatchId": "550e8400-e29b-41d4-a716-446655440000",
+    "importWindow": {
+      "minDate": "2026-09-20",
+      "maxDate": "2026-09-25"
+    }
+  },
+  "p1AutoEnqueue": {
+    "welcomeDrafts": 3,
+    "lateDrafts": 1
+  }
 }
 ```
+
+**Response Fields:**
+- `inserted`: Number of NEW bookings added
+- `updated`: Number of EXISTING bookings updated (phone, notes, status changed)
+- `cancelled`: Number of bookings soft-cancelled (missing from this import but within date window)
+- `unchanged`: Number of bookings that matched exactly (no changes needed)
+- `summary.importBatchId`: Unique ID for this import (tracks which import last touched a booking)
+- `summary.importWindow`: Date range covered by this file (min check-in to max check-out)
 
 #### Postman Setup
 
