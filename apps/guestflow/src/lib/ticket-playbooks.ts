@@ -6,9 +6,14 @@
  * - Staff brief (for Admin/staff channel, may be ready-to-post)
  * - Known Browns facts (no invention)
  * - Escalation contacts
+ * 
+ * Access codes are resolved via DB-first with env fallback.
  */
 
 import type { OutlierCategory } from './inbound-classifier'
+import type { DbClient } from './db'
+import { resolveAccessCodes } from './access-codes'
+import { ACCESS_CODE_PLACEHOLDER } from './access-codes-schema'
 
 export interface TicketPlaybook {
   category: OutlierCategory
@@ -23,6 +28,7 @@ export interface TicketPlaybook {
 /**
  * The Browns Luxury Guest Suites — Known Facts
  * DO NOT INVENT. Use these exact details or flag [ASK STAFF].
+ * Access codes are resolved dynamically via resolveAccessCodes().
  */
 const BROWNS_KNOWN_FACTS = {
   property: 'The Browns Luxury Guest Suites',
@@ -31,7 +37,6 @@ const BROWNS_KNOWN_FACTS = {
   checkOutTime: '10:00',
   emergencyContact: '[STAFF CONTACT - ASK GRANT]',
   maintenanceContact: '[MAINTENANCE CONTACT - ASK GRANT]',
-  gateCode: '[GATE CODE - ASK STAFF]',
   wifiPassword: '[WIFI PASSWORD - ASK STAFF]',
   nearbyRestaurants: [
     '[RESTAURANT 1 - ASK STAFF]',
@@ -348,8 +353,9 @@ The Browns Team`,
 
 /**
  * Generate ticket drafts from playbook
+ * Access codes are resolved via DB-first with env fallback
  */
-export function generateTicketDrafts(
+export async function generateTicketDrafts(
   category: OutlierCategory,
   context: {
     guestName?: string
@@ -359,15 +365,32 @@ export function generateTicketDrafts(
     bookingRef?: string
     issueDescription?: string
     occasionType?: string
+    db?: DbClient
+    tenantId?: number
   }
-): {
+): Promise<{
   guestReply: string
   staffBrief: string
   staffBriefReady: boolean
   priority: string
   askStaffFlags: string[]
-} {
+}> {
   const playbook = TICKET_PLAYBOOKS[category]
+  
+  // Resolve access codes if DB connection provided
+  let gateCode = ACCESS_CODE_PLACEHOLDER
+  if (context.db && context.tenantId && context.property) {
+    const propertyKey = context.property.toLowerCase().includes('cottage') 
+      ? 'cottage' 
+      : 'main-house'
+    const codes = await resolveAccessCodes(
+      context.db, 
+      context.tenantId, 
+      propertyKey, 
+      context.suiteNumber
+    )
+    gateCode = codes.gateCode
+  }
   
   // Replace template variables
   let guestReply = playbook.guestReplyTemplate
@@ -383,7 +406,7 @@ export function generateTicketDrafts(
     occasionType: context.occasionType || 'your special occasion',
     emergencyContact: BROWNS_KNOWN_FACTS.emergencyContact,
     maintenanceContact: BROWNS_KNOWN_FACTS.maintenanceContact,
-    gateCode: BROWNS_KNOWN_FACTS.gateCode,
+    gateCode,
     spareKeyLocation: BROWNS_KNOWN_FACTS.spareKeyLocation,
     timestamp: new Date().toISOString(),
     status: 'new'

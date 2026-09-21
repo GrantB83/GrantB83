@@ -141,15 +141,18 @@ export default function LateCheckinQueuePage() {
     setExporting(true)
     try {
       const exportData = {
+        tenantId: selectedTenantId,
         tenantName: activeTenant?.name || 'Demo Tenant',
         targetDate,
         afterHoursThreshold,
         lateBookings: lateBookings.map(b => ({
+          id: b.id,
           guestName: b.guest_name,
           propertyName: b.property_name,
           checkIn: b.check_in,
           checkOut: b.check_out,
           roomNumber: b.room_number || '[NOT ASSIGNED]',
+          suiteOrUnit: b.suite_or_unit,
           adults: b.adults,
           children: b.children,
           notes: b.notes || '',

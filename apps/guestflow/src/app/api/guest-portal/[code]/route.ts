@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDbAsync } from '@/lib/db'
+import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { hashToken, getStayPhase, shouldShowAccessCodes } from '@/lib/token'
+import { resolveAccessCodes } from '@/lib/access-codes'
 
 /**
  * Guest portal access via magic token
@@ -95,6 +96,16 @@ export async function GET(
     const stayPhase = getStayPhase(booking.checkInDate, booking.checkOutDate)
     const showAccessCodes = shouldShowAccessCodes(booking.checkInDate, booking.checkOutDate)
 
+    // Resolve access codes from DB-first with env fallback
+    // Extract property and suite from booking data
+    const tenantId = await getDefaultTenantIdAsync()
+    const property = booking.propertyName?.toLowerCase().includes('cottage') 
+      ? 'cottage' 
+      : 'main-house'
+    const suite = booking.suiteOrUnit || ''
+    
+    const accessCodes = await resolveAccessCodes(db, tenantId, property, suite || undefined)
+
     // Build portal data response
     // IMPORTANT: Never invent WiFi passwords, directions, phone numbers, access codes, or other details
     // Use [PLACEHOLDER] or empty string when data is missing
@@ -134,9 +145,11 @@ export async function GET(
         },
         accessCodes: {
           // Time-gated: only show from 24h before check-in through checkout
+          // DB-first resolution with env fallback, fail-closed to [ASK STAFF]
           available: showAccessCodes,
-          gateCode: showAccessCodes ? (process.env.PROPERTY_GATE_CODE || '') : '',
-          doorCode: showAccessCodes ? (process.env.PROPERTY_DOOR_CODE || '') : '',
+          gateCode: showAccessCodes ? accessCodes.gateCode : '',
+          doorCode: showAccessCodes ? accessCodes.doorCode : '',
+          lockboxCode: showAccessCodes && accessCodes.lockboxCode ? accessCodes.lockboxCode : undefined,
           message: showAccessCodes ? '' : 'Access codes will be available 24 hours before your check-in date'
         },
         checkIn: {

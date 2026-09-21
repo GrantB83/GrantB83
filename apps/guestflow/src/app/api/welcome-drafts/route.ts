@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDbAsync } from '@/lib/db'
 import { format, parseISO, addDays, isWithinInterval } from 'date-fns'
 import { generateGuestToken, calculateTokenExpiry } from '@/lib/token'
 import { getGuestPortalUrl } from '@/lib/portal-url'
+import { resolveAccessCodes } from '@/lib/access-codes'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,7 @@ interface Booking {
   check_in: string
   check_out: string
   room_number: string | null
+  suite_or_unit: string | null
   status: string
   property_id: number | null
 }
@@ -34,9 +36,18 @@ interface WelcomeDraft {
   message: string
   missingFields: string[]
   portalUrl?: string
+  gateCode?: string
+  doorCode?: string
+  lockboxCode?: string
 }
 
-function generateWelcomeMessage(booking: Booking, property: Property | null, portalUrl?: string): { message: string, missingFields: string[] } {
+async function generateWelcomeMessage(
+  booking: Booking, 
+  property: Property | null, 
+  portalUrl?: string,
+  db?: any,
+  tenantId?: number
+): Promise<{ message: string, missingFields: string[], gateCode?: string, doorCode?: string, lockboxCode?: string }> {
   const missingFields: string[] = []
   
   // Grant Law (CoS 6 Sep 2026): NEVER include [GUEST_PHONE] or [RATE CARD REQUIRED] in guest-facing WhatsApp draft bodies
@@ -55,6 +66,24 @@ function generateWelcomeMessage(booking: Booking, property: Property | null, por
   
   const propertyName = property?.name || 'Our Guesthouse'
   const location = property?.location || 'Dullstroom'
+
+  // Resolve access codes from DB (fail-closed to [ASK STAFF])
+  let gateCode: string | undefined
+  let doorCode: string | undefined
+  let lockboxCode: string | undefined
+  
+  if (db && tenantId) {
+    try {
+      const propertyKey = propertyName.toLowerCase().includes('cottage') ? 'cottage' : 'main-house'
+      const suite = booking.room_number || booking.suite_or_unit || ''
+      const codes = await resolveAccessCodes(db, tenantId, propertyKey, suite || undefined)
+      gateCode = codes.gateCode
+      doorCode = codes.doorCode
+      lockboxCode = codes.lockboxCode
+    } catch (error) {
+      console.error('[welcome-drafts] Failed to resolve access codes:', error)
+    }
+  }
   
   // Guest-facing message body: NEVER includes [GUEST_PHONE] or [RATE CARD REQUIRED] placeholders
   let message = `# Welcome Message Stub — ${booking.guest_name}
@@ -82,6 +111,16 @@ ${portalUrl}
 (All check-in details, Wi-Fi, access codes, and property info are in your portal)`
   }
 
+  // Add access codes section (from SoR)
+  if (gateCode || doorCode || lockboxCode) {
+    message += `
+
+📍 Access Information:
+${gateCode ? `- Gate Code: ${gateCode}` : ''}
+${doorCode ? `- Door Code: ${doorCode}` : ''}
+${lockboxCode ? `- Lockbox Code (${booking.room_number || 'your suite'}): ${lockboxCode}` : ''}`
+  }
+
   message += `
 
 If you have any questions or special requests ahead of your stay, please don't hesitate to reach out.
@@ -90,7 +129,7 @@ Warm regards,
 The GuestFlow Team
 ${location}`
 
-  return { message, missingFields }
+  return { message, missingFields, gateCode, doorCode, lockboxCode }
 }
 
 export async function GET(request: NextRequest) {
@@ -100,14 +139,14 @@ export async function GET(request: NextRequest) {
     const asOfDate = searchParams.get('as_of') || format(new Date(), 'yyyy-MM-dd')
     const windowDays = parseInt(searchParams.get('window_days') || '1')
 
-    const db = getDb()
+    const db = await getDbAsync()
     
     // Calculate date range
     const startDate = parseISO(asOfDate)
     const endDate = addDays(startDate, windowDays)
     
     // Fetch bookings within the window
-    const bookings = db.prepare(`
+    const bookings = await db.prepare(`
       SELECT * FROM bookings 
       WHERE tenant_id = ? 
       AND check_in >= ? 
@@ -116,7 +155,7 @@ export async function GET(request: NextRequest) {
     `).all(tenantId, asOfDate, format(endDate, 'yyyy-MM-dd')) as Booking[]
 
     // Fetch properties for this tenant
-    const properties = db.prepare(`
+    const properties = await db.prepare(`
       SELECT * FROM properties WHERE tenant_id = ?
     `).all(tenantId) as Property[]
 
@@ -139,7 +178,7 @@ export async function GET(request: NextRequest) {
       let portalUrl: string | undefined = undefined
       try {
         // Revoke any existing active tokens for this booking
-        db.prepare(`
+        await db.prepare(`
           UPDATE guest_tokens 
           SET revoked = 1 
           WHERE booking_id = ? AND revoked = 0
@@ -154,7 +193,7 @@ export async function GET(request: NextRequest) {
           : calculateTokenExpiry(addDays(parseISO(booking.check_in), 14).toISOString().split('T')[0])
         
         // Store token hash in database
-        db.prepare(`
+        await db.prepare(`
           INSERT INTO guest_tokens (booking_id, token_hash, expires_at)
           VALUES (?, ?, ?)
         `).run(booking.id, hash, expiryDate.toISOString())
@@ -167,7 +206,13 @@ export async function GET(request: NextRequest) {
         // Continue generating draft but mark portal_url as missing
       }
       
-      const { message, missingFields } = generateWelcomeMessage(booking, property || null, portalUrl)
+      const { message, missingFields, gateCode, doorCode, lockboxCode } = await generateWelcomeMessage(
+        booking, 
+        property || null, 
+        portalUrl,
+        db,
+        tenantId
+      )
       
       // Add portal_url to missingFields if generation failed
       if (!portalUrl) {
@@ -183,7 +228,10 @@ export async function GET(request: NextRequest) {
         roomNumber: booking.room_number,
         message,
         missingFields,
-        portalUrl
+        portalUrl,
+        gateCode,
+        doorCode,
+        lockboxCode
       })
     }
 
