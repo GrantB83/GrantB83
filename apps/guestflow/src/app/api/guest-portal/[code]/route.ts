@@ -149,7 +149,7 @@ export async function GET(
           available: showAccessCodes,
           gateCode: showAccessCodes ? accessCodes.gateCode : '',
           doorCode: showAccessCodes ? accessCodes.doorCode : '',
-          lockboxCode: showAccessCodes && accessCodes.lockboxCode ? accessCodes.lockboxCode : undefined,
+          lockboxCode: showAccessCodes && accessCodes.lockboxCode ? accessCodes.lockboxCode : '',
           message: showAccessCodes ? '' : 'Access codes will be available 24 hours before your check-in date'
         },
         checkIn: {
