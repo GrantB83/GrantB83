@@ -47,7 +47,7 @@ async function generateWelcomeMessage(
   portalUrl?: string,
   db?: any,
   tenantId?: number
-): Promise<{ message: string, missingFields: string[], gateCode?: string, doorCode?: string, lockboxCode?: string }> {
+): Promise<{ message: string, missingFields: string[], gateCode?: string, doorCode?: string, lockboxCode?: string, wifiNetwork?: string, wifiPassword?: string }> {
   const missingFields: string[] = []
   
   // Grant Law (CoS 6 Sep 2026): NEVER include [GUEST_PHONE] or [RATE CARD REQUIRED] in guest-facing WhatsApp draft bodies
@@ -86,10 +86,13 @@ async function generateWelcomeMessage(
     ? (process.env.PROPERTY_PARKING_COTTAGE || 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.')
     : process.env.PROPERTY_PARKING_MAIN
 
+  
   // Resolve access codes from DB (fail-closed to [ASK STAFF])
   let gateCode: string | undefined
   let doorCode: string | undefined
   let lockboxCode: string | undefined
+  let wifiNetwork: string | undefined
+  let wifiPassword: string | undefined
   
   if (db && tenantId) {
     try {
@@ -99,14 +102,16 @@ async function generateWelcomeMessage(
       gateCode = codes.gateCode
       doorCode = codes.doorCode
       lockboxCode = codes.lockboxCode
+      wifiNetwork = codes.wifi.network
+      wifiPassword = codes.wifi.password
     } catch (error) {
       console.error('[welcome-drafts] Failed to resolve access codes:', error)
     }
   }
   
-  // WiFi from environment (fail to placeholder)
-  const wifiPassword = process.env.WIFI_PASSWORD || '[WIFI]'
-  if (!process.env.WIFI_PASSWORD || process.env.WIFI_PASSWORD.trim() === '') {
+  // WiFi from SoR with fallback to env (fail to placeholder)
+  const wifiPasswordDisplay = wifiPassword || process.env.WIFI_PASSWORD || '[WIFI]'
+  if (!wifiPassword && (!process.env.WIFI_PASSWORD || process.env.WIFI_PASSWORD.trim() === '')) {
     missingFields.push('wifi_password')
   }
   
@@ -134,7 +139,7 @@ Thank you for choosing ${propertyDisplayName}! ✨
   
   message += `
 
-📶 WiFi Password: ${wifiPassword}
+📶 WiFi Password: ${wifiPasswordDisplay}
 
 🛏️ Suite you booked: ${suiteName}.
 
@@ -189,7 +194,7 @@ ${portalUrl}
 Kind regards,
 Grant & Liana Brown`
 
-  return { message, missingFields, gateCode, doorCode, lockboxCode }
+  return { message, missingFields, gateCode, doorCode, lockboxCode, wifiNetwork, wifiPassword }
 }
 
 export async function GET(request: NextRequest) {

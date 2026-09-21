@@ -53,7 +53,7 @@ describe('Access Codes Resolution Logic', () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_id INTEGER NOT NULL DEFAULT 1,
         property TEXT NOT NULL,
-        code_type TEXT NOT NULL CHECK(code_type IN ('gate_pinpad', 'lockbox')),
+        code_type TEXT NOT NULL CHECK(code_type IN ('gate_pinpad', 'lockbox', 'wifi_network', 'wifi_password')),
         suite TEXT NOT NULL DEFAULT '',
         code_value TEXT NOT NULL,
         last_updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -93,6 +93,8 @@ describe('Access Codes Resolution Logic', () => {
     // Clear env vars
     delete process.env.PROPERTY_GATE_CODE
     delete process.env.PROPERTY_DOOR_CODE
+    delete process.env.WIFI_NETWORK
+    delete process.env.WIFI_PASSWORD
   })
 
   describe('getAccessCode', () => {
@@ -417,6 +419,129 @@ describe('Access Codes Resolution Logic', () => {
       expect(codes[0].property).toBe('cottage')
       expect(codes[1].property).toBe('cottage')
       expect(codes[2].property).toBe('main-house')
+    })
+  })
+
+  describe('WiFi SoR Resolution', () => {
+    it('returns DB WiFi when rows exist', async () => {
+      // Insert WiFi credentials in DB
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_network', '', 'CottageTestNet', 'staff-1')
+
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_password', '', '[REDACTED]', 'staff-1')
+
+      const result = await resolveAccessCodes(db, 1, 'cottage')
+
+      expect(result.wifi.network).toBe('CottageTestNet')
+      expect(result.wifi.password).toBe('[REDACTED]')
+    })
+
+    it('returns empty DB row as [ASK STAFF] (not env fallback)', async () => {
+      // Insert empty WiFi password in DB
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_password', '', '', 'staff-1')
+
+      // Set env var (should be ignored because DB row exists)
+      process.env.WIFI_PASSWORD = 'EnvShouldBeIgnored'
+
+      const result = await resolveAccessCodes(db, 1, 'cottage')
+
+      // Empty DB row → [ASK STAFF], NOT env fallback
+      expect(result.wifi.password).toBe(ACCESS_CODE_PLACEHOLDER)
+    })
+
+    it('returns env fallback when NO DB row exists', async () => {
+      // NO DB row for WiFi
+      // Set env vars
+      process.env.WIFI_NETWORK = 'EnvFallbackNet'
+      process.env.WIFI_PASSWORD = '[REDACTED]'
+
+      const result = await resolveAccessCodes(db, 1, 'cottage')
+
+      expect(result.wifi.network).toBe('EnvFallbackNet')
+      expect(result.wifi.password).toBe('[REDACTED]')
+    })
+
+    it('returns [ASK STAFF] when both DB and env are empty', async () => {
+      // NO DB row, NO env vars
+      const result = await resolveAccessCodes(db, 1, 'cottage')
+
+      expect(result.wifi.network).toBe(ACCESS_CODE_PLACEHOLDER)
+      expect(result.wifi.password).toBe(ACCESS_CODE_PLACEHOLDER)
+    })
+
+    it('handles multiple properties independently', async () => {
+      // Cottage has DB WiFi
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_network', '', 'CottageNet', 'staff-1')
+
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_password', '', '[REDACTED]', 'staff-1')
+
+      // Main-house has NO DB WiFi, set env fallback
+      process.env.WIFI_NETWORK = 'MainEnvNet'
+      process.env.WIFI_PASSWORD = '[REDACTED]'
+
+      const cottageResult = await resolveAccessCodes(db, 1, 'cottage')
+      const mainResult = await resolveAccessCodes(db, 1, 'main-house')
+
+      // Cottage uses DB (env ignored)
+      expect(cottageResult.wifi.network).toBe('CottageNet')
+      
+      // Main-house uses env fallback (no DB row)
+      expect(mainResult.wifi.network).toBe('MainEnvNet')
+    })
+
+    it('never prints plaintext passwords in test output', async () => {
+      // All password fixtures use [REDACTED] or ****
+      await db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value, last_updated_at, last_updated_by)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+      ).run(1, 'cottage', 'wifi_password', '', '[REDACTED]', 'staff-1')
+
+      const result = await resolveAccessCodes(db, 1, 'cottage')
+
+      // Test output never contains real-looking passwords
+      expect(result.wifi.password).toMatch(/\[REDACTED\]|\*\*\*\*|\[ASK STAFF\]/)
+      
+      // Verify no accidental plaintext leaks
+      const resultStr = JSON.stringify(result)
+      expect(resultStr).not.toMatch(/password123|secret|admin/i)
+    })
+
+    it('upserts WiFi credentials and creates audit log', async () => {
+      const result = await upsertAccessCode(
+        db, 1, 'cottage', 'wifi_password', '', '[REDACTED]', 'staff-wifi'
+      )
+
+      expect(result.success).toBe(true)
+
+      // Verify audit log entry (metadata only, no password)
+      const logs = await getAuditLog(db, 1)
+      expect(logs.length).toBe(1)
+      expect(logs[0].code_type).toBe('wifi_password')
+      expect(logs[0].changed_by).toBe('staff-wifi')
+      
+      // Audit log must NOT contain plaintext password
+      const logsStr = JSON.stringify(logs)
+      expect(logsStr).not.toContain('[REDACTED]')
     })
   })
 })

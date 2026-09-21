@@ -163,11 +163,10 @@ export async function GET(
       },
       stayPacket: {
         wifi: {
-          // IMPORTANT: WiFi credentials should be stored in environment variables
-          // or property-specific configuration. Never hardcode or invent.
-          // Empty string will trigger [WIFI DETAILS PENDING] message in UI
-          network: process.env.WIFI_NETWORK || '',
-          password: process.env.WIFI_PASSWORD || ''
+          // WiFi credentials from DB-first resolution with env fallback
+          // Use resolved WiFi from access codes SoR
+          network: accessCodes.wifi.network,
+          password: accessCodes.wifi.password
         },
         accessCodes: {
           // Time-gated: only show from 24h before check-in through checkout

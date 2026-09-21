@@ -3,14 +3,20 @@
  *
  * DB-first with env fallback, fail-closed to [ASK STAFF].
  * Never invent codes. Redact live codes in logs/tests.
+ *
+ * Supported code_type values:
+ * - 'gate_pinpad': Gate entry codes (suite='')
+ * - 'lockbox': Suite-specific lockbox codes (suite=actual name)
+ * - 'wifi_network': WiFi network name/SSID per property (suite='')
+ * - 'wifi_password': WiFi password per property (suite='')
  */
 
 export interface PropertyAccessCode {
   id: number
   tenant_id: number
   property: string // 'cottage' | 'main-house'
-  code_type: 'gate_pinpad' | 'lockbox'
-  suite: string // '' (empty string) for gates, actual suite name for lockboxes
+  code_type: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password'
+  suite: string // '' (empty string) for gates and WiFi, actual suite name for lockboxes
   code_value: string
   last_updated_at: string // ISO datetime
   last_updated_by: string | null
@@ -21,8 +27,8 @@ export interface AccessCodeAuditLog {
   id: number
   tenant_id: number
   property: string
-  code_type: 'gate_pinpad' | 'lockbox'
-  suite: string // '' for gates, suite name for lockboxes
+  code_type: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password'
+  suite: string // '' for gates and WiFi, suite name for lockboxes
   action: 'create' | 'update'
   changed_at: string // ISO datetime
   changed_by: string | null
@@ -33,12 +39,16 @@ export interface ResolvedAccessCodes {
   gateCode: string // DB value, env fallback, or '[ASK STAFF]'
   doorCode: string // DB value, env fallback, or '[ASK STAFF]'
   lockboxCode?: string // Suite-specific lockbox code (if applicable)
+  wifi: {
+    network: string // DB value, env fallback, or '[ASK STAFF]'
+    password: string // DB value, env fallback, or '[ASK STAFF]'
+  }
 }
 
 export interface AccessCodeUpsertRequest {
   property: string
-  code_type: 'gate_pinpad' | 'lockbox'
-  suite: string // '' for gates, actual suite name for lockboxes
+  code_type: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password'
+  suite: string // '' for gates and WiFi, actual suite name for lockboxes
   code: string
 }
 

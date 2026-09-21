@@ -61,7 +61,7 @@ export async function getAccessCode(
   db: DbClient,
   tenantId: number,
   property: string,
-  codeType: 'gate_pinpad' | 'lockbox',
+  codeType: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password',
   suite: string = ''
 ): Promise<{ found: boolean; value: string | null }> {
   try {
@@ -150,10 +150,32 @@ export async function resolveAccessCodes(
     }
   }
 
+  // Resolve WiFi network (wifi_network with suite='')
+  const wifiNetworkResult = await getAccessCode(db, tenantId, property, 'wifi_network', '')
+  let wifiNetwork: string
+  if (wifiNetworkResult.found) {
+    wifiNetwork = wifiNetworkResult.value || ACCESS_CODE_PLACEHOLDER
+  } else {
+    wifiNetwork = process.env.WIFI_NETWORK?.trim() || ACCESS_CODE_PLACEHOLDER
+  }
+
+  // Resolve WiFi password (wifi_password with suite='')
+  const wifiPasswordResult = await getAccessCode(db, tenantId, property, 'wifi_password', '')
+  let wifiPassword: string
+  if (wifiPasswordResult.found) {
+    wifiPassword = wifiPasswordResult.value || ACCESS_CODE_PLACEHOLDER
+  } else {
+    wifiPassword = process.env.WIFI_PASSWORD?.trim() || ACCESS_CODE_PLACEHOLDER
+  }
+
   return {
     gateCode,
     doorCode,
     ...(lockboxCode !== null ? { lockboxCode } : {}),
+    wifi: {
+      network: wifiNetwork,
+      password: wifiPassword,
+    },
   }
 }
 
@@ -164,7 +186,7 @@ export async function upsertAccessCode(
   db: DbClient,
   tenantId: number,
   property: string,
-  codeType: 'gate_pinpad' | 'lockbox',
+  codeType: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password',
   suite: string,
   codeValue: string,
   staffId: string

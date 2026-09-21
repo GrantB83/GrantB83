@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['gate_pinpad', 'lockbox'].includes(code_type)) {
+    if (!['gate_pinpad', 'lockbox', 'wifi_network', 'wifi_password'].includes(code_type)) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'code_type must be gate_pinpad or lockbox' 
+          error: 'code_type must be gate_pinpad, lockbox, wifi_network, or wifi_password' 
         },
         { status: 400 }
       )
