@@ -225,6 +225,20 @@ export async function POST(request: NextRequest) {
             booking.notes = value
           } else if (header.includes('night')) {
             booking.nights = parseInt(value) || 0
+          } else if (header.includes('phonenumber') || header.includes('phone')) {
+            // Map phone number columns: "phonenumber" → guestPhone, "phonenumber2" or "phonenumber*2" → guestPhone2
+            if (header.includes('2') || header.includes('*2')) {
+              booking.guestPhone2 = value
+            } else {
+              booking.guestPhone = value
+            }
+          } else if (header.includes('email')) {
+            // Map email columns: "email" → guestEmail, "email2" or "email*2" → guestEmail2
+            if (header.includes('2') || header.includes('*2')) {
+              booking.guestEmail2 = value
+            } else {
+              booking.guestEmail = value
+            }
           }
         })
 
