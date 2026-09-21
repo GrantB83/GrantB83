@@ -29,12 +29,19 @@ export default function ArrivalsDeparturesPage() {
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState<number | null>(null)
   
-  // Default date range: today to +7 days (Africa/Johannesburg timezone handled by browser)
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const defaultTo = format(addDays(new Date(), 7), 'yyyy-MM-dd')
+  // Default date range: SAST today to SAST today+7 days
+  // Computed in Africa/Johannesburg timezone (not browser local)
+  const getSASTDate = (daysOffset = 0) => {
+    const now = new Date()
+    const sastDate = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Johannesburg' }))
+    if (daysOffset > 0) {
+      sastDate.setDate(sastDate.getDate() + daysOffset)
+    }
+    return format(sastDate, 'yyyy-MM-dd')
+  }
   
-  const [fromDate, setFromDate] = useState(today)
-  const [toDate, setToDate] = useState(defaultTo)
+  const [fromDate, setFromDate] = useState(getSASTDate(0))
+  const [toDate, setToDate] = useState(getSASTDate(7))
   const [includeCancelled, setIncludeCancelled] = useState(false)
 
   useEffect(() => {
@@ -50,22 +57,16 @@ export default function ArrivalsDeparturesPage() {
       }
       params.set('from', fromDate)
       params.set('to', toDate)
+      if (includeCancelled) {
+        params.set('include_cancelled', '1')
+      }
       
       const res = await fetch(`/api/ops/arrivals-departures?${params}`)
       const data = await res.json()
       
       if (res.ok) {
-        let arrivalsData = data.arrivals || []
-        let departuresData = data.departures || []
-        
-        // Client-side filter for cancelled if not included
-        if (!includeCancelled) {
-          arrivalsData = arrivalsData.filter((b: Booking) => b.status !== 'cancelled')
-          departuresData = departuresData.filter((b: Booking) => b.status !== 'cancelled')
-        }
-        
-        setArrivals(arrivalsData)
-        setDepartures(departuresData)
+        setArrivals(data.arrivals || [])
+        setDepartures(data.departures || [])
       }
     } catch (err) {
       // Never log PII

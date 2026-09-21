@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const tenantId = searchParams.get('tenant_id')
     const from = searchParams.get('from')
     const to = searchParams.get('to')
+    const includeCancelled = searchParams.get('include_cancelled') === '1' || searchParams.get('include_cancelled') === 'true'
 
     if (!from || !to) {
       return NextResponse.json(
@@ -52,9 +53,11 @@ export async function GET(req: NextRequest) {
     arrivalsQuery += ' AND b.check_in >= ? AND b.check_in <= ?'
     arrivalsParams.push(from, to)
 
-    // Exclude cancelled by default
-    arrivalsQuery += ' AND b.status != ?'
-    arrivalsParams.push('cancelled')
+    // Exclude cancelled by default (unless include_cancelled=1)
+    if (!includeCancelled) {
+      arrivalsQuery += ' AND b.status != ?'
+      arrivalsParams.push('cancelled')
+    }
 
     // Sort by check_in ASC, then property, then suite
     arrivalsQuery += ' ORDER BY b.check_in ASC, b.property_name ASC, b.suite_or_unit ASC'
@@ -72,9 +75,11 @@ export async function GET(req: NextRequest) {
     departuresQuery += ' AND b.check_out >= ? AND b.check_out <= ?'
     departuresParams.push(from, to)
 
-    // Exclude cancelled by default
-    departuresQuery += ' AND b.status != ?'
-    departuresParams.push('cancelled')
+    // Exclude cancelled by default (unless include_cancelled=1)
+    if (!includeCancelled) {
+      departuresQuery += ' AND b.status != ?'
+      departuresParams.push('cancelled')
+    }
 
     // Sort by check_out ASC, then property, then suite
     departuresQuery += ' ORDER BY b.check_out ASC, b.property_name ASC, b.suite_or_unit ASC'
