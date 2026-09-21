@@ -392,43 +392,57 @@ export function getDb(): Database.Database {
  * Pattern: Same as migrate-outbound-redirect.js
  */
 async function ensurePhase17Columns(db: DbClient): Promise<void> {
-  try {
-    // Check if bookings table exists
-    const tables = await db.prepare(`
-      SELECT name FROM sqlite_master 
-      WHERE type='table' AND name='bookings'
-    `).all()
-    
-    if (tables.length === 0) {
-      // Table doesn't exist yet, will be created with full schema
-      return
-    }
+  // Check if bookings table exists
+  const tables = await db.prepare(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name='bookings'
+  `).all()
+  
+  if (tables.length === 0) {
+    // Table doesn't exist yet, will be created with full schema
+    return
+  }
 
-    // Get current columns
-    const columns = await db.prepare(`PRAGMA table_info(bookings)`).all() as Array<{ name: string }>
-    const columnNames = new Set(columns.map(c => c.name))
+  // Get current columns
+  const columns = await db.prepare(`PRAGMA table_info(bookings)`).all() as Array<{ name: string }>
+  const columnNames = new Set(columns.map(c => c.name))
 
-    // Phase 17 columns to add
-    const phase17Columns = [
-      { name: 'guest_name_norm', type: 'TEXT' },
-      { name: 'suite_or_unit_norm', type: 'TEXT' },
-      { name: 'nightsbridge_booking_id', type: 'TEXT' },
-      { name: 'last_import_at', type: 'DATETIME' },
-      { name: 'import_batch_id', type: 'TEXT' },
-      { name: 'source', type: 'TEXT', default: "'nb'" },
-      { name: 'last_seen_import_at', type: 'DATETIME' },
-      { name: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
-    ]
+  // Phase 17 columns to add
+  // Critical columns MUST succeed (fail-closed); non-critical MAY fail
+  const phase17Columns = [
+    { name: 'guest_name_norm', type: 'TEXT', critical: true },
+    { name: 'suite_or_unit_norm', type: 'TEXT', critical: true },
+    { name: 'nightsbridge_booking_id', type: 'TEXT', critical: true },
+    { name: 'last_import_at', type: 'DATETIME', critical: true },
+    { name: 'import_batch_id', type: 'TEXT', critical: true },
+    { name: 'source', type: 'TEXT', default: "'nb'", critical: true },
+    { name: 'last_seen_import_at', type: 'DATETIME', critical: true },
+    { name: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP', critical: true },
+  ]
 
-    for (const col of phase17Columns) {
-      if (!columnNames.has(col.name)) {
+  const failedCriticalColumns: string[] = []
+
+  for (const col of phase17Columns) {
+    if (!columnNames.has(col.name)) {
+      try {
         const defaultClause = col.default ? ` DEFAULT ${col.default}` : ''
         await db.exec(`ALTER TABLE bookings ADD COLUMN ${col.name} ${col.type}${defaultClause}`)
         console.log(`[ensurePhase17Columns] Added column: bookings.${col.name}`)
+      } catch (error: any) {
+        const message = `Failed to add column ${col.name}: ${error.message}`
+        console.error(`[ensurePhase17Columns] ${message}`)
+        
+        if (col.critical) {
+          // Critical column failure: collect error and fail at end
+          failedCriticalColumns.push(col.name)
+        }
+        // Non-critical columns: log but continue
       }
     }
+  }
 
-    // Create indexes if they don't exist (Turso supports CREATE INDEX IF NOT EXISTS)
+  // Create indexes if they don't exist (Turso supports CREATE INDEX IF NOT EXISTS)
+  try {
     await db.exec(`
       CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_nbid 
       ON bookings(tenant_id, nightsbridge_booking_id) 
@@ -439,12 +453,20 @@ async function ensurePhase17Columns(db: DbClient): Promise<void> {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_natural_key 
       ON bookings(tenant_id, guest_name_norm, check_in, check_out, suite_or_unit_norm)
     `)
-
-    console.log('[ensurePhase17Columns] Phase 17 schema migration complete')
   } catch (error: any) {
-    console.error('[ensurePhase17Columns] Migration failed:', error.message)
-    // Don't throw - allow app to continue if columns might already exist
+    console.error('[ensurePhase17Columns] Index creation failed (non-critical):', error.message)
+    // Index creation failures are non-critical if columns exist
   }
+
+  // Fail-closed: if any critical column failed, throw
+  if (failedCriticalColumns.length > 0) {
+    throw new Error(
+      `[ensurePhase17Columns] CRITICAL: Failed to add required columns: ${failedCriticalColumns.join(', ')}. ` +
+      'Production UPSERT operations will fail without these columns. Check DB permissions and schema state.'
+    )
+  }
+
+  console.log('[ensurePhase17Columns] Phase 17 schema migration complete')
 }
 
 export async function getDbAsync(): Promise<DbClient> {
