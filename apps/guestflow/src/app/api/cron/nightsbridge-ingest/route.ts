@@ -277,17 +277,47 @@ export async function POST(request: NextRequest) {
     // 5. Save to database (async for Production Turso compatibility)
     const db = await getDbAsync()
     
-    // Get Browns tenant ID (hardcoded as per existing codebase)
-    const tenant = await db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
+    // Get Browns tenant ID with robust resolution strategy
+    const KNOWN_ALIASES = [
+      'Browns Dullstroom',
+      'The Browns Luxury Guest Suites (Dullstroom)',
+      'The Browns Dullstroom'
+    ]
+    
+    // Try exact match on known aliases
+    let tenant: any = null
+    for (const alias of KNOWN_ALIASES) {
+      tenant = await db.prepare('SELECT id, name FROM tenants WHERE name = ?').get(alias)
+      if (tenant) break
+    }
+    
+    // Fallback: LIKE pattern for Browns + Dullstroom
+    if (!tenant) {
+      const candidates = await db.prepare(
+        "SELECT id, name FROM tenants WHERE name LIKE '%Browns%' AND name LIKE '%Dullstroom%'"
+      ).all()
+      
+      if (candidates.results && candidates.results.length === 1) {
+        tenant = candidates.results[0]
+      } else if (candidates.results && candidates.results.length > 1) {
+        // Multiple matches - prefer the one with full suite name or use id=1
+        tenant = candidates.results.find((t: any) => t.id === 1) || candidates.results[0]
+      }
+    }
+    
+    // Final fallback: If no tenant found, try id=1 (confirmed single Browns tenant in production)
+    if (!tenant) {
+      tenant = await db.prepare('SELECT id, name FROM tenants WHERE id = ?').get(1)
+    }
     
     if (!tenant) {
       return NextResponse.json(
-        { error: 'Browns Dullstroom tenant not found in database' },
+        { error: 'Browns Dullstroom tenant not found in database. No tenant with id=1 exists.' },
         { status: 500 }
       )
     }
 
-    const tenantId = (tenant as any).id
+    const tenantId = tenant.id
 
     // Phase 17: Replace INSERT OR REPLACE with UPSERT logic
     const importBatchId = randomUUID()
