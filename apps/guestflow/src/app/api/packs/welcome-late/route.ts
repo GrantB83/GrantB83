@@ -95,19 +95,53 @@ function generatePackMd(bookings: any[], date: string, timestamp: string): strin
         lines.push('')
       }
       
-      lines.push('**Draft Message:**')
+      // Determine property type (cottage vs main-house)
+      const propertyNameLower = (booking.propertyName || '').toLowerCase()
+      const suiteLower = (booking.suiteOrUnit || '').toLowerCase()
+      const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
+      
+      const propertyDisplayName = isCottage 
+        ? "The Browns' Cottage Suites"
+        : "The Browns' Luxury Suites"
+      
+      const propertyAddress = isCottage
+        ? '278 Blue Crane Drive, Dullstroom'
+        : '279 Blue Crane Drive, Dullstroom'
+      
+      const mapsUrl = isCottage
+        ? 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8'
+        : '[MAPS URL TBD]'
+      
+      const parkingInstructions = isCottage
+        ? 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.'
+        : '[PARKING TBD]'
+      
+      lines.push('**Draft Message (Cottage Falcon v1):**')
       lines.push('```')
-      lines.push(`Welcome to Browns ${booking.propertyName || 'Dullstroom'}!`)
+      lines.push('Hi there! 🌟')
       lines.push('')
-      lines.push(`Check-in: ${booking.checkInDate}`)
-      lines.push(`Check-out: ${booking.checkOutDate || '[TBD]'}`)
+      lines.push("Hope you're well. We're excited to welcome you to Dullstroom soon! 🎉")
       lines.push('')
-      lines.push('Details:')
-      lines.push('- Wi-Fi: [NEVER INVENT - CoS provides]')
-      lines.push('- Parking: [NEVER INVENT - CoS provides]')
-      lines.push('- Access: [NEVER INVENT - CoS provides]')
+      lines.push(`Thank you for choosing ${propertyDisplayName}! ✨`)
       lines.push('')
-      lines.push('Looking forward to your arrival!')
+      lines.push('🕒 Check-in Time: From 14:00')
+      lines.push(`📍 Address: ${propertyAddress}`)
+      lines.push(`🔗 Navigation Link (Google Maps): ${mapsUrl}`)
+      lines.push('')
+      lines.push('📶 WiFi Password: [WIFI]')
+      lines.push('')
+      lines.push(`🛏️ Suite you booked: ${booking.suiteOrUnit || '[SUITE NAME]'}.`)
+      lines.push('')
+      lines.push('🛑 Gate: Once the gate has opened please drive through. Do not wait in the gate.')
+      lines.push(`🚗 Parking: ${parkingInstructions}`)
+      lines.push('')
+      lines.push("🙋 Our housekeepers are available next door at The Browns' Luxury Suites (279 Blue Crane Drive) until 5 PM. They will be expecting you and will gladly show you to your room. After 5 PM, we will give you our self-check-in details.")
+      lines.push('⚡ Loadshedding: Currently no planned loadshedding.')
+      lines.push('')
+      lines.push('📞 If you need any assistance or guidance, feel free to contact us at stay@thebrowns.co.za.')
+      lines.push('')
+      lines.push('Kind regards,')
+      lines.push('Grant & Liana Brown')
       lines.push('```')
       lines.push('')
     })
