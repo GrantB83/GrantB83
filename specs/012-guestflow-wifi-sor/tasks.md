@@ -47,11 +47,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Update `apps/guestflow/src/app/ops/access-codes/page.tsx` to fetch WiFi rows (code_type `wifi_network` and `wifi_password`) for each property alongside existing gate/lockbox codes
-- [ ] T009 [US1] Update `apps/guestflow/src/app/ops/access-codes/AccessCodesManager.tsx` (client component) to add WiFi section per property: (1) Network name text input (plaintext, always visible), (2) Password input (masked by default, `type="password"`), (3) Reveal toggle button for password, (4) Save button per WiFi credential or single save per property
-- [ ] T010 [US1] Verify `apps/guestflow/src/app/api/ops/access-codes/upsert/route.ts` accepts `code_type='wifi_network'` and `'wifi_password'` (validation: non-empty after trim, max 32 chars for network, min 8 max 63 chars for password)
-- [ ] T011 [US1] Verify `upsertAccessCode()` in `apps/guestflow/src/lib/access-codes.ts` handles WiFi code types correctly (upsert into `property_access_codes` with `suite=''`, insert audit log entry with property, code_type, changed_at, changed_by, metadata only no plaintext password)
-- [ ] T012 [US1] Verify audit log at `/ops/access-codes` displays WiFi changes with property, code_type, timestamp, staff ID, NO plaintext passwords
+- [x] T008 [P] [US1] Update `apps/guestflow/src/app/ops/access-codes/page.tsx` to fetch WiFi rows (code_type `wifi_network` and `wifi_password`) for each property alongside existing gate/lockbox codes
+- [x] T009 [US1] Update `apps/guestflow/src/app/ops/access-codes/AccessCodesManager.tsx` (client component) to add WiFi section per property: (1) Network name text input (plaintext, always visible), (2) Password input (masked by default, `type="password"`), (3) Reveal toggle button for password, (4) Save button per WiFi credential or single save per property
+- [x] T010 [US1] Verify `apps/guestflow/src/app/api/ops/access-codes/upsert/route.ts` accepts `code_type='wifi_network'` and `'wifi_password'` (validation: non-empty after trim, max 32 chars for network, min 8 max 63 chars for password)
+- [x] T011 [US1] Verify `upsertAccessCode()` in `apps/guestflow/src/lib/access-codes.ts` handles WiFi code types correctly (upsert into `property_access_codes` with `suite=''`, insert audit log entry with property, code_type, changed_at, changed_by, metadata only no plaintext password)
+- [x] T012 [US1] Verify audit log at `/ops/access-codes` displays WiFi changes with property, code_type, timestamp, staff ID, NO plaintext passwords
 
 **Checkpoint**: Staff can edit WiFi via UI, audit log records changes with metadata only
 
