@@ -5,7 +5,7 @@
  * and window-based soft-cancel for disappeared bookings.
  */
 
-import type { Database as SqliteDatabase } from 'better-sqlite3'
+import type { DbClient } from '@/lib/db'
 import { format } from 'date-fns'
 
 /**
@@ -83,18 +83,18 @@ export function normalizeSuite(suite: string): string {
 /**
  * Upsert a single booking using durable identity (nbid + natural key fallback)
  * 
- * @param db - SQLite database instance
+ * @param db - Database client (async-compatible)
  * @param booking - Parsed booking from Nightsbridge
  * @param tenantId - Tenant ID
  * @param batchId - Import batch UUID
  * @returns UpsertResult with action and id
  */
-export function upsertBooking(
-  db: SqliteDatabase,
+export async function upsertBooking(
+  db: DbClient,
   booking: ParsedBooking,
   tenantId: number,
   batchId: string
-): UpsertResult {
+): Promise<UpsertResult> {
   const guestNameNorm = normalizeGuestName(booking.guestName)
   const suiteOrUnitNorm = normalizeSuite(booking.suiteOrUnit)
   
@@ -104,7 +104,7 @@ export function upsertBooking(
   let existingBooking: any = null
   
   if (booking.bookingId) {
-    existingBooking = db.prepare(`
+    existingBooking = await db.prepare(`
       SELECT id, guest_phone, status, adults, children, notes, late_check_in 
       FROM bookings 
       WHERE tenant_id = ? AND nightsbridge_booking_id = ?
@@ -113,7 +113,7 @@ export function upsertBooking(
 
   // Fallback: Try to find by natural key
   if (!existingBooking) {
-    existingBooking = db.prepare(`
+    existingBooking = await db.prepare(`
       SELECT id, guest_phone, status, adults, children, notes, late_check_in 
       FROM bookings 
       WHERE tenant_id = ? 
@@ -140,7 +140,7 @@ export function upsertBooking(
     }
 
     // Update existing booking (mutable fields only)
-    db.prepare(`
+    await db.prepare(`
       UPDATE bookings
       SET guest_phone = ?,
           status = ?,
@@ -170,7 +170,7 @@ export function upsertBooking(
     return { action: 'updated', id: existingBooking.id }
   } else {
     // Insert new booking
-    const result = db.prepare(`
+    const result: any = await db.prepare(`
       INSERT INTO bookings (
         tenant_id, 
         guest_name, 
@@ -248,22 +248,22 @@ export function determineImportWindow(parsedBookings: ParsedBooking[]): ImportWi
 /**
  * Soft-cancel bookings that disappeared from the import window
  * 
- * @param db - SQLite database instance
+ * @param db - Database client (async-compatible)
  * @param tenantId - Tenant ID
  * @param importWindow - Date range covered by this import
  * @param batchId - Import batch UUID
  * @param parsedBookings - Current parsed bookings (to exclude from cancellation)
  * @returns Number of bookings cancelled
  */
-export function softCancelDisappearedBookings(
-  db: SqliteDatabase,
+export async function softCancelDisappearedBookings(
+  db: DbClient,
   tenantId: number,
   importWindow: ImportWindow,
   batchId: string,
   parsedBookings: ParsedBooking[]
-): number {
+): Promise<number> {
   // Get all bookings in the import window
-  const existingInWindow = db.prepare(`
+  const existingInWindow = await db.prepare(`
     SELECT id, guest_name_norm, check_in, check_out, suite_or_unit_norm, nightsbridge_booking_id, last_import_at
     FROM bookings
     WHERE tenant_id = ?
@@ -304,7 +304,7 @@ export function softCancelDisappearedBookings(
 
     if (!existsInImport) {
       // Booking disappeared from import window → soft-cancel
-      db.prepare(`
+      await db.prepare(`
         UPDATE bookings
         SET status = 'cancelled',
             last_seen_import_at = ?,

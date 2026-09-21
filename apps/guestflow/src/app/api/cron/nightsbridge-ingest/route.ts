@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, type DbClient } from '@/lib/db'
+import { getDbAsync, type DbClient } from '@/lib/db'
 import * as XLSX from 'xlsx'
-import { format, parseISO, differenceInDays } from 'date-fns'
+import { format, parseISO, addDays } from 'date-fns'
 import { upsertGuestContact } from '@/lib/guest-contacts'
 import {
   upsertBooking,
@@ -140,7 +140,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. Parse Excel file (same logic as nightsbridge-import page)
+    // Helper function to parse MM/DD/YYYY to YYYY-MM-DD
+    function parseDateMDY(dateStr: string): string {
+      const [month, day, year] = dateStr.split('/')
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    }
+
+    // 4. Parse sectioned Excel file (Arrival/Departure sections)
     const workbook = XLSX.read(fileBuffer, { type: 'array' })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
@@ -148,130 +154,131 @@ export async function POST(request: NextRequest) {
 
     if (jsonData.length < 2) {
       return NextResponse.json(
-        { error: 'File must have at least a header row and one data row' },
+        { error: 'File must have at least section headers and data rows' },
         { status: 400 }
       )
     }
 
-    // Find header row
-    let headerRowIndex = 0
+    const parsedBookings: ParsedBooking[] = []
+    const missingFields: MissingField[] = []
+    const bookingsByNbId = new Map<string, ParsedBooking>()
+
+    let currentSection: 'arrival' | 'departure' | null = null
+    let currentSectionDate: string | null = null
+    let currentHeaders: string[] = []
+
     for (let i = 0; i < jsonData.length; i++) {
-      if (jsonData[i] && jsonData[i].some(cell => cell !== null && cell !== undefined && cell !== '')) {
-        headerRowIndex = i
-        break
+      const row = jsonData[i]
+      if (!row || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+        continue
+      }
+
+      const firstCell = String(row[0] || '').trim()
+
+      // Detect section headers: "Arrival: MM/DD/YYYY" or "Departure: MM/DD/YYYY"
+      const arrivalMatch = firstCell.match(/^Arrival:\s*(\d{1,2}\/\d{1,2}\/\d{4})$/i)
+      const departureMatch = firstCell.match(/^Departure:\s*(\d{1,2}\/\d{1,2}\/\d{4})$/i)
+
+      if (arrivalMatch) {
+        currentSection = 'arrival'
+        currentSectionDate = parseDateMDY(arrivalMatch[1])
+        currentHeaders = []
+        continue
+      } else if (departureMatch) {
+        currentSection = 'departure'
+        currentSectionDate = parseDateMDY(departureMatch[1])
+        currentHeaders = []
+        continue
+      }
+
+      // Detect column headers row (Room Name, Guest Name, Guest 2, Number of Guests, Booking ID, Notes, Nights)
+      if (currentSection && currentHeaders.length === 0) {
+        const potentialHeaders = row.map((h: any) =>
+          String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+        )
+        if (potentialHeaders.some(h => h.includes('room') || h.includes('guest'))) {
+          currentHeaders = potentialHeaders
+          continue
+        }
+      }
+
+      // Parse data rows
+      if (currentSection && currentSectionDate && currentHeaders.length > 0) {
+        const booking: any = {}
+
+        currentHeaders.forEach((header, index) => {
+          const value = row[index] ? String(row[index]).trim() : ''
+
+          if (header.includes('room') || header.includes('roomname')) {
+            booking.suiteOrUnit = value
+          } else if (header.includes('guestname') || (header.includes('guest') && !header.includes('2') && !header.includes('number'))) {
+            booking.guestName = value
+          } else if (header.includes('guest2')) {
+            booking.guest2 = value
+          } else if (header.includes('numberofguests') || header.includes('numberguests')) {
+            const num = parseInt(value) || 0
+            booking.adults = Math.max(1, num)
+            booking.children = 0
+          } else if (header.includes('bookingid') || header.includes('booking')) {
+            booking.bookingId = value
+          } else if (header.includes('note')) {
+            booking.notes = value
+          } else if (header.includes('night')) {
+            booking.nights = parseInt(value) || 0
+          }
+        })
+
+        // Skip rows without required fields
+        if (!booking.guestName || !booking.suiteOrUnit) {
+          continue
+        }
+
+        // Calculate check-in/check-out from section date + nights
+        if (currentSection === 'arrival') {
+          booking.checkInDate = currentSectionDate
+          booking.checkOutDate = booking.nights
+            ? format(addDays(parseISO(currentSectionDate), booking.nights), 'yyyy-MM-dd')
+            : currentSectionDate
+          booking.status = format(parseISO(targetDate), 'yyyy-MM-dd') === currentSectionDate ? 'arriving' : ''
+        } else if (currentSection === 'departure') {
+          booking.checkOutDate = currentSectionDate
+          booking.checkInDate = booking.nights
+            ? format(addDays(parseISO(currentSectionDate), -booking.nights), 'yyyy-MM-dd')
+            : currentSectionDate
+          booking.status = format(parseISO(targetDate), 'yyyy-MM-dd') === currentSectionDate ? 'departing' : ''
+        }
+
+        // Detect late check-in
+        booking.lateCheckIn = booking.notes && booking.notes.toLowerCase().includes('late')
+
+        // Defaults
+        if (!booking.adults) booking.adults = 2
+        if (!booking.children) booking.children = 0
+
+        // Dedupe by Booking ID across sections (keep first occurrence)
+        if (booking.bookingId) {
+          if (!bookingsByNbId.has(booking.bookingId)) {
+            bookingsByNbId.set(booking.bookingId, booking as ParsedBooking)
+            parsedBookings.push(booking as ParsedBooking)
+          }
+        } else {
+          parsedBookings.push(booking as ParsedBooking)
+        }
       }
     }
 
-    const headers = jsonData[headerRowIndex].map((h: any) =>
-      String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-    )
+    if (parsedBookings.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid bookings found in file. Ensure file has Arrival/Departure sections with data rows.' },
+        { status: 400 }
+      )
+    }
 
-    const rows = jsonData.slice(headerRowIndex + 1).filter(row =>
-      row && row.some(cell => cell !== null && cell !== undefined && cell !== '')
-    )
-
-    const parsedBookings: ParsedBooking[] = []
-    const missingFields: MissingField[] = []
-
-    rows.forEach((row, rowIndex) => {
-      const booking: any = {}
-
-      headers.forEach((header, index) => {
-        const value = row[index] ? String(row[index]).trim() : ''
-
-        if (header.includes('room') || header.includes('roomname')) {
-          booking.suiteOrUnit = value
-        } else if (header.includes('guestname') || (header.includes('guest') && !header.includes('2') && !header.includes('number'))) {
-          booking.guestName = value
-        } else if (header.includes('guest2')) {
-          booking.guest2 = value
-        } else if (header.includes('numberofguests')) {
-          const num = parseInt(value) || 0
-          booking.adults = Math.max(1, num)
-          booking.children = 0
-        } else if (header.includes('bookingid') || header.includes('booking')) {
-          booking.bookingId = value
-        } else if (header.includes('note')) {
-          booking.notes = value
-        } else if (header.includes('night')) {
-          booking.nights = parseInt(value) || 0
-        } else if (header.includes('phonenumber') && !header.includes('2')) {
-          booking.guestPhone = value
-        } else if (header.includes('email') && !header.includes('2')) {
-          booking.guestEmail = value
-        } else if (header.includes('phonenumber2')) {
-          booking.guestPhone2 = value
-        } else if (header.includes('email2')) {
-          booking.guestEmail2 = value
-        } else if (header.includes('checkin') || header.includes('arrive') || header.includes('arrival')) {
-          if (typeof row[index] === 'number') {
-            const date = XLSX.SSF.parse_date_code(row[index])
-            booking.checkInDate = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`
-          } else {
-            booking.checkInDate = value
-          }
-        } else if (header.includes('checkout') || header.includes('depart') || header.includes('departure')) {
-          if (typeof row[index] === 'number') {
-            const date = XLSX.SSF.parse_date_code(row[index])
-            booking.checkOutDate = `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`
-          } else {
-            booking.checkOutDate = value
-          }
-        }
-      })
-
-      // Track missing required fields
-      if (!booking.guestName) {
-        missingFields.push({ guest: 'Row ' + (rowIndex + headerRowIndex + 2), field: 'guestName' })
-      }
-      if (!booking.suiteOrUnit) {
-        missingFields.push({ guest: booking.guestName || 'Row ' + (rowIndex + headerRowIndex + 2), field: 'suiteOrUnit' })
-      }
-      if (!booking.checkInDate) {
-        missingFields.push({ guest: booking.guestName || 'Row ' + (rowIndex + headerRowIndex + 2), field: 'checkInDate' })
-      }
-      if (!booking.checkOutDate) {
-        missingFields.push({ guest: booking.guestName || 'Row ' + (rowIndex + headerRowIndex + 2), field: 'checkOutDate' })
-      }
-
-      // Derive status
-      if (booking.checkInDate && booking.checkOutDate) {
-        try {
-          const checkIn = parseISO(booking.checkInDate)
-          const checkOut = parseISO(booking.checkOutDate)
-          const target = parseISO(targetDate)
-
-          if (format(checkIn, 'yyyy-MM-dd') === targetDate) {
-            booking.status = 'arriving'
-          } else if (format(checkOut, 'yyyy-MM-dd') === targetDate) {
-            booking.status = 'departing'
-          } else if (target > checkIn && target < checkOut) {
-            booking.status = 'inhouse'
-          } else {
-            booking.status = ''
-          }
-        } catch {
-          booking.status = ''
-        }
-      } else {
-        booking.status = ''
-      }
-
-      // Detect late check-in
-      booking.lateCheckIn = booking.notes && booking.notes.toLowerCase().includes('late')
-
-      // Defaults
-      if (!booking.adults) booking.adults = 2
-      if (!booking.children) booking.children = 0
-
-      parsedBookings.push(booking as ParsedBooking)
-    })
-
-    // 5. Save to database
-    const db = getDb()
+    // 5. Save to database (async for Production Turso compatibility)
+    const db = await getDbAsync()
     
     // Get Browns tenant ID (hardcoded as per existing codebase)
-    const tenant = db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
+    const tenant = await db.prepare('SELECT id FROM tenants WHERE name = ?').get('Browns Dullstroom')
     
     if (!tenant) {
       return NextResponse.json(
@@ -281,21 +288,6 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantId = (tenant as any).id
-    const contactDb: DbClient = {
-      prepare: (sql: string) => {
-        const stmt = db.prepare(sql)
-        return {
-          run: (...params: any[]) => stmt.run(...params),
-          get: (...params: any[]) => stmt.get(...params),
-          all: (...params: any[]) => stmt.all(...params),
-        }
-      },
-      exec: (sql: string): void => {
-        db.exec(sql)
-      },
-      batch: () => {},
-      type: 'sqlite' as const,
-    }
 
     // Phase 17: Replace INSERT OR REPLACE with UPSERT logic
     const importBatchId = randomUUID()
@@ -309,7 +301,7 @@ export async function POST(request: NextRequest) {
 
     for (const booking of parsedBookings) {
       try {
-        const result = upsertBooking(db, booking as NbParsedBooking, tenantId, importBatchId)
+        const result = await upsertBooking(db, booking as NbParsedBooking, tenantId, importBatchId)
         
         if (result.action === 'inserted') {
           inserted++
@@ -319,20 +311,23 @@ export async function POST(request: NextRequest) {
           unchanged++
         }
 
-        // Upsert guest contact (existing P1 feature)
-        try {
-          await upsertGuestContact(contactDb as any, {
-            tenantId,
-            phone: booking.guestPhone || booking.guestPhone2 || null,
-            email: booking.guestEmail || booking.guestEmail2 || null,
-            displayName: booking.guestName || null,
-            lastStayAt: booking.checkOutDate || booking.checkInDate || null,
-            lastSuite: booking.suiteOrUnit || null,
-            source: 'nb',
-            nbid: booking.bookingId || null,
-          })
-        } catch (contactErr: any) {
-          console.warn(`guest_contacts upsert skipped for ${booking.guestName}:`, contactErr.message)
+        // Upsert guest contact only when phone is present (never invent PII)
+        const phone = booking.guestPhone || booking.guestPhone2
+        if (phone && phone.trim()) {
+          try {
+            await upsertGuestContact(db as any, {
+              tenantId,
+              phone: phone.trim(),
+              email: booking.guestEmail || booking.guestEmail2 || null,
+              displayName: booking.guestName || null,
+              lastStayAt: booking.checkOutDate || booking.checkInDate || null,
+              lastSuite: booking.suiteOrUnit || null,
+              source: 'nb',
+              nbid: booking.bookingId || null,
+            })
+          } catch (contactErr: any) {
+            console.warn(`guest_contacts upsert skipped for ${booking.guestName}:`, contactErr.message)
+          }
         }
       } catch (err: any) {
         errors.push(`${booking.guestName}: ${err.message}`)
@@ -340,7 +335,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Phase 17: Soft-cancel bookings that disappeared from import window
-    const cancelled = softCancelDisappearedBookings(
+    const cancelled = await softCancelDisappearedBookings(
       db,
       tenantId,
       importWindow,
@@ -363,7 +358,7 @@ export async function POST(request: NextRequest) {
     for (const booking of arrivingSoonBookings) {
       try {
         // Check if welcome draft already exists for this guest/date
-        const existing = db.prepare(`
+        const existing = await db.prepare(`
           SELECT id FROM welcome_drafts
           WHERE tenant_id = ? AND guest_name = ? AND created_at >= datetime('now', '-24 hours')
         `).get(tenantId, booking.guestName) as any
@@ -392,7 +387,7 @@ The Browns Team`
           // If phone missing, draft is still created but marked for blocking in queue
           const draftStatus = booking.guestPhone ? 'pending_approval' : 'blocked_missing_phone'
           
-          db.prepare(`
+          await db.prepare(`
             INSERT INTO welcome_drafts (
               tenant_id, guest_name, guest_phone,
               draft_message, source, status, created_at
@@ -426,7 +421,7 @@ The Browns Team`
       for (const booking of todayArrivals) {
         try {
           // Check if late draft already exists
-          const existing = db.prepare(`
+          const existing = await db.prepare(`
             SELECT id FROM late_checkin_drafts
             WHERE tenant_id = ? AND guest_name = ? AND created_at >= datetime('now', '-6 hours')
           `).get(tenantId, booking.guestName) as any
@@ -444,7 +439,7 @@ After-hours access: [STAFF PROVIDES]
 Best regards,
 The Browns Team`
 
-            db.prepare(`
+            await db.prepare(`
               INSERT INTO late_checkin_drafts (
                 tenant_id, guest_name, guest_phone,
                 draft_message, source, status, created_at
