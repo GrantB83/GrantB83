@@ -121,13 +121,16 @@ ${doorCode ? `- Door Code: ${doorCode}` : ''}
 ${lockboxCode ? `- Lockbox Code (${booking.room_number || 'your suite'}): ${lockboxCode}` : ''}`
   }
 
+  const contactEmail = process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za'
+  
   message += `
 
 If you have any questions or special requests ahead of your stay, please don't hesitate to reach out.
 
 Warm regards,
 The GuestFlow Team
-${location}`
+${location}
+📧 ${contactEmail}`
 
   return { message, missingFields, gateCode, doorCode, lockboxCode }
 }

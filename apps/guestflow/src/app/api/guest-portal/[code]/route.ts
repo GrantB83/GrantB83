@@ -139,7 +139,7 @@ export async function GET(
           // IMPORTANT: Use real contact details from environment or config
           // Never invent phone numbers or emails
           phone: process.env.PROPERTY_PHONE || '',
-          email: process.env.PROPERTY_EMAIL || 'grant@thebrowns.co.za',
+          email: process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za',
           whatsapp: process.env.PROPERTY_WHATSAPP || ''
         }
       },
