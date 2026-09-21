@@ -39,6 +39,7 @@ interface PortalData {
       available: boolean
       gateCode: string
       doorCode: string
+      lockboxCode: string
       message: string
     }
     checkIn: {
@@ -269,7 +270,7 @@ export default function GuestPortalPage() {
           </div>
           <div className="p-6">
             {stayPacket.accessCodes.available ? (
-              stayPacket.accessCodes.gateCode || stayPacket.accessCodes.doorCode ? (
+              stayPacket.accessCodes.gateCode || stayPacket.accessCodes.doorCode || stayPacket.accessCodes.lockboxCode ? (
                 <div className="space-y-3">
                   {stayPacket.accessCodes.gateCode && (
                     <div>
@@ -279,7 +280,19 @@ export default function GuestPortalPage() {
                       </p>
                     </div>
                   )}
-                  {stayPacket.accessCodes.doorCode && (
+                  {stayPacket.accessCodes.lockboxCode && 
+                   stayPacket.accessCodes.lockboxCode !== '[ASK STAFF]' && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Suite Lockbox Code</p>
+                      <p className="font-mono font-semibold text-2xl text-gray-900 bg-gray-50 px-4 py-3 rounded border border-gray-200 text-center">
+                        {stayPacket.accessCodes.lockboxCode}
+                      </p>
+                    </div>
+                  )}
+                  {stayPacket.accessCodes.doorCode && 
+                   stayPacket.accessCodes.doorCode !== '[ASK STAFF]' && 
+                   (!stayPacket.accessCodes.lockboxCode || 
+                    stayPacket.accessCodes.lockboxCode === '[ASK STAFF]') && (
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Door Code</p>
                       <p className="font-mono font-semibold text-2xl text-gray-900 bg-gray-50 px-4 py-3 rounded border border-gray-200 text-center">
