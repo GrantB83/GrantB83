@@ -96,7 +96,7 @@ describe('Access Codes Resolution Logic', () => {
   })
 
   describe('getAccessCode', () => {
-    it('returns DB code value when DB row exists', async () => {
+    it('returns {found:true, value:code} when DB row exists', async () => {
       // Insert test code (obviously fake pattern)
       db.prepare(
         `INSERT INTO property_access_codes 
@@ -104,28 +104,31 @@ describe('Access Codes Resolution Logic', () => {
          VALUES (?, ?, ?, ?, ?)`
       ).run(1, 'cottage', 'gate_pinpad', '', 'TEST_GATE_9876')
 
-      const code = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
+      const result = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
       
-      expect(code).toBe('TEST_GATE_9876')
+      expect(result.found).toBe(true)
+      expect(result.value).toBe('TEST_GATE_9876')
     })
 
-    it('returns null when NO DB row exists (for env fallback)', async () => {
-      const code = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
+    it('returns {found:false, value:null} when NO DB row exists (for env fallback)', async () => {
+      const result = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
       
-      expect(code).toBeNull()
+      expect(result.found).toBe(false)
+      expect(result.value).toBeNull()
     })
 
-    it('returns empty code_value when DB row exists but code is empty', async () => {
+    it('returns {found:true, value:null} when DB row exists but code_value is empty', async () => {
       db.prepare(
         `INSERT INTO property_access_codes 
          (tenant_id, property, code_type, suite, code_value) 
          VALUES (?, ?, ?, ?, ?)`
       ).run(1, 'cottage', 'gate_pinpad', '', '')
 
-      const code = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
+      const result = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
       
-      // Empty string is stored, so return null for fail-closed behavior
-      expect(code).toBeNull()
+      // Empty string stored → found=true, value=null (will resolve to [ASK STAFF])
+      expect(result.found).toBe(true)
+      expect(result.value).toBeNull()
     })
 
     it('scopes correctly by property (cottage vs main-house)', async () => {
@@ -141,11 +144,13 @@ describe('Access Codes Resolution Logic', () => {
          VALUES (?, ?, ?, ?, ?)`
       ).run(1, 'main-house', 'gate_pinpad', '', 'TEST_MAIN_2222')
 
-      const cottageCode = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
-      const mainCode = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
+      const cottageResult = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
+      const mainResult = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
       
-      expect(cottageCode).toBe('TEST_COTTAGE_1111')
-      expect(mainCode).toBe('TEST_MAIN_2222')
+      expect(cottageResult.found).toBe(true)
+      expect(cottageResult.value).toBe('TEST_COTTAGE_1111')
+      expect(mainResult.found).toBe(true)
+      expect(mainResult.value).toBe('TEST_MAIN_2222')
     })
 
     it('scopes correctly by suite for lockboxes', async () => {
@@ -161,13 +166,16 @@ describe('Access Codes Resolution Logic', () => {
          VALUES (?, ?, ?, ?, ?)`
       ).run(1, 'cottage', 'lockbox', 'Suite 2', 'TEST_LOCKBOX_S2_4444')
 
-      const suite1Code = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 1')
-      const suite2Code = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 2')
-      const suite3Code = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 3')
+      const suite1Result = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 1')
+      const suite2Result = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 2')
+      const suite3Result = await getAccessCode(db, 1, 'cottage', 'lockbox', 'Suite 3')
       
-      expect(suite1Code).toBe('TEST_LOCKBOX_S1_3333')
-      expect(suite2Code).toBe('TEST_LOCKBOX_S2_4444')
-      expect(suite3Code).toBeNull() // NO DB row for Suite 3
+      expect(suite1Result.found).toBe(true)
+      expect(suite1Result.value).toBe('TEST_LOCKBOX_S1_3333')
+      expect(suite2Result.found).toBe(true)
+      expect(suite2Result.value).toBe('TEST_LOCKBOX_S2_4444')
+      expect(suite3Result.found).toBe(false)
+      expect(suite3Result.value).toBeNull() // NO DB row for Suite 3
     })
   })
 
@@ -177,24 +185,45 @@ describe('Access Codes Resolution Logic', () => {
         `INSERT INTO property_access_codes 
          (tenant_id, property, code_type, suite, code_value) 
          VALUES (?, ?, ?, ?, ?)`
-      ).run(1, 'cottage', 'gate_pinpad', '', 'TEST_DB_CODE_5555')
+      ).run(1, 'cottage', 'gate_pinpad', '', 'TEST_DB_GATE_5555')
 
-      process.env.PROPERTY_GATE_CODE = 'TEST_ENV_CODE_6666'
+      process.env.PROPERTY_GATE_CODE = 'TEST_ENV_GATE_6666'
+      process.env.PROPERTY_DOOR_CODE = 'TEST_ENV_DOOR_6666'
 
       const codes = await resolveAccessCodes(db, 1, 'cottage')
       
-      expect(codes.gateCode).toBe('TEST_DB_CODE_5555')
-      expect(codes.doorCode).toBe('TEST_DB_CODE_5555')
-      // Env var should be ignored because DB row exists
+      expect(codes.gateCode).toBe('TEST_DB_GATE_5555')
+      // doorCode reads lockbox (suite=''), not gate_pinpad - no DB row so uses env
+      expect(codes.doorCode).toBe('TEST_ENV_DOOR_6666')
+      // Env var for gate should be ignored because DB row exists for gate_pinpad
+    })
+
+    it('DB row empty (found=true, value=null) → returns [ASK STAFF] (no env fallback)', async () => {
+      // Insert gate with empty code_value
+      db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value) 
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(1, 'cottage', 'gate_pinpad', '', '')
+
+      process.env.PROPERTY_GATE_CODE = 'TEST_ENV_SHOULD_NOT_USE'
+
+      const codes = await resolveAccessCodes(db, 1, 'cottage')
+      
+      // DB row exists (even though empty) → use [ASK STAFF], NOT env
+      expect(codes.gateCode).toBe(ACCESS_CODE_PLACEHOLDER)
+      // doorCode still tries lockbox path (no row) → falls back to env
+      expect(codes.doorCode).toBe(ACCESS_CODE_PLACEHOLDER) // No PROPERTY_DOOR_CODE set
     })
 
     it('NO DB row, env set → returns env value (fallback)', async () => {
-      process.env.PROPERTY_GATE_CODE = 'TEST_ENV_FALLBACK_7777'
+      process.env.PROPERTY_GATE_CODE = 'TEST_ENV_GATE_7777'
+      process.env.PROPERTY_DOOR_CODE = 'TEST_ENV_DOOR_8888'
 
       const codes = await resolveAccessCodes(db, 1, 'main-house')
       
-      expect(codes.gateCode).toBe('TEST_ENV_FALLBACK_7777')
-      expect(codes.doorCode).toBe('TEST_ENV_FALLBACK_7777')
+      expect(codes.gateCode).toBe('TEST_ENV_GATE_7777')
+      expect(codes.doorCode).toBe('TEST_ENV_DOOR_8888')
     })
 
     it('NO DB row, NO env → returns [ASK STAFF] (fail-closed)', async () => {
@@ -204,8 +233,42 @@ describe('Access Codes Resolution Logic', () => {
       expect(codes.doorCode).toBe(ACCESS_CODE_PLACEHOLDER)
     })
 
+    it('doorCode reads lockbox (suite=""), NOT gate_pinpad', async () => {
+      // Insert gate code
+      db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value) 
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(1, 'cottage', 'gate_pinpad', '', 'TEST_GATE_9999')
+
+      // Insert separate lockbox (suite='') for door
+      db.prepare(
+        `INSERT INTO property_access_codes 
+         (tenant_id, property, code_type, suite, code_value) 
+         VALUES (?, ?, ?, ?, ?)`
+      ).run(1, 'cottage', 'lockbox', '', 'TEST_DOOR_LOCK_1010')
+
+      const codes = await resolveAccessCodes(db, 1, 'cottage')
+      
+      expect(codes.gateCode).toBe('TEST_GATE_9999')
+      expect(codes.doorCode).toBe('TEST_DOOR_LOCK_1010')
+      // doorCode should NOT duplicate gateCode
+    })
+
+    it('doorCode fallback: PROPERTY_DOOR_CODE only (no gate bleed)', async () => {
+      // NO lockbox row for door
+      process.env.PROPERTY_GATE_CODE = 'TEST_GATE_WRONG'
+      process.env.PROPERTY_DOOR_CODE = 'TEST_DOOR_RIGHT'
+
+      const codes = await resolveAccessCodes(db, 1, 'cottage')
+      
+      expect(codes.gateCode).toBe('TEST_GATE_WRONG')
+      expect(codes.doorCode).toBe('TEST_DOOR_RIGHT')
+      // doorCode should use PROPERTY_DOOR_CODE, NOT fall back to PROPERTY_GATE_CODE
+    })
+
     it('Multiple properties → correct scoping (cottage with DB row uses DB, main-house without uses env)', async () => {
-      // Cottage has DB row
+      // Cottage has DB row for gate
       db.prepare(
         `INSERT INTO property_access_codes 
          (tenant_id, property, code_type, suite, code_value) 
@@ -276,8 +339,9 @@ describe('Access Codes Resolution Logic', () => {
       expect(result.success).toBe(true)
       expect(result.updated_at).toBeTruthy()
 
-      const code = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
-      expect(code).toBe('TEST_NEW_CODE_3333')
+      const codeResult = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
+      expect(codeResult.found).toBe(true)
+      expect(codeResult.value).toBe('TEST_NEW_CODE_3333')
 
       const auditLogs = await getAuditLog(db, 1)
       expect(auditLogs.length).toBe(1)
@@ -290,8 +354,9 @@ describe('Access Codes Resolution Logic', () => {
       await upsertAccessCode(db, 1, 'main-house', 'gate_pinpad', '', 'TEST_OLD_4444', 'staff-bob')
       await upsertAccessCode(db, 1, 'main-house', 'gate_pinpad', '', 'TEST_NEW_5555', 'staff-charlie')
 
-      const code = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
-      expect(code).toBe('TEST_NEW_5555')
+      const codeResult = await getAccessCode(db, 1, 'main-house', 'gate_pinpad', '')
+      expect(codeResult.found).toBe(true)
+      expect(codeResult.value).toBe('TEST_NEW_5555')
 
       const auditLogs = await getAuditLog(db, 1)
       expect(auditLogs.length).toBe(2)
@@ -307,8 +372,9 @@ describe('Access Codes Resolution Logic', () => {
     it('trims whitespace from code value', async () => {
       await upsertAccessCode(db, 1, 'cottage', 'gate_pinpad', '', '  TEST_TRIM_6666  ', 'staff-eve')
 
-      const code = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
-      expect(code).toBe('TEST_TRIM_6666')
+      const codeResult = await getAccessCode(db, 1, 'cottage', 'gate_pinpad', '')
+      expect(codeResult.found).toBe(true)
+      expect(codeResult.value).toBe('TEST_TRIM_6666')
     })
   })
 

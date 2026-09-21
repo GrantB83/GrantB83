@@ -86,10 +86,8 @@ export async function resolveAccessCodes(
     // DB row exists for lockbox with suite='' → use it
     doorCode = doorResult.value || ACCESS_CODE_PLACEHOLDER
   } else {
-    // NO DB row → check env fallback (PROPERTY_DOOR_CODE, then PROPERTY_GATE_CODE as fallback)
-    doorCode = process.env.PROPERTY_DOOR_CODE?.trim() || 
-               process.env.PROPERTY_GATE_CODE?.trim() || 
-               ACCESS_CODE_PLACEHOLDER
+    // NO DB row → check env fallback (PROPERTY_DOOR_CODE only, no gate bleed)
+    doorCode = process.env.PROPERTY_DOOR_CODE?.trim() || ACCESS_CODE_PLACEHOLDER
   }
 
   // Resolve suite-specific lockbox code (if applicable)
