@@ -61,7 +61,7 @@ export async function getAccessCode(
   db: DbClient,
   tenantId: number,
   property: string,
-  codeType: 'gate_pinpad' | 'lockbox',
+  codeType: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password',
   suite: string = ''
 ): Promise<{ found: boolean; value: string | null }> {
   try {
