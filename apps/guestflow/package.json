@@ -23,6 +23,7 @@
     "db:migrate:phase0": "node scripts/migrate-phase0-safety.js",
     "db:migrate:outbound-redirect": "node scripts/migrate-outbound-redirect.js",
     "db:migrate:inbound-status": "node scripts/migrate-add-inbound-message-status.js",
+    "db:migrate:phase17": "node scripts/migrate-phase17-incremental-bookings.js",
     "seed:browns": "node scripts/seed-browns-data.js",
     "db:export": "node scripts/export-data.js",
     "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts",
