@@ -22,7 +22,7 @@ interface Booking {
   status: string
 }
 
-export default function ArrivalsDepart<br/>uresPage() {
+export default function ArrivalsDeparturesPage() {
   const { selectedTenantId } = useTenant()
   const [arrivals, setArrivals] = useState<Booking[]>([])
   const [departures, setDepartures] = useState<Booking[]>([])
