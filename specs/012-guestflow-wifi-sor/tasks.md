@@ -18,10 +18,10 @@
 
 **Purpose**: Extend existing access-codes schema and types for WiFi support
 
-- [ ] T001 [P] Update `apps/guestflow/src/lib/access-codes-schema.ts` to extend `code_type` enum with `'wifi_network'` and `'wifi_password'` values
-- [ ] T002 [P] Update `ResolvedAccessCodes` interface in `apps/guestflow/src/lib/access-codes-schema.ts` to add `wifi: { network: string, password: string }` field
-- [ ] T003 [P] Update `AccessCodeUpsertRequest` interface in `apps/guestflow/src/lib/access-codes-schema.ts` to allow new WiFi code types
-- [ ] T004 [P] Add documentation comment in `apps/guestflow/src/lib/db.ts` (or create `docs/WIFI-SOR.md`) documenting new `code_type` values for WiFi
+- [x] T001 [P] Update `apps/guestflow/src/lib/access-codes-schema.ts` to extend `code_type` enum with `'wifi_network'` and `'wifi_password'` values
+- [x] T002 [P] Update `ResolvedAccessCodes` interface in `apps/guestflow/src/lib/access-codes-schema.ts` to add `wifi: { network: string, password: string }` field
+- [x] T003 [P] Update `AccessCodeUpsertRequest` interface in `apps/guestflow/src/lib/access-codes-schema.ts` to allow new WiFi code types
+- [x] T004 [P] Add documentation comment in `apps/guestflow/src/lib/db.ts` (or create `docs/WIFI-SOR.md`) documenting new `code_type` values for WiFi
 
 ---
 
@@ -31,9 +31,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Extend `getAccessCode()` function in `apps/guestflow/src/lib/access-codes.ts` to handle `code_type` values `'wifi_network'` and `'wifi_password'`
-- [ ] T006 Extend `resolveAccessCodes()` function in `apps/guestflow/src/lib/access-codes.ts` to query WiFi network and password for property, return `wifi: { network, password }` in result with SoR resolution (DB first, env fallback `WIFI_NETWORK` and `WIFI_PASSWORD` ONLY if NO DB row exists, placeholder `[ASK STAFF]` if both empty)
-- [ ] T007 Add unit tests in `apps/guestflow/src/lib/__tests__/access-codes.test.ts` for WiFi resolution: (1) DB row exists → returns DB value, (2) DB row empty → returns `[ASK STAFF]`, (3) NO DB row + env set → returns env fallback, (4) both empty → returns `[ASK STAFF]`, (5) multiple properties → correct scope. All password fixtures use `[REDACTED]` or `****`, never plaintext.
+- [x] T005 Extend `getAccessCode()` function in `apps/guestflow/src/lib/access-codes.ts` to handle `code_type` values `'wifi_network'` and `'wifi_password'`
+- [x] T006 Extend `resolveAccessCodes()` function in `apps/guestflow/src/lib/access-codes.ts` to query WiFi network and password for property, return `wifi: { network, password }` in result with SoR resolution (DB first, env fallback `WIFI_NETWORK` and `WIFI_PASSWORD` ONLY if NO DB row exists, placeholder `[ASK STAFF]` if both empty)
+- [x] T007 Add unit tests in `apps/guestflow/src/lib/__tests__/access-codes.test.ts` for WiFi resolution: (1) DB row exists → returns DB value, (2) DB row empty → returns `[ASK STAFF]`, (3) NO DB row + env set → returns env fallback, (4) both empty → returns `[ASK STAFF]`, (5) multiple properties → correct scope. All password fixtures use `[REDACTED]` or `****`, never plaintext.
 
 **Checkpoint**: Foundation ready - WiFi resolution works, user story implementation can now begin in parallel
 
