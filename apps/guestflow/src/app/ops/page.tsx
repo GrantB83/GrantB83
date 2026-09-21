@@ -11,7 +11,9 @@ import {
   FileCheck,
   Package,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  CalendarDays,
+  Plane
 } from 'lucide-react'
 
 export default function OpsPage() {
@@ -96,6 +98,22 @@ export default function OpsPage() {
           Operations Support
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <OpsToolCard
+            href="/ops/bookings"
+            icon={<CalendarDays className="w-8 h-8 text-blue-600" />}
+            title="Bookings"
+            description="View all bookings, copy guest portal links, and manage reservations"
+            cliTool="(web-only)"
+            color="blue"
+          />
+          <OpsToolCard
+            href="/ops/arrivals-departures"
+            icon={<Plane className="w-8 h-8 text-green-600" />}
+            title="Arrivals & Departures"
+            description="View arrivals by check-in and departures by check-out date (Africa/Johannesburg)"
+            cliTool="(web-only)"
+            color="green"
+          />
           <OpsToolCard
             href="/ops/late-checkin-queue"
             icon={<Clock className="w-8 h-8 text-orange-600" />}
