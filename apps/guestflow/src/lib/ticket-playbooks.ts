@@ -28,7 +28,7 @@ export interface TicketPlaybook {
 /**
  * The Browns Luxury Guest Suites — Known Facts
  * DO NOT INVENT. Use these exact details or flag [ASK STAFF].
- * Access codes are resolved dynamically via resolveAccessCodes().
+ * Access codes and WiFi are resolved dynamically via resolveAccessCodes().
  */
 const BROWNS_KNOWN_FACTS = {
   property: 'The Browns Luxury Guest Suites',
@@ -37,7 +37,7 @@ const BROWNS_KNOWN_FACTS = {
   checkOutTime: '10:00',
   emergencyContact: '[STAFF CONTACT - ASK GRANT]',
   maintenanceContact: '[MAINTENANCE CONTACT - ASK GRANT]',
-  wifiPassword: '[WIFI PASSWORD - ASK STAFF]',
+  // WiFi credentials resolved dynamically via resolveAccessCodes() - do not hardcode
   nearbyRestaurants: [
     '[RESTAURANT 1 - ASK STAFF]',
     '[RESTAURANT 2 - ASK STAFF]',
