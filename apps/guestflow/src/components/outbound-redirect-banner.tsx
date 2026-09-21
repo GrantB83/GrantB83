@@ -4,6 +4,7 @@
  * Displays an info-level banner when outbound redirect is active (mode=redirect)
  * or when live mode is disabled by OUTBOUND_LIVE_CLEAR.
  * Hidden when mode=live and OUTBOUND_LIVE_CLEAR=true (full live mode active).
+ * Hidden on /guest/* paths via layout.tsx SSR check (middleware x-is-guest-route header).
  */
 
 import { getOutboundStatus } from '@/lib/outbound-redirect'
