@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 interface AccessCode {
   id: number
   property: string
-  code_type: 'gate_pinpad' | 'lockbox'
+  code_type: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password'
   suite: string
   code_value: string
   code_value_hint?: string
@@ -34,7 +34,7 @@ export default function AccessCodesManager() {
   const [editingCode, setEditingCode] = useState<{
     id?: number
     property: string
-    code_type: 'gate_pinpad' | 'lockbox'
+    code_type: 'gate_pinpad' | 'lockbox' | 'wifi_network' | 'wifi_password'
     suite: string
     code: string
   } | null>(null)
@@ -153,15 +153,19 @@ export default function AccessCodesManager() {
 
   const groupedCodes = codes.reduce((acc, code) => {
     if (!acc[code.property]) {
-      acc[code.property] = { gates: [], lockboxes: [] }
+      acc[code.property] = { gates: [], lockboxes: [], wifiNetworks: [], wifiPasswords: [] }
     }
     if (code.code_type === 'gate_pinpad') {
       acc[code.property].gates.push(code)
-    } else {
+    } else if (code.code_type === 'lockbox') {
       acc[code.property].lockboxes.push(code)
+    } else if (code.code_type === 'wifi_network') {
+      acc[code.property].wifiNetworks.push(code)
+    } else if (code.code_type === 'wifi_password') {
+      acc[code.property].wifiPasswords.push(code)
     }
     return acc
-  }, {} as Record<string, { gates: AccessCode[]; lockboxes: AccessCode[] }>)
+  }, {} as Record<string, { gates: AccessCode[]; lockboxes: AccessCode[]; wifiNetworks: AccessCode[]; wifiPasswords: AccessCode[] }>)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -524,7 +528,10 @@ export default function AccessCodesManager() {
                           {log.property.replace('-', ' ')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {log.code_type === 'gate_pinpad' ? 'Gate' : 'Lockbox'}
+                          {log.code_type === 'gate_pinpad' ? 'Gate' : 
+                           log.code_type === 'lockbox' ? 'Lockbox' :
+                           log.code_type === 'wifi_network' ? 'WiFi Network' :
+                           log.code_type === 'wifi_password' ? 'WiFi Password' : log.code_type}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {log.suite || '—'}
