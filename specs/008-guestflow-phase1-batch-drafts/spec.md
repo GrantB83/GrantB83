@@ -1,12 +1,12 @@
-# Feature Specification: GuestFlow Phase 1 Ultra Batch Draft Pilot
+# Feature Specification: GuestFlow Phase 1 Cursor Ultra Batch Draft Pilot
 
-**Feature Branch**: `cursor/guestflow-phase1-batch-drafts-04a5`
+**Feature Branch**: `cursor/guestflow-ultra-only-cfea`
 
-**Created**: 2026-09-20
+**Created**: 2026-09-21
 
-**Status**: Ready for planning
+**Status**: Ready for implementation
 
-**Input**: Grant CLEAR (20 Sep 2026) for GuestFlow Phase 1: Cursor Ultra–metered batch LLM draft worker that fills draft_reply via POST /api/drafts/upsert (DRAFT_WORKER_SECRET), while inbound webhooks only enqueue draft_jobs (no sync LLM on Vercel). Batch contract: ≥5 jobs OR 20 min wait, 07:00–21:00 Africa/Johannesburg window, one CA/worker in flight, ≤6 batches/day soft cap Phase 1. Intents: general_question, maintenance_other, low-confidence only. No auto-send, From unchanged, respect outbound redirect.
+**Input**: Grant CLEAR (21 Sep 2026) for GuestFlow Phase 1 Ultra-only realignment: Remove/disable OpenAI chat.completions path. Cursor Ultra CA generates drafts directly using its own model, then POSTs to /api/drafts/upsert (DRAFT_WORKER_SECRET only). Batch contract: ≥5 jobs OR 20 min wait, 07:00–21:00 Africa/Johannesburg window, one CA in flight, ≤6 batches/day soft cap Phase 1. Intents: general_question, maintenance_other, low-confidence only. No auto-send, From unchanged, respect outbound redirect. **No OPENAI_API_KEY required in Production.**
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -30,21 +30,22 @@ When an inbound WhatsApp/SMS/email message is classified with a matching intent 
 
 ### User Story 2 - Batch worker claims and processes draft jobs (Priority: P1)
 
-A Cursor Ultra Cloud Agent or scripted worker discovers pending draft_jobs, claims a batch (≥5 jobs OR all pending if 20 minutes elapsed since last batch), calls the LLM with a QC'd prompt template, and upserts each draft via the authenticated API endpoint with draft_source=llm. The worker enforces one-in-flight and respects the batch contract window and cap.
+A Cursor Ultra Cloud Agent discovers pending draft_jobs, claims a batch (≥5 jobs OR all pending if 20 minutes elapsed since last batch), generates drafts using its own Cursor Ultra model (no external API calls), and upserts each draft via the authenticated API endpoint with draft_source=llm. The worker enforces one-in-flight and respects the batch contract window and cap.
 
-**Why this priority**: This is the core Phase 1 value: LLM-generated drafts that bill Cursor Ultra Models pool instead of Vercel or per-message Cloud Agents. The batch contract keeps costs predictable and prevents resource contention.
+**Why this priority**: This is the core Phase 1 value: Cursor Ultra-generated drafts that bill Cursor Ultra Models pool instead of Vercel or per-message Cloud Agents. No OpenAI dependency. The batch contract keeps costs predictable and prevents resource contention.
 
-**Independent Test**: Seed 5 pending draft_jobs in the test database. Run the batch worker (or simulate with a script calling the claim/process logic). Confirm all 5 jobs transition to claimed then done, each message has draft_reply populated with draft_source=llm, and no jobs remain pending.
+**Independent Test**: Seed 5 pending draft_jobs in the test database. Run the batch worker script in dry-run mode to verify claim logic. For actual draft generation, launch as Cursor Ultra CA task and confirm all 5 jobs transition to claimed then done, each message has draft_reply populated with draft_source=llm, and no jobs remain pending.
 
 **Acceptance Scenarios**:
 
-1. **Given** 5 or more pending draft_jobs exist, **When** the batch worker runs, **Then** it claims and processes all pending jobs in one batch
+1. **Given** 5 or more pending draft_jobs exist, **When** the Cursor Ultra CA batch worker runs, **Then** it claims and processes all pending jobs in one batch
 2. **Given** fewer than 5 pending draft_jobs exist and 20 minutes have elapsed since the last batch, **When** the batch worker checks, **Then** it claims and processes all pending jobs
 3. **Given** fewer than 5 pending draft_jobs exist and less than 20 minutes have elapsed, **When** the batch worker checks, **Then** it does not claim jobs and waits
-4. **Given** a draft_job is being processed by the worker, **When** the worker calls the LLM, **Then** the prompt uses the QC'd template from the repository (never invents rates, phones, or facts)
-5. **Given** the LLM returns a draft reply, **When** the worker upserts, **Then** it POSTs to /api/drafts/upsert with DRAFT_WORKER_SECRET and draft_source=llm
+4. **Given** a draft_job is being processed by the worker, **When** the Cursor Ultra CA generates the draft, **Then** it uses the QC'd prompt template from the repository and its own model context (never invents rates, phones, or facts)
+5. **Given** the CA generates a draft reply, **When** the worker upserts, **Then** it POSTs to /api/drafts/upsert with DRAFT_WORKER_SECRET and draft_source=llm
 6. **Given** the upsert succeeds, **When** the worker updates the job, **Then** the job status becomes done and the message draft_reply and draft_source are set
-7. **Given** the upsert or LLM call fails, **When** the worker handles the error, **Then** the job status becomes failed with error recorded and attempts incremented
+7. **Given** the upsert fails, **When** the worker handles the error, **Then** the job status becomes failed with error recorded and attempts incremented
+8. **Given** the batch worker is run as a standalone script (not by Cursor Ultra CA), **When** it attempts to generate drafts, **Then** it fails closed with error message instructing to launch as Cursor Ultra CA
 
 ---
 
@@ -161,25 +162,28 @@ Staff and SA Ops can see which drafts are LLM-generated vs heuristic vs human. G
 - **FR-004**: Batch worker MUST claim draft_jobs only when: (a) ≥5 pending jobs exist OR (b) ≥20 minutes elapsed since last batch completion
 - **FR-005**: Batch worker MUST only run during 07:00–21:00 Africa/Johannesburg time window
 - **FR-006**: Batch worker MUST soft-cap at 6 batches per day (Africa/Johannesburg date)
-- **FR-007**: Batch worker MUST enforce one-in-flight: only one worker claiming/processing at a time
-- **FR-008**: Batch worker MUST use a single QC'd LLM prompt template stored in the repository (e.g., apps/guestflow/prompts/DRAFT_PROMPT.md)
+- **FR-007**: Batch worker MUST enforce one-in-flight: only one Cursor Ultra CA claiming/processing at a time
+- **FR-008**: Batch worker MUST use a single QC'd prompt template stored in the repository (apps/guestflow/prompts/DRAFT_PROMPT.md)
 - **FR-009**: Prompt template MUST include instructions to never invent rates, phone numbers, stock levels, or legal advice; use [ASK STAFF] or [ASK GRANT] placeholders when facts are unknown
 - **FR-010**: Prompt template MUST be QC'd by Coding or SuperGrok once before use; note QC status in a comment or template header
-- **FR-011**: Batch worker MUST call POST /api/drafts/upsert with DRAFT_WORKER_SECRET and payload: {threadId, messageId, draftReply, draftSource: "llm"}
-- **FR-012**: POST /api/drafts/upsert MUST accept only DRAFT_WORKER_SECRET as Authorization (bearer token or dedicated header)
-- **FR-013**: POST /api/drafts/upsert MUST reject requests with no secret, wrong secret, or CRON_SECRET
-- **FR-014**: POST /api/drafts/upsert MUST upsert draft_reply and draft_source=llm on the specified message
-- **FR-015**: POST /api/drafts/upsert MUST validate payload: threadId and draftReply are required; draftSource must be "llm" for this endpoint
-- **FR-016**: POST /api/drafts/upsert MUST NOT create any send_job, WhatsApp send, or email send (drafts require human approval)
-- **FR-017**: Batch worker MUST update draft_job status: pending → claimed (on claim) → done (on success) or failed (on error)
-- **FR-018**: Batch worker MUST record error messages and increment attempts on draft_job when LLM or upsert fails
-- **FR-019**: System MUST NOT auto-send LLM drafts; all drafts require staff Approve & Send with confirmToken (Phase 0 gate)
-- **FR-020**: Staff MUST be able to review threads with draft_source=llm in Needs Approval and inbound queue
-- **FR-021**: Staff editing an LLM draft MUST change draft_source to human
-- **FR-022**: Batch worker and upsert endpoint MUST NOT bypass OUTBOUND_MODE=redirect; send path enforces redirect
-- **FR-023**: Batch worker MUST respect existing From number (+27600200825); no WhatsApp mode changes
-- **FR-024**: Documentation MUST include: batch contract, DRAFT_WORKER_SECRET setup, how to launch a Cursor Ultra Cloud Agent batch worker, and prompt QC status
-- **FR-025**: Automated tests MUST cover: webhook enqueue without LLM, upsert auth (reject CRON_SECRET), intent filter, job claim idempotency, batch size logic, no send side effects
+- **FR-011**: Cursor Ultra CA MUST generate drafts using its own model context (not external API calls to OpenAI or other providers)
+- **FR-012**: Batch worker MUST call POST /api/drafts/upsert with DRAFT_WORKER_SECRET and payload: {threadId, messageId, draftReply, draftSource: "llm"}
+- **FR-013**: POST /api/drafts/upsert MUST accept only DRAFT_WORKER_SECRET as Authorization (bearer token or dedicated header)
+- **FR-014**: POST /api/drafts/upsert MUST reject requests with no secret, wrong secret, or CRON_SECRET
+- **FR-015**: POST /api/drafts/upsert MUST upsert draft_reply and draft_source=llm on the specified message
+- **FR-016**: POST /api/drafts/upsert MUST validate payload: threadId and draftReply are required; draftSource must be "llm" for this endpoint
+- **FR-017**: POST /api/drafts/upsert MUST NOT create any send_job, WhatsApp send, or email send (drafts require human approval)
+- **FR-018**: Batch worker MUST update draft_job status: pending → claimed (on claim) → done (on success) or failed (on error)
+- **FR-019**: Batch worker MUST record error messages and increment attempts on draft_job when draft generation or upsert fails
+- **FR-020**: System MUST NOT auto-send Cursor Ultra drafts; all drafts require staff Approve & Send with confirmToken (Phase 0 gate)
+- **FR-021**: Staff MUST be able to review threads with draft_source=llm in Needs Approval and inbound queue
+- **FR-022**: Staff editing a Cursor Ultra draft MUST change draft_source to human
+- **FR-023**: Batch worker and upsert endpoint MUST NOT bypass OUTBOUND_MODE=redirect; send path enforces redirect
+- **FR-024**: Batch worker MUST respect existing From number (+27600200825); no WhatsApp mode changes
+- **FR-025**: Batch worker MUST fail closed if run as standalone script (not by Cursor Ultra CA) with clear error message
+- **FR-026**: Production deployment MUST NOT require OPENAI_API_KEY or any external LLM provider API keys
+- **FR-027**: Documentation MUST state that worker must be launched BY Coding/Grok as Cursor Ultra CA, not as standalone script with API keys
+- **FR-028**: Automated tests MUST cover: webhook enqueue without LLM, upsert auth (reject CRON_SECRET), intent filter, job claim idempotency, batch size logic, no send side effects, fail-closed behavior
 
 ### Key Entities
 
@@ -193,15 +197,17 @@ Staff and SA Ops can see which drafts are LLM-generated vs heuristic vs human. G
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of webhook requests with general_question, maintenance_other, or low-confidence classification complete in under 30 seconds and enqueue a draft_job without calling an LLM
+- **SC-001**: 100% of webhook requests with general_question, maintenance_other, or low-confidence classification complete in under 30 seconds and enqueue a draft_job without calling any external LLM API
 - **SC-002**: 100% of pending draft_jobs are claimed and processed in batches of ≥5 OR within 20 minutes of the last batch (whichever comes first), respecting the 07:00–21:00 SAST window
 - **SC-003**: No more than 6 batches run in any single day (Africa/Johannesburg date) during Phase 1 pilot
 - **SC-004**: 100% of draft upserts present DRAFT_WORKER_SECRET; 0% succeed with CRON_SECRET or no secret
-- **SC-005**: All LLM-generated drafts have draft_source=llm and appear in Needs Approval for staff review
-- **SC-006**: Zero auto-sends occur; 100% of LLM drafts require staff Approve & Send with confirmToken
+- **SC-005**: All Cursor Ultra-generated drafts have draft_source=llm and appear in Needs Approval for staff review
+- **SC-006**: Zero auto-sends occur; 100% of Cursor Ultra drafts require staff Approve & Send with confirmToken
 - **SC-007**: Phase 1 pilot runs for at least one week with measurable edit/reject rate tracked (success = data exists; target rates are not set in Phase 1)
-- **SC-008**: When OUTBOUND_MODE=redirect, 100% of approved LLM draft sends go to OUTBOUND_REDIRECT_TARGET, not real guest phones
+- **SC-008**: When OUTBOUND_MODE=redirect, 100% of approved Cursor Ultra draft sends go to OUTBOUND_REDIRECT_TARGET, not real guest phones
 - **SC-009**: npm run build and focused tests pass in apps/guestflow before merge
+- **SC-010**: Production deployment does NOT require OPENAI_API_KEY or any external LLM provider credentials
+- **SC-011**: Attempting to run batch-worker as standalone script (not Cursor Ultra CA) fails with clear error message and instructions
 
 ## Assumptions
 
@@ -210,12 +216,14 @@ Staff and SA Ops can see which drafts are LLM-generated vs heuristic vs human. G
 - WhatsApp allowlist (#193) is merged and does not conflict with Phase 1 changes
 - Cursor Ultra Cloud Agents have network egress to GuestFlow production API (allowlist approved)
 - GuestFlow production has DRAFT_WORKER_SECRET set as an environment secret distinct from CRON_SECRET
-- Coding or SuperGrok performs one-time QC on the LLM prompt template before Phase 1 launch
+- Coding or SuperGrok performs one-time QC on the Cursor Ultra prompt template before Phase 1 launch
+- Cursor Ultra Cloud Agent provides the LLM capability - no external API provider (OpenAI, Anthropic, etc.) is needed
+- Coding launches the batch worker AS a Cursor Ultra CA task, not as a standalone script with API keys
 - GFM Bot never drafts; no per-message CA launch; no Bot poll-wait for CA completion (forbid encoded in Efficiency desk bounce)
 - Batch contract parameters (≥5, 20min, 07:00–21:00, ≤6/day) are Phase 1 pilot values and may change in Phase 2 based on measured load and cost
 - From stays +27600200825; no WA clicker; no Gmail enrich; no stock_order in Phase 1
 - SA Ops retention = 5 years after last stay (Phase 0); Phase 1 does not change retention
-- Coding sets the live DRAFT_WORKER_SECRET on Vercel Production after PR merge
+- Coding sets the live DRAFT_WORKER_SECRET on Vercel Production after PR merge (no OPENAI_API_KEY required)
 - One-in-flight enforcement uses a simple lock mechanism (database row lock, file lock, or distributed lock); does not require a complex orchestrator
 - Stale lock timeout = 60 minutes (if worker crashes, next worker can reclaim after 60 min)
 - Failed draft_jobs are not automatically retried; manual intervention or a future cron can retry (out of scope for Phase 1)

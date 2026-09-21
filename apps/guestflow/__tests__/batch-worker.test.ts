@@ -6,7 +6,10 @@ import {
   isWithinBatchWindow,
   getTodayBatchCount,
   isWorkerInFlight,
-  claimPendingJobs
+  claimPendingJobs,
+  generateDraftWithCursorUltra,
+  runBatch,
+  type BatchWorkerConfig
 } from '../src/lib/batch-worker'
 import { enqueueDraftJob } from '../src/lib/draft-jobs'
 import { ensurePhase0Schema } from '../src/lib/phase0-schema'
@@ -29,7 +32,7 @@ function createTestDbClient(db: Database.Database) {
   }
 }
 
-describe('Phase 1 Batch Worker', () => {
+describe('Phase 1 Batch Worker (Cursor Ultra)', () => {
   let sqlite: Database.Database
   let db: ReturnType<typeof createTestDbClient>
 
@@ -106,7 +109,49 @@ describe('Phase 1 Batch Worker', () => {
     })
   })
 
-  describe('draft_jobs enqueue and claim', () => {
+  describe('generateDraftWithCursorUltra', () => {
+    it('fails closed with instructions when not run by Cursor Ultra CA', async () => {
+      const context = {
+        fromNumber: '+27821234567',
+        messageText: 'Hello, I have a question',
+        guestName: 'Test Guest',
+        intent: 'general_question',
+        confidence: 0.8
+      }
+
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: false
+      }
+
+      await expect(generateDraftWithCursorUltra(context, config)).rejects.toThrow(
+        /Cursor Ultra Cloud Agent/
+      )
+    })
+
+    it('returns placeholder in dry-run mode', async () => {
+      const context = {
+        fromNumber: '+27821234567',
+        messageText: 'Hello, I have a question',
+        guestName: 'Test Guest',
+        intent: 'general_question',
+        confidence: 0.8
+      }
+
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: true
+      }
+
+      const result = await generateDraftWithCursorUltra(context, config)
+      expect(result).toContain('[DRY RUN]')
+      expect(result).toContain('Hello, I have a question')
+    })
+  })
+
+  describe('draft_jobs enqueue and claim with Cursor Ultra', () => {
     it('enqueues a draft_job for general_question intent', async () => {
       // Clean slate for this test
       db.exec(`DELETE FROM draft_jobs`)
@@ -273,6 +318,58 @@ describe('Phase 1 Batch Worker', () => {
         .prepare(`SELECT * FROM draft_jobs WHERE status = 'claimed'`)
         .all()) as any[]
       expect(updated.length).toBe(0)
+    })
+  })
+
+  describe('runBatch with test draft generator', () => {
+    it('processes jobs with provided draft generator in dry-run', async () => {
+      // Clean slate
+      db.exec(`DELETE FROM draft_jobs`)
+      db.exec(`DELETE FROM inbound_messages`)
+      db.exec(`DELETE FROM inbound_threads`)
+
+      const threadRes = await db
+        .prepare(
+          `INSERT INTO inbound_threads (tenant_id, source, from_number, status, first_message_at, last_message_at)
+           VALUES (1, 'twilio_whatsapp', '+27821234567', 'new', datetime('now'), datetime('now'))`
+        )
+        .run()
+      const threadId = Number(threadRes.lastInsertRowid)
+
+      // Insert 5 messages and enqueue jobs
+      for (let i = 0; i < 5; i++) {
+        const msgRes = await db
+          .prepare(
+            `INSERT INTO inbound_messages (thread_id, tenant_id, direction, from_number, message_text, message_timestamp)
+             VALUES (?, 1, 'inbound', '+27821234567', 'Message ${i}', datetime('now'))`
+          )
+          .run(threadId)
+        const messageId = Number(msgRes.lastInsertRowid)
+
+        await enqueueDraftJob(db, {
+          tenantId: 1,
+          threadId,
+          messageId,
+          intent: 'general_question'
+        })
+      }
+
+      // Mock draft generator for testing
+      const testDraftGenerator = async (context: any, config: BatchWorkerConfig) => {
+        return `[TEST DRAFT] Reply to: ${context.messageText}`
+      }
+
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: true  // Dry-run so no actual upsert
+      }
+
+      const result = await runBatch(db, config, testDraftGenerator)
+
+      // In dry-run, should claim and process but not actually upsert
+      expect(result.jobsClaimed).toBeGreaterThan(0)
+      expect(result.jobsProcessed).toBe(result.jobsClaimed)
     })
   })
 

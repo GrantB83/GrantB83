@@ -3,20 +3,21 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
- * Phase 1 batch worker logic for LLM draft generation.
+ * Phase 1 batch worker logic for Cursor Ultra draft generation.
  * 
  * Batch contract:
  * - Claim ≥5 pending jobs OR every 20 min
  * - Window: 07:00–21:00 Africa/Johannesburg
  * - One worker in flight at a time
  * - Soft cap: ≤6 batches/day
+ * 
+ * Design: Cursor Ultra Cloud Agent generates drafts directly using its own model,
+ * then upserts via authenticated API. No external LLM API calls (OpenAI removed).
  */
 
 export interface BatchWorkerConfig {
   guestflowApiUrl: string
   draftWorkerSecret: string
-  llmProvider: 'openai' | 'anthropic' // extensible for Cursor Ultra
-  llmApiKey?: string
   minJobsForBatch?: number // default 5
   maxWaitMinutes?: number // default 20
   softCapPerDay?: number // default 6
@@ -262,9 +263,16 @@ export async function fetchMessageContext(
 }
 
 /**
- * Generate draft using LLM (OpenAI-compatible API).
+ * Load prompt template and prepare context for Cursor Ultra CA to generate draft.
+ * 
+ * DESIGN: This function returns the formatted prompt. The Cursor Ultra Cloud Agent
+ * calling this worker IS the LLM - it generates the draft directly using its own
+ * model context, not by making HTTP calls to OpenAI or other external APIs.
+ * 
+ * The CA reads this prompt, generates the draft reply itself, and the processJob
+ * function receives that generated draft to upsert via the API.
  */
-export async function generateDraftWithLLM(
+export async function loadPromptForDraft(
   context: {
     fromNumber: string
     messageText: string
@@ -274,6 +282,10 @@ export async function generateDraftWithLLM(
   },
   config: BatchWorkerConfig
 ): Promise<string> {
+  if (config.dryRun) {
+    return `[DRY RUN] Draft for message: "${context.messageText.substring(0, 50)}..."`
+  }
+
   // Load prompt template
   const promptPath = join(process.cwd(), 'prompts', 'DRAFT_PROMPT.md')
   const promptTemplate = readFileSync(promptPath, 'utf-8')
@@ -286,62 +298,39 @@ export async function generateDraftWithLLM(
     .replace('{confidence}', String(context.confidence || 0))
     .replace('{message_text}', context.messageText)
 
+  return prompt
+}
+
+/**
+ * Generate draft using Cursor Ultra Cloud Agent's own model.
+ * 
+ * This is a placeholder that will be called by the Cursor Ultra CA.
+ * The CA implements the actual draft generation logic using its model context.
+ * 
+ * For manual/scripted testing: returns an error instructing to use Cursor Ultra CA.
+ */
+export async function generateDraftWithCursorUltra(
+  context: {
+    fromNumber: string
+    messageText: string
+    guestName: string | null
+    intent: string | null
+    confidence: number | null
+  },
+  config: BatchWorkerConfig
+): Promise<string> {
   if (config.dryRun) {
     return `[DRY RUN] Draft for message: "${context.messageText.substring(0, 50)}..."`
   }
 
-  // Real LLM call via OpenAI-compatible API
-  const apiKey = config.llmApiKey || process.env.OPENAI_API_KEY
-  const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1'
-  const model = process.env.LLM_MODEL || 'gpt-4o-mini'
-
-  if (!apiKey) {
-    throw new Error(
-      'LLM API key required: set OPENAI_API_KEY environment variable or pass llmApiKey in config'
-    )
-  }
-
-  try {
-    const response = await fetch(`${apiBase}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
-    })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`LLM API error (${response.status}): ${error}`)
-    }
-
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>
-    }
-    const draft = data.choices?.[0]?.message?.content
-
-    if (!draft) {
-      throw new Error('LLM returned empty response')
-    }
-
-    return draft.trim()
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`LLM generation failed: ${error.message}`)
-    }
-    throw error
-  }
+  // Fail closed: This worker must be run BY a Cursor Ultra Cloud Agent,
+  // not as a standalone script with API keys.
+  throw new Error(
+    'Draft generation requires Cursor Ultra Cloud Agent. ' +
+    'This worker must be launched by Coding/Grok as a Cursor Ultra CA task. ' +
+    'The CA generates drafts using its own model context, not external API calls. ' +
+    'See docs/PHASE1-BATCH-DRAFTS.md for launch instructions.'
+  )
 }
 
 /**
@@ -379,18 +368,26 @@ export async function upsertDraft(
 
 /**
  * Process a single claimed job.
+ * 
+ * IMPLEMENTATION NOTE: When run by a Cursor Ultra Cloud Agent, replace the
+ * generateDraftWithCursorUltra call with the CA's own draft generation logic.
+ * The CA has the prompt context and generates the reply directly using its model.
+ * 
+ * For standalone script execution, this will fail closed with instructions.
  */
 export async function processJob(
   db: DbClient,
   job: ClaimedJob,
-  config: BatchWorkerConfig
+  config: BatchWorkerConfig,
+  draftGenerator?: (context: any, config: BatchWorkerConfig) => Promise<string>
 ): Promise<ProcessResult> {
   try {
     // Fetch message context
     const context = await fetchMessageContext(db, job.message_id)
 
-    // Generate draft with LLM
-    const draftReply = await generateDraftWithLLM(context, config)
+    // Generate draft with Cursor Ultra CA (or provided generator for testing)
+    const generator = draftGenerator || generateDraftWithCursorUltra
+    const draftReply = await generator(context, config)
 
     // Upsert draft via API and update thread status
     if (!config.dryRun) {
@@ -440,9 +437,16 @@ export async function processJob(
 /**
  * Run a batch of draft jobs.
  */
+/**
+ * Run a batch of draft jobs.
+ * 
+ * Optional draftGenerator allows Cursor Ultra CA or tests to provide draft generation logic.
+ * Without it, fails closed with instructions to use Cursor Ultra CA.
+ */
 export async function runBatch(
   db: DbClient,
-  config: BatchWorkerConfig
+  config: BatchWorkerConfig,
+  draftGenerator?: (context: any, config: BatchWorkerConfig) => Promise<string>
 ): Promise<BatchRunResult> {
   const batchId = `batch-${Date.now()}`
   const startedAt = new Date()
@@ -519,7 +523,7 @@ export async function runBatch(
   // Process jobs
   const results: ProcessResult[] = []
   for (const job of jobs) {
-    const result = await processJob(db, job, config)
+    const result = await processJob(db, job, config, draftGenerator)
     results.push(result)
   }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * GuestFlow Phase 1 Batch Draft Worker
+ * GuestFlow Phase 1 Batch Draft Worker (Cursor Ultra Only)
  * 
  * Usage:
  *   npm run batch-worker
@@ -17,6 +17,9 @@
  *   - Window: 07:00–21:00 Africa/Johannesburg
  *   - One worker in flight at a time
  *   - Soft cap: ≤6 batches/day
+ * 
+ * CURSOR ULTRA ONLY: This worker must be run BY a Cursor Ultra Cloud Agent.
+ * No OPENAI_API_KEY required. The CA generates drafts using its own model.
  */
 
 import { getDbAsync } from '../src/lib/db'
@@ -47,18 +50,18 @@ async function main() {
   // Get database client (uses getDbAsync which handles Turso or SQLite)
   const db = await getDbAsync()
 
-  // Configure batch worker
+  // Configure batch worker (Cursor Ultra only - no API keys)
   const config: BatchWorkerConfig = {
     guestflowApiUrl: apiUrl,
     draftWorkerSecret: secret,
-    llmProvider: 'openai', // Default; override via Cursor Ultra
     dryRun
   }
 
-  console.log('🚀 GuestFlow Phase 1 Batch Worker')
-  console.log('=====================================')
+  console.log('🚀 GuestFlow Phase 1 Batch Worker (Cursor Ultra Only)')
+  console.log('=====================================================')
   console.log(`API URL: ${apiUrl}`)
   console.log(`Dry Run: ${dryRun ? 'YES' : 'NO'}`)
+  console.log('Provider: Cursor Ultra Cloud Agent (no external API)')
   console.log('')
 
   // Run batch

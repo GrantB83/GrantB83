@@ -1,11 +1,13 @@
-# GuestFlow Phase 1 — Batch LLM Draft Pilot
+# GuestFlow Phase 1 — Cursor Ultra Batch Draft Pilot
 
 **Status**: Implemented (Grant CLEAR 20 Sep 2026)  
 **Spec**: `specs/008-guestflow-phase1-batch-drafts/spec.md`
 
 ## Overview
 
-Phase 1 introduces **Cursor Ultra–metered batch LLM draft generation** for GuestFlow. Instead of generating drafts inline during webhook processing (which would bill Vercel function time and violate the 30s timeout), inbound messages with certain intents now enqueue `draft_jobs` for asynchronous processing by a Cursor Cloud Agent batch worker.
+Phase 1 introduces **Cursor Ultra–only batch draft generation** for GuestFlow. Instead of generating drafts inline during webhook processing (which would bill Vercel function time and violate the 30s timeout), inbound messages with certain intents now enqueue `draft_jobs` for asynchronous processing by a Cursor Cloud Agent batch worker running on Cursor Ultra models.
+
+**KEY CHANGE**: No OPENAI_API_KEY required. The Cursor Ultra Cloud Agent generates drafts using its own model context, not external API calls.
 
 ## What Changed
 
@@ -27,12 +29,14 @@ The `/api/inbound/webhook` endpoint now:
 
 ### 2. Batch Worker
 
-A new batch worker (`scripts/batch-worker.ts`) processes queued draft jobs:
+A Cursor Ultra Cloud Agent batch worker (`scripts/batch-worker.ts`) processes queued draft jobs:
 
 - Claims pending jobs in batches
-- Calls LLM with a QC'd prompt template
+- Generates drafts using Cursor Ultra model (the CA itself IS the LLM)
 - Upserts drafts via authenticated API (`POST /api/drafts/upsert`)
 - Updates job status (`pending` → `claimed` → `done`/`failed`)
+
+**No external LLM API calls**: The Cursor Ultra CA reads the prompt template, generates the draft using its own model, and submits it. No OPENAI_API_KEY or other external API provider is used.
 
 ### 3. Batch Contract
 
@@ -56,72 +60,73 @@ The batch worker enforces these hard rules:
    - `DRAFT_WORKER_SECRET` - Draft worker authentication secret (distinct from `CRON_SECRET`)
    - `TURSO_DATABASE_URL` - Turso database URL
    - `TURSO_AUTH_TOKEN` - Turso auth token
-   - `OPENAI_API_KEY` - OpenAI API key (required for LLM calls, fail-closed if unset)
-   - `OPENAI_API_BASE` - Optional, defaults to `https://api.openai.com/v1`
-   - `LLM_MODEL` - Optional, defaults to `gpt-4o-mini`
 
-2. **LLM Provider** (OpenAI-compatible API):
-   - The worker calls OpenAI-compatible chat completions endpoint
-   - Supports OpenAI, Azure OpenAI, or compatible providers via `OPENAI_API_BASE`
-   - Fail-closed: if `OPENAI_API_KEY` is unset, jobs fail immediately with clear error
+2. **Runtime Environment**:
+   - Must be launched BY a Cursor Ultra Cloud Agent
+   - The CA provides the LLM capability - no external API keys needed
+   - Fails closed if run as standalone script without CA context
 
 ### Manual Run
 
+**NOTE**: Running manually outside a Cursor Ultra CA will fail with instructions. The worker must be launched BY Coding as a Cursor Ultra Cloud Agent task.
+
+For testing the batch claim logic only (no draft generation):
+
 ```bash
 cd apps/guestflow
-npm run batch-worker
-```
-
-### Dry Run (Testing)
-
-```bash
 npm run batch-worker -- --dry-run
 ```
 
 Dry run:
 - Claims jobs as normal
-- Generates placeholder drafts (no real LLM call)
+- Generates placeholder drafts (no real model call)
 - Does NOT upsert to the database
 - Useful for testing batch logic without affecting production
 
 ### Cursor Cloud Agent Run
 
-To launch a Cursor Cloud Agent batch worker:
+To launch a Cursor Ultra Cloud Agent batch worker, Coding or Grok Bot instructs Cursor:
 
-```typescript
-// In your orchestrator (e.g., Grok Bot or manual Cursor launch)
-const agent = await cursor.cloudAgents.create({
-  name: 'GuestFlow Phase 1 Batch Worker',
-  environment: 'guestflow-production',
-  branch: 'main',
-  task: `
-    Run the GuestFlow Phase 1 batch draft worker:
-    
-    1. cd apps/guestflow
-    2. npm run batch-worker
-    3. Report results (jobs claimed, succeeded, failed)
-    
-    Stop after one batch completes. Do not loop or wait.
-  `,
-  secrets: [
-    'GUESTFLOW_API_URL',
-    'DRAFT_WORKER_SECRET',
-    'TURSO_DATABASE_URL',
-    'TURSO_AUTH_TOKEN',
-    'OPENAI_API_KEY'  // Required for LLM calls
-  ]
-})
 ```
+Launch Cursor Ultra Cloud Agent on GrantB83/GrantB83, branch main:
+
+Task: Run GuestFlow Phase 1 batch draft worker
+
+Steps:
+1. cd apps/guestflow
+2. npm run batch-worker
+3. For each claimed job, read the prompt template at prompts/DRAFT_PROMPT.md
+4. Generate a warm, professional draft reply following the template instructions
+5. The worker will upsert each draft via POST /api/drafts/upsert
+6. Report results (jobs claimed, succeeded, failed)
+
+Stop after one batch completes. Do not loop or wait.
+
+Environment secrets needed:
+- GUESTFLOW_API_URL
+- DRAFT_WORKER_SECRET  
+- TURSO_DATABASE_URL
+- TURSO_AUTH_TOKEN
+```
+
+The Cursor Ultra CA:
+1. Executes the batch-worker script
+2. Claims pending draft_jobs
+3. For each job, reads the prompt template and message context
+4. Generates the draft using its own Cursor Ultra model
+5. Upserts via the authenticated API
+6. Reports results and exits
 
 ## Batch Worker Output
 
 Example successful run:
 
 ```
-🚀 GuestFlow Phase 1 Batch Worker
-=====================================
+🚀 GuestFlow Phase 1 Batch Worker (Cursor Ultra Only)
+=====================================================
 API URL: https://guestflow.example.com
 Dry Run: NO
+Provider: Cursor Ultra Cloud Agent (no external API)
 
 Batch ID: batch-1695000000000
 Started: 2026-09-20T10:00:00.000Z
@@ -146,10 +151,11 @@ Completed: 2026-09-20T10:02:30.000Z
 Example skipped run (outside window):
 
 ```
-🚀 GuestFlow Phase 1 Batch Worker
-=====================================
+🚀 GuestFlow Phase 1 Batch Worker (Cursor Ultra Only)
+=====================================================
 API URL: https://guestflow.example.com
 Dry Run: NO
+Provider: Cursor Ultra Cloud Agent (no external API)
 
 Batch ID: batch-1695000000000
 Started: 2026-09-20T22:30:00.000Z
@@ -179,6 +185,16 @@ The worker substitutes these variables from the message context:
 - `{intent}` - Classified intent
 - `{confidence}` - Classification confidence
 - `{message_text}` - Original message text
+
+### How Cursor Ultra CA Uses the Template
+
+1. Worker claims draft_job from queue
+2. Worker fetches message context from database
+3. Worker loads `prompts/DRAFT_PROMPT.md` and substitutes variables
+4. **Cursor Ultra CA reads the complete prompt**
+5. **CA generates draft using its own model** (no external API call)
+6. Worker receives generated draft from CA
+7. Worker upserts draft via `POST /api/drafts/upsert`
 
 ## Draft Source Tracking
 
@@ -310,15 +326,9 @@ WHERE draft_source = 'human'
 
 **Solution**: Fewer than 5 pending jobs exist AND oldest job is less than 20 minutes old. The batch worker waits for either condition: ≥5 jobs OR oldest job ≥20 minutes.
 
-### "LLM generation requires Cursor Ultra environment"
+### "Draft generation requires Cursor Ultra Cloud Agent"
 
-**Old error** (pre-fix). Now uses real OpenAI-compatible API.
-
-**Solution**: Set `OPENAI_API_KEY` environment variable. The worker now calls OpenAI chat completions (or compatible API via `OPENAI_API_BASE`).
-
-### "LLM API key required"
-
-**Solution**: Set `OPENAI_API_KEY` in environment variables or Cursor Cloud Agent secrets. Worker fails closed if unset.
+**Solution**: You attempted to run the batch worker as a standalone script. Phase 1 requires launching the worker AS a Cursor Ultra Cloud Agent task. The CA provides the LLM capability. See "Cursor Cloud Agent Run" section for launch instructions.
 
 ### Failed jobs with "Upsert failed (401)"
 
@@ -337,6 +347,8 @@ WHERE draft_source = 'human'
 - ✅ No auto-send (all drafts require Approve & Send)
 - ✅ Outbound redirect mode respected
 - ✅ Edit/reject rates measurable via `draft_source`
+- ✅ **No OPENAI_API_KEY required** (Cursor Ultra only)
+- ✅ **Fail-closed if not launched as Cursor Ultra CA**
 
 ## Out of Scope (Phase 1)
 
