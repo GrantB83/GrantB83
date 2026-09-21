@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 let mockGuestContact: any = null
 let mockBookings: any[] = []
 let mockTwilioThread: any = null
+let lastMessageInsert: any = null
 
 vi.mock('@/lib/db', () => ({
   getDbAsync: vi.fn(async () => ({
@@ -35,6 +36,15 @@ vi.mock('@/lib/db', () => ({
       // Triage ticket insert
       if (query.includes('INSERT INTO guest_tickets')) {
         return { run: vi.fn(() => ({ lastInsertRowid: 99 })) }
+      }
+      // Message insert - capture the arguments
+      if (query.includes('INSERT INTO inbound_messages')) {
+        return {
+          run: vi.fn((...args: any[]) => {
+            lastMessageInsert = { args }
+            return { lastInsertRowid: 21 }
+          }),
+        }
       }
       return {
         run: vi.fn(() => ({ lastInsertRowid: 21 })),
@@ -71,6 +81,7 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     mockGuestContact = null
     mockBookings = []
     mockTwilioThread = null
+    lastMessageInsert = null
     vi.resetModules()
   })
 
@@ -246,5 +257,36 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     const data = await response.json()
     expect(response.status).toBe(401)
     expect(data.success).toBe(false)
+  })
+
+  it('stores [metadata-only] sentinel in message_text (NOT NULL constraint)', async () => {
+    mockGuestContact = { id: 123 }
+    const { POST } = await import('@/app/api/inbound/webhook/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer whsec',
+        },
+        body: JSON.stringify({
+          from: '+27821234567',
+          timestamp: '2026-09-20T12:00:00.000Z',
+          source: 'whatsapp_web',
+          externalMessageId: 'waweb-sentinel-test',
+          metadata: { observedOn: '+27836458313' }
+        }),
+      }) as any
+    )
+    const data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data.success).toBe(true)
+    
+    // Verify the message_text is '[metadata-only]' (not null or empty)
+    expect(lastMessageInsert).toBeTruthy()
+    expect(lastMessageInsert.args).toBeTruthy()
+    // Args order: thread_id, tenant_id, from_number, message_text, media_refs, timestamp, external_message_id, metadata
+    const messageTextArg = lastMessageInsert.args[3] // 4th argument (0-indexed position 3)
+    expect(messageTextArg).toBe('[metadata-only]')
   })
 })

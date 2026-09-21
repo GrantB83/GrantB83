@@ -186,8 +186,9 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      // Metadata-only enforcement: strip body content
-      payload.text = ''
+      // Metadata-only enforcement: normalize to sentinel (never store real body)
+      // Accept incoming [metadata-only], observe-probe, or empty → normalize to sentinel
+      payload.text = '[metadata-only]'
     } else {
       if (!payload.from || !payload.text || !payload.timestamp) {
         return NextResponse.json(
@@ -294,8 +295,8 @@ export async function POST(request: NextRequest) {
       `).run(payload.timestamp, thread.id)
     }
 
-    // Insert message (metadata-only for whatsapp_web)
-    const messageText = source === 'whatsapp_web' ? null : payload.text
+    // Insert message (metadata-only for whatsapp_web uses sentinel)
+    const messageText = source === 'whatsapp_web' ? '[metadata-only]' : payload.text
     const messageMetadata = source === 'whatsapp_web' 
       ? JSON.stringify({ 
           observedOn: payload.metadata?.observedOn || '+27836458313',
