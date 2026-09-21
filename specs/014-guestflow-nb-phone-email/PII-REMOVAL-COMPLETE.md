@@ -1,10 +1,10 @@
 # PII Removal Complete: History Cleaned
 
-## New Tip OID: `77b43d7`
+## New Tip OID: `a770665`
 
 **PR #210**: https://github.com/GrantB83/GrantB83/pull/210  
 **Vercel Preview**: ✅ **SUCCESS**  
-**Status**: PII removed, Ready for GFM review
+**Status**: PII removed, MERGEABLE, Ready for GFM review
 
 ---
 
@@ -92,16 +92,18 @@ Build passes with no PII file.
 ## Commit History (Clean)
 
 ```
-77b43d7 - security(guestflow): remove PII file from fixtures
-293fcae - fix(guestflow): import ParsedBooking type from section-parse module
-0d1c3ac - fix(guestflow): move mapNbSectionRow to lib (Next.js route export fix)
-a1a4dc4 - docs: testing implementation complete
-5282ec0 - test(guestflow): add unit tests for NB phone/email mapping
-d6302ab - docs: add implementation complete summary
-f64e0f7 - fix(guestflow): map NB phone/email columns to bookings+contacts
+a770665 - security(guestflow): remove PII file from fixtures
+c9d4553 - fix(guestflow): import ParsedBooking type from section-parse module
+4b71510 - fix(guestflow): move mapNbSectionRow to lib (Next.js route export fix)
+9182c55 - docs: testing implementation complete
+f01584b - test(guestflow): add unit tests for NB phone/email mapping
+efc5c89 - docs: add implementation complete summary
+95f1196 - fix(guestflow): map NB phone/email columns to bookings+contacts
 ```
 
-All commits rewritten with new SHAs (filter-branch effect).
+All 7 commits rewritten with new SHAs (filter-branch from base dda6caf).
+
+**Critical**: Second filter-branch run was required because initial run filtered `f64e0f7..HEAD` (commits AFTER f64e0f7), but f64e0f7 itself was the commit that added the PII file. Second run filtered `dda6caf..HEAD` (from base) and successfully removed the file from ALL commits including f64e0f7 (now 95f1196).
 
 ---
 
@@ -135,6 +137,21 @@ SA Ops may test with live exports:
 ✅ Unit tests cover all scenarios (no xlsx needed)  
 ✅ **NOT merged** (awaiting GFM review)
 
-**New Tip OID**: `77b43d7`  
+**New Tip OID**: `a770665`  
 **PR**: https://github.com/GrantB83/GrantB83/pull/210  
-**Status**: PII removed, ready for GFM review
+**Status**: PII removed, MERGEABLE, ready for GFM review
+
+## Two-Phase Filter-Branch Process
+
+### Phase 1 (Incomplete)
+- Ran `git filter-branch f64e0f7..HEAD`
+- Only filtered commits AFTER f64e0f7
+- f64e0f7 itself still contained PII file
+- Resulted in tip 77b43d7 (partial clean)
+
+### Phase 2 (Complete)
+- Ran `git filter-branch dda6caf..HEAD` (from base)
+- Filtered ALL 7 commits including f64e0f7
+- Verified ALL commits have zero PII xlsx files
+- Resulted in tip a770665 (fully clean)
+- Force-pushed to remote
