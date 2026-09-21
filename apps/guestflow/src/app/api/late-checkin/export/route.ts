@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
             ...booking,
             gateCode: codes.gateCode,
             doorCode: codes.doorCode,
-            lockboxCode: codes.lockboxCode
+            lockboxCode: codes.lockboxCode,
+            wifiNetwork: codes.wifi.network,
+            wifiPassword: codes.wifi.password
           }
         } catch (error) {
           console.error(`[late-checkin-export] Failed to resolve access codes for ${booking.guestName}:`, error)
