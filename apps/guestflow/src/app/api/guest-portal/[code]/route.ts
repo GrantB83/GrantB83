@@ -104,15 +104,31 @@ export async function GET(
     // Check both fields since propertyName might be generic while suite contains "Cottage Suites - X"
     const propertyNameLower = booking.propertyName?.toLowerCase() || ''
     const suiteLower = booking.suiteOrUnit?.toLowerCase() || ''
-    const property = (propertyNameLower.includes('cottage') || suiteLower.includes('cottage'))
-      ? 'cottage' 
-      : 'main-house'
+    const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
+    const property = isCottage ? 'cottage' : 'main-house'
     
     // Extract suite - use suiteOrUnit directly for matching
     // The resolveAccessCodes function will handle normalization
     const suite = booking.suiteOrUnit || ''
     
     const accessCodes = await resolveAccessCodes(db, tenantId, property, suite || undefined)
+    
+    // Property-specific values from environment (Cottage Falcon template port)
+    const propertyDisplayName = isCottage 
+      ? (process.env.PROPERTY_NAME_COTTAGE || "The Browns' Cottage Suites")
+      : (process.env.PROPERTY_NAME_MAIN || "The Browns' Luxury Suites")
+    
+    const propertyAddress = isCottage
+      ? (process.env.PROPERTY_ADDRESS_COTTAGE || '278 Blue Crane Drive, Dullstroom')
+      : (process.env.PROPERTY_ADDRESS_MAIN || '279 Blue Crane Drive, Dullstroom')
+    
+    const mapsUrl = isCottage
+      ? (process.env.PROPERTY_MAPS_URL_COTTAGE || 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8')
+      : process.env.PROPERTY_MAPS_URL_MAIN
+    
+    const parkingInstructions = isCottage
+      ? (process.env.PROPERTY_PARKING_COTTAGE || 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.')
+      : (process.env.PROPERTY_PARKING_MAIN || 'Parking details will be provided upon arrival')
 
     // Build portal data response
     // IMPORTANT: Never invent WiFi passwords, directions, phone numbers, access codes, or other details
@@ -125,22 +141,24 @@ export async function GET(
         checkInDate: booking.checkInDate || '',
         checkOutDate: booking.checkOutDate || '',
         suiteOrUnit: booking.suiteOrUnit || '',
-        propertyName: booking.propertyName || 'The Browns Luxury Guest Suites',
+        propertyName: propertyDisplayName,
         adults: booking.adults || 2,
         children: booking.children || 0,
         notes: booking.notes || '',
         guestPhone: booking.guestPhone || ''
       },
       property: {
-        name: 'The Browns Luxury Guest Suites',
-        displayName: "The Browns' Dullstroom",
+        name: propertyDisplayName,
+        displayName: propertyDisplayName,
         location: 'Dullstroom, Mpumalanga, South Africa',
+        address: propertyAddress,
+        mapsUrl: mapsUrl || '',
         contact: {
           // IMPORTANT: Use real contact details from environment or config
           // Never invent phone numbers or emails
           phone: process.env.PROPERTY_PHONE || '',
-          email: process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za',
-          whatsapp: process.env.PROPERTY_WHATSAPP || ''
+          email: process.env.PROPERTY_CONTACT_EMAIL || process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za',
+          whatsapp: process.env.PROPERTY_OPS_WHATSAPP || process.env.PROPERTY_WHATSAPP || ''
         }
       },
       stayPacket: {
@@ -162,24 +180,24 @@ export async function GET(
         },
         checkIn: {
           from: '14:00',
-          to: '18:00'
+          to: ''
         },
         checkOut: {
           by: '10:00'
         },
         parking: {
-          // Show parking instructions from NightsBridge/staff facts only
-          instructions: process.env.PROPERTY_PARKING || 'Parking details will be provided upon arrival'
+          // Property-specific parking instructions from Cottage Falcon template
+          instructions: parkingInstructions
         },
         // IMPORTANT: Directions should be property-specific and verified
         // Placeholder policy - update when real directions are approved
         directions: process.env.PROPERTY_DIRECTIONS || 'Directions to The Browns will be provided closer to your arrival date.\n\nPlease contact us if you need specific directions or have any questions about finding the property.',
         houseRules: [
-          'Check-in: 14:00 - 18:00 | Check-out: 10:00',
+          'Check-in: From 14:00 | Check-out: 10:00',
+          'Housekeepers available at 279 Blue Crane Drive until 5 PM',
           'Quiet hours: 22:00 - 07:00',
           'No smoking inside the suites',
-          'Please respect the property and fellow guests',
-          'Report any damages or issues to management immediately'
+          'Please respect the property and fellow guests'
         ],
         emergencyContact: process.env.EMERGENCY_CONTACT || ''
       },

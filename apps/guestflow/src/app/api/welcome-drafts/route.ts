@@ -64,8 +64,27 @@ async function generateWelcomeMessage(
   const checkInFormatted = format(checkInDate, 'EEEE, d MMM yyyy')
   const checkOutFormatted = format(checkOutDate, 'EEEE, d MMM yyyy')
   
-  const propertyName = property?.name || 'Our Guesthouse'
-  const location = property?.location || 'Dullstroom'
+  // Determine property type from property name and suite (cottage vs main-house)
+  const propertyNameLower = property?.name?.toLowerCase() || ''
+  const suiteLower = (booking.room_number || booking.suite_or_unit || '').toLowerCase()
+  const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
+  
+  // Property-specific values from environment
+  const propertyDisplayName = isCottage 
+    ? (process.env.PROPERTY_NAME_COTTAGE || "The Browns' Cottage Suites")
+    : (process.env.PROPERTY_NAME_MAIN || "The Browns' Luxury Suites")
+  
+  const propertyAddress = isCottage
+    ? (process.env.PROPERTY_ADDRESS_COTTAGE || '278 Blue Crane Drive, Dullstroom')
+    : (process.env.PROPERTY_ADDRESS_MAIN || '279 Blue Crane Drive, Dullstroom')
+  
+  const mapsUrl = isCottage
+    ? (process.env.PROPERTY_MAPS_URL_COTTAGE || 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8')
+    : process.env.PROPERTY_MAPS_URL_MAIN
+  
+  const parkingInstructions = isCottage
+    ? (process.env.PROPERTY_PARKING_COTTAGE || 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.')
+    : process.env.PROPERTY_PARKING_MAIN
 
   // Resolve access codes from DB (fail-closed to [ASK STAFF])
   let gateCode: string | undefined
@@ -74,7 +93,7 @@ async function generateWelcomeMessage(
   
   if (db && tenantId) {
     try {
-      const propertyKey = propertyName.toLowerCase().includes('cottage') ? 'cottage' : 'main-house'
+      const propertyKey = isCottage ? 'cottage' : 'main-house'
       const suite = booking.room_number || booking.suite_or_unit || ''
       const codes = await resolveAccessCodes(db, tenantId, propertyKey, suite || undefined)
       gateCode = codes.gateCode
@@ -85,52 +104,90 @@ async function generateWelcomeMessage(
     }
   }
   
-  // Guest-facing message body: NEVER includes [GUEST_PHONE] or [RATE CARD REQUIRED] placeholders
-  let message = `# Welcome Message Stub — ${booking.guest_name}
-
-**Check-in:** ${checkInFormatted}
-**Check-out:** ${checkOutFormatted}
-**Property:** ${propertyName}
-${booking.room_number ? `**Room:** ${booking.room_number}` : ''}
-
----
-
-Hi there,
-
-Looking forward to welcoming you to ${propertyName} in ${location} on ${checkInFormatted}!
-
-We're preparing everything for your arrival and want to make sure your stay is comfortable.`
-
-  // Add portal section if URL is provided
-  if (portalUrl) {
-    message += `
-
-🔗 Your digital welcome pack:
-${portalUrl}
-
-(All check-in details, Wi-Fi, access codes, and property info are in your portal)`
+  // WiFi from environment (fail to placeholder)
+  const wifiPassword = process.env.WIFI_PASSWORD || '[WIFI]'
+  if (!process.env.WIFI_PASSWORD || process.env.WIFI_PASSWORD.trim() === '') {
+    missingFields.push('wifi_password')
   }
+  
+  // Extract suite name from booking
+  const suiteName = booking.room_number || booking.suite_or_unit || '[SUITE NAME]'
+  
+  // Guest-facing message body: Matches Cottage Falcon template structure
+  // Approve & Send only. No invented content.
+  let message = `Hi there! 🌟
 
-  // Add access codes section (from SoR)
-  if (gateCode || doorCode || lockboxCode) {
+Hope you're well. We're excited to welcome you to Dullstroom soon! 🎉
+
+Thank you for choosing ${propertyDisplayName}! ✨
+
+🕒 Check-in Time: From 14:00
+📍 Address: ${propertyAddress}`
+
+  // Add maps link if available
+  if (mapsUrl) {
     message += `
-
-📍 Access Information:
-${gateCode ? `- Gate Code: ${gateCode}` : ''}
-${doorCode ? `- Door Code: ${doorCode}` : ''}
-${lockboxCode ? `- Lockbox Code (${booking.room_number || 'your suite'}): ${lockboxCode}` : ''}`
+🔗 Navigation Link (Google Maps): ${mapsUrl}`
   }
 
   const contactEmail = process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za'
   
   message += `
 
-If you have any questions or special requests ahead of your stay, please don't hesitate to reach out.
+📶 WiFi Password: ${wifiPassword}
 
-Warm regards,
-The GuestFlow Team
-${location}
-📧 ${contactEmail}`
+🛏️ Suite you booked: ${suiteName}.
+
+🛑 Gate: Once the gate has opened please drive through. Do not wait in the gate.`
+
+  // Add property-specific parking instructions
+  if (parkingInstructions) {
+    message += `
+🚗 Parking: ${parkingInstructions}`
+  }
+
+  message += `
+
+🙋 Our housekeepers are available next door at The Browns' Luxury Suites (279 Blue Crane Drive) until 5 PM. They will be expecting you and will gladly show you to your room. After 5 PM, we will give you our self-check-in details.`
+
+  // Add access codes if available and after 5 PM path applies
+  if (gateCode || doorCode || lockboxCode) {
+    message += `
+
+📍 Self-Check-In Access (after 5 PM):`
+    if (gateCode) {
+      message += `
+- Gate Code: ${gateCode}`
+    }
+    if (doorCode) {
+      message += `
+- Door Code: ${doorCode}`
+    }
+    if (lockboxCode) {
+      message += `
+- Lockbox Code: ${lockboxCode}`
+    }
+  }
+
+  message += `
+⚡ Loadshedding: Currently no planned loadshedding.
+
+📞 If you need any assistance or guidance, feel free to contact us at ${process.env.PROPERTY_CONTACT_EMAIL || 'stay@thebrowns.co.za'}.`
+
+  // Add portal link if available
+  if (portalUrl) {
+    message += `
+
+🔗 Your stay portal:
+${portalUrl}
+
+(Check-in details, Wi-Fi, access codes, and property info)`
+  }
+
+  message += `
+
+Kind regards,
+Grant & Liana Brown`
 
   return { message, missingFields, gateCode, doorCode, lockboxCode }
 }

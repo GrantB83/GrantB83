@@ -24,6 +24,8 @@ interface PortalData {
     name: string
     displayName: string
     location: string
+    address?: string
+    mapsUrl?: string
     contact: {
       phone: string
       email: string
@@ -183,7 +185,7 @@ export default function GuestPortalPage() {
                     {booking.checkInDate ? format(parseISO(booking.checkInDate), 'EEEE, d MMMM yyyy') : '[MISSING DATE]'}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    Between {stayPacket.checkIn.from} - {stayPacket.checkIn.to}
+                    {stayPacket.checkIn.to ? `Between ${stayPacket.checkIn.from} - ${stayPacket.checkIn.to}` : `From ${stayPacket.checkIn.from}`}
                   </p>
                 </div>
               </div>
@@ -356,21 +358,45 @@ export default function GuestPortalPage() {
           </div>
         </div>
 
-        {/* Directions */}
+        {/* Property Address & Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="bg-purple-50 border-b border-purple-100 px-6 py-4">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl font-bold text-gray-900">Directions</h2>
+              <h2 className="text-xl font-bold text-gray-900">Property Address</h2>
             </div>
           </div>
-          <div className="p-6">
-            {stayPacket.directions ? (
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-900 whitespace-pre-line">{stayPacket.directions}</p>
+          <div className="p-6 space-y-4">
+            {property.address && (
+              <div>
+                <p className="text-lg font-semibold text-gray-900 mb-2">
+                  {property.address}
+                </p>
               </div>
-            ) : (
-              <p className="text-gray-600">[DIRECTIONS PENDING]</p>
+            )}
+            
+            {property.mapsUrl && (
+              <div>
+                <a
+                  href={property.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+                >
+                  <MapPin className="w-5 h-5" />
+                  Open in Google Maps
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
+            {stayPacket.directions && (
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600 mb-2 font-medium">Getting Here</p>
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-gray-900 whitespace-pre-line">{stayPacket.directions}</p>
+                </div>
+              </div>
             )}
           </div>
         </div>
