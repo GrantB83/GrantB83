@@ -101,10 +101,12 @@ const schema = `
     inquiry_id INTEGER,
     property_id INTEGER,
     guest_name TEXT NOT NULL,
+    guest_name_norm TEXT,
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
     room_number TEXT,
     suite_or_unit TEXT,
+    suite_or_unit_norm TEXT,
     adults INTEGER DEFAULT 2,
     children INTEGER DEFAULT 0,
     notes TEXT,
@@ -112,7 +114,13 @@ const schema = `
     guest_phone TEXT,
     property_name TEXT,
     status TEXT DEFAULT 'pending',
+    nightsbridge_booking_id TEXT,
+    last_import_at DATETIME,
+    import_batch_id TEXT,
+    source TEXT DEFAULT 'nb',
+    last_seen_import_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     FOREIGN KEY (inquiry_id) REFERENCES inquiries(id),
     FOREIGN KEY (property_id) REFERENCES properties(id)
@@ -377,6 +385,68 @@ export function getDb(): Database.Database {
   }
 }
 
+/**
+ * Ensure Phase 17 columns exist in bookings table (Turso-safe runtime migration)
+ * 
+ * Adds missing columns if they don't exist. Idempotent and safe for Production.
+ * Pattern: Same as migrate-outbound-redirect.js
+ */
+async function ensurePhase17Columns(db: DbClient): Promise<void> {
+  try {
+    // Check if bookings table exists
+    const tables = await db.prepare(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='bookings'
+    `).all()
+    
+    if (tables.length === 0) {
+      // Table doesn't exist yet, will be created with full schema
+      return
+    }
+
+    // Get current columns
+    const columns = await db.prepare(`PRAGMA table_info(bookings)`).all() as Array<{ name: string }>
+    const columnNames = new Set(columns.map(c => c.name))
+
+    // Phase 17 columns to add
+    const phase17Columns = [
+      { name: 'guest_name_norm', type: 'TEXT' },
+      { name: 'suite_or_unit_norm', type: 'TEXT' },
+      { name: 'nightsbridge_booking_id', type: 'TEXT' },
+      { name: 'last_import_at', type: 'DATETIME' },
+      { name: 'import_batch_id', type: 'TEXT' },
+      { name: 'source', type: 'TEXT', default: "'nb'" },
+      { name: 'last_seen_import_at', type: 'DATETIME' },
+      { name: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
+    ]
+
+    for (const col of phase17Columns) {
+      if (!columnNames.has(col.name)) {
+        const defaultClause = col.default ? ` DEFAULT ${col.default}` : ''
+        await db.exec(`ALTER TABLE bookings ADD COLUMN ${col.name} ${col.type}${defaultClause}`)
+        console.log(`[ensurePhase17Columns] Added column: bookings.${col.name}`)
+      }
+    }
+
+    // Create indexes if they don't exist (Turso supports CREATE INDEX IF NOT EXISTS)
+    await db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_nbid 
+      ON bookings(tenant_id, nightsbridge_booking_id) 
+      WHERE nightsbridge_booking_id IS NOT NULL
+    `)
+    
+    await db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_natural_key 
+      ON bookings(tenant_id, guest_name_norm, check_in, check_out, suite_or_unit_norm)
+    `)
+
+    console.log('[ensurePhase17Columns] Phase 17 schema migration complete')
+  } catch (error: any) {
+    console.error('[ensurePhase17Columns] Migration failed:', error.message)
+    // Don't throw - allow app to continue if columns might already exist
+  }
+}
+
 export async function getDbAsync(): Promise<DbClient> {
   if (dbClient) {
     return dbClient
@@ -397,10 +467,11 @@ export async function getDbAsync(): Promise<DbClient> {
     try {
       dbClient = createTursoClient(tursoUrl, tursoAuthToken)
       
-      // Initialize schema and seed data (async)
+      // Initialize schema, ensure Phase 17 columns, and seed data (async)
       if (!initPromise) {
         initPromise = (async () => {
           await dbClient!.exec(schema)
+          await ensurePhase17Columns(dbClient!)
           await seedDefaultDataAsync(dbClient!)
         })()
       }
@@ -420,6 +491,7 @@ export async function getDbAsync(): Promise<DbClient> {
   try {
     dbClient = createSqliteClient()
     dbClient.exec(schema)
+    await ensurePhase17Columns(dbClient)
     seedDefaultData(dbClient)
     return dbClient
   } catch (err: any) {
