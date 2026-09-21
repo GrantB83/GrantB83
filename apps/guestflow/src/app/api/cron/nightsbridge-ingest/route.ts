@@ -3,6 +3,13 @@ import { getDb, type DbClient } from '@/lib/db'
 import * as XLSX from 'xlsx'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { upsertGuestContact } from '@/lib/guest-contacts'
+import {
+  upsertBooking,
+  determineImportWindow,
+  softCancelDisappearedBookings,
+  type ParsedBooking as NbParsedBooking,
+} from '@/lib/nightsbridge-upsert'
+import { randomUUID } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -290,32 +297,29 @@ export async function POST(request: NextRequest) {
       type: 'sqlite' as const,
     }
 
+    // Phase 17: Replace INSERT OR REPLACE with UPSERT logic
+    const importBatchId = randomUUID()
     let inserted = 0
+    let updated = 0
+    let unchanged = 0
     const errors: string[] = []
 
-    const insertStmt = db.prepare(`
-      INSERT OR REPLACE INTO bookings (
-        tenant_id, guest_name, suite_or_unit, check_in, check_out,
-        adults, children, notes, late_check_in, guest_phone, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
+    // Determine import window for soft-cancel logic
+    const importWindow = determineImportWindow(parsedBookings as NbParsedBooking[])
 
     for (const booking of parsedBookings) {
       try {
-        insertStmt.run(
-          tenantId,
-          booking.guestName,
-          booking.suiteOrUnit,
-          booking.checkInDate,
-          booking.checkOutDate,
-          booking.adults,
-          booking.children,
-          booking.notes || '',
-          booking.lateCheckIn ? 1 : 0,
-          booking.guestPhone || booking.guestPhone2 || '',
-          booking.status
-        )
-        inserted++
+        const result = upsertBooking(db, booking as NbParsedBooking, tenantId, importBatchId)
+        
+        if (result.action === 'inserted') {
+          inserted++
+        } else if (result.action === 'updated') {
+          updated++
+        } else if (result.action === 'unchanged') {
+          unchanged++
+        }
+
+        // Upsert guest contact (existing P1 feature)
         try {
           await upsertGuestContact(contactDb as any, {
             tenantId,
@@ -334,6 +338,15 @@ export async function POST(request: NextRequest) {
         errors.push(`${booking.guestName}: ${err.message}`)
       }
     }
+
+    // Phase 17: Soft-cancel bookings that disappeared from import window
+    const cancelled = softCancelDisappearedBookings(
+      db,
+      tenantId,
+      importWindow,
+      importBatchId,
+      parsedBookings as NbParsedBooking[]
+    )
 
     // 6. P1: Auto-enqueue welcome and late check-in drafts after successful import
     const now = new Date()
@@ -452,15 +465,25 @@ The Browns Team`
       }
     }
 
-    // 7. Return summary with P1 draft stats
+    // 7. Return enhanced summary with P1 draft stats
     return NextResponse.json({
       success: true,
       targetDate,
       parsed: parsedBookings.length,
       inserted,
+      updated,
+      cancelled,
+      unchanged,
       errors: errors.length > 0 ? errors : undefined,
       missingFields: missingFields.length > 0 ? missingFields : undefined,
-      message: `Successfully imported ${inserted} of ${parsedBookings.length} bookings`,
+      message: `Successfully imported ${parsedBookings.length} bookings (${inserted} new, ${updated} updated, ${cancelled} cancelled, ${unchanged} unchanged)`,
+      summary: {
+        importBatchId,
+        importWindow: {
+          minDate: importWindow.minDate,
+          maxDate: importWindow.maxDate,
+        },
+      },
       p1AutoEnqueue: {
         welcomeDrafts: welcomeDraftsCreated,
         lateDrafts: lateDraftsCreated,
