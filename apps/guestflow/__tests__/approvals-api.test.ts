@@ -18,17 +18,18 @@ const inboundRows = [
 vi.mock('@/lib/db', () => ({
   getDbAsync: vi.fn(async () => ({
     prepare: vi.fn((query: string) => {
+      if (query.includes('sqlite_master')) {
+        return {
+          get: vi.fn(async () => undefined),
+          all: vi.fn(async () => []),
+          run: vi.fn(),
+        }
+      }
       if (query.includes('FROM inbound_messages')) {
-        return { all: vi.fn(async () => inboundRows) }
+        return { all: vi.fn(async () => inboundRows), get: vi.fn(), run: vi.fn() }
       }
       if (query.includes('FROM guest_tickets')) {
-        return { all: vi.fn(async () => []) }
-      }
-      if (query.includes('FROM welcome_drafts')) {
-        return { all: vi.fn(async () => []) }
-      }
-      if (query.includes('FROM late_checkin_drafts')) {
-        return { all: vi.fn(async () => []) }
+        return { all: vi.fn(async () => []), get: vi.fn(), run: vi.fn() }
       }
       return { all: vi.fn(async () => []), get: vi.fn(), run: vi.fn() }
     }),
@@ -61,5 +62,16 @@ describe('GET /api/approvals', () => {
     expect(data.items[0].id).toBe(101)
     expect(typeof data.items[0].id).toBe('number')
     expect(data.items[0].metadata.thread_id).toBe(55)
+  })
+
+  it('returns 200 with empty items when optional draft tables are absent (no 500)', async () => {
+    const { GET } = await import('@/app/api/approvals/route')
+    const response = await GET(
+      new NextRequest('http://localhost:3100/api/approvals?tenant_id=1')
+    )
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.success).toBe(true)
+    expect(Array.isArray(data.items)).toBe(true)
   })
 })
