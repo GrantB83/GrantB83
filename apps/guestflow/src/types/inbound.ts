@@ -4,7 +4,7 @@
  * Defines request/response shapes for the send API and related entities
  */
 
-export type SendChannel = 'whatsapp' | 'email' | 'whatsapp_web'
+export type SendChannel = 'whatsapp' | 'email' | 'whatsapp_web' | 'sms'
 
 export interface SendMessageRequest {
   threadId: number

@@ -4,6 +4,7 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 
 | Phase | Ritual removed | Est. hours/week before | Est. hours/week after | Actual before (Grant) | Actual after (Grant) | Live since | Evidence artefact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| GuestFlow UMI v2.1 | Rewrite the same guest reply in WA + Gmail + SMS, then hunt Needs Approval | 3–5 (stay morning) | 0.5 in-thread review + Approve&Send | | | 2026-09-24 coded | `apps/guestflow/docs/UMI-V21.md` |
 | GuestFlow Phase 0 | Send because a draft body exists (staff cookie + body) | 0.5–1 risk/recovery | 0 (approve + one-time confirmToken) | | | 2026-09-20 coded | `apps/guestflow/docs/PHASE0-SAFETY.md` |
 | GuestFlow P0/P1 | 07:00 copy guest reply into Gmail + paste WhatsApp Web | 3–5 (stay morning) | 0.5 review + confirm Send / clicker | | | 2026-09-20 coded | `apps/guestflow/docs/EMAIL-CONTROL-CENTER.md` |
 | 1a | Scan mixed inbox for “what is this?” | 5–8 | 1 review of `Queue/NeedsGrant` | | | | `samples/email-dry-run.md` |

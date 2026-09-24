@@ -4,7 +4,8 @@ import { jsonSafeResponse } from '@/lib/json-safe'
 import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { generateTicketDrafts } from '@/lib/ticket-playbooks'
 import { processCheckinEvent } from '@/lib/checkin-inference'
-import { checkWhatsAppWebAllowlist, createTriageTicket } from '@/lib/whatsapp-web-allowlist'
+import { checkWhatsAppWebAllowlist } from '@/lib/whatsapp-web-allowlist'
+import { ingestInboundMessage } from '@/lib/inbound-ingest'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const source = payload.source || 'legacy_wa'
     
-    // WhatsApp Web source has different validation requirements
+    // WhatsApp Web source: full bodies (UMI v2.1). Empty → [body unavailable].
     if (source === 'whatsapp_web') {
       if (!payload.from || !payload.timestamp || !payload.externalMessageId) {
         return jsonSafeResponse(
@@ -187,9 +188,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      // Metadata-only enforcement: normalize to sentinel (never store real body)
-      // Accept incoming [metadata-only], observe-probe, or empty → normalize to sentinel
-      payload.text = '[metadata-only]'
+      const body = String(payload.text || '').trim()
+      payload.text =
+        !body || body === '[metadata-only]' || body === '[observe-probe]'
+          ? '[body unavailable]'
+          : payload.text
     } else {
       if (!payload.from || !payload.text || !payload.timestamp) {
         return jsonSafeResponse(
@@ -204,134 +207,48 @@ export async function POST(request: NextRequest) {
     const db = await getDbAsync()
     const tenantId = await getDefaultTenantIdAsync()
 
-    // WhatsApp Web allowlist gate (fail-closed)
+    // WhatsApp Web: prefer existing Cloud/Twilio thread when the allowlist finds one.
+    // Unknown senders become temp threads (UMI v2.1) — no longer dropped as triage-only.
     if (source === 'whatsapp_web') {
       const allowlistCheck = await checkWhatsAppWebAllowlist(db, tenantId, payload.from)
-      
-      if (!allowlistCheck.allowed) {
-        // Unknown sender - route to triage queue
-        const ticketId = await createTriageTicket(
-          db,
-          tenantId,
-          payload.from,
-          payload.externalMessageId!,
-          payload.timestamp,
-          payload.metadata || {}
-        )
-        
-        return jsonSafeResponse({
-          success: true,
-          triaged: true,
-          ticketId: Number(ticketId),
-          reason: 'Sender not in allowlist (guest_contacts, bookings, or open Twilio threads)'
-        })
-      }
-      
-      // If existing Twilio thread found, we'll use it for deduplication below
       if (allowlistCheck.existingTwilioThreadId) {
-        // Store for deduplication logic
         payload._twilioThreadId = allowlistCheck.existingTwilioThreadId
       }
     }
 
-    // Check for duplicate message
-    if (payload.externalMessageId) {
-      const existing = await db.prepare(`
-        SELECT id FROM inbound_messages 
-        WHERE external_message_id = ? 
-        LIMIT 1
-      `).get(payload.externalMessageId)
+    const ingest = await ingestInboundMessage(db, tenantId, {
+      from: payload.from,
+      text: payload.text,
+      timestamp: payload.timestamp,
+      source,
+      mediaRefs: payload.mediaRefs,
+      externalMessageId: payload.externalMessageId,
+      preferredThreadId: payload._twilioThreadId,
+    })
 
-      if (existing) {
-        return jsonSafeResponse({
-          success: true,
-          duplicate: true,
-          messageId: (existing as any).id
-        })
-      }
+    const thread = (await db.prepare('SELECT * FROM inbound_threads WHERE id = ?').get(ingest.threadId)) as any
+    const messageId = Number(ingest.messageId)
+
+    if (ingest.duplicate) {
+      return jsonSafeResponse({
+        success: true,
+        duplicate: true,
+        messageId: ingest.messageId,
+        threadId: ingest.threadId,
+      })
     }
 
-    // Find or create thread
-    let thread = null
-    
-    // WhatsApp Web deduplication: prefer existing Twilio thread if present
-    if (source === 'whatsapp_web' && (payload as any)._twilioThreadId) {
-      thread = await db.prepare(`
-        SELECT * FROM inbound_threads WHERE id = ?
-      `).get((payload as any)._twilioThreadId) as any
-    }
-    
-    if (!thread) {
-      thread = await db.prepare(`
-        SELECT * FROM inbound_threads 
-        WHERE from_number = ? AND source = ?
-        ORDER BY last_message_at DESC
-        LIMIT 1
-      `).get(payload.from, source) as any
-    }
-
-    if (!thread) {
-      // Create new thread
-      const threadInsert = await db.prepare(`
-        INSERT INTO inbound_threads (
-          tenant_id, source, from_number, status, 
-          first_message_at, last_message_at
-        ) VALUES (?, ?, ?, 'new', ?, ?)
-      `).run(
-        tenantId,
-        source,
-        payload.from,
-        payload.timestamp,
-        payload.timestamp
-      )
-
-      thread = await db.prepare('SELECT * FROM inbound_threads WHERE id = ?')
-        .get(threadInsert.lastInsertRowid) as any
-    } else {
-      // Update existing thread
-      await db.prepare(`
-        UPDATE inbound_threads 
-        SET last_message_at = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(payload.timestamp, thread.id)
-    }
-
-    // Insert message (metadata-only for whatsapp_web uses sentinel)
-    const messageText = source === 'whatsapp_web' ? '[metadata-only]' : payload.text
-    const messageMetadata = source === 'whatsapp_web' 
-      ? JSON.stringify({ 
-          observedOn: payload.metadata?.observedOn || '+27836458313',
-          ...(payload.metadata || {})
-        })
-      : null
-    
-    const messageInsert = await db.prepare(`
-      INSERT INTO inbound_messages (
-        thread_id, tenant_id, direction, from_number, 
-        message_text, media_refs, message_timestamp, external_message_id, metadata
-      ) VALUES (?, ?, 'inbound', ?, ?, ?, ?, ?, ?)
-    `).run(
-      thread.id,
-      tenantId,
-      payload.from,
-      messageText,
-      payload.mediaRefs ? JSON.stringify(payload.mediaRefs) : null,
-      payload.timestamp,
-      payload.externalMessageId || null,
-      messageMetadata
-    )
-
-    const messageId = Number(messageInsert.lastInsertRowid)
-
-    // WhatsApp Web metadata-only: skip classification (no body to classify)
     if (source === 'whatsapp_web') {
       return jsonSafeResponse({
         success: true,
         messageId,
         threadId: thread.id,
         allowlisted: true,
-        deduped: !!(payload as any)._twilioThreadId,
-        metadataOnly: true
+        deduped: !!payload._twilioThreadId,
+        metadataOnly: false,
+        temp: thread.thread_kind === 'temp',
+        spam: Boolean(ingest.spam),
+        queuedForApproval: ingest.queuedForApproval,
       })
     }
 

@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       source: normalized.source,
       subject: normalized.subject,
       externalMessageId: normalized.externalMessageId,
+      senderAddress: normalized.from,
+      sourceTag: 'email',
     })
 
     return NextResponse.json(result)

@@ -80,11 +80,11 @@ export default function OpsPage() {
             color="blue"
           />
           <OpsToolCard
-            href="/ops/inbound-queue"
+            href="/"
             icon={<MessageSquare className="w-8 h-8 text-purple-600" />}
-            title="Inbound Queue"
-            description="Review & approve inbound WhatsApp messages"
-            cliTool="browns-inbound-queue"
+            title="Inbox"
+            description="Chat-first booking threads — drafts live in-thread"
+            cliTool="(web-only)"
             color="purple"
           />
           <OpsToolCard
@@ -102,14 +102,6 @@ export default function OpsPage() {
             description="Parse NightsBridge CSV bookings and detect gaps"
             cliTool="browns-nightsbridge-bookings-adapter"
             color="teal"
-          />
-          <OpsToolCard
-            href="/needs-approval"
-            icon={<CheckCircle2 className="w-8 h-8 text-amber-600" />}
-            title="Needs Approval"
-            description="Review drafts and approve guest communications"
-            cliTool="(web-only)"
-            color="amber"
           />
         </div>
       </div>
@@ -196,6 +188,22 @@ export default function OpsPage() {
               description="Morning brief with RED/AMBER/GREEN priorities, arrivals, departures, housekeeping"
               cliTool="browns-daily-ops-brief"
               color="slate"
+            />
+            <OpsToolCard
+              href="/ops/inbound-queue"
+              icon={<MessageSquare className="w-8 h-8 text-purple-600" />}
+              title="Inbound Queue"
+              description="Legacy inbound queue (guest drafts now live in Inbox)"
+              cliTool="browns-inbound-queue"
+              color="purple"
+            />
+            <OpsToolCard
+              href="/exceptions"
+              icon={<AlertTriangle className="w-8 h-8 text-red-600" />}
+              title="Exceptions"
+              description="Tickets and fail-closed stops"
+              cliTool="(web-only)"
+              color="red"
             />
           </div>
         )}

@@ -5,6 +5,10 @@ import { sendEmail, isEmailAddress, extractEmailAddress } from '@/lib/email'
 import { createQueuedJob } from '@/lib/send-jobs'
 import { consumeConfirmToken, isSendEligible } from '@/lib/confirm-token'
 import { ensurePhase0Schema } from '@/lib/phase0-schema'
+import { sendSms } from '@/lib/sms'
+import { mapSourceToChannel, sendApiChannel } from '@/lib/umi-channels'
+import { markThreadOutbound } from '@/lib/umi-threads'
+import { ensureUmiSchema } from '@/lib/umi-schema'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 
 export const dynamic = 'force-dynamic'
@@ -62,7 +66,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as SendMessageRequest
     const { threadId } = body
-    const channel: SendChannel = body.channel || 'whatsapp'
+    let channel: SendChannel = body.channel || 'whatsapp'
 
     if (!threadId || typeof threadId !== 'number') {
       return NextResponse.json(
@@ -84,11 +88,12 @@ export async function POST(request: NextRequest) {
 
     const db = await getDbAsync()
     await ensurePhase0Schema(db)
+    await ensureUmiSchema(db)
 
     const thread = (await db
       .prepare(
         `
-      SELECT id, from_number, status, guest_name, metadata
+      SELECT id, from_number, status, guest_name, metadata, last_inbound_channel, last_channel
       FROM inbound_threads
       WHERE id = ?
     `
@@ -100,6 +105,10 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Thread not found' } as SendMessageResponse,
         { status: 400 }
       )
+    }
+
+    if (!body.channel && thread.last_inbound_channel) {
+      channel = sendApiChannel(mapSourceToChannel(thread.last_inbound_channel))
     }
 
     const latestMessage = (await db
@@ -279,6 +288,63 @@ export async function POST(request: NextRequest) {
           timestamp,
         },
       } as SendMessageResponse)
+    }
+
+    if (channel === 'sms') {
+      const to = (body.to || thread.from_number || '').replace(/^whatsapp:/i, '').trim()
+      if (!to) {
+        return NextResponse.json(
+          { success: false, error: 'A recipient phone number is required for SMS' } as SendMessageResponse,
+          { status: 400 }
+        )
+      }
+
+      const sendResult = await sendSms({ to, body: outboundBody })
+      if (sendResult.success) {
+        await db.batch([
+          {
+            sql: `
+              INSERT INTO inbound_messages (
+                thread_id, message_text, message_timestamp, tenant_id,
+                direction, channel, from_number
+              ) VALUES (?, ?, ?, 1, 'outbound', 'sms', ?)
+            `,
+            args: [threadId, outboundBody, sendResult.timestamp, to],
+          },
+          {
+            sql: `
+              UPDATE inbound_threads
+              SET status = 'sent', last_message_at = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `,
+            args: [sendResult.timestamp, threadId],
+          },
+        ])
+        await markThreadOutbound(db, threadId, {
+          timestamp: sendResult.timestamp,
+          channel: 'sms',
+          status: 'sent',
+        })
+        return NextResponse.json({
+          success: true,
+          data: {
+            channel: 'sms',
+            messageId: sendResult.messageId || null,
+            timestamp: sendResult.timestamp,
+            provider: 'twilio',
+            threadStatus: 'sent',
+          },
+        } as SendMessageResponse)
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to send SMS',
+          details: sendResult.error,
+        } as SendMessageResponse,
+        { status: sendResult.error?.includes('not configured') ? 503 : 500 }
+      )
     }
 
     const redactedPhone =

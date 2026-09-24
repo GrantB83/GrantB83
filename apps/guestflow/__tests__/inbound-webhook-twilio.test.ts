@@ -62,6 +62,25 @@ vi.mock('@/lib/ticket-playbooks', () => ({
   }))
 }))
 
+vi.mock('@/lib/inbound-ingest', () => ({
+  ingestInboundMessage: vi.fn(async () => ({
+    success: true,
+    messageId: 123,
+    threadId: 1,
+    queuedForApproval: true,
+    status: 'drafted',
+    spam: false,
+    classification: {
+      intent: 'general_question',
+      confidence: 0.7,
+      extractedData: {},
+      missingFields: [],
+    },
+    draftReply: { text: 'Draft', requiresApproval: true, missingInfo: [] },
+  })),
+  verifySharedSecret: vi.fn(),
+}))
+
 vi.mock('@/lib/checkin-inference', () => ({
   processCheckinEvent: vi.fn(() => ({
     event: {
