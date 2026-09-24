@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDbAsync } from '@/lib/db'
+import { jsonSafeResponse } from '@/lib/json-safe'
 import {
   approveStaffOpsDraft,
   ensureStaffOpsDraftsTable,
@@ -169,13 +170,13 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()
     )
 
-    return NextResponse.json({
+    return jsonSafeResponse({
       success: true,
       items,
     })
   } catch (error) {
     console.error('Error fetching approvals:', error)
-    return NextResponse.json({ success: false, error: 'Failed to fetch approvals' }, { status: 500 })
+    return jsonSafeResponse({ success: false, error: 'Failed to fetch approvals' }, { status: 500 })
   }
 }
 
@@ -190,7 +191,7 @@ export async function PATCH(request: NextRequest) {
     const { itemId, action, content, actor, type } = body
 
     if (!itemId || !action) {
-      return NextResponse.json(
+      return jsonSafeResponse(
         { success: false, error: 'itemId and action required' },
         { status: 400 }
       )
@@ -217,9 +218,9 @@ export async function PATCH(request: NextRequest) {
       if (action === 'approve') {
         const result = await approveStaffOpsDraft(db, Number(itemId), actor)
         if (!result) {
-          return NextResponse.json({ success: false, error: 'Staff ops draft not found' }, { status: 404 })
+          return jsonSafeResponse({ success: false, error: 'Staff ops draft not found' }, { status: 404 })
         }
-        return NextResponse.json({
+        return jsonSafeResponse({
           success: true,
           status: result.status,
           copyContent: result.copyContent,
@@ -230,15 +231,15 @@ export async function PATCH(request: NextRequest) {
       if (action === 'reject') {
         const rejected = await rejectStaffOpsDraft(db, Number(itemId), actor)
         if (!rejected) {
-          return NextResponse.json(
+          return jsonSafeResponse(
             { success: false, error: 'Staff ops draft not found or not pending' },
             { status: 404 }
           )
         }
-        return NextResponse.json({ success: true, status: 'rejected', copyOnly: true })
+        return jsonSafeResponse({ success: true, status: 'rejected', copyOnly: true })
       }
 
-      return NextResponse.json(
+      return jsonSafeResponse(
         { success: false, error: 'Unsupported action for staff_ops' },
         { status: 400 }
       )
@@ -301,9 +302,9 @@ export async function PATCH(request: NextRequest) {
         .run(itemId)
     }
 
-    return NextResponse.json({ success: true })
+    return jsonSafeResponse({ success: true })
   } catch (error) {
     console.error('Error updating approval:', error)
-    return NextResponse.json({ success: false, error: 'Failed to update approval' }, { status: 500 })
+    return jsonSafeResponse({ success: false, error: 'Failed to update approval' }, { status: 500 })
   }
 }

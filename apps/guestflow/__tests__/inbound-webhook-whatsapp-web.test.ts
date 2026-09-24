@@ -3,6 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 let mockGuestContact: any = null
 let mockBookings: any[] = []
 let mockTwilioThread: any = null
+let mockDuplicateMessage: { id: number | bigint } | null = null
 let lastMessageInsert: any = null
 
 vi.mock('@/lib/db', () => ({
@@ -19,8 +20,8 @@ vi.mock('@/lib/db', () => ({
         return { get: vi.fn(() => mockTwilioThread) }
       }
       // Duplicate check
-      if (query.includes('SELECT id FROM inbound_messages')) {
-        return { get: vi.fn(() => null) }
+      if (query.includes('SELECT id FROM inbound_messages') && query.includes('external_message_id')) {
+        return { get: vi.fn(() => mockDuplicateMessage) }
       }
       // Thread lookup
       if (query.includes('SELECT * FROM inbound_threads')) {
@@ -81,6 +82,7 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     mockGuestContact = null
     mockBookings = []
     mockTwilioThread = null
+    mockDuplicateMessage = null
     lastMessageInsert = null
     vi.resetModules()
   })
@@ -158,6 +160,66 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(data.allowlisted).toBe(true)
+  })
+
+  it('returns 200 JSON when Turso returns BigInt thread and message ids', async () => {
+    mockGuestContact = { id: BigInt(123) }
+    mockTwilioThread = {
+      id: BigInt(88),
+      source: 'twilio_whatsapp',
+      from_number: '+27821234567',
+      status: 'new',
+    }
+    const { POST } = await import('@/app/api/inbound/webhook/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer whsec',
+        },
+        body: JSON.stringify({
+          from: '+27821234567',
+          timestamp: '2026-09-20T12:00:00.000Z',
+          source: 'whatsapp_web',
+          externalMessageId: 'waweb-bigint-ids',
+        }),
+      }) as any
+    )
+    expect(response.status).toBe(200)
+    const raw = await response.text()
+    expect(raw).not.toContain('serialize a BigInt')
+    const data = JSON.parse(raw)
+    expect(data.success).toBe(true)
+    expect(data.threadId).toBe(88)
+    expect(typeof data.messageId).toBe('number')
+  })
+
+  it('returns 200 on duplicate when existing message id is BigInt', async () => {
+    mockGuestContact = { id: 123 }
+    mockDuplicateMessage = { id: BigInt(999) }
+
+    const { POST } = await import('@/app/api/inbound/webhook/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer whsec',
+        },
+        body: JSON.stringify({
+          from: '+27821234567',
+          text: 'ignored for whatsapp_web',
+          timestamp: '2026-09-20T12:00:00.000Z',
+          source: 'whatsapp_web',
+          externalMessageId: 'dup-bigint',
+        }),
+      }) as any
+    )
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.duplicate).toBe(true)
+    expect(data.messageId).toBe(999)
   })
 
   it('merges into existing Twilio thread (allowlist tier 3 + dedup)', async () => {
