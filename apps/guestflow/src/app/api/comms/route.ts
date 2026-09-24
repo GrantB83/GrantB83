@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const db = await getDbAsync()
-    const tenantId = parseInt(request.nextUrl.searchParams.get('tenant_id') || '') || (await getDefaultTenantIdAsync())
+    const url = new URL(request.url)
+    const tenantId = parseInt(url.searchParams.get('tenant_id') || '') || (await getDefaultTenantIdAsync())
     const threads = await listInboxThreads(db, tenantId)
     return jsonSafeResponse({
       success: true,

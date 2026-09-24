@@ -177,11 +177,13 @@ export async function ingestInboundMessage(
       )
       .run(messageId)
     if (classification.intent === 'spam') {
-      await db
-        .prepare(
-          `UPDATE inbound_threads SET intent = 'spam', status = 'classified' WHERE id = ?`
-        )
-        .run(thread.id)
+      try {
+        await db
+          .prepare(`UPDATE inbound_threads SET intent = 'spam', status = 'classified' WHERE id = ?`)
+          .run(thread.id)
+      } catch {
+        await db.prepare(`UPDATE inbound_threads SET status = 'classified' WHERE id = ?`).run(thread.id)
+      }
     }
     return {
       success: true,
@@ -202,19 +204,25 @@ export async function ingestInboundMessage(
   }
 
   if (classification.confidence >= 0.6) {
-    await db
-      .prepare(
-        `UPDATE inbound_threads
-         SET intent = ?, confidence = ?, status = ?, guest_name = COALESCE(?, guest_name)
-         WHERE id = ?`
-      )
-      .run(
-        classification.intent,
-        classification.confidence,
-        'classified',
-        classification.extractedData.guestName || null,
-        thread.id
-      )
+    try {
+      await db
+        .prepare(
+          `UPDATE inbound_threads
+           SET intent = ?, confidence = ?, status = ?, guest_name = COALESCE(?, guest_name)
+           WHERE id = ?`
+        )
+        .run(
+          classification.intent,
+          classification.confidence,
+          'classified',
+          classification.extractedData.guestName || null,
+          thread.id
+        )
+    } catch {
+      await db
+        .prepare(`UPDATE inbound_threads SET status = ?, guest_name = COALESCE(?, guest_name) WHERE id = ?`)
+        .run('classified', classification.extractedData.guestName || null, thread.id)
+    }
   }
 
   const { draft, requiresApproval, missingInfo } = generateDraftReply(

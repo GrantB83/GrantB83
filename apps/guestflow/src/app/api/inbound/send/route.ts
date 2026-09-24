@@ -188,10 +188,10 @@ export async function POST(request: NextRequest) {
             sql: `
               INSERT INTO inbound_messages (
                 thread_id, message_text, message_timestamp, tenant_id,
-                direction, whatsapp_message_id
-              ) VALUES (?, ?, ?, 1, 'outbound', ?)
+                direction, channel, from_number, whatsapp_message_id
+              ) VALUES (?, ?, ?, 1, 'outbound', 'email', ?, ?)
             `,
-            args: [threadId, outboundBody, sendResult.timestamp, sendResult.messageId || null],
+            args: [threadId, outboundBody, sendResult.timestamp, to, sendResult.messageId || null],
           },
           {
             sql: `
@@ -202,6 +202,11 @@ export async function POST(request: NextRequest) {
             args: [sendResult.timestamp, threadId],
           },
         ])
+        await markThreadOutbound(db, threadId, {
+          timestamp: sendResult.timestamp,
+          channel: 'email',
+          status: 'sent',
+        })
         await writeEmailAudit(db, threadId, 'sent', to, sendResult.messageId || null, sendResult.timestamp)
 
         return NextResponse.json({
@@ -369,10 +374,10 @@ export async function POST(request: NextRequest) {
           sql: `
             INSERT INTO inbound_messages (
               thread_id, message_text, message_timestamp, tenant_id,
-              direction, whatsapp_provider, whatsapp_message_id
-            ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
+              direction, channel, from_number, whatsapp_provider, whatsapp_message_id
+            ) VALUES (?, ?, ?, 1, 'outbound', 'whatsapp_cloud', ?, ?, ?)
           `,
-          args: [threadId, outboundBody, sendResult.timestamp, sendResult.provider, sendResult.messageId],
+          args: [threadId, outboundBody, sendResult.timestamp, thread.from_number, sendResult.provider, sendResult.messageId],
         },
         {
           sql: `
@@ -383,6 +388,11 @@ export async function POST(request: NextRequest) {
           args: [sendResult.timestamp, threadId],
         },
       ])
+      await markThreadOutbound(db, threadId, {
+        timestamp: sendResult.timestamp,
+        channel: 'whatsapp_cloud',
+        status: 'sent',
+      })
 
       return NextResponse.json({
         success: true,

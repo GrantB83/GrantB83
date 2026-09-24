@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
 import { ingestInboundMessage } from '@/lib/inbound-ingest'
-import { applyTempHygiene, linkTempToBooking, listInboxThreads } from '@/lib/umi-threads'
+import { applyTempHygiene, linkTempToBooking, listInboxThreads, markThreadOutbound } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import { ensurePhase0Schema } from '@/lib/phase0-schema'
 
@@ -15,6 +15,7 @@ function createDb() {
       tenant_id INTEGER,
       guest_name TEXT,
       guest_phone TEXT,
+      guest_email TEXT,
       check_in DATE,
       check_out DATE,
       suite_or_unit TEXT,
@@ -27,6 +28,8 @@ function createDb() {
       source TEXT NOT NULL,
       from_number TEXT NOT NULL,
       guest_name TEXT,
+      intent TEXT,
+      confidence REAL,
       status TEXT DEFAULT 'new',
       first_message_at DATETIME,
       last_message_at DATETIME,
@@ -184,6 +187,49 @@ describe('umi threads', () => {
       .run(created, created, created)
     const result = await applyTempHygiene(db, 1, new Date('2026-09-20T00:00:00.000Z'))
     expect(result.expired).toBe(1)
+  })
+
+  it('matches inbound email to booking.guest_email when phone is missing', async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO bookings (id, tenant_id, guest_name, guest_phone, guest_email, check_in, check_out, suite_or_unit, nightsbridge_booking_id)
+         VALUES (12, 1, 'Eve Email', NULL, 'eve@example.com', '2026-10-01', '2026-10-03', 'Robin', 'NB-12')`
+      )
+      .run()
+    const result = await ingestInboundMessage(db, 1, {
+      from: 'eve@example.com',
+      text: 'Can I add a late dinner?',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'email',
+      senderAddress: 'eve@example.com',
+      sourceTag: 'email',
+    })
+    const thread = sqlite.prepare('SELECT * FROM inbound_threads WHERE id = ?').get(result.threadId) as any
+    expect(thread.thread_kind).toBe('booking')
+    expect(thread.booking_id).toBe(12)
+    expect(result.channel).toBe('email')
+  })
+
+  it('clears pending_reply after outbound', async () => {
+    const result = await ingestInboundMessage(db, 1, {
+      from: 'eve2@example.com',
+      text: 'Is breakfast included?',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'email',
+    })
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, direction, from_number, message_text, message_timestamp, channel)
+         VALUES (?, 1, 'outbound', 'stay@thebrowns.co.za', 'Yes — see your confirmation.', '2026-09-24T12:05:00.000Z', 'email')`
+      )
+      .run(result.threadId)
+    await markThreadOutbound(db, Number(result.threadId), {
+      timestamp: '2026-09-24T12:05:00.000Z',
+      channel: 'email',
+    })
+    const inbox = await listInboxThreads(db, 1)
+    const row = inbox.find((thread) => Number(thread.id) === Number(result.threadId))
+    expect(row?.pendingReply).toBe(false)
   })
 
   it('sorts arriving threads first in the inbox', async () => {

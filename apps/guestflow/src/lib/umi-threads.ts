@@ -71,6 +71,7 @@ interface BookingMatch {
   id: number
   guest_name: string
   guest_phone: string | null
+  guest_email?: string | null
   check_in: string
   check_out: string
   suite_or_unit: string | null
@@ -133,23 +134,40 @@ export async function findDuplicateMessage(
 }
 
 async function loadBookings(db: DbClient, tenantId: number): Promise<BookingMatch[]> {
+  const where = `WHERE tenant_id = ? AND COALESCE(status, '') NOT IN ('cancelled', 'canceled')`
   try {
     return ((await db
       .prepare(
-        `SELECT id, guest_name, guest_phone, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
+        `SELECT id, guest_name, guest_phone, guest_email, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
          FROM bookings
-         WHERE tenant_id = ?
-           AND COALESCE(status, '') NOT IN ('cancelled', 'canceled')`
+         ${where}`
       )
       .all(tenantId)) || []) as BookingMatch[]
   } catch {
-    return []
+    try {
+      const rows = ((await db
+        .prepare(
+          `SELECT id, guest_name, guest_phone, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
+           FROM bookings
+           ${where}`
+        )
+        .all(tenantId)) || []) as BookingMatch[]
+      return rows.map((row) => ({ ...row, guest_email: null }))
+    } catch {
+      return []
+    }
   }
 }
 
 function phonesEqual(a?: string | null, b?: string | null): boolean {
   const left = normalizeZaE164(a)
   const right = normalizeZaE164(b)
+  return Boolean(left && right && left === right)
+}
+
+function emailsEqual(a?: string | null, b?: string | null): boolean {
+  const left = normalizeEmail(a)
+  const right = normalizeEmail(b)
   return Boolean(left && right && left === right)
 }
 
@@ -165,6 +183,9 @@ async function bookingsForContact(
 
   for (const booking of bookings) {
     if (phone && phonesEqual(booking.guest_phone, phone)) {
+      matched.set(asNumber(booking.id), booking)
+    }
+    if (email && emailsEqual(booking.guest_email, email)) {
       matched.set(asNumber(booking.id), booking)
     }
   }
@@ -454,6 +475,17 @@ export async function markThreadOutbound(
        WHERE id = ?`
     )
     .run(input.timestamp, input.channel, input.timestamp, input.status || 'sent', threadId)
+  try {
+    await db
+      .prepare(
+        `UPDATE inbound_messages
+         SET status = 'sent'
+         WHERE thread_id = ? AND draft_reply IS NOT NULL AND COALESCE(status, '') <> 'sent'`
+      )
+      .run(threadId)
+  } catch {
+    // older fixtures may lack status
+  }
 }
 
 export async function applyTempHygiene(

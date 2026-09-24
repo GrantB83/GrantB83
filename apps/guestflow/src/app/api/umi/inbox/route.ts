@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const filter = request.nextUrl.searchParams.get('filter') === 'needs-attention'
+    const url = new URL(request.url)
+    const filter = url.searchParams.get('filter') === 'needs-attention'
       ? 'needs-attention'
       : 'all'
-    const q = request.nextUrl.searchParams.get('q') || undefined
+    const q = url.searchParams.get('q') || undefined
     const db = await getDbAsync()
     const tenantId = await getDefaultTenantIdAsync()
     const threads = await listInboxThreads(db, tenantId, { filter, q })
