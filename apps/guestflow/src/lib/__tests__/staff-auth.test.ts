@@ -14,6 +14,8 @@ import {
 } from '@/lib/staff-auth'
 import { looksLikePasswordHash, RATE_LIMIT_MAX_FAILURES } from '@/lib/staff-auth-crypto'
 import { actorStamp, deleteStaffSessionByToken, lookupStaffSession } from '@/lib/staff-session'
+import { sha256HexEdge } from '@/lib/staff-session-edge'
+import { createHash } from 'crypto'
 import {
   ensureStaffUsersSchema,
   LEGACY_STAFF_EMAIL,
@@ -80,6 +82,13 @@ describe('staff auth', () => {
     process.env.GUESTFLOW_LEGACY_LOGIN = '1'
     process.env.STAFF_PASSWORD = 'shared-secret'
     process.env.STAFF_BCRYPT_ROUNDS = '4'
+  })
+
+  it('hashes session tokens the same way in Edge and Node', async () => {
+    const token = 'edge-session-token-check'
+    const edge = await sha256HexEdge(token)
+    const node = createHash('sha256').update(token, 'utf8').digest('hex')
+    expect(edge).toBe(node)
   })
 
   it('stores a bcrypt hash, never plaintext', async () => {

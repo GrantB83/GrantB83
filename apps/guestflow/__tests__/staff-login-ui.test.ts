@@ -42,4 +42,12 @@ describe('staff login and users UI', () => {
     expect(schema).not.toMatch(/\brole\b|\bis_admin\b|\bis_owner\b/)
     expect(schema).not.toContain('username TEXT')
   })
+
+  it('edge session lookup stays fetch-only', () => {
+    const src = readFileSync(path.join(__dirname, '../src/lib/staff-session-edge.ts'), 'utf8')
+    expect(src).toContain('/v2/pipeline')
+    expect(src).not.toMatch(/from ['"]@libsql\/client/)
+    expect(src).not.toContain('better-sqlite3')
+    expect(src).not.toContain("from 'bcryptjs'")
+  })
 })
