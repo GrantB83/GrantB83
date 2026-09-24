@@ -11,11 +11,13 @@ List/add/remove never return `password_hash` or plaintext passwords.
 ```json
 {
   "success": true,
-  "username": "liana",
+  "email": "liana@thebrowns.co.za",
+  "display_name": "Liana",
   "users": [
     {
       "id": 1,
-      "username": "liana",
+      "email": "liana@thebrowns.co.za",
+      "display_name": "Liana",
       "created_at": "2026-09-24T12:00:00.000Z",
       "created_by": "bootstrap",
       "last_login_at": "2026-09-24T13:00:00.000Z"
@@ -24,19 +26,20 @@ List/add/remove never return `password_hash` or plaintext passwords.
 }
 ```
 
-`username` is the caller (for self-remove UI). 401 if no session.
+`email` is the caller (for self-remove UI). 401 if no session.
 
 ## POST /api/staff/users
 
-**Request**: `{ "username": "grant", "password": "••••" }`
+**Request**: `{ "email": "grant@thebrowns.co.za", "password": "••••", "display_name": "Grant" }`  
+`display_name` is optional.
 
-**Success (201)**: `{ "success": true, "user": { "id": 2, "username": "grant", "created_at": "…", "created_by": "liana", "last_login_at": null } }`
+**Success (201)**: `{ "success": true, "user": { "id": 2, "email": "grant@thebrowns.co.za", "display_name": "Grant", "created_at": "…", "created_by": "liana@thebrowns.co.za", "last_login_at": null } }`
 
 **Failures**:
-- 400 missing/blank username or password, reserved `legacy`, duplicate username
+- 400 missing/blank/invalid email, empty password, reserved `legacy@guestflow.local`, duplicate email (case-insensitive)
 - 401 no session
 
-**Side effects**: hashed insert; `staff_user_audit` row `add`.
+**Side effects**: hashed insert; `staff_user_audit` row `add` with actor/target emails.
 
 ## DELETE /api/staff/users/:id
 
@@ -61,4 +64,4 @@ List/add/remove never return `password_hash` or plaintext passwords.
 - 401 no session or current password wrong
 - 400 if caller is legacy (no `user_id`) — cannot change a non-user password here
 
-**Side effects**: update `password_hash`; audit `password_change` with target = self. Other sessions may remain until expiry (not required to revoke).
+**Side effects**: update `password_hash`; audit `password_change` with target = self email.

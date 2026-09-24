@@ -6,7 +6,7 @@
 
 ## Summary
 
-Replace GuestFlow’s shared-password cookie with named staff users (identical full access, no roles), bcryptjs password hashes, per-user sessions (random ID in `guestflow_staff_session`, SHA-256 in Turso/sqlite), Ops Users page, logout, bootstrap-from-env, and default-on legacy `legacy` + `STAFF_PASSWORD` login. Add/remove are server-guarded (no self-remove, no last-user remove, revoke sessions on remove). DB-backed login rate limit. Migrate script included but not applied to Production.
+Replace GuestFlow’s shared-password cookie with named staff users identified by **email** (optional display name; identical full access, no roles), bcryptjs password hashes, per-user sessions (random ID in `guestflow_staff_session`, SHA-256 in Turso/sqlite), Ops Users page, logout, bootstrap from `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD`, and default-on legacy `legacy@guestflow.local` + `STAFF_PASSWORD` login. Add/remove are server-guarded (no self-remove, no last-user remove, revoke sessions on remove). DB-backed login rate limit keyed by IP+email. Migrate script included but not applied to Production.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Replace GuestFlow’s shared-password cookie with named staff users (identical f
 
 **Performance Goals**: Login and Users list for a handful of staff in one query; middleware session lookup one indexed hash read
 
-**Constraints**: No roles/RBAC; no guest send; outbound redirect unchanged; confirmToken / Approve&Send logic unchanged except optional actor username stamp; no Production migrate/deploy; never log passwords or hashes; Edge middleware cannot use better-sqlite3
+**Constraints**: No roles/RBAC; no guest send; outbound redirect unchanged; confirmToken / Approve&Send logic unchanged except actor email (or display name + email) stamp; no Production migrate/deploy; never log passwords or hashes; Edge middleware cannot use better-sqlite3; email is the only login id
 
 **Scale/Scope**: Single property staff (Grant, Liana, a few ops people). Touch `apps/guestflow` + this spec dir + `docs/automation/STATUS.md` + `docs/automation/labor-ledger.md`
 
@@ -71,7 +71,7 @@ apps/guestflow/
 ├── src/lib/staff-session.ts                # Node session create/lookup/logout/require
 ├── src/lib/staff-session-edge.ts           # Edge Turso session lookup for middleware
 ├── src/middleware.ts                       # replace staff_auth base64 check
-├── src/app/api/staff-auth/route.ts         # username+password login
+├── src/app/api/staff-auth/route.ts         # email+password login
 ├── src/app/api/staff-auth/logout/route.ts
 ├── src/app/api/staff/users/route.ts        # GET list, POST add
 ├── src/app/api/staff/users/[id]/route.ts   # DELETE

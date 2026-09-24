@@ -18,9 +18,9 @@
 
 **Purpose**: Dependencies and feature wiring in the existing GuestFlow app
 
-- [ ] T001 Add `bcryptjs` and `@types/bcryptjs` in `apps/guestflow/package.json`
-- [ ] T002 Add `db:migrate:staff-users` script entry in `apps/guestflow/package.json` pointing at `apps/guestflow/scripts/migrate-staff-users.js`
-- [ ] T003 [P] Verify `.gitignore` already ignores `.env*` / `node_modules/` / `*.log` at repo and `apps/guestflow` (append only if missing)
+- [x] T001 Add `bcryptjs` and `@types/bcryptjs` in `apps/guestflow/package.json`
+- [x] T002 Add `db:migrate:staff-users` script entry in `apps/guestflow/package.json` pointing at `apps/guestflow/scripts/migrate-staff-users.js`
+- [x] T003 [P] Verify `.gitignore` already ignores `.env*` / `node_modules/` / `*.log` at repo and `apps/guestflow` (append only if missing)
 
 ---
 
@@ -28,13 +28,13 @@
 
 **Purpose**: Schema, migrate script, password/session primitives. BLOCKS all user stories.
 
-- [ ] T004 Create DDL + `ensureStaffUsersSchema()` + empty-table bootstrap from `GUESTFLOW_BOOTSTRAP_USER` / `GUESTFLOW_BOOTSTRAP_PASSWORD` (`created_by` NOT NULL, bootstrap value `bootstrap`; username unique on `lower(username)`; NO role column) in `apps/guestflow/src/lib/staff-users-schema.ts`
-- [ ] T005 Create Turso-or-local migrate script (do not apply to Production) for `staff_users`, `staff_sessions`, `staff_user_audit`, `staff_login_attempts` in `apps/guestflow/scripts/migrate-staff-users.js`
-- [ ] T006 Implement password hash/verify with bcryptjs (never log or return hashes) and username normalize (trim, case-insensitive compare) in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T007 Implement session create/lookup/delete: crypto-strong raw token, SHA-256 `token_hash` only in DB, 14-day sliding expiry, cookie name `guestflow_staff_session` in `apps/guestflow/src/lib/staff-session.ts`
-- [ ] T008 [P] Implement Edge Turso session lookup (Web Crypto SHA-256, `@libsql/client`, no better-sqlite3) in `apps/guestflow/src/lib/staff-session-edge.ts`
-- [ ] T009 Implement DB-backed login rate limit (5 failures / 15 minutes / IP+username; clear on success) in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T010 Implement `isLegacyLoginEnabled()` (default on unless `GUESTFLOW_LEGACY_LOGIN` is `0` or `false`) in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T004 Create DDL + `ensureStaffUsersSchema()` + empty-table bootstrap from `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD` (`created_by` NOT NULL, bootstrap value `bootstrap`; email stored lowercase with unique index on `email`; optional `display_name`; NO role or username column) in `apps/guestflow/src/lib/staff-users-schema.ts`
+- [x] T005 Create Turso-or-local migrate script (do not apply to Production) for `staff_users`, `staff_sessions`, `staff_user_audit`, `staff_login_attempts` in `apps/guestflow/scripts/migrate-staff-users.js`
+- [x] T006 Implement password hash/verify with bcryptjs (never log or return hashes) and email normalize/validate (trim, lowercase, reject invalid) in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T007 Implement session create/lookup/delete: crypto-strong raw token, SHA-256 `token_hash` only in DB, 14-day sliding expiry, cookie name `guestflow_staff_session` in `apps/guestflow/src/lib/staff-session.ts`
+- [x] T008 [P] Implement Edge Turso session lookup (Web Crypto SHA-256, `@libsql/client`, no better-sqlite3) in `apps/guestflow/src/lib/staff-session-edge.ts`
+- [x] T009 Implement DB-backed login rate limit (5 failures / 15 minutes / IP+email; clear on success) in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T010 Implement `isLegacyLoginEnabled()` (default on unless `GUESTFLOW_LEGACY_LOGIN` is `0` or `false`) in `apps/guestflow/src/lib/staff-auth.ts`
 
 **Checkpoint**: Foundation ready — user stories can proceed
 
@@ -42,22 +42,22 @@
 
 ## Phase 3: User Story 1 - Sign in as a named staff user (Priority: P1) 🎯 MVP
 
-**Goal**: Username+password login, per-user session cookie, logout, replace shared-password cookie checks
+**Goal**: Email+password login, per-user session cookie, logout, replace shared-password cookie checks
 
 **Independent Test**: Seed one user, sign in at `/staff-login`, reach ops, logout, next ops visit requires sign-in
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Tests for hash-not-plaintext, session create/lookup, logout deletes session in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T011 [P] [US1] Tests for hash-not-plaintext, session create/lookup, logout deletes session in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Change login to username+password and issue session cookie in `apps/guestflow/src/app/api/staff-auth/route.ts`
-- [ ] T013 [US1] Add logout that deletes the session row and clears the cookie in `apps/guestflow/src/app/api/staff-auth/logout/route.ts`
-- [ ] T014 [US1] Replace `staff_auth` base64-of-shared-password check with session lookup in `apps/guestflow/src/middleware.ts`
-- [ ] T015 [US1] Change `/staff-login` form to username + password in `apps/guestflow/src/app/staff-login/page.tsx`
-- [ ] T016 [US1] Add logout control in `apps/guestflow/src/components/Navigation.tsx`
-- [ ] T017 [P] [US1] Source test that login is username+password and logout exists in `apps/guestflow/__tests__/staff-login-ui.test.ts`
+- [x] T012 [US1] Change login to email+password and issue session cookie in `apps/guestflow/src/app/api/staff-auth/route.ts`
+- [x] T013 [US1] Add logout that deletes the session row and clears the cookie in `apps/guestflow/src/app/api/staff-auth/logout/route.ts`
+- [x] T014 [US1] Replace `staff_auth` base64-of-shared-password check with session lookup in `apps/guestflow/src/middleware.ts`
+- [x] T015 [US1] Change `/staff-login` form to email + password in `apps/guestflow/src/app/staff-login/page.tsx`
+- [x] T016 [US1] Add logout control in `apps/guestflow/src/components/Navigation.tsx`
+- [x] T017 [P] [US1] Source test that login is email+password and logout exists in `apps/guestflow/__tests__/staff-login-ui.test.ts`
 
 **Checkpoint**: Named sign-in and logout work without Users CRUD
 
@@ -71,17 +71,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T018 [P] [US2] Tests for add/remove, self-remove guard, last-user guard, session revoke on remove, no plaintext in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
-- [ ] T019 [P] [US2] API tests for GET/POST/DELETE users in `apps/guestflow/__tests__/staff-users-api.test.ts`
+- [x] T018 [P] [US2] Tests for add/remove, self-remove guard, last-user guard, session revoke on remove, no plaintext in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T019 [P] [US2] API tests for GET/POST/DELETE users in `apps/guestflow/__tests__/staff-users-api.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement list (never select `password_hash`) and add user (username unique case-insensitive; reject reserved `legacy`; `created_by` = actor) in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T021 [US2] Implement remove user in one batch/transaction: refuse self, refuse last remaining user (`COUNT(*)` guard), delete that user’s sessions, delete user in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T022 [US2] Add GET/POST `/api/staff/users` in `apps/guestflow/src/app/api/staff/users/route.ts`
-- [ ] T023 [US2] Add DELETE `/api/staff/users/:id` in `apps/guestflow/src/app/api/staff/users/[id]/route.ts`
-- [ ] T024 [US2] Build Users page (list, add, remove with confirm) at `apps/guestflow/src/app/ops/users/page.tsx`
-- [ ] T025 [US2] Add Users card under Ops (not top nav) in `apps/guestflow/src/app/ops/page.tsx`
+- [x] T020 [US2] Implement list (never select `password_hash`) and add user (email unique case-insensitive; validate email; optional display_name; reject reserved `legacy@guestflow.local`; `created_by` = actor email) in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T021 [US2] Implement remove user in one batch/transaction: refuse self, refuse last remaining user (`COUNT(*)` guard), delete that user’s sessions, delete user in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T022 [US2] Add GET/POST `/api/staff/users` in `apps/guestflow/src/app/api/staff/users/route.ts`
+- [x] T023 [US2] Add DELETE `/api/staff/users/:id` in `apps/guestflow/src/app/api/staff/users/[id]/route.ts`
+- [x] T024 [US2] Build Users page (list, add, remove with confirm) at `apps/guestflow/src/app/ops/users/page.tsx`
+- [x] T025 [US2] Add Users card under Ops (not top nav) in `apps/guestflow/src/app/ops/page.tsx`
 
 **Checkpoint**: Users CRUD + guards + Ops entry work
 
@@ -89,18 +89,18 @@
 
 ## Phase 5: User Story 3 - First user and legacy shared password (Priority: P1)
 
-**Goal**: Bootstrap when table empty; legacy `legacy` + `STAFF_PASSWORD` session when flag on
+**Goal**: Bootstrap when table empty; legacy `legacy@guestflow.local` + `STAFF_PASSWORD` session when flag on
 
-**Independent Test**: Empty table + bootstrap env creates one user; legacy flag on signs in as `legacy`; flag off refuses shared password
+**Independent Test**: Empty table + bootstrap env creates one user; legacy flag on signs in as `legacy@guestflow.local`; flag off refuses shared password
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Tests for bootstrap-once and legacy flag on/off in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T026 [P] [US3] Tests for bootstrap-once and legacy flag on/off in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Wire bootstrap into login/users ensure path in `apps/guestflow/src/lib/staff-users-schema.ts` and `apps/guestflow/src/app/api/staff-auth/route.ts`
-- [ ] T028 [US3] Implement legacy login path (session `username=legacy`, `user_id` null; no `staff_users` row) in `apps/guestflow/src/lib/staff-auth.ts` and `apps/guestflow/src/app/api/staff-auth/route.ts`
+- [x] T027 [US3] Wire bootstrap into login/users ensure path in `apps/guestflow/src/lib/staff-users-schema.ts` and `apps/guestflow/src/app/api/staff-auth/route.ts`
+- [x] T028 [US3] Implement legacy login path (session `email=legacy@guestflow.local`, `user_id` null; no `staff_users` row) in `apps/guestflow/src/lib/staff-auth.ts` and `apps/guestflow/src/app/api/staff-auth/route.ts`
 
 **Checkpoint**: Deploy will not lock out existing shared-password staff
 
@@ -114,13 +114,13 @@
 
 ### Tests for User Story 4
 
-- [ ] T029 [P] [US4] Tests for own-password change and wrong current password in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T029 [P] [US4] Tests for own-password change and wrong current password in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Implement `changeOwnPassword` in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T031 [US4] Add POST `/api/staff/me/password` in `apps/guestflow/src/app/api/staff/me/password/route.ts`
-- [ ] T032 [US4] Add change-password form on Users page (self only) in `apps/guestflow/src/app/ops/users/page.tsx`
+- [x] T030 [US4] Implement `changeOwnPassword` in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T031 [US4] Add POST `/api/staff/me/password` in `apps/guestflow/src/app/api/staff/me/password/route.ts`
+- [x] T032 [US4] Add change-password form on Users page (self only) in `apps/guestflow/src/app/ops/users/page.tsx`
 
 **Checkpoint**: Own password change works; no other-user password edit
 
@@ -134,13 +134,13 @@
 
 ### Tests for User Story 5
 
-- [ ] T033 [P] [US5] Tests that add/remove write `staff_user_audit` rows in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T033 [P] [US5] Tests that add/remove write `staff_user_audit` rows in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T034 [US5] Write audit rows from add/remove/password-change in `apps/guestflow/src/lib/staff-auth.ts`
-- [ ] T035 [US5] Stamp acting username on access-code upsert instead of `'staff'` in `apps/guestflow/src/app/api/ops/access-codes/upsert/route.ts`
-- [ ] T036 [US5] Stamp acting username on Approve&Send email audit instead of `'Grant'` in `apps/guestflow/src/app/api/inbound/send/route.ts` if still trivial
+- [x] T034 [US5] Write audit rows from add/remove/password-change in `apps/guestflow/src/lib/staff-auth.ts`
+- [x] T035 [US5] Stamp acting email (or `display_name <email>`) on access-code upsert instead of `'staff'` in `apps/guestflow/src/app/api/ops/access-codes/upsert/route.ts`
+- [x] T036 [US5] Stamp acting email (or `display_name <email>`) on Approve&Send email audit instead of `'Grant'` in `apps/guestflow/src/app/api/inbound/send/route.ts`
 
 **Checkpoint**: Audit + optional actor stamps done
 
@@ -150,11 +150,11 @@
 
 **Purpose**: Docs, rate-limit tests, STATUS, no extra behaviour
 
-- [ ] T037 [P] Rate-limit tests (5 failures / 15 min / IP+username) in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
-- [ ] T038 [P] Assert no role/owner column and Users is under Ops only in `apps/guestflow/__tests__/staff-login-ui.test.ts`
-- [ ] T039 Update `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md` (ritual: shared staff password rotation)
-- [ ] T040 [P] Staff-users note (env vars, bootstrap, migrate-not-prod, rate-limit is DB-backed) in `apps/guestflow/docs/STAFF-USERS.md`
-- [ ] T041 Run `npm test`, `npm run lint`, `npm run build` in `apps/guestflow` and record output for the PR
+- [x] T037 [P] Rate-limit tests (5 failures / 15 min / IP+email) plus case-insensitive uniqueness and invalid-email rejection in `apps/guestflow/src/lib/__tests__/staff-auth.test.ts`
+- [x] T038 [P] Assert no role/owner column and Users is under Ops only in `apps/guestflow/__tests__/staff-login-ui.test.ts`
+- [x] T039 Update `docs/automation/STATUS.md` and `docs/automation/labor-ledger.md` (ritual: shared staff password rotation)
+- [x] T040 [P] Staff-users note (env vars, bootstrap, migrate-not-prod, rate-limit is DB-backed) in `apps/guestflow/docs/STAFF-USERS.md`
+- [x] T041 Run `npm test`, `npm run lint`, `npm run build` in `apps/guestflow` and record output for the PR
 
 ---
 

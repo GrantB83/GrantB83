@@ -7,25 +7,28 @@ Tables are new. No role, owner, or permission column on any of them.
 | Column | Type | Constraints |
 | --- | --- | --- |
 | id | INTEGER | PRIMARY KEY AUTOINCREMENT |
-| username | TEXT | NOT NULL, UNIQUE (store trimmed; compare case-insensitive via unique index on `lower(username)`) |
+| email | TEXT | NOT NULL, stored lowercase; UNIQUE index on `email` (already normalized) |
+| display_name | TEXT | NULL (optional label; not a login id) |
 | password_hash | TEXT | NOT NULL (bcryptjs hash). Never selected in list/API responses |
 | created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
-| created_by | TEXT | NOT NULL (actor username, or `bootstrap`) |
+| created_by | TEXT | NOT NULL (actor email, or `bootstrap`) |
 | last_login_at | DATETIME | NULL until first successful login |
 
 **Validation**:
-- username: trim, reject empty, reject if `lower(username)` already exists, reject reserved `legacy` for normal add (legacy is session-only)
+- email: trim, lowercase, reject empty/invalid, reject if already exists, reject reserved `legacy@guestflow.local` for normal add
+- display_name: trim; empty becomes NULL
 - password: reject empty on add and change; hash before insert
 
-**No columns**: role, is_admin, is_owner, permissions
+**No columns**: role, is_admin, is_owner, permissions, username
 
 ## staff_sessions
 
 | Column | Type | Constraints |
 | --- | --- | --- |
 | id | INTEGER | PRIMARY KEY AUTOINCREMENT |
-| user_id | INTEGER | NULL for legacy shared-password sessions; FK-like to staff_users.id for named users |
-| username | TEXT | NOT NULL (denormalized for audit/legacy; `legacy` when user_id is null) |
+| user_id | INTEGER | NULL for legacy shared-password sessions; otherwise staff_users.id |
+| email | TEXT | NOT NULL (denormalized; `legacy@guestflow.local` when user_id is null) |
+| display_name | TEXT | NULL (copied at login for actor stamps) |
 | token_hash | TEXT | NOT NULL UNIQUE (SHA-256 hex of raw cookie value) |
 | created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
 | last_seen_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
@@ -42,9 +45,9 @@ Tables are new. No role, owner, or permission column on any of them.
 | Column | Type | Constraints |
 | --- | --- | --- |
 | id | INTEGER | PRIMARY KEY AUTOINCREMENT |
-| actor | TEXT | NOT NULL |
+| actor | TEXT | NOT NULL (actor email) |
 | action | TEXT | NOT NULL (`add`, `remove`, `password_change`) |
-| target | TEXT | NOT NULL (username affected) |
+| target | TEXT | NOT NULL (target email) |
 | created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
 
 Dedicated table (do not overload guest `audit_log` or access-code audit).
@@ -55,19 +58,19 @@ Dedicated table (do not overload guest `audit_log` or access-code audit).
 | --- | --- | --- |
 | id | INTEGER | PRIMARY KEY AUTOINCREMENT |
 | ip | TEXT | NOT NULL |
-| username | TEXT | NOT NULL (normalized lower/trim) |
+| email | TEXT | NOT NULL (normalized lowercase) |
 | attempted_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
 
-**Rules**: count rows for `(ip, username)` in the last 15 minutes; block at ≥ 5 failures; delete that pair on success.
+**Rules**: count rows for `(ip, email)` in the last 15 minutes; block at ≥ 5 failures; delete that pair on success.
 
 ## Indexes
 
 ```sql
-CREATE UNIQUE INDEX idx_staff_users_username_lower ON staff_users(lower(username));
+CREATE UNIQUE INDEX idx_staff_users_email ON staff_users(email);
 CREATE UNIQUE INDEX idx_staff_sessions_token_hash ON staff_sessions(token_hash);
 CREATE INDEX idx_staff_sessions_user_id ON staff_sessions(user_id);
 CREATE INDEX idx_staff_sessions_expires ON staff_sessions(expires_at);
-CREATE INDEX idx_staff_login_attempts_pair_time ON staff_login_attempts(ip, username, attempted_at);
+CREATE INDEX idx_staff_login_attempts_pair_time ON staff_login_attempts(ip, email, attempted_at);
 CREATE INDEX idx_staff_user_audit_created ON staff_user_audit(created_at);
 ```
 
@@ -79,10 +82,10 @@ CREATE INDEX idx_staff_user_audit_created ON staff_user_audit(created_at);
 [signed in, N>=2, target≠self] --remove--> [N-1 users] + sessions deleted + audit remove
 [signed in] --self or last--> refused, no delete
 [session valid] --logout or remove or expiry--> [no access]
-[legacy flag on] --username legacy + STAFF_PASSWORD--> session username=legacy, user_id null
+[legacy flag on] --email legacy@guestflow.local + STAFF_PASSWORD--> session email=legacy@guestflow.local, user_id null
 ```
 
 ## Relationships
 
 - `staff_sessions.user_id` → `staff_users.id` (nullable)
-- Audit `actor` / `target` are usernames, not required FKs (survive remove)
+- Audit `actor` / `target` are emails, not required FKs (survive remove)

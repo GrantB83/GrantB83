@@ -7,22 +7,22 @@ Base: existing `POST /api/staff-auth`. Middleware still skips this path so login
 **Request JSON**:
 
 ```json
-{ "username": "liana", "password": "••••" }
+{ "email": "liana@thebrowns.co.za", "password": "••••" }
 ```
 
-**Success (200)**: `{ "success": true, "username": "liana" }`  
-Sets `guestflow_staff_session` cookie (HttpOnly, SameSite=Lax, Secure in production, 14-day max-age). Body never includes password or hash.
+**Success (200)**: `{ "success": true, "email": "liana@thebrowns.co.za", "display_name": "Liana" }`  
+`email` is the normalized lowercase value. Sets `guestflow_staff_session` cookie (HttpOnly, SameSite=Lax, Secure in production, 14-day max-age). Body never includes password or hash.
 
 **Failures**:
-- 401 `{ "error": "Invalid username or password" }` — unknown user, bad password, or legacy path refused
-- 429 `{ "error": "Too many login attempts. Try again later." }` — ≥5 failures in 15 minutes for IP+username
+- 401 `{ "error": "Invalid email or password" }` — unknown user, bad password, invalid email, or legacy path refused
+- 429 `{ "error": "Too many login attempts. Try again later." }` — ≥5 failures in 15 minutes for IP+email
 - 500 `{ "error": "Staff password not configured" }` — production, no users, no bootstrap, no usable legacy (same fail-closed spirit as today)
 
-**Legacy**: if `GUESTFLOW_LEGACY_LOGIN` is enabled (default) and `username` is `legacy` (case-insensitive) and `password` equals `STAFF_PASSWORD`, create a session with `username=legacy`, `user_id=null`.
+**Legacy**: if `GUESTFLOW_LEGACY_LOGIN` is enabled (default) and `email` normalizes to `legacy@guestflow.local` and `password` equals `STAFF_PASSWORD`, create a session with `email=legacy@guestflow.local`, `user_id=null`.
 
-**Bootstrap**: before verify, `ensureStaffUsersSchema` may insert the first user from bootstrap env when the table is empty.
+**Bootstrap**: before verify, `ensureStaffUsersSchema` may insert the first user from `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD` when the table is empty.
 
-**Side effects**: on success, set `staff_users.last_login_at` for named users; insert `staff_sessions`; clear `staff_login_attempts` for that IP+username. On failure, insert an attempt row.
+**Side effects**: on success, set `staff_users.last_login_at` for named users; insert `staff_sessions`; clear `staff_login_attempts` for that IP+email. On failure, insert an attempt row.
 
 ## POST /api/staff-auth/logout
 

@@ -9,7 +9,7 @@ Validation guide for Preview / local. Do **not** apply the migrate script to Pro
 - Env (local or Vercel Preview — never commit values):
 
 ```text
-GUESTFLOW_BOOTSTRAP_USER=<first username>
+GUESTFLOW_BOOTSTRAP_EMAIL=grant@thebrowns.co.za
 GUESTFLOW_BOOTSTRAP_PASSWORD=<first password>
 GUESTFLOW_LEGACY_LOGIN=1
 STAFF_PASSWORD=<existing shared password>
@@ -35,15 +35,15 @@ npm run lint
 npm run build
 ```
 
-Expected: add/remove, self-remove guard, last-user guard, hashed storage, session revoke, legacy flag on/off, rate limit all pass. Lint/build clean.
+Expected: add/remove, self-remove, last-user, hashed storage, session revoke, legacy flag on/off, rate limit, case-insensitive email uniqueness, invalid email rejection all pass. Lint/build clean.
 
 ## Manual Preview checks
 
-1. Open `/staff-login` — username + password fields (not password-only)
-2. Sign in with bootstrap user (or `legacy` + `STAFF_PASSWORD` while flag is on)
+1. Open `/staff-login` — email + password fields (not password-only, not username)
+2. Sign in with bootstrap email (or `legacy@guestflow.local` + `STAFF_PASSWORD` while flag is on)
 3. Open `/ops` — Users card present; logout control visible
-4. Open `/ops/users` — list shows username, created, created by, last login
-5. Add a second user, sign in as them, confirm same ops access
+4. Open `/ops/users` — list shows email, display name, created, created by, last login
+5. Add a second user by email, sign in as them, confirm same ops access
 6. Remove the second user with confirm — their next request is refused
 7. Confirm you cannot remove yourself; with one user left, remove is refused
 8. Optional: change own password; old password fails
