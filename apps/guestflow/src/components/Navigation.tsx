@@ -2,15 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CheckCircle, AlertTriangle, Calendar, MessageSquare, Menu, X, ArrowLeftRight } from 'lucide-react'
+import { Calendar, Home, Menu, MessageSquare, MoreHorizontal, X, ArrowLeftRight } from 'lucide-react'
 import { useState } from 'react'
 
 export default function Navigation() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
   const isActive = (path: string) => pathname === path
-
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
   return (
@@ -29,25 +27,18 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <NavLink href="/" icon={<Home className="w-4 h-4" />} active={isActive('/')}>
-              Today
-            </NavLink>
-            <NavLink href="/needs-approval" icon={<CheckCircle className="w-4 h-4" />} active={isActive('/needs-approval')} badge={0}>
-              Needs approval
-            </NavLink>
-            <NavLink href="/exceptions" icon={<AlertTriangle className="w-4 h-4" />} active={isActive('/exceptions')} badge={0}>
-              Exceptions
-            </NavLink>
-            <NavLink href="/ops/bookings" icon={<Calendar className="w-4 h-4" />} active={isActive('/ops/bookings')}>
-              Live bookings
+            <NavLink href="/" icon={<MessageSquare className="w-4 h-4" />} active={isActive('/')}>
+              Inbox
             </NavLink>
             <NavLink href="/ops/arrivals-departures" icon={<ArrowLeftRight className="w-4 h-4" />} active={isActive('/ops/arrivals-departures')}>
               Arrivals & Departures
             </NavLink>
-            <NavLink href="/comms" icon={<MessageSquare className="w-4 h-4" />} active={isActive('/comms')}>
-              Comms
+            <NavLink href="/ops/bookings" icon={<Calendar className="w-4 h-4" />} active={isActive('/ops/bookings')}>
+              Bookings
+            </NavLink>
+            <NavLink href="/ops" icon={<MoreHorizontal className="w-4 h-4" />} active={pathname.startsWith('/ops') && pathname === '/ops'}>
+              Ops
             </NavLink>
           </div>
 
@@ -55,8 +46,6 @@ export default function Navigation() {
             <div className="hidden sm:block px-3 py-1 bg-slate-700 text-slate-200 rounded text-xs font-medium">
               Internal Ops
             </div>
-            
-            {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
@@ -67,59 +56,20 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 pt-2">
             <div className="flex flex-col space-y-2">
-              <MobileNavLink 
-                href="/" 
-                icon={<Home className="w-5 h-5" />} 
-                active={isActive('/')}
-                onClick={closeMobileMenu}
-              >
-                Today
+              <MobileNavLink href="/" icon={<MessageSquare className="w-5 h-5" />} active={isActive('/')} onClick={closeMobileMenu}>
+                Inbox
               </MobileNavLink>
-              <MobileNavLink 
-                href="/needs-approval" 
-                icon={<CheckCircle className="w-5 h-5" />} 
-                active={isActive('/needs-approval')}
-                onClick={closeMobileMenu}
-                badge={0}
-              >
-                Needs approval
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/exceptions" 
-                icon={<AlertTriangle className="w-5 h-5" />} 
-                active={isActive('/exceptions')}
-                onClick={closeMobileMenu}
-                badge={0}
-              >
-                Exceptions
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/ops/bookings" 
-                icon={<Calendar className="w-5 h-5" />} 
-                active={isActive('/ops/bookings')}
-                onClick={closeMobileMenu}
-              >
-                Live bookings
-              </MobileNavLink>
-              <MobileNavLink 
-                href="/ops/arrivals-departures" 
-                icon={<ArrowLeftRight className="w-5 h-5" />} 
-                active={isActive('/ops/arrivals-departures')}
-                onClick={closeMobileMenu}
-              >
+              <MobileNavLink href="/ops/arrivals-departures" icon={<ArrowLeftRight className="w-5 h-5" />} active={isActive('/ops/arrivals-departures')} onClick={closeMobileMenu}>
                 Arrivals & Departures
               </MobileNavLink>
-              <MobileNavLink 
-                href="/comms" 
-                icon={<MessageSquare className="w-5 h-5" />} 
-                active={isActive('/comms')}
-                onClick={closeMobileMenu}
-              >
-                Comms
+              <MobileNavLink href="/ops/bookings" icon={<Calendar className="w-5 h-5" />} active={isActive('/ops/bookings')} onClick={closeMobileMenu}>
+                Bookings
+              </MobileNavLink>
+              <MobileNavLink href="/ops" icon={<Home className="w-5 h-5" />} active={isActive('/ops')} onClick={closeMobileMenu}>
+                Ops / More Tools
               </MobileNavLink>
             </div>
           </div>
@@ -129,71 +79,53 @@ export default function Navigation() {
   )
 }
 
-function NavLink({ 
-  href, 
-  icon, 
-  active, 
+function NavLink({
+  href,
+  icon,
+  active,
   children,
-  badge
-}: { 
+}: {
   href: string
   icon: React.ReactNode
   active: boolean
   children: React.ReactNode
-  badge?: number
 }) {
   return (
     <Link
       href={href}
-      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition relative ${
-        active
-          ? 'text-white bg-slate-700'
-          : 'text-slate-300 hover:text-white hover:bg-slate-700'
+      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition ${
+        active ? 'text-white bg-slate-700' : 'text-slate-300 hover:text-white hover:bg-slate-700'
       }`}
     >
       {icon}
       <span>{children}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-          {badge}
-        </span>
-      )}
     </Link>
   )
 }
 
-function MobileNavLink({ 
-  href, 
-  icon, 
-  active, 
+function MobileNavLink({
+  href,
+  icon,
+  active,
   children,
   onClick,
-  badge
-}: { 
+}: {
   href: string
   icon: React.ReactNode
   active: boolean
   children: React.ReactNode
   onClick: () => void
-  badge?: number
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition relative ${
-        active
-          ? 'text-white bg-slate-700'
-          : 'text-slate-300 hover:text-white hover:bg-slate-700'
+      className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition ${
+        active ? 'text-white bg-slate-700' : 'text-slate-300 hover:text-white hover:bg-slate-700'
       }`}
     >
       {icon}
       <span>{children}</span>
-      {badge !== undefined && badge > 0 && (
-        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-          {badge}
-        </span>
-      )}
     </Link>
   )
 }

@@ -1,6 +1,10 @@
 import type { DbClient } from '@/lib/db'
 import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { enqueueDraftJob } from '@/lib/draft-jobs'
+import { isSpamOrMarketing } from '@/lib/umi-spam'
+import { ensureUmiSchema } from '@/lib/umi-schema'
+import { markThreadPendingDraft, resolveUmiThread } from '@/lib/umi-threads'
+import { mapSourceToChannel } from '@/lib/umi-channels'
 
 export interface IngestPayload {
   from: string
@@ -10,6 +14,9 @@ export interface IngestPayload {
   subject?: string
   mediaRefs?: string[]
   externalMessageId?: string
+  senderAddress?: string
+  sourceTag?: string
+  preferredThreadId?: number
 }
 
 export interface IngestResult {
@@ -30,6 +37,21 @@ export interface IngestResult {
   } | null
   queuedForApproval: boolean
   status: string
+  spam?: boolean
+  channel?: string
+}
+
+function emailTaggedBody(payload: IngestPayload): { text: string; sourceTag?: string; senderAddress?: string } {
+  const channel = mapSourceToChannel(payload.source)
+  if (channel !== 'email') {
+    return { text: payload.text, sourceTag: payload.sourceTag, senderAddress: payload.senderAddress }
+  }
+  const sender = payload.senderAddress || payload.from
+  return {
+    text: payload.text,
+    sourceTag: payload.sourceTag || 'email',
+    senderAddress: sender,
+  }
 }
 
 export async function ingestInboundMessage(
@@ -37,42 +59,37 @@ export async function ingestInboundMessage(
   tenantId: number,
   payload: IngestPayload
 ): Promise<IngestResult> {
-  if (payload.externalMessageId) {
-    const existing = (await db
-      .prepare(
-        `
-      SELECT id, thread_id FROM inbound_messages
-      WHERE external_message_id = ?
-      LIMIT 1
-    `
-      )
-      .get(payload.externalMessageId)) as { id: number; thread_id: number } | undefined
+  await ensureUmiSchema(db)
+  const tagged = emailTaggedBody(payload)
+  const bodyUnavailable = !payload.text || payload.text === '[body unavailable]' || payload.text === '[metadata-only]'
+  const storedText = payload.text?.trim()
+    ? payload.text
+    : '[body unavailable]'
 
-    if (existing) {
-      return {
-        success: true,
-        duplicate: true,
-        messageId: existing.id,
-        threadId: existing.thread_id,
-        queuedForApproval: false,
-        status: 'duplicate',
-      }
+  const resolved = await resolveUmiThread(db, tenantId, {
+    from: payload.from,
+    source: payload.source,
+    timestamp: payload.timestamp,
+    text: storedText,
+    externalMessageId: payload.externalMessageId,
+    preferredThreadId: payload.preferredThreadId,
+  })
+
+  if (resolved.duplicate) {
+    return {
+      success: true,
+      duplicate: true,
+      messageId: resolved.duplicate.id,
+      threadId: resolved.duplicate.thread_id,
+      queuedForApproval: false,
+      status: 'duplicate',
+      channel: resolved.channel,
     }
   }
 
-  let thread = (await db
-    .prepare(
-      `
-    SELECT * FROM inbound_threads
-    WHERE from_number = ? AND source = ?
-    ORDER BY last_message_at DESC
-    LIMIT 1
-  `
-    )
-    .get(payload.from, payload.source)) as any
-
+  const thread = resolved.thread
   const metadata = {
-    ...(thread?.metadata
+    ...(thread.metadata
       ? (() => {
           try {
             return JSON.parse(thread.metadata)
@@ -84,62 +101,42 @@ export async function ingestInboundMessage(
     ...(payload.subject ? { subject: payload.subject } : {}),
   }
 
-  if (!thread) {
-    const threadInsert = await db
-      .prepare(
-        `
-      INSERT INTO inbound_threads (
-        tenant_id, source, from_number, status,
-        first_message_at, last_message_at, metadata
-      ) VALUES (?, ?, ?, 'new', ?, ?, ?)
-    `
-      )
-      .run(
-        tenantId,
-        payload.source,
-        payload.from,
-        payload.timestamp,
-        payload.timestamp,
-        JSON.stringify(metadata)
-      )
+  await db
+    .prepare(
+      `UPDATE inbound_threads
+       SET metadata = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
+    )
+    .run(JSON.stringify(metadata), thread.id)
 
-    thread = await db
-      .prepare('SELECT * FROM inbound_threads WHERE id = ?')
-      .get(threadInsert.lastInsertRowid)
-  } else {
-    await db
-      .prepare(
-        `
-      UPDATE inbound_threads
-      SET last_message_at = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `
-      )
-      .run(payload.timestamp, JSON.stringify(metadata), thread.id)
-  }
-
+  const spam = isSpamOrMarketing(storedText)
   const messageInsert = await db
     .prepare(
-      `
-    INSERT INTO inbound_messages (
-      thread_id, tenant_id, direction, from_number,
-      message_text, media_refs, message_timestamp, external_message_id
-    ) VALUES (?, ?, 'inbound', ?, ?, ?, ?, ?)
-  `
+      `INSERT INTO inbound_messages (
+        thread_id, tenant_id, direction, from_number,
+        message_text, media_refs, message_timestamp, external_message_id,
+        channel, sender_address, source_tag, dedup_key, is_spam, body_unavailable
+      ) VALUES (?, ?, 'inbound', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       thread.id,
       tenantId,
       payload.from,
-      payload.text,
+      storedText,
       payload.mediaRefs ? JSON.stringify(payload.mediaRefs) : null,
       payload.timestamp,
-      payload.externalMessageId || null
+      payload.externalMessageId || null,
+      resolved.channel,
+      tagged.senderAddress || null,
+      tagged.sourceTag || null,
+      resolved.dedupKey,
+      spam.spam ? 1 : 0,
+      bodyUnavailable ? 1 : 0
     )
 
   const messageId = messageInsert.lastInsertRowid
   const classification = classifyMessage({
-    messageText: payload.text,
+    messageText: storedText,
     fromNumber: payload.from,
     threadHistory: [],
   })
@@ -147,12 +144,10 @@ export async function ingestInboundMessage(
   try {
     await db
       .prepare(
-        `
-      INSERT INTO message_classifications (
-        message_id, thread_id, intent, confidence,
-        extracted_data, missing_fields
-      ) VALUES (?, ?, ?, ?, ?, ?)
-    `
+        `INSERT INTO message_classifications (
+          message_id, thread_id, intent, confidence,
+          extracted_data, missing_fields
+        ) VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(
         messageId,
@@ -168,88 +163,92 @@ export async function ingestInboundMessage(
 
   await db
     .prepare(
-      `
-    UPDATE inbound_messages
-    SET is_classified = 1, classification_result = ?
-    WHERE id = ?
-  `
+      `UPDATE inbound_messages
+       SET is_classified = 1, classification_result = ?
+       WHERE id = ?`
     )
     .run(JSON.stringify(classification), messageId)
 
-  if (classification.confidence >= 0.6) {
+  const treatAsSpam = spam.spam || classification.intent === 'spam'
+  if (treatAsSpam) {
     await db
       .prepare(
-        `
-      UPDATE inbound_threads
-      SET intent = ?, confidence = ?, status = ?,
-          guest_name = ?
-      WHERE id = ?
-    `
+        `UPDATE inbound_messages SET is_spam = 1, status = 'spam' WHERE id = ?`
       )
-      .run(
-        classification.intent,
-        classification.confidence,
-        classification.intent === 'spam' ? 'closed' : 'classified',
-        classification.extractedData.guestName || null,
-        thread.id
-      )
+      .run(messageId)
+    if (classification.intent === 'spam') {
+      try {
+        await db
+          .prepare(`UPDATE inbound_threads SET intent = 'spam', status = 'classified' WHERE id = ?`)
+          .run(thread.id)
+      } catch {
+        await db.prepare(`UPDATE inbound_threads SET status = 'classified' WHERE id = ?`).run(thread.id)
+      }
+    }
+    return {
+      success: true,
+      messageId,
+      threadId: thread.id,
+      classification: {
+        intent: classification.intent,
+        confidence: classification.confidence,
+        extractedData: classification.extractedData as Record<string, unknown>,
+        missingFields: classification.missingFields,
+      },
+      draftReply: null,
+      queuedForApproval: false,
+      status: 'spam',
+      spam: true,
+      channel: resolved.channel,
+    }
   }
 
-  let draftReply = null
-  if (classification.intent !== 'spam') {
-    const { draft, requiresApproval, missingInfo } = generateDraftReply(
-      classification,
-      'The Browns Luxury Guest Suites (Dullstroom)'
-    )
-
-    await db
-      .prepare(
-        `
-      UPDATE inbound_messages
-      SET draft_reply = ?, draft_source = 'heuristic'
-      WHERE id = ?
-    `
-      )
-      .run(draft, messageId)
-
+  if (classification.confidence >= 0.6) {
     try {
       await db
         .prepare(
-          `
-        UPDATE inbound_messages
-        SET status = 'drafted'
-        WHERE id = ?
-      `
+          `UPDATE inbound_threads
+           SET intent = ?, confidence = ?, status = ?, guest_name = COALESCE(?, guest_name)
+           WHERE id = ?`
         )
-        .run(messageId)
+        .run(
+          classification.intent,
+          classification.confidence,
+          'classified',
+          classification.extractedData.guestName || null,
+          thread.id
+        )
     } catch {
-      // older thread-only schemas have no inbound_messages.status
-    }
-
-    draftReply = { text: draft, requiresApproval, missingInfo }
-
-    if (classification.confidence >= 0.6) {
       await db
-        .prepare(
-          `
-        UPDATE inbound_threads
-        SET status = 'drafted'
-        WHERE id = ?
-      `
-        )
-        .run(thread.id)
+        .prepare(`UPDATE inbound_threads SET status = ?, guest_name = COALESCE(?, guest_name) WHERE id = ?`)
+        .run('classified', classification.extractedData.guestName || null, thread.id)
     }
+  }
 
-    try {
-      await enqueueDraftJob(db, {
-        tenantId,
-        threadId: thread.id,
-        messageId: Number(messageId),
-        intent: classification.intent,
-      })
-    } catch (error) {
-      console.warn('[inbound-ingest] draft_jobs enqueue skipped:', error)
-    }
+  const { draft, requiresApproval, missingInfo } = generateDraftReply(
+    classification,
+    'The Browns Luxury Guest Suites (Dullstroom)'
+  )
+
+  await db
+    .prepare(
+      `UPDATE inbound_messages
+       SET draft_reply = ?, draft_source = 'heuristic', status = 'drafted'
+       WHERE id = ?`
+    )
+    .run(draft, messageId)
+
+  await markThreadPendingDraft(db, thread.id)
+
+  try {
+    await enqueueDraftJob(db, {
+      tenantId,
+      threadId: thread.id,
+      messageId: Number(messageId),
+      intent: classification.intent,
+    })
+  } catch (error) {
+    console.warn('[inbound-ingest] draft_jobs enqueue skipped:', error)
   }
 
   const refreshed = (await db
@@ -266,9 +265,11 @@ export async function ingestInboundMessage(
       extractedData: classification.extractedData as Record<string, unknown>,
       missingFields: classification.missingFields,
     },
-    draftReply,
+    draftReply: { text: draft, requiresApproval, missingInfo },
     queuedForApproval: refreshed?.status === 'drafted',
     status: refreshed?.status || thread.status,
+    spam: false,
+    channel: resolved.channel,
   }
 }
 

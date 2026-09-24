@@ -26,6 +26,15 @@ vi.mock('@/lib/confirm-token', () => ({
 
 vi.mock('@/lib/phase0-schema', () => ({
   ensurePhase0Schema: vi.fn(async () => {}),
+  tableHasColumn: vi.fn(async () => true),
+}))
+
+vi.mock('@/lib/umi-schema', () => ({
+  ensureUmiSchema: vi.fn(async () => {}),
+}))
+
+vi.mock('@/lib/umi-threads', () => ({
+  markThreadOutbound: vi.fn(async () => {}),
 }))
 
 const { mockDb } = vi.hoisted(() => ({

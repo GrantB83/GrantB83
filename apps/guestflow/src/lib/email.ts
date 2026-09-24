@@ -232,3 +232,7 @@ export function composeInboundEmailText(subject: string | undefined, text: strin
   if (subject) return `[body unavailable]\nSubject: ${subject}`
   return '[body unavailable]'
 }
+
+export function composeEmailSourceTag(sender: string): string {
+  return `source=email · sender=${sender}`
+}

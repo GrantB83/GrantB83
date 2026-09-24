@@ -17,7 +17,7 @@ Documented empty in `.env.example`. Coding cannot create dashboard secrets.
 
 ## How Grant Sends at 07:00 America/Chicago
 
-1. Open [Needs Approval](https://guestflow.thebrowns.co.za/needs-approval) or [Inbound queue](https://guestflow.thebrowns.co.za/ops/inbound-queue).
+1. Open the [Inbox](https://guestflow.thebrowns.co.za/) (chat home) or [Inbound queue](https://guestflow.thebrowns.co.za/ops/inbound-queue).
 2. Open a **guest** thread (not Staff Ops Brief).
 3. Choose **Email**. Edit To, Subject, Body.
 4. Click **Send email** and confirm the dialog. Cancel leaves the draft.
@@ -27,9 +27,19 @@ Approve-only does **not** send. Cron does **not** send.
 
 Morning E2E (Grant): send a test to `grant830318@gmail.com`. Confirm it arrives from the existing From address.
 
-## HOLD — Resend inbound webhook (Phase 0)
+## Inbound email — HOLD lifted (UMI v2.1)
 
-Resend dashboard webhook URL / event / secret wiring is **HOLD**. This phase does not invent dashboard steps. `POST /api/inbound/email` remains coded and uses the same `ingestInboundMessage` path as WhatsApp (thread + classify + heuristic draft + `draft_jobs` enqueue). Mail will not appear until CoS/Grant paste the webhook.
+Product HOLD is lifted: when Resend delivers `email.received` to `POST /api/inbound/email`, the message is ingested immediately onto the booking thread (or a temp thread), tagged `source=email` + sender address, then auto-drafted after the spam filter. **No auto-send.**
+
+Dashboard webhook URL / event / secret paste is still a CoS/Grant step. Coding does not invent inbox addresses.
+
+In-scope documented inboxes only:
+
+- `stay@thebrowns.co.za`
+- `stay@hospitality.partners`
+- `grant@hospitality.partners`
+
+`stay@thebrowns.co.za` outbound From flip remains pending domain verify. Keep existing `RESEND_FROM_EMAIL`.
 
 Phase 0 send gate: Email Send also requires **approved/ready + confirmToken**. Approve-only still does not send.
 
