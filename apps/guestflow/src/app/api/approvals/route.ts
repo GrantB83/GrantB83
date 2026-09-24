@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server'
+import { fetchAllApprovalItems } from '@/lib/approvals-queue'
 import { getDbAsync } from '@/lib/db'
 import { jsonSafeResponse } from '@/lib/json-safe'
 import {
   approveStaffOpsDraft,
   ensureStaffOpsDraftsTable,
   rejectStaffOpsDraft,
-  staffOpsDraftsTableExists,
 } from '@/lib/staff-ops-drafts'
 
 export const dynamic = 'force-dynamic'
@@ -47,124 +47,7 @@ export async function GET(request: NextRequest) {
 
     const db = await getDbAsync()
 
-    const inboundItems = (await db
-      .prepare(
-        `
-      SELECT 
-        id,
-        'inbound' as type,
-        COALESCE(from_name, from_number, 'Unknown') as guest,
-        draft_reply as draft_content,
-        'WhatsApp inbound' as source,
-        timestamp as created_at,
-        'medium' as priority,
-        from_number as guest_phone,
-        json_object('thread_id', thread_id, 'from_number', from_number) as metadata
-      FROM inbound_messages
-      WHERE tenant_id = ? AND draft_reply IS NOT NULL
-        AND (
-          status = 'drafted'
-          OR thread_id IN (
-            SELECT id FROM inbound_threads
-            WHERE tenant_id = ? AND status IN ('drafted', 'approved', 'queued')
-          )
-        )
-      ORDER BY timestamp DESC
-    `
-      )
-      .all(tenantId, tenantId)) as Record<string, unknown>[]
-
-    const ticketItems = (await db
-      .prepare(
-        `
-      SELECT 
-        id,
-        CASE WHEN guest_draft_reply IS NOT NULL THEN 'ticket_guest' ELSE 'ticket_staff' END as type,
-        guest_name as guest,
-        COALESCE(guest_draft_reply, staff_brief) as draft_content,
-        category as source,
-        created_at,
-        CASE WHEN priority = 'high' THEN 'high' ELSE 'medium' END as priority,
-        guest_phone,
-        '{}' as metadata
-      FROM guest_tickets
-      WHERE tenant_id = ? AND status IN ('new', 'triaged')
-        AND (guest_draft_reply IS NOT NULL OR staff_brief IS NOT NULL)
-      ORDER BY created_at DESC
-    `
-      )
-      .all(tenantId)) as Record<string, unknown>[]
-
-    const welcomeItems = (await db
-      .prepare(
-        `
-      SELECT 
-        id,
-        'welcome' as type,
-        guest_name as guest,
-        draft_message as draft_content,
-        source,
-        created_at,
-        'medium' as priority,
-        guest_phone,
-        '{}' as metadata
-      FROM welcome_drafts
-      WHERE tenant_id = ? AND status = 'pending_approval'
-      ORDER BY created_at DESC
-    `
-      )
-      .all(tenantId)) as Record<string, unknown>[]
-
-    const lateItems = (await db
-      .prepare(
-        `
-      SELECT 
-        id,
-        'late_checkin' as type,
-        guest_name as guest,
-        draft_message as draft_content,
-        source,
-        created_at,
-        'high' as priority,
-        guest_phone,
-        '{}' as metadata
-      FROM late_checkin_drafts
-      WHERE tenant_id = ? AND status = 'pending_approval'
-      ORDER BY created_at DESC
-    `
-      )
-      .all(tenantId)) as Record<string, unknown>[]
-
-    let staffOpsItems: Record<string, unknown>[] = []
-    if (await staffOpsDraftsTableExists(db)) {
-      staffOpsItems = (await db
-        .prepare(
-          `
-        SELECT 
-          id,
-          'staff_ops' as type,
-          'Daily brief ' || brief_date as guest,
-          draft_content,
-          'daily-brief' as source,
-          created_at,
-          'medium' as priority,
-          NULL as guest_phone,
-          json_object('copy_only', 1, 'brief_date', brief_date) as metadata
-        FROM staff_ops_drafts
-        WHERE tenant_id = ? AND status = 'pending_approval'
-        ORDER BY created_at DESC
-      `
-        )
-        .all(tenantId)) as Record<string, unknown>[]
-    }
-
-    const allItems = [
-      ...inboundItems,
-      ...ticketItems,
-      ...welcomeItems,
-      ...lateItems,
-      ...staffOpsItems,
-    ].map(normalizeApprovalItem)
+    const allItems = (await fetchAllApprovalItems(db, tenantId)).map(normalizeApprovalItem)
 
     const items = allItems.sort(
       (a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()
