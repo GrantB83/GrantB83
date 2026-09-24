@@ -3,6 +3,7 @@ import Database from 'better-sqlite3'
 import fs from 'fs'
 import path from 'path'
 import { NextRequest } from 'next/server'
+import type { DbClient } from '@/lib/db'
 import { addStaffUser } from '@/lib/staff-auth'
 import { createStaffSession } from '@/lib/staff-session'
 import { ensureStaffUsersSchema } from '@/lib/staff-users-schema'
@@ -20,10 +21,12 @@ function createTestDbClient(db: Database.Database) {
         all: (...params: any[]) => stmt.all(...params),
       }
     },
-    exec: (sql: string) => db.exec(sql),
+    exec: (sql: string) => {
+      db.exec(sql)
+    },
     batch: () => {},
     type: 'sqlite' as const,
-  }
+  } as unknown as DbClient
 }
 
 let sqlite: Database.Database
@@ -39,7 +42,7 @@ function authedRequest(url: string, token: string, init?: RequestInit) {
   if (init?.body && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
-  return new NextRequest(url, { ...init, headers })
+  return new NextRequest(url, { ...init, headers } as ConstructorParameters<typeof NextRequest>[1])
 }
 
 describe('staff users API', () => {

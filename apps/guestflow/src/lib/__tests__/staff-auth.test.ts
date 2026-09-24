@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
 import fs from 'fs'
 import path from 'path'
+import type { DbClient } from '@/lib/db'
 import {
   addStaffUser,
   authenticateStaff,
@@ -34,7 +35,9 @@ function createTestDbClient(db: Database.Database) {
         all: (...params: any[]) => stmt.all(...params),
       }
     },
-    exec: (sql: string) => db.exec(sql),
+    exec: (sql: string) => {
+      db.exec(sql)
+    },
     batch: (statements: Array<{ sql: string; args?: any[] }>) => {
       const tx = db.transaction(() => {
         for (const statement of statements) {
@@ -44,7 +47,7 @@ function createTestDbClient(db: Database.Database) {
       tx()
     },
     type: 'sqlite' as const,
-  }
+  } as unknown as DbClient
 }
 
 describe('staff auth', () => {
