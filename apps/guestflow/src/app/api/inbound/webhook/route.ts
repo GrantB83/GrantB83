@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
+import { jsonSafeResponse } from '@/lib/json-safe'
 import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { generateTicketDrafts } from '@/lib/ticket-playbooks'
 import { processCheckinEvent } from '@/lib/checkin-inference'
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       const twilioSignature = request.headers.get('x-twilio-signature')
       
       if (!twilioSignature) {
-        return NextResponse.json(
+        return jsonSafeResponse(
           { success: false, error: 'Missing X-Twilio-Signature header' },
           { status: 401 }
         )
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
       // Validate Twilio signature
       const url = request.url
       if (!verifyTwilioSignature(twilioSignature, url, twilioParams)) {
-        return NextResponse.json(
+        return jsonSafeResponse(
           { success: false, error: 'Invalid Twilio signature' },
           { status: 401 }
         )
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
     } else {
       // JSON payload: verify Bearer token
       if (!verifyWebhookSecret(request)) {
-        return NextResponse.json(
+        return jsonSafeResponse(
           { success: false, error: 'Unauthorized - invalid webhook secret' },
           { status: 401 }
         )
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
     // WhatsApp Web source has different validation requirements
     if (source === 'whatsapp_web') {
       if (!payload.from || !payload.timestamp || !payload.externalMessageId) {
-        return NextResponse.json(
+        return jsonSafeResponse(
           { 
             success: false, 
             error: 'Missing required fields for whatsapp_web: from, timestamp, externalMessageId' 
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
       payload.text = '[metadata-only]'
     } else {
       if (!payload.from || !payload.text || !payload.timestamp) {
-        return NextResponse.json(
+        return jsonSafeResponse(
           { 
             success: false, 
             error: 'Missing required fields: from, text, timestamp' 
@@ -218,7 +219,7 @@ export async function POST(request: NextRequest) {
           payload.metadata || {}
         )
         
-        return NextResponse.json({
+        return jsonSafeResponse({
           success: true,
           triaged: true,
           ticketId: Number(ticketId),
@@ -242,7 +243,7 @@ export async function POST(request: NextRequest) {
       `).get(payload.externalMessageId)
 
       if (existing) {
-        return NextResponse.json({
+        return jsonSafeResponse({
           success: true,
           duplicate: true,
           messageId: (existing as any).id
@@ -324,7 +325,7 @@ export async function POST(request: NextRequest) {
 
     // WhatsApp Web metadata-only: skip classification (no body to classify)
     if (source === 'whatsapp_web') {
-      return NextResponse.json({
+      return jsonSafeResponse({
         success: true,
         messageId,
         threadId: thread.id,
@@ -359,7 +360,7 @@ export async function POST(request: NextRequest) {
         `Manual review and classify required`
       )
 
-      return NextResponse.json({
+      return jsonSafeResponse({
         success: true,
         messageId,
         threadId: thread.id,
@@ -709,7 +710,7 @@ The Browns Team`
       return new NextResponse('', { status: 200 })
     } else {
       // JSON response for CoS bridge / manual paste / debugging
-      return NextResponse.json({
+      return jsonSafeResponse({
         success: true,
         messageId,
         threadId: thread.id,
@@ -731,7 +732,7 @@ The Browns Team`
 
   } catch (error) {
     console.error('Inbound webhook error:', error)
-    return NextResponse.json(
+    return jsonSafeResponse(
       { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -757,7 +758,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  return NextResponse.json({
+  return jsonSafeResponse({
     service: 'GuestFlow Inbound Webhook',
     version: '1.0',
     status: 'ready',
