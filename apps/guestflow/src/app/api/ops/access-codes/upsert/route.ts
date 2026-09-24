@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { upsertAccessCode } from '@/lib/access-codes'
 import { ACCESS_CODE_REDACTED } from '@/lib/access-codes-schema'
+import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
     const db = await getDbAsync()
     const tenantId = await getDefaultTenantIdAsync()
     
-    // For now, staff ID is 'staff' - can be enhanced with real staff auth
-    const staffId = 'staff'
+    const session = await getStaffSessionFromRequest(request, db)
+    const staffId = actorStamp(session, 'staff')
     
     const result = await upsertAccessCode(
       db,

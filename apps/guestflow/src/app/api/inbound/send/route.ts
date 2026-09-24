@@ -10,6 +10,7 @@ import { mapSourceToChannel, sendApiChannel } from '@/lib/umi-channels'
 import { markThreadOutbound } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
+import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,8 @@ async function writeEmailAudit(
   status: string,
   to: string,
   messageId: string | null,
-  timestamp: string
+  timestamp: string,
+  actor = 'Grant'
 ) {
   try {
     await db
@@ -42,7 +44,7 @@ async function writeEmailAudit(
       )
       .run(
         1,
-        'Grant',
+        actor,
         'email_send',
         'inbound_thread',
         threadId,
@@ -62,6 +64,8 @@ async function writeEmailAudit(
 
 export async function POST(request: NextRequest) {
   const timestamp = new Date().toISOString()
+  const staffSession = await getStaffSessionFromRequest(request).catch(() => null)
+  const actingActor = actorStamp(staffSession, 'Grant')
 
   try {
     const body = (await request.json()) as SendMessageRequest
@@ -207,7 +211,7 @@ export async function POST(request: NextRequest) {
           channel: 'email',
           status: 'sent',
         })
-        await writeEmailAudit(db, threadId, 'sent', to, sendResult.messageId || null, sendResult.timestamp)
+        await writeEmailAudit(db, threadId, 'sent', to, sendResult.messageId || null, sendResult.timestamp, actingActor)
 
         return NextResponse.json({
           success: true,
@@ -240,7 +244,7 @@ export async function POST(request: NextRequest) {
           args: [threadId],
         },
       ])
-      await writeEmailAudit(db, threadId, 'failed', to, null, sendResult.timestamp)
+      await writeEmailAudit(db, threadId, 'failed', to, null, sendResult.timestamp, actingActor)
 
       return NextResponse.json(
         {
