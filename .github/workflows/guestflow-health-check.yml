@@ -14,6 +14,7 @@ jobs:
     permissions:
       actions: write
       contents: read
+      variables: write
     steps:
       - name: Probe /api/health/deep
         env:
