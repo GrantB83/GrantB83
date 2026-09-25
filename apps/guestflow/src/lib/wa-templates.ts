@@ -2,7 +2,7 @@ import type { DbClient } from '@/lib/db'
 import { ensureSprint2WhatsappSchema } from '@/lib/sprint2-schema'
 import { isWhatsAppApproved } from '@/lib/wa-templates-seed'
 import { GRANT_REVIEW_URL } from '@/lib/wa-templates-seed'
-import { resolveCodesFromLockboxProperty } from '@/lib/access-codes-from-lockbox'
+import { resolveAccessCodesForSuite, type PropertyKey } from '@/lib/property-resolve'
 import { ACCESS_CODE_PLACEHOLDER } from '@/lib/access-codes-schema'
 
 export interface WaTemplateRow {
@@ -81,7 +81,7 @@ export interface FilledTemplate {
   rendered: string
   codesIncluded: boolean
   propertyResolved: boolean
-  property: string | null
+  property: PropertyKey | null
   reason: string
 }
 
@@ -125,11 +125,9 @@ export async function fillTemplateVariables(
   const needsCodes = Object.values(mapping).some((key) =>
     ['gate_code', 'lockbox_code', 'door_code', 'wifi_network', 'wifi_password'].includes(key)
   )
-  const lockbox = needsCodes
-    ? await resolveCodesFromLockboxProperty(db, tenantId, context.suite)
-    : await resolveCodesFromLockboxProperty(db, tenantId, context.suite)
-
-  const property = lockbox.property
+  const resolved = await resolveAccessCodesForSuite(db, tenantId, context.suite)
+  const property = resolved.property
+  const propertyResolved = resolved.ok
   const fieldValues: Record<string, string> = {
     guest_name: context.guestName || '',
     suite: context.suite || '',
@@ -146,13 +144,13 @@ export async function fillTemplateVariables(
     wifi_password: '',
   }
 
-  const codesIncluded = Boolean(lockbox.propertyResolved && lockbox.codes)
-  if (codesIncluded && lockbox.codes) {
-    fieldValues.gate_code = lockbox.codes.gateCode
-    fieldValues.door_code = lockbox.codes.doorCode
-    fieldValues.lockbox_code = lockbox.codes.lockboxCode || lockbox.codes.doorCode
-    fieldValues.wifi_network = lockbox.codes.wifi.network
-    fieldValues.wifi_password = lockbox.codes.wifi.password
+  const codesIncluded = Boolean(propertyResolved && resolved.codes)
+  if (codesIncluded && resolved.codes) {
+    fieldValues.gate_code = resolved.codes.gateCode
+    fieldValues.door_code = resolved.codes.doorCode
+    fieldValues.lockbox_code = resolved.codes.lockboxCode || resolved.codes.doorCode
+    fieldValues.wifi_network = resolved.codes.wifi.network
+    fieldValues.wifi_password = resolved.codes.wifi.password
   } else if (needsCodes) {
     fieldValues.gate_code = ACCESS_CODE_PLACEHOLDER
     fieldValues.lockbox_code = ACCESS_CODE_PLACEHOLDER
@@ -174,9 +172,9 @@ export async function fillTemplateVariables(
     variables,
     rendered,
     codesIncluded: codesIncluded && needsCodes,
-    propertyResolved: lockbox.propertyResolved,
+    propertyResolved,
     property,
-    reason: lockbox.reason,
+    reason: resolved.ok ? '' : resolved.reason,
   }
 }
 
