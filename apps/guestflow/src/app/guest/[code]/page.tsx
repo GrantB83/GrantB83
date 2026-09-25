@@ -110,12 +110,12 @@ export default function GuestPortalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 shadow-lg">
-            <Home className="w-8 h-8 text-primary-600 animate-pulse" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-4 shadow-lg">
+            <img src="/logos/thebrowns-logo-live.svg" alt="The Browns" className="h-12 w-auto" />
           </div>
-          <p className="text-gray-700 font-medium">Loading your stay details...</p>
+          <p className="text-foreground font-medium">Loading your stay details...</p>
         </div>
       </div>
     )
@@ -123,24 +123,27 @@ export default function GuestPortalPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-              <Home className="w-8 h-8 text-red-600" />
+            <div className="inline-flex items-center justify-center mb-4">
+              <img src="/logos/thebrowns-logo-live.svg" alt="The Browns" className="h-16 w-auto" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-serif text-foreground mb-2">
               Unable to Access
             </h1>
+            <p className="text-sm text-muted-foreground">
+              This stay link is invalid or has expired.
+            </p>
           </div>
 
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 mb-6">
             {error}
           </div>
 
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-muted-foreground">
             <p className="mb-2">Need help? Contact us at</p>
-            <a href="mailto:stay@thebrowns.co.za" className="text-primary-600 hover:text-primary-700 font-medium">
+            <a href="mailto:stay@thebrowns.co.za" className="text-primary hover:text-primary-700 font-medium">
               stay@thebrowns.co.za
             </a>
           </div>
@@ -154,15 +157,15 @@ export default function GuestPortalPage() {
   const { booking, property, stayPacket } = portalData
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+      <div className="bg-primary text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Home className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">{property.displayName}</h1>
+          <div className="flex items-center gap-4 mb-3">
+            <img src="/logos/thebrowns-logo-live.svg" alt="The Browns" className="h-12 w-auto" />
           </div>
-          <p className="text-primary-100">{property.location}</p>
+          <h1 className="text-3xl font-serif text-white mb-2">Your Stay</h1>
+          <p className="text-white/90">{property.displayName} · {property.location}</p>
         </div>
       </div>
 
@@ -170,9 +173,9 @@ export default function GuestPortalPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         
         {/* Booking Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-primary-50 border-b border-primary-100 px-6 py-4">
-            <h2 className="text-xl font-bold text-gray-900">Your Stay</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
+            <h2 className="text-xl font-bold text-white">Your Stay</h2>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-start gap-4">
@@ -266,7 +269,7 @@ export default function GuestPortalPage() {
                     setSelfBusy(false)
                   }
                 }}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm disabled:opacity-50 hover:bg-primary-700"
               >
                 Save my contacts
               </button>
@@ -276,11 +279,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* Wi-Fi Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-blue-50 border-b border-blue-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <Wifi className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900">Wi-Fi Access</h2>
+              <Wifi className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">Wi-Fi Access</h2>
             </div>
           </div>
           <div className="p-6">
@@ -311,11 +314,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* Access Codes (Time-gated) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <Key className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-xl font-bold text-gray-900">Access Codes</h2>
+              <Key className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">Access Codes</h2>
             </div>
           </div>
           <div className="p-6">
@@ -370,11 +373,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* Parking */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-teal-50 border-b border-teal-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <Car className="w-5 h-5 text-teal-600" />
-              <h2 className="text-xl font-bold text-gray-900">Parking</h2>
+              <Car className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">Parking</h2>
             </div>
           </div>
           <div className="p-6">
@@ -383,11 +386,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* House Rules */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-green-600" />
-              <h2 className="text-xl font-bold text-gray-900">House Rules</h2>
+              <FileText className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">House Rules</h2>
             </div>
           </div>
           <div className="p-6">
@@ -407,11 +410,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* Property Address & Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-purple-50 border-b border-purple-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl font-bold text-gray-900">Property Address</h2>
+              <MapPin className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">Property Address</h2>
             </div>
           </div>
           <div className="p-6 space-y-4">
@@ -429,7 +432,7 @@ export default function GuestPortalPage() {
                   href={property.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-700 transition"
                 >
                   <MapPin className="w-5 h-5" />
                   Open in Google Maps
@@ -450,11 +453,11 @@ export default function GuestPortalPage() {
         </div>
 
         {/* Contact Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-orange-50 border-b border-orange-100 px-6 py-4">
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
             <div className="flex items-center gap-2">
-              <Phone className="w-5 h-5 text-orange-600" />
-              <h2 className="text-xl font-bold text-gray-900">Contact Us</h2>
+              <Phone className="w-5 h-5 text-white" />
+              <h2 className="text-xl font-bold text-white">Contact Us</h2>
             </div>
           </div>
           <div className="p-6 space-y-4">
@@ -463,7 +466,7 @@ export default function GuestPortalPage() {
                 <Phone className="w-5 h-5 text-gray-600" />
                 <div>
                   <p className="text-sm text-gray-600">Phone</p>
-                  <a href={`tel:${property.contact.phone}`} className="font-semibold text-primary-600 hover:text-primary-700">
+                  <a href={`tel:${property.contact.phone}`} className="font-semibold text-primary hover:text-primary-700">
                     {property.contact.phone}
                   </a>
                 </div>
@@ -479,7 +482,7 @@ export default function GuestPortalPage() {
                     href={`https://wa.me/${property.contact.whatsapp.replace(/\D/g, '')}`} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-primary-600 hover:text-primary-700"
+                    className="font-semibold text-primary hover:text-primary-700"
                   >
                     {property.contact.whatsapp}
                   </a>
@@ -492,7 +495,7 @@ export default function GuestPortalPage() {
                 <Mail className="w-5 h-5 text-gray-600" />
                 <div>
                   <p className="text-sm text-gray-600">Email</p>
-                  <a href={`mailto:${property.contact.email}`} className="font-semibold text-primary-600 hover:text-primary-700">
+                  <a href={`mailto:${property.contact.email}`} className="font-semibold text-primary hover:text-primary-700">
                     {property.contact.email}
                   </a>
                 </div>
@@ -510,19 +513,19 @@ export default function GuestPortalPage() {
 
         {/* WEBDIRECT CTA - Only shown post-checkout */}
         {portalData.nextStay && portalData.nextStay.enabled && (
-          <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-secondary rounded-xl shadow-lg overflow-hidden border-2 border-secondary-600">
             <div className="p-8 text-center">
-              <h2 className="text-2xl font-bold text-white mb-2">
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 {portalData.nextStay.title}
               </h2>
-              <p className="text-primary-100 mb-6">
+              <p className="text-foreground/80 mb-6">
                 {portalData.nextStay.message}
               </p>
               <a
                 href={portalData.nextStay.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-700 rounded-lg font-semibold hover:bg-gray-50 transition shadow-lg"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-lg font-semibold hover:bg-primary-700 transition shadow-lg"
               >
                 Book Your Next Stay
                 <ExternalLink className="w-5 h-5" />
@@ -532,10 +535,10 @@ export default function GuestPortalPage() {
         )}
 
         {/* Footer */}
-        <div className="text-center py-8 text-sm text-gray-600">
+        <div className="text-center py-8 text-sm text-muted-foreground">
           <p>We look forward to welcoming you!</p>
           <p className="mt-2">
-            <a href="https://thebrowns.co.za" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 font-medium">
+            <a href="https://thebrowns.co.za" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-700 font-medium">
               thebrowns.co.za
             </a>
           </p>
