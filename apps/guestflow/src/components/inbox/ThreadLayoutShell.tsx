@@ -14,6 +14,10 @@ interface ThreadLayoutShellProps {
   extraHeader?: ReactNode
   messages: ReactNode
   composer: ReactNode
+  /** Minimum height for message transcript area (US1: ≥240px or ≥35% shell) */
+  minMessageHeight?: number
+  /** Maximum height for composer on desktop (US4: ≤50% shell) */
+  maxComposerHeight?: number
 }
 
 export function ThreadLayoutShell({
@@ -27,6 +31,8 @@ export function ThreadLayoutShell({
   extraHeader,
   messages,
   composer,
+  minMessageHeight,
+  maxComposerHeight,
 }: ThreadLayoutShellProps) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -63,11 +69,18 @@ export function ThreadLayoutShell({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0"
+        style={minMessageHeight ? { minHeight: `${minMessageHeight}px` } : undefined}
+      >
         {messages}
       </div>
 
-      <footer data-inbox-composer className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3">
+      <footer
+        data-inbox-composer
+        className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3"
+        style={maxComposerHeight ? { maxHeight: `${maxComposerHeight}px`, overflowY: 'auto' } : undefined}
+      >
         {composer}
       </footer>
     </div>

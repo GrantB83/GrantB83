@@ -20,6 +20,7 @@ import { FIXTURE_DETAILS, FIXTURE_THREADS } from '@/components/inbox/inbox-fixtu
 import type { InboxThread, ThreadDetail } from '@/components/inbox/inbox-types'
 import { useInboxBreakpoint } from '@/components/inbox/useInboxBreakpoint'
 import { useInboxChromeOffset } from '@/components/inbox/useInboxChromeOffset'
+import { useShellDimensions } from '@/components/inbox/useShellDimensions'
 import { useVisualViewportInset } from '@/components/inbox/useVisualViewportInset'
 
 const CHANNELS: Array<{ id: string; label: string }> = [
@@ -55,6 +56,7 @@ function InboxHomePageInner() {
   const keyboardSim = searchParams.get('keyboard') === '1'
   const threadParam = searchParams.get('thread')
   const keyboardInsetPx = useVisualViewportInset(keyboardSim)
+  const { minMessageHeight, maxComposerHeight, shellHeight } = useShellDimensions(chromeOffset, keyboardInsetPx)
 
   const [threads, setThreads] = useState<InboxThread[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -762,7 +764,7 @@ function InboxHomePageInner() {
       ))}
       composer={
         <>
-          {careWindow && (
+          {careWindow && keyboardInsetPx < 100 && shellHeight >= 500 && (
             <p
               className={`text-base px-2 py-1 rounded inbox-wrap ${
                 careWindow.state === 'closed'
@@ -877,6 +879,8 @@ function InboxHomePageInner() {
           </div>
         </>
       }
+      minMessageHeight={minMessageHeight}
+      maxComposerHeight={breakpoint === 'phone' ? undefined : maxComposerHeight}
     />
   )
 
