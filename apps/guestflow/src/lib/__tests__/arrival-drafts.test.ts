@@ -383,7 +383,7 @@ describe('runArrivalDraftsJob', () => {
   })
 
   it('uses email when there is no phone', async () => {
-    insertBooking(sqlite, { id: 17, phone: null, email: 'ada@example.com', checkIn: '2026-09-27' })
+    insertBooking(sqlite, { id: 17, phone: null, email: 'ada@thebrowns.co.za', checkIn: '2026-09-27' })
     await runArrivalDraftsJob(db, { now: T3_NOW })
     const row = sqlite.prepare('SELECT channel FROM arrival_drafts').get() as { channel: string }
     expect(row.channel).toBe('email')

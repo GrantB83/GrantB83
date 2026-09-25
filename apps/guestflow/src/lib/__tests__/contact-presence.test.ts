@@ -12,8 +12,8 @@ describe('contact presence (#219 matching interface)', () => {
   })
 
   it('falls back to email when phone is missing', () => {
-    const presence = resolveContactPresence({ phone: '', email: 'Ada@Host.example' })
-    expect(presence).toMatchObject({ email: 'ada@host.example', channel: 'email', hasContact: true })
+    const presence = resolveContactPresence({ phone: '', email: 'Ada@thebrowns.co.za' })
+    expect(presence).toMatchObject({ email: 'ada@thebrowns.co.za', channel: 'email', hasContact: true })
   })
 
   it('is no-contact when both are missing or unparseable', () => {
