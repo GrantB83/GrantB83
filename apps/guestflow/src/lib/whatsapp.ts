@@ -40,6 +40,8 @@ interface SendMessageParams {
   to: string // Phone number in international format (e.g., +27836458313)
   message: string
   portalUrl?: string // Optional portal link to include
+  contentSid?: string
+  contentVariables?: Record<string, string>
 }
 
 interface SendResult {
@@ -192,7 +194,14 @@ async function sendViaTwilio(
   // Build form body
   const formBody = new URLSearchParams()
   formBody.append('To', toNumber)
-  formBody.append('Body', messageText)
+  if (params.contentSid) {
+    formBody.append('ContentSid', params.contentSid)
+    if (params.contentVariables) {
+      formBody.append('ContentVariables', JSON.stringify(params.contentVariables))
+    }
+  } else {
+    formBody.append('Body', messageText)
+  }
   
   // Use MessagingServiceSid if available, otherwise From
   if (config.messagingServiceSid) {
@@ -467,25 +476,19 @@ export async function sendWhatsAppMessage(
  *   2. Purchase SA phone number from approved provider
  *   3. Link number to WhatsApp Business Account
  * 
- * Template message notes (Meta only):
- * 
- * Meta requires approved Message Templates for messages sent outside 
- * the 24-hour customer service window. Twilio does not have this restriction.
- * For messages within 24h of customer contact, free-form text is allowed.
- * 
- * Required templates for The Browns' Dullstroom operations:
- * 
- * 1. stay_packet_link - Link to guest portal with booking details
- *    Template: "Hi {{1}}, your booking at {{2}} is confirmed. 
- *              Access your stay packet: {{3}}"
- * 
- * 2. welcome_message - Same-day welcome with arrival details
- *    Template: "Welcome! Looking forward to hosting you today at {{1}}. 
- *              Check-in from {{2}}. Questions? Reply anytime."
- * 
- * 3. custom_within_24h - Free-form text within 24h service window
- *    (No template required - can send custom text)
- * 
- * Note: Template approval is done via Meta Business Manager.
- * Twilio does not require template approval.
+ * Template message notes (Twilio WhatsApp and Meta):
+ *
+ * Both Twilio WhatsApp and Meta require an approved message template for
+ * messages sent outside the 24-hour customer-care window. Free-form text is
+ * allowed only while that window is open (guest last inbound on WABA
+ * +27600200825). GuestFlow refuses Cloud free-text with HTTP 409 when the
+ * window is closed and does not call Twilio.
+ *
+ * Grant-approved Browns templates (unsubmitted until final go-ahead):
+ * browns_pre_arrival_welcome, browns_checkin_instructions, browns_access_codes,
+ * browns_mid_stay_checkin, browns_checkout_reminder, browns_post_stay_thank_you,
+ * browns_review_request.
+ *
+ * Template send uses Twilio ContentSid + ContentVariables. Do not create or
+ * submit templates from this package.
  */

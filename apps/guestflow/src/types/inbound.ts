@@ -13,6 +13,8 @@ export interface SendMessageRequest {
   to?: string
   subject?: string
   body?: string
+  contentSid?: string
+  contentVariables?: Record<string, string>
 }
 
 export interface SendMessageResponse {

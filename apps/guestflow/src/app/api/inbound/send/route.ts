@@ -9,6 +9,7 @@ import { sendSms } from '@/lib/sms'
 import { mapSourceToChannel, sendApiChannel } from '@/lib/umi-channels'
 import { markThreadOutbound } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
+import { getCareWindowForThread } from '@/lib/whatsapp-care-window'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
 import { notifyFailedApproveSend, stampLastHandler } from '@/lib/staff-alerts'
@@ -139,12 +140,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const contentSid = typeof body.contentSid === 'string' ? body.contentSid.trim() : ''
+    const contentVariables =
+      body.contentVariables && typeof body.contentVariables === 'object' ? body.contentVariables : undefined
     const outboundBody = (body.body || latestMessage?.draft_reply || '').trim()
-    if (!outboundBody) {
+    if (!outboundBody && !contentSid) {
       return NextResponse.json(
         { success: false, error: 'Thread has no draft reply to send' } as SendMessageResponse,
         { status: 400 }
       )
+    }
+
+    const isWhatsAppCloud = channel !== 'email' && channel !== 'whatsapp_web' && channel !== 'sms'
+    if (isWhatsAppCloud && !contentSid) {
+      const careWindow = await getCareWindowForThread(db, threadId)
+      if (careWindow.state === 'closed') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'WhatsApp customer-care window is closed. Send an approved template.',
+          } as SendMessageResponse,
+          { status: 409 }
+        )
+      }
     }
 
     const consumed = await consumeConfirmToken(db, { threadId, confirmToken })
@@ -387,7 +405,9 @@ export async function POST(request: NextRequest) {
 
     const sendResult = await sendWhatsAppMessage({
       to: thread.from_number,
-      message: outboundBody,
+      message: outboundBody || `[template ${contentSid}]`,
+      contentSid: contentSid || undefined,
+      contentVariables,
     })
 
     if (sendResult.success) {

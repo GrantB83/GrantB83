@@ -1,6 +1,7 @@
 import type { DbClient } from '@/lib/db'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { buildDraftPrompt, formatPropertyKnowledgeForPrompt } from '@/lib/property-knowledge'
 
 /**
  * Phase 1 batch worker logic for LLM draft generation.
@@ -271,20 +272,25 @@ export async function generateDraftWithLLM(
     guestName: string | null
     intent: string | null
     confidence: number | null
+    propertyKnowledge?: string
   },
   config: BatchWorkerConfig
 ): Promise<string> {
   // Load prompt template
   const promptPath = join(process.cwd(), 'prompts', 'DRAFT_PROMPT.md')
   const promptTemplate = readFileSync(promptPath, 'utf-8')
+  const propertyKnowledge =
+    context.propertyKnowledge ||
+    'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
 
-  // Replace template variables
-  const prompt = promptTemplate
-    .replace('{from_number}', context.fromNumber)
-    .replace('{guest_name}', context.guestName || 'Guest')
-    .replace('{intent}', context.intent || 'general_question')
-    .replace('{confidence}', String(context.confidence || 0))
-    .replace('{message_text}', context.messageText)
+  const prompt = buildDraftPrompt(promptTemplate, {
+    fromNumber: context.fromNumber,
+    guestName: context.guestName,
+    intent: context.intent,
+    confidence: context.confidence,
+    messageText: context.messageText,
+    propertyKnowledge,
+  })
 
   if (config.dryRun) {
     return `[DRY RUN] Draft for message: "${context.messageText.substring(0, 50)}..."`
@@ -388,9 +394,16 @@ export async function processJob(
   try {
     // Fetch message context
     const context = await fetchMessageContext(db, job.message_id)
+    let propertyKnowledge =
+      'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
+    try {
+      propertyKnowledge = await formatPropertyKnowledgeForPrompt(db, job.tenant_id)
+    } catch {
+      // Narrow test fixtures may not have knowledge tables
+    }
 
     // Generate draft with LLM
-    const draftReply = await generateDraftWithLLM(context, config)
+    const draftReply = await generateDraftWithLLM({ ...context, propertyKnowledge }, config)
 
     // Upsert draft via API and update thread status
     if (!config.dryRun) {

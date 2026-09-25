@@ -31,6 +31,11 @@ interface InboxThread {
   sortBucket: 0 | 1 | 2
   hygieneStatus: string | null
   fromNumber: string
+  careWindow?: {
+    state: 'open' | 'closing_soon' | 'closed'
+    label: string
+    closingSoon: boolean
+  }
 }
 
 interface ThreadDetail {
@@ -66,6 +71,12 @@ interface ThreadDetail {
     timestamp: string
     isSpam: boolean
   }>
+  careWindow?: {
+    state: 'open' | 'closing_soon' | 'closed'
+    label: string
+    closingSoon: boolean
+    windowExpiresAt: string | null
+  }
 }
 
 const CHANNELS: Array<{ id: string; label: string }> = [
@@ -102,6 +113,14 @@ export default function InboxHomePage() {
   const [linkBookingId, setLinkBookingId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [approvedTemplates, setApprovedTemplates] = useState<
+    Array<{ name: string; category: string; content_sid: string | null }>
+  >([])
+  const [templateEmptyReason, setTemplateEmptyReason] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [templateVars, setTemplateVars] = useState<Record<string, string>>({})
+  const [templateSid, setTemplateSid] = useState('')
+  const [templateRendered, setTemplateRendered] = useState('')
 
   const loadInbox = async () => {
     setLoading(true)
@@ -130,6 +149,10 @@ export default function InboxHomePage() {
         data.thread.fromNumber?.includes('@') ? data.thread.fromNumber : ''
       )
       setLinkBookingId('')
+      setSelectedTemplate('')
+      setTemplateVars({})
+      setTemplateSid('')
+      setTemplateRendered('')
     }
   }
 
@@ -147,6 +170,36 @@ export default function InboxHomePage() {
     [threads, selectedId]
   )
 
+  const careWindow = detail?.careWindow
+  const forceTemplateMode =
+    channel === 'whatsapp' &&
+    (careWindow?.state === 'closed' || careWindow?.state === 'closing_soon')
+
+  useEffect(() => {
+    if (!forceTemplateMode) return
+    fetch('/api/ops/wa-templates?picker=1')
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success) return
+        setApprovedTemplates(data.templates || [])
+        setTemplateEmptyReason(data.emptyReason || '')
+      })
+      .catch(() => {})
+  }, [forceTemplateMode, selectedId])
+
+  useEffect(() => {
+    if (!selectedTemplate || !selectedId) return
+    fetch(`/api/ops/wa-templates/fill?threadId=${selectedId}&name=${encodeURIComponent(selectedTemplate)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success) return
+        setTemplateVars(data.variables || {})
+        setTemplateSid(data.template?.content_sid || '')
+        setTemplateRendered(data.rendered || '')
+      })
+      .catch(() => {})
+  }, [selectedTemplate, selectedId])
+
   const saveDraft = async () => {
     if (!selectedId || !draft.trim()) return
     setBusy(true)
@@ -163,9 +216,23 @@ export default function InboxHomePage() {
   }
 
   const approveAndSend = async () => {
-    if (!selectedId || !draft.trim()) return
+    const usingTemplate = forceTemplateMode && Boolean(selectedTemplate)
+    if (!selectedId) return
+    if (!usingTemplate && !draft.trim()) return
+    if (forceTemplateMode && careWindow?.state === 'closed' && !selectedTemplate) {
+      setError('Window closed. Pick a WhatsApp-approved template (none until Grant submits).')
+      return
+    }
+    const windowNote =
+      channel === 'whatsapp' && careWindow
+        ? careWindow.state === 'closed'
+          ? '\n\nWARNING: WhatsApp window is closed. Free-text will be refused (409). Use an approved template.'
+          : careWindow.state === 'closing_soon'
+            ? '\n\nWARNING: WhatsApp window closes in about 5 minutes. Switch to a template if this send might miss the window.'
+            : ''
+        : ''
     const confirmed = window.confirm(
-      `Approve & Send on ${CHANNELS.find((item) => item.id === channel)?.label || channel}?\n\nRedirect sinks stay on until a separate go-live CLEAR. No auto-send.`
+      `Approve & Send on ${CHANNELS.find((item) => item.id === channel)?.label || channel}?\n\nRedirect sinks stay on until a separate go-live CLEAR. No auto-send.${windowNote}`
     )
     if (!confirmed) return
     setBusy(true)
@@ -190,9 +257,12 @@ export default function InboxHomePage() {
           threadId: selectedId,
           confirmToken: tokenData.confirmToken,
           channel,
-          body: draft,
+          body: usingTemplate ? templateRendered || draft : draft,
           to: channel === 'email' ? emailTo : detail?.fromNumber,
           subject: 'Message from The Browns',
+          ...(usingTemplate && templateSid
+            ? { contentSid: templateSid, contentVariables: templateVars }
+            : {}),
         }),
       })
       const sendData = await sendRes.json()
@@ -315,6 +385,16 @@ export default function InboxHomePage() {
                     Stale temp
                   </span>
                 )}
+                {thread.careWindow?.state === 'closed' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                    WA closed
+                  </span>
+                )}
+                {thread.careWindow?.state === 'closing_soon' && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
+                    WA closing
+                  </span>
+                )}
               </div>
             </button>
           ))}
@@ -340,6 +420,19 @@ export default function InboxHomePage() {
                   <p className="text-xs text-slate-500 mt-1">
                     Last channel: {badge(detail.lastChannel)} · Default reply: {badge(detail.defaultOutboundChannel)}
                   </p>
+                  {detail.careWindow && (
+                    <p
+                      className={`text-xs mt-2 inline-flex px-2 py-1 rounded ${
+                        detail.careWindow.state === 'closed'
+                          ? 'bg-slate-200 text-slate-800'
+                          : detail.careWindow.state === 'closing_soon'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-emerald-50 text-emerald-800'
+                      }`}
+                    >
+                      {detail.careWindow.label}
+                    </p>
+                  )}
                 </div>
                 {detail.threadKind === 'temp' && (
                   <div className="text-xs bg-amber-50 border border-amber-200 rounded-lg p-3 max-w-sm">
@@ -414,6 +507,19 @@ export default function InboxHomePage() {
             </div>
 
             <footer className="bg-white border-t p-4 space-y-3">
+              {careWindow && (
+                <p
+                  className={`text-xs px-2 py-1 rounded ${
+                    careWindow.state === 'closed'
+                      ? 'bg-slate-200 text-slate-800'
+                      : careWindow.state === 'closing_soon'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-emerald-50 text-emerald-800'
+                  }`}
+                >
+                  {careWindow.label}
+                </p>
+              )}
               {error && <p className="text-sm text-red-600">{error}</p>}
               {selected?.hasOpenDraft || detail.openDraft ? (
                 <p className="text-xs text-amber-700">
@@ -435,6 +541,48 @@ export default function InboxHomePage() {
                   </button>
                 ))}
               </div>
+              {forceTemplateMode && (
+                <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
+                  <p className="text-xs font-medium text-slate-800">Template mode</p>
+                  <p className="text-xs text-slate-600">
+                    {approvedTemplates.length === 0
+                      ? templateEmptyReason ||
+                        'Picker shows only templates APPROVED by WhatsApp. Grant-approved copy is stored but unsubmitted — none appear until Grant’s submit go-ahead.'
+                      : 'Choose a WhatsApp-approved template. Variables are pre-filled; you can edit them.'}
+                  </p>
+                  <select
+                    value={selectedTemplate}
+                    onChange={(event) => setSelectedTemplate(event.target.value)}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                  >
+                    <option value="">Select template…</option>
+                    {approvedTemplates.map((item) => (
+                      <option key={item.name} value={item.name}>
+                        {item.name} ({item.category})
+                      </option>
+                    ))}
+                  </select>
+                  {Object.keys(templateVars).length > 0 && (
+                    <div className="space-y-2">
+                      {Object.entries(templateVars).map(([key, value]) => (
+                        <label key={key} className="block text-xs text-slate-600">
+                          {`{{${key}}}`}
+                          <input
+                            value={value}
+                            onChange={(event) =>
+                              setTemplateVars((current) => ({
+                                ...current,
+                                [key]: event.target.value,
+                              }))
+                            }
+                            className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {channel === 'email' && (
                 <input
                   value={emailTo}
@@ -460,7 +608,7 @@ export default function InboxHomePage() {
                 </button>
                 <button
                   onClick={approveAndSend}
-                  disabled={busy || !draft.trim()}
+                  disabled={busy || (!draft.trim() && !selectedTemplate)}
                   className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg flex items-center gap-1 disabled:opacity-50"
                 >
                   <CheckCircle className="w-4 h-4" />

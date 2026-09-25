@@ -1,0 +1,62 @@
+[
+  {
+    "id": "q1",
+    "question": "What time is check-in?",
+    "expectAskStaffIfMissing": false,
+    "knownKey": "check_in_from"
+  },
+  {
+    "id": "q2",
+    "question": "What time is check-out?",
+    "expectAskStaffIfMissing": false,
+    "knownKey": "check_out_by"
+  },
+  {
+    "id": "q3",
+    "question": "Where should we eat tonight in Dullstroom?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "restaurants"
+  },
+  {
+    "id": "q4",
+    "question": "Can you recommend a fly-fishing guide?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "fly_fishing"
+  },
+  {
+    "id": "q5",
+    "question": "Is there a fireplace and extra wood in our suite?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "fireplace_wood"
+  },
+  {
+    "id": "q6",
+    "question": "Do you have a braai we can use?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "braai"
+  },
+  {
+    "id": "q7",
+    "question": "Can we get extra towels and linen?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "towels_linen"
+  },
+  {
+    "id": "q8",
+    "question": "What are the house quiet hours?",
+    "expectAskStaffIfMissing": false,
+    "knownKey": "quiet_hours"
+  },
+  {
+    "id": "q9",
+    "question": "What is the cottage address and parking?",
+    "expectAskStaffIfMissing": false,
+    "knownKey": "address"
+  },
+  {
+    "id": "q10",
+    "question": "How far is Johannesburg and which shops are closest?",
+    "expectAskStaffIfMissing": true,
+    "knownKey": "distances"
+  }
+]

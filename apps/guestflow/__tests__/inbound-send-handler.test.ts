@@ -37,6 +37,21 @@ vi.mock('@/lib/umi-threads', () => ({
   markThreadOutbound: vi.fn(async () => {}),
 }))
 
+const { getCareWindowForThread } = vi.hoisted(() => ({
+  getCareWindowForThread: vi.fn(async () => ({
+    state: 'open',
+    label: 'Window open, closes in 12h 0m',
+    remainingMs: 12 * 60 * 60 * 1000,
+    closingSoon: false,
+    lastWabaInboundAt: '2026-09-25T00:00:00.000Z',
+    windowExpiresAt: '2026-09-26T00:00:00.000Z',
+  })),
+}))
+
+vi.mock('@/lib/whatsapp-care-window', () => ({
+  getCareWindowForThread,
+}))
+
 const { mockDb } = vi.hoisted(() => ({
   mockDb: {
     prepare: vi.fn((query: string) => ({
@@ -75,6 +90,14 @@ describe('POST /api/inbound/send', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     consumeConfirmToken.mockResolvedValue({ ok: true })
+    getCareWindowForThread.mockResolvedValue({
+      state: 'open',
+      label: 'Window open, closes in 12h 0m',
+      remainingMs: 12 * 60 * 60 * 1000,
+      closingSoon: false,
+      lastWabaInboundAt: '2026-09-25T00:00:00.000Z',
+      windowExpiresAt: '2026-09-26T00:00:00.000Z',
+    })
   })
 
   it('returns 400 when threadId is missing', async () => {
@@ -249,6 +272,81 @@ describe('POST /api/inbound/send', () => {
     expect(data.success).toBe(false)
     expect(data.error).toContain('confirmToken')
     expect(sendWhatsAppMessage).not.toHaveBeenCalled()
+  })
+
+  it('returns 409 for WhatsApp free-text when the Cloud window is closed and does not call Twilio', async () => {
+    const { sendWhatsAppMessage } = await import('@/lib/whatsapp')
+    getCareWindowForThread.mockResolvedValueOnce({
+      state: 'closed',
+      label: 'Window closed',
+      remainingMs: 0,
+      closingSoon: false,
+      lastWabaInboundAt: '2026-09-23T00:00:00.000Z',
+      windowExpiresAt: '2026-09-24T00:00:00.000Z',
+    })
+    stubThreadAndMessage(
+      { id: 1, from_number: '+27821234567', status: 'approved' },
+      { id: 1, draft_reply: 'Hi', status: 'approved' }
+    )
+
+    const { POST } = await import('@/app/api/inbound/send/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: 1, confirmToken: 'tok', body: 'Hi' }),
+      }) as any
+    )
+    const data = (await response.json()) as SendMessageResponse
+
+    expect(response.status).toBe(409)
+    expect(data.success).toBe(false)
+    expect(data.error).toMatch(/window is closed/i)
+    expect(sendWhatsAppMessage).not.toHaveBeenCalled()
+    expect(consumeConfirmToken).not.toHaveBeenCalled()
+  })
+
+  it('allows email send when the WhatsApp window is closed', async () => {
+    getCareWindowForThread.mockResolvedValue({
+      state: 'closed',
+      label: 'Window closed',
+      remainingMs: 0,
+      closingSoon: false,
+      lastWabaInboundAt: '',
+      windowExpiresAt: '',
+    })
+    vi.doMock('@/lib/email', () => ({
+      sendEmail: vi.fn(async () => ({
+        success: true,
+        messageId: 'em_1',
+        timestamp: '2026-09-25T00:00:00.000Z',
+      })),
+      isEmailAddress: () => true,
+      extractEmailAddress: (value: string) => value,
+    }))
+    stubThreadAndMessage(
+      { id: 1, from_number: 'guest@example.com', status: 'approved' },
+      { id: 1, draft_reply: 'Hi', status: 'approved' }
+    )
+    vi.mocked(mockDb.batch).mockResolvedValue(undefined as any)
+
+    const { POST } = await import('@/app/api/inbound/send/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threadId: 1,
+          confirmToken: 'tok',
+          channel: 'email',
+          to: 'guest@example.com',
+          body: 'Hi',
+        }),
+      }) as any
+    )
+
+    expect(response.status).not.toBe(409)
+    expect(getCareWindowForThread).not.toHaveBeenCalled()
   })
 
   it('handles WhatsApp API errors gracefully', async () => {
