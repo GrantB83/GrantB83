@@ -1,12 +1,22 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Montserrat, Playfair_Display } from 'next/font/google'
 import { headers } from 'next/headers'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import { TenantProvider } from '@/components/TenantContext'
 import { OutboundRedirectBanner } from '@/components/outbound-redirect-banner'
 
-const inter = Inter({ subsets: ['latin'] })
+const montserrat = Montserrat({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-sans',
+})
+
+const playfairDisplay = Playfair_Display({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-serif',
+})
 
 export const metadata: Metadata = {
   title: 'GuestFlow - Guesthouse Operations Platform',
@@ -27,7 +37,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
       </head>
-      <body className={inter.className}>
+      <body className={`${montserrat.variable} ${playfairDisplay.variable} font-sans`}>
         <TenantProvider>
           {!isGuestRoute && (
             <>
