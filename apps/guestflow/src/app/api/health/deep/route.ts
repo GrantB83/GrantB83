@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
-<<<<<<< HEAD
 import { staffApiResponseInit } from '@/lib/json-safe'
-=======
 import { parseDatabaseUrlHost, queryMaxInboundId } from '@/lib/health-deep-diagnostics'
->>>>>>> 799bc46 (feat(guestflow): expose Turso host and inbound max ids on deep health)
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
