@@ -1,14 +1,12 @@
 import { NextRequest } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
-import { staffApiResponseInit } from '@/lib/json-safe'
+import { jsonSafeResponse } from '@/lib/json-safe'
 import { listInboxThreads } from '@/lib/umi-threads'
-import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString()
-  const { headers } = staffApiResponseInit()
   
   try {
     const url = new URL(request.url)
@@ -67,12 +65,12 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    return NextResponse.json(response, { headers })
+    return jsonSafeResponse(response)
   } catch (error) {
     console.error('[umi/inbox]', error)
-    return NextResponse.json(
+    return jsonSafeResponse(
       { success: false, error: 'Failed to load inbox', timestamp },
-      { status: 500, headers }
+      { status: 500 }
     )
   }
 }
