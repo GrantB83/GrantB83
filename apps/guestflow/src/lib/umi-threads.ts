@@ -698,18 +698,26 @@ async function latestMessagePreview(
   db: DbClient,
   threadId: number
 ): Promise<{ preview: string; hasOpenDraft: boolean }> {
-  const row = (await db
-    .prepare(
-      `SELECT message_text, draft_reply, status
-       FROM inbound_messages
-       WHERE thread_id = ?
-       ORDER BY message_timestamp DESC
-       LIMIT 1`
-    )
-    .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
-  return {
-    preview: String(row?.message_text || '').slice(0, 160),
-    hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
+  try {
+    const row = (await db
+      .prepare(
+        `SELECT message_text, draft_reply, status
+         FROM inbound_messages
+         WHERE thread_id = ?
+         ORDER BY message_timestamp DESC
+         LIMIT 1`
+      )
+      .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
+    return {
+      preview: String(row?.message_text || '').slice(0, 160),
+      hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
+    }
+  } catch (error) {
+    console.error(`[latestMessagePreview] Failed for thread ${threadId}:`, error)
+    return {
+      preview: '',
+      hasOpenDraft: false,
+    }
   }
 }
 
