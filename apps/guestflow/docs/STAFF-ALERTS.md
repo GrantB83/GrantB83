@@ -16,7 +16,7 @@ Thresholds live in `src/lib/ops-settings.ts` (shared with Nightsbridge sync). Do
 
 Alert body: guest **first name**, **booking ref**, **staff link**. Never access codes or payment text.
 
-Evaluator: `GET/POST /api/cron/alerts-evaluate` every 10 minutes (`CRON_SECRET`). Idempotent.
+Evaluator: idempotent `GET/POST /api/cron/alerts-evaluate` (`CRON_SECRET`). Hobby Vercel rejects sub-daily crons, so the 10-minute tick is GitHub Actions (`.github/workflows/guestflow-alerts-evaluate.yml`). The route is still the Vercel cron contract — add `*/10 * * * *` on Pro later if Grant upgrades. Do not put a sub-daily schedule in `vercel.json` or Preview fails.
 
 ## Required env / token **names** (do not invent values)
 
@@ -24,7 +24,8 @@ Evaluator: `GET/POST /api/cron/alerts-evaluate` every 10 minutes (`CRON_SECRET`)
 | --- | --- | --- |
 | `ALERT_FALLBACK_EMAIL` | Vercel | Only recipient when `staff_users` is empty |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Vercel + GitHub Actions secrets | Send staff alerts; GHA sends site-down while the app is down |
-| `CRON_SECRET` | Vercel | Evaluator + ingest |
+| `CRON_SECRET` | Vercel + GHA secret | Evaluator + ingest (GHA header `x-cron-secret`) |
+| `GUESTFLOW_EVALUATE_URL` | GHA variable (optional) | Full URL to `/api/cron/alerts-evaluate`; else `GUESTFLOW_APP_URL` + path |
 | `RESEND_WEBHOOK_SECRET` / `INBOUND_WEBHOOK_SECRET` | Vercel | Inbound email / NB email |
 | `GITHUB_ALERTS_TOKEN` | Vercel (optional) | Fine-grained PAT: Actions Variables read/write on `GrantB83/GrantB83` |
 | `GITHUB_ALERTS_REPO` | Optional | Default `GrantB83/GrantB83` |

@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const evaluateStaffAlerts = vi.fn(async () => ({ sent: 0, skipped: 0, resolved: 0, kinds: {} }))
@@ -28,5 +30,16 @@ describe('POST /api/cron/alerts-evaluate', () => {
     )
     expect(allowed.status).toBe(200)
     expect(evaluateStaffAlerts).toHaveBeenCalled()
+  })
+})
+
+describe('vercel.json crons', () => {
+  it('does not register a sub-daily Vercel cron (Hobby Preview)', () => {
+    const raw = readFileSync(join(__dirname, '../vercel.json'), 'utf8')
+    const crons = (JSON.parse(raw).crons || []) as Array<{ schedule: string }>
+    for (const cron of crons) {
+      expect(cron.schedule).not.toMatch(/^\*\/\d+/)
+      expect(cron.schedule).not.toMatch(/^\* /)
+    }
   })
 })
