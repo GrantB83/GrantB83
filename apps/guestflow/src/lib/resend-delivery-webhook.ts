@@ -59,6 +59,42 @@ export function verifyResendDeliveryRequest(
   return verifySharedSecret(request, [secret], ['x-webhook-secret'])
 }
 
+export function verifyResendInboundEmailRequest(
+  request: { headers: { get(name: string): string | null } },
+  rawBody: string
+): boolean {
+  const svixId = request.headers.get('svix-id')
+  const svixTimestamp = request.headers.get('svix-timestamp')
+  const svixSignature = request.headers.get('svix-signature')
+
+  if (svixId && svixTimestamp && svixSignature) {
+    const secrets = [
+      process.env.RESEND_INBOUND_WEBHOOK_SECRET,
+      process.env.RESEND_WEBHOOK_SECRET,
+    ].filter((s): s is string => Boolean(s))
+    for (const secret of secrets) {
+      if (
+        verifyResendSvixSignature({
+          payload: rawBody,
+          svixId,
+          svixTimestamp,
+          svixSignature,
+          secret,
+        })
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
+  return verifySharedSecret(
+    request,
+    [process.env.RESEND_WEBHOOK_SECRET, process.env.INBOUND_WEBHOOK_SECRET],
+    ['x-webhook-secret']
+  )
+}
+
 export function parseResendDeliveryEvent(body: unknown): {
   providerMessageId: string
   providerStatus: string
