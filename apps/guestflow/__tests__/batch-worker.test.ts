@@ -6,7 +6,13 @@ import {
   isWithinBatchWindow,
   getTodayBatchCount,
   isWorkerInFlight,
-  claimPendingJobs
+  claimPendingJobs,
+  generateDraftWithCursorUltra,
+  isCursorUltraPathAvailable,
+  runBatch,
+  ULTRA_PATH_UNAVAILABLE,
+  type BatchWorkerConfig,
+  type DraftContext,
 } from '../src/lib/batch-worker'
 import { enqueueDraftJob } from '../src/lib/draft-jobs'
 import { ensurePhase0Schema } from '../src/lib/phase0-schema'
@@ -29,7 +35,7 @@ function createTestDbClient(db: Database.Database) {
   }
 }
 
-describe('Phase 1 Batch Worker', () => {
+describe('Phase 1 Batch Worker (Cursor Ultra)', () => {
   let sqlite: Database.Database
   let db: ReturnType<typeof createTestDbClient>
 
@@ -103,6 +109,84 @@ describe('Phase 1 Batch Worker', () => {
       const result = isWithinBatchWindow()
       expect(typeof result).toBe('boolean')
       // Actual result depends on current SAST time, so we just check type
+    })
+
+    it('accepts a fixed clock inside the SAST window', () => {
+      expect(isWithinBatchWindow(new Date('2026-09-25T10:00:00+02:00'))).toBe(true)
+    })
+
+    it('accepts a fixed clock outside the SAST window', () => {
+      expect(isWithinBatchWindow(new Date('2026-09-25T22:00:00+02:00'))).toBe(false)
+    })
+  })
+
+  describe('generateDraftWithCursorUltra', () => {
+    const context: DraftContext = {
+      fromNumber: '+27820000000',
+      messageText: 'Hello, I have a question',
+      guestName: 'Test Guest',
+      intent: 'general_question',
+      confidence: 0.8,
+      messageId: 42,
+    }
+
+    it('fails closed with instructions when Ultra path is missing', async () => {
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: false,
+      }
+
+      await expect(generateDraftWithCursorUltra(context, config)).rejects.toThrow(
+        /Cursor Ultra Cloud Agent/
+      )
+    })
+
+    it('returns placeholder in dry-run mode', async () => {
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: true,
+      }
+
+      const result = await generateDraftWithCursorUltra(context, config)
+      expect(result).toContain('[DRY RUN]')
+      expect(result).toContain('Hello, I have a question')
+    })
+
+    it('ignores OPENAI_API_KEY and still fails closed', async () => {
+      const previous = process.env.OPENAI_API_KEY
+      process.env.OPENAI_API_KEY = 'sk-test-must-not-enable-openai'
+      try {
+        const config: BatchWorkerConfig = {
+          guestflowApiUrl: 'https://test.example.com',
+          draftWorkerSecret: 'test-secret',
+          dryRun: false,
+        }
+        expect(isCursorUltraPathAvailable(config)).toBe(false)
+        await expect(generateDraftWithCursorUltra(context, config)).rejects.toThrow(
+          /Cursor Ultra Cloud Agent/
+        )
+      } finally {
+        if (previous === undefined) {
+          delete process.env.OPENAI_API_KEY
+        } else {
+          process.env.OPENAI_API_KEY = previous
+        }
+      }
+    })
+
+    it('uses a CA drafts map when present', async () => {
+      const config: BatchWorkerConfig = {
+        guestflowApiUrl: 'https://test.example.com',
+        draftWorkerSecret: 'test-secret',
+        dryRun: false,
+        draftsByMessageId: { 42: 'Warm regards from Ultra' },
+      }
+      expect(isCursorUltraPathAvailable(config)).toBe(true)
+      await expect(generateDraftWithCursorUltra(context, config)).resolves.toBe(
+        'Warm regards from Ultra'
+      )
     })
   })
 
@@ -291,6 +375,109 @@ describe('Phase 1 Batch Worker', () => {
       db.exec(`DELETE FROM draft_jobs`)
       const inFlight = await isWorkerInFlight(db)
       expect(inFlight).toBe(false)
+    })
+  })
+
+  describe('runBatch Ultra fail-closed and mock generator', () => {
+    async function seedPendingJobs(count: number) {
+      db.exec(`DELETE FROM draft_jobs`)
+      db.exec(`DELETE FROM inbound_messages`)
+      db.exec(`DELETE FROM inbound_threads`)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS batch_runs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          batch_id TEXT NOT NULL,
+          jobs_count INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      db.exec(`DELETE FROM batch_runs`)
+
+      const threadRes = await db
+        .prepare(
+          `INSERT INTO inbound_threads (tenant_id, source, from_number, status, first_message_at, last_message_at)
+           VALUES (1, 'twilio_whatsapp', '+27820000000', 'new', datetime('now'), datetime('now'))`
+        )
+        .run()
+      const threadId = Number(threadRes.lastInsertRowid)
+
+      for (let i = 0; i < count; i++) {
+        const msgRes = await db
+          .prepare(
+            `INSERT INTO inbound_messages (thread_id, tenant_id, direction, from_number, message_text, message_timestamp)
+             VALUES (?, 1, 'inbound', '+27820000000', 'Message ${i}', datetime('now'))`
+          )
+          .run(threadId)
+        const messageId = Number(msgRes.lastInsertRowid)
+        await enqueueDraftJob(db, {
+          tenantId: 1,
+          threadId,
+          messageId,
+          intent: 'general_question',
+        })
+      }
+    }
+
+    it('refuses the batch without claiming when Ultra path is unavailable', async () => {
+      await seedPendingJobs(5)
+      const previous = process.env.OPENAI_API_KEY
+      process.env.OPENAI_API_KEY = 'sk-test-must-not-enable-openai'
+      try {
+        const result = await runBatch(db, {
+          guestflowApiUrl: 'https://test.example.com',
+          draftWorkerSecret: 'test-secret',
+          dryRun: false,
+          now: new Date('2026-09-25T10:00:00+02:00'),
+        })
+
+        expect(result.jobsClaimed).toBe(0)
+        expect(result.skippedReason).toContain('Cursor Ultra')
+        expect(result.skippedReason).toBe(ULTRA_PATH_UNAVAILABLE)
+
+        const pending = (await db
+          .prepare(`SELECT COUNT(*) as count FROM draft_jobs WHERE status = 'pending'`)
+          .get()) as { count: number }
+        expect(pending.count).toBe(5)
+        const claimed = (await db
+          .prepare(`SELECT COUNT(*) as count FROM draft_jobs WHERE status = 'claimed'`)
+          .get()) as { count: number }
+        expect(claimed.count).toBe(0)
+        const runs = (await db.prepare(`SELECT COUNT(*) as count FROM batch_runs`).get()) as {
+          count: number
+        }
+        expect(runs.count).toBe(0)
+      } finally {
+        if (previous === undefined) {
+          delete process.env.OPENAI_API_KEY
+        } else {
+          process.env.OPENAI_API_KEY = previous
+        }
+      }
+    })
+
+    it('processes jobs with a mock generator in dry-run', async () => {
+      await seedPendingJobs(5)
+
+      const testDraftGenerator = async (context: DraftContext) => {
+        return `[TEST DRAFT] Reply to: ${context.messageText}`
+      }
+
+      const result = await runBatch(
+        db,
+        {
+          guestflowApiUrl: 'https://test.example.com',
+          draftWorkerSecret: 'test-secret',
+          dryRun: true,
+          now: new Date('2026-09-25T10:00:00+02:00'),
+        },
+        testDraftGenerator
+      )
+
+      expect(result.skippedReason).toBeUndefined()
+      expect(result.jobsClaimed).toBe(5)
+      expect(result.jobsProcessed).toBe(5)
+      expect(result.jobsSucceeded).toBe(5)
+      expect(result.results.every((r) => r.draftGenerated?.startsWith('[TEST DRAFT]'))).toBe(true)
     })
   })
 })
