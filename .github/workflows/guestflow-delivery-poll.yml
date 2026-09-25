@@ -1,7 +1,7 @@
 # Hobby Vercel rejects sub-daily crons, so the 10-minute delivery poll
-# is driven here. Route is idempotent and never sends.
-# Configure CRON_SECRET + GUESTFLOW_APP_URL (or GUESTFLOW_DELIVERY_POLL_URL).
-name: GuestFlow delivery poll
+# is driven here. Same CRON_SECRET as alerts-evaluate / arrival-drafts.
+# Route: GET/POST /api/cron/delivery-poll — never sends; status poll only.
+name: GuestFlow delivery poll (10m Hobby fallback)
 
 on:
   schedule:
@@ -27,9 +27,10 @@ jobs:
             echo "GUESTFLOW_DELIVERY_POLL_URL / GUESTFLOW_APP_URL or CRON_SECRET unset; skipping."
             exit 0
           fi
-          code=$(curl -sS -o /tmp/gf-delivery-poll.json -w '%{http_code}' --max-time 40 \
+          code=$(curl -sS -o /tmp/gf-delivery-poll.json -w '%{http_code}' --max-time 120 \
             -X POST \
             -H "x-cron-secret: ${CRON_SECRET}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
             "$url" || echo 000)
           echo "HTTP $code"
           cat /tmp/gf-delivery-poll.json || true
