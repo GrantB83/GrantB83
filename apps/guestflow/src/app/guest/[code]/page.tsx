@@ -122,6 +122,25 @@ export default function GuestPortalPage() {
   }
 
   if (error) {
+    // Determine if the error is expired vs invalid based on API response
+    const isExpired = error.toLowerCase().includes('expired')
+    const isRevoked = error.toLowerCase().includes('revoked')
+    
+    // Distinct copy for expired vs invalid/revoked
+    const subtitle = isExpired 
+      ? 'This stay link has expired.'
+      : 'This stay link is not valid.'
+    
+    const badgeLabel = isExpired 
+      ? 'Expired access link'
+      : 'Invalid access link'
+    
+    const helpText = isExpired
+      ? 'Your access link has expired for security. Please email us for a new link.'
+      : isRevoked
+        ? 'This link has been deactivated. Please email us if you need access.'
+        : 'This link could not be found. Please check your link or email us for assistance.'
+
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
@@ -133,12 +152,13 @@ export default function GuestPortalPage() {
               Unable to Access
             </h1>
             <p className="text-sm text-muted-foreground">
-              This stay link is invalid or has expired.
+              {subtitle}
             </p>
           </div>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800 mb-6">
-            {error}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-sm font-medium text-red-900 mb-2">{badgeLabel}</p>
+            <p className="text-sm text-red-800">{helpText}</p>
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
