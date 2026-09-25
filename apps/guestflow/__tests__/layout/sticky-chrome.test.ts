@@ -2,7 +2,18 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { measureOpsChromeOffset } from '../../src/components/inbox/useInboxChromeOffset'
-import { calculateMaxComposerHeight, calculateMinMessageHeight, calculateShellHeight } from './setup.test'
+
+function calculateShellHeight(chromeOffset: number, keyboardInset: number, viewportHeight = 800) {
+  return viewportHeight - chromeOffset - keyboardInset
+}
+
+function calculateMinMessageHeight(shellHeight: number) {
+  return Math.max(240, Math.round(shellHeight * 0.35))
+}
+
+function calculateMaxComposerHeight(shellHeight: number) {
+  return Math.round(shellHeight * 0.5)
+}
 
 const read = (...parts: string[]) => readFileSync(path.join(__dirname, ...parts), 'utf8')
 
@@ -86,9 +97,8 @@ describe('US2: Sticky chrome is not double-counted against #235 floors', () => {
   })
 
   it('preserves #235 floors at 1280×800 with sticky chrome height 88', () => {
-    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 800 })
     const chromeOffset = 88
-    const shellHeight = calculateShellHeight(chromeOffset, 0)
+    const shellHeight = calculateShellHeight(chromeOffset, 0, 800)
     const minMessageHeight = calculateMinMessageHeight(shellHeight)
     const maxComposerHeight = calculateMaxComposerHeight(shellHeight)
 

@@ -78,7 +78,7 @@ export function ThreadLayoutShell({
 
       <footer
         data-inbox-composer
-        className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3"
+        className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-0"
         style={maxComposerHeight ? { maxHeight: `${maxComposerHeight}px`, overflowY: 'auto' } : undefined}
       >
         {composer}

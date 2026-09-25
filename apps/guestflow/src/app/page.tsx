@@ -666,7 +666,7 @@ function InboxHomePageInner() {
       extraHeader={
         <>
           {detail.bookingId ? (
-            <div className="mt-3 text-base text-slate-600 space-y-2 inbox-wrap">
+            <div className="mt-2 sm:mt-3 text-base text-slate-600 space-y-1.5 sm:space-y-2 inbox-wrap">
               <p>
                 Phone {detail.guestPhone || '—'}
                 {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
@@ -680,13 +680,13 @@ function InboxHomePageInner() {
                   value={contactPhone}
                   onChange={(event) => setContactPhone(event.target.value)}
                   placeholder="Staff phone"
-                  className="inbox-field flex-1 min-w-[10rem]"
+                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
                 />
                 <input
                   value={contactEmail}
                   onChange={(event) => setContactEmail(event.target.value)}
                   placeholder="Staff email"
-                  className="inbox-field flex-1 min-w-[10rem]"
+                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
                 />
                 <button
                   type="button"
@@ -694,7 +694,8 @@ function InboxHomePageInner() {
                   disabled={busy}
                   className="inbox-tap px-3 bg-slate-800 text-white rounded-lg disabled:opacity-50"
                 >
-                  Save contact
+                  <span className="sm:hidden">Save</span>
+                  <span className="hidden sm:inline">Save contact</span>
                 </button>
               </div>
               {contactNote && <p className="text-emerald-700">{contactNote}</p>}
@@ -860,7 +861,7 @@ function InboxHomePageInner() {
           <textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            rows={keyboardInsetPx > 80 ? 2 : 4}
+            rows={keyboardInsetPx > 80 || breakpoint === 'phone' ? 2 : 4}
             placeholder="Draft reply — edit before Approve&Send"
             className="inbox-field w-full"
           />
@@ -887,8 +888,8 @@ function InboxHomePageInner() {
           </div>
         </>
       }
-      minMessageHeight={minMessageHeight}
-      maxComposerHeight={breakpoint === 'phone' ? undefined : maxComposerHeight}
+      minMessageHeight={breakpoint === 'phone' ? undefined : minMessageHeight}
+      maxComposerHeight={maxComposerHeight}
     />
   )
 

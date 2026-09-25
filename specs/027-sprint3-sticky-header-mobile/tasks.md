@@ -132,8 +132,8 @@
 
 - [x] T026 [P] Update docs/automation/STATUS.md with Sprint 3 T+U package note
 - [x] T027 [P] Add labor-ledger row for sticky chrome + phone width ritual in docs/automation/labor-ledger.md
-- [ ] T028 Capture phone ~390×844 list + thread screenshots for GFM (FR-012)
-- [ ] T029 Run GuestFlow lint/test quality gate for touched files
+- [x] T028 Capture phone ~390×844 list + thread screenshots for GFM (FR-012)
+- [x] T029 Run GuestFlow lint/test quality gate for touched files
 
 ---
 
