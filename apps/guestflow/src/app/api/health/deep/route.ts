@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
+<<<<<<< HEAD
 import { staffApiResponseInit } from '@/lib/json-safe'
+=======
+import { parseDatabaseUrlHost, queryMaxInboundId } from '@/lib/health-deep-diagnostics'
+>>>>>>> 799bc46 (feat(guestflow): expose Turso host and inbound max ids on deep health)
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -11,6 +15,19 @@ export async function GET() {
   try {
     const db = await getDbAsync()
     await db.prepare('SELECT 1 AS ok').get()
+
+    const [threads, messages] = await Promise.all([
+      queryMaxInboundId(db, 'inbound_threads'),
+      queryMaxInboundId(db, 'inbound_messages'),
+    ])
+
+    const databaseUrlHost = parseDatabaseUrlHost(process.env.DATABASE_URL)
+    const hasTursoAuthToken = Boolean(process.env.TURSO_AUTH_TOKEN?.trim())
+
+    const notes: string[] = []
+    if (threads.note) notes.push(threads.note)
+    if (messages.note) notes.push(messages.note)
+
     return NextResponse.json(
       {
         status: 'ok',
@@ -19,6 +36,11 @@ export async function GET() {
         database: db.type,
         touched: true,
         timestamp,
+        maxInboundThreadId: threads.value,
+        maxInboundMessageId: messages.value,
+        databaseUrlHost,
+        hasTursoAuthToken,
+        ...(notes.length > 0 ? { notes } : {}),
       },
       { headers }
     )
