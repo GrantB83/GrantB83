@@ -1090,16 +1090,25 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
   await ensureDeliverySchema(db)
   const thread = (await db
     .prepare(
-      `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
-              b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone,
-              b.guest_email as booking_email, b.guest_phone_source as booking_phone_source,
-              b.guest_email_source as booking_email_source, b.guest_email_kind as booking_email_kind
+      `SELECT 
+         t.id, t.tenant_id, t.source, t.from_number, t.guest_name, t.status,
+         t.booking_id, t.thread_kind, t.guest_contact_id, t.last_channel,
+         t.last_inbound_channel, t.last_outbound_at, t.last_inbound_at,
+         t.pending_reply, t.expires_at, t.nudged_at, t.hygiene_status,
+         t.last_message_at, t.metadata,
+         b.guest_name as booking_guest_name, b.check_in, b.check_out,
+         b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone,
+         b.guest_email as booking_email, b.guest_phone_source as booking_phone_source,
+         b.guest_email_source as booking_email_source, b.guest_email_kind as booking_email_kind
        FROM inbound_threads t
        LEFT JOIN bookings b ON b.id = t.booking_id
        WHERE t.id = ? AND t.tenant_id = ?`
     )
     .get(threadId, tenantId)) as any
-  if (!thread) return null
+  if (!thread) {
+    console.log(`[getThreadDetail] Thread ${threadId} not found for tenant ${tenantId}`)
+    return null
+  }
 
   const messages = ((await db
     .prepare(
