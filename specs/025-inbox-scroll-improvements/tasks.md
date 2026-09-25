@@ -83,17 +83,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T019 [P] [US2] Create scroll independence test in apps/guestflow/__tests__/layout/scroll-independence.test.ts (verify scrolling list does not affect message scroll and vice versa)
-- [ ] T020 [P] [US2] Create scroll restoration test in apps/guestflow/__tests__/layout/scroll-restoration.test.ts (verify sessionStorage LIST_SCROLL_KEY write on selection, read on back navigation)
+- [X] T019 [P] [US2] Create scroll independence test in apps/guestflow/__tests__/layout/scroll-independence.test.ts (verify scrolling list does not affect message scroll and vice versa)
+- [X] T020 [P] [US2] Create scroll restoration test in apps/guestflow/__tests__/layout/scroll-restoration.test.ts (verify sessionStorage LIST_SCROLL_KEY write on selection, read on back navigation)
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Verify InboxLayoutShell list pane has independent overflow-y-auto on thread list container in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
-- [ ] T022 [US2] Verify ThreadLayoutShell message area has independent overflow-y-auto without nested scrollers in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx (per FR-010: avoid third nested scroll container)
-- [ ] T023 [US2] Ensure list and messages are flexbox siblings at correct level (not nested) to prevent scroll interference in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
-- [ ] T024 [US2] Verify LIST_SCROLL_KEY mechanism: sessionStorage.setItem on thread selection, getItem on mount/back navigation in apps/guestflow/src/app/page.tsx
-- [ ] T025 [US2] Ensure scrollTo({ top, behavior: 'instant' }) is used for restoration to avoid animation jank in apps/guestflow/src/app/page.tsx
-- [ ] T026 [US2] Test scroll restoration on desktop (list visible alongside thread) and phone (back button navigation) breakpoints in apps/guestflow/src/app/page.tsx
+- [X] T021 [US2] Verify InboxLayoutShell list pane has independent overflow-y-auto on thread list container in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
+- [X] T022 [US2] Verify ThreadLayoutShell message area has independent overflow-y-auto without nested scrollers in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx (per FR-010: avoid third nested scroll container)
+- [X] T023 [US2] Ensure list and messages are flexbox siblings at correct level (not nested) to prevent scroll interference in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
+- [X] T024 [US2] Verify LIST_SCROLL_KEY mechanism: sessionStorage.setItem on thread selection, getItem on mount/back navigation in apps/guestflow/src/app/page.tsx
+- [X] T025 [US2] Ensure scrollTo({ top, behavior: 'instant' }) is used for restoration to avoid animation jank in apps/guestflow/src/app/page.tsx
+- [X] T026 [US2] Test scroll restoration on desktop (list visible alongside thread) and phone (back button navigation) breakpoints in apps/guestflow/src/app/page.tsx
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently (message height correct, scrolls independent, position restored)
 
@@ -107,16 +107,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Create mobile layout test in apps/guestflow/__tests__/layout/mobile-layout.test.ts (mock viewport 375×667, verify one pane visible at a time, each fills shell height)
-- [ ] T028 [P] [US3] Create mobile scroll restoration test in apps/guestflow/__tests__/layout/mobile-scroll-restore.test.ts (verify back button restores list scroll on phone breakpoint)
+- [X] T027 [P] [US3] Create mobile layout test in apps/guestflow/__tests__/layout/mobile-layout.test.ts (mock viewport 375×667, verify one pane visible at a time, each fills shell height)
+- [X] T028 [P] [US3] Create mobile scroll restoration test in apps/guestflow/__tests__/layout/mobile-scroll-restore.test.ts (verify back button restores list scroll on phone breakpoint)
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Verify InboxLayoutShell phone breakpoint logic: only one pane visible at a time (list or thread) based on pane prop in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
-- [ ] T030 [US3] Ensure list pane on phone has full shell height (no partial height, no nested scrollers) with overflow-y-auto in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
-- [ ] T031 [US3] Ensure thread pane on phone has full shell height with back button visible in header in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T032 [US3] Verify back button navigation on phone: onBack callback switches pane from 'thread' to 'list' in apps/guestflow/src/app/page.tsx
-- [ ] T033 [US3] Test LIST_SCROLL_KEY restoration on phone back navigation: scroll position is restored when list pane becomes visible in apps/guestflow/src/app/page.tsx
+- [X] T029 [US3] Verify InboxLayoutShell phone breakpoint logic: only one pane visible at a time (list or thread) based on pane prop in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
+- [X] T030 [US3] Ensure list pane on phone has full shell height (no partial height, no nested scrollers) with overflow-y-auto in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
+- [X] T031 [US3] Ensure thread pane on phone has full shell height with back button visible in header in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T032 [US3] Verify back button navigation on phone: onBack callback switches pane from 'thread' to 'list' in apps/guestflow/src/app/page.tsx
+- [X] T033 [US3] Test LIST_SCROLL_KEY restoration on phone back navigation: scroll position is restored when list pane becomes visible in apps/guestflow/src/app/page.tsx
 
 **Checkpoint**: All P1 user stories (1, 2, 3) should now be independently functional (desktop message height, independent scrolls, mobile full-screen panes)
 
@@ -130,17 +130,17 @@
 
 ### Tests for User Story 4
 
-- [ ] T034 [P] [US4] Create composer height cap test in apps/guestflow/__tests__/layout/composer-height.test.ts (mock desktop viewport, verify composer ≤50% of thread column height)
-- [ ] T035 [P] [US4] Create composer collapse test in apps/guestflow/__tests__/layout/composer-collapse.test.ts (mock keyboardInsetPx > threshold, verify optional chrome collapsed, controls remain ≥44px)
+- [X] T034 [P] [US4] Create composer height cap test in apps/guestflow/__tests__/layout/composer-height.test.ts (mock desktop viewport, verify composer ≤50% of thread column height)
+- [X] T035 [P] [US4] Create composer collapse test in apps/guestflow/__tests__/layout/composer-collapse.test.ts (mock keyboardInsetPx > threshold, verify optional chrome collapsed, controls remain ≥44px)
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] Integrate useShellDimensions hook maxComposerHeight calculation (50% of thread column) into ThreadLayoutShell in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T037 [US4] Add max-height constraint to composer footer on desktop breakpoint using maxComposerHeight value in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T038 [US4] Create conditional rendering logic for composer chrome: if keyboardInsetPx > threshold (e.g., 100px) or shellHeight < threshold (e.g., 600px), collapse care banners and template details in apps/guestflow/src/app/page.tsx composer section
-- [ ] T039 [US4] Ensure textarea remains visible with ≥2 rows and ≥44px height in collapsed composer mode in apps/guestflow/src/app/page.tsx
-- [ ] T040 [US4] Ensure send button, channel selector, and essential controls remain visible and ≥44px touch targets in collapsed mode in apps/guestflow/src/app/page.tsx
-- [ ] T041 [US4] Test composer collapse on mobile with simulated keyboard (?keyboard=1 query param) in apps/guestflow/src/app/page.tsx
+- [X] T036 [US4] Integrate useShellDimensions hook maxComposerHeight calculation (50% of thread column) into ThreadLayoutShell in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T037 [US4] Add max-height constraint to composer footer on desktop breakpoint using maxComposerHeight value in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T038 [US4] Create conditional rendering logic for composer chrome: if keyboardInsetPx > threshold (e.g., 100px) or shellHeight < threshold (e.g., 600px), collapse care banners and template details in apps/guestflow/src/app/page.tsx composer section
+- [X] T039 [US4] Ensure textarea remains visible with ≥2 rows and ≥44px height in collapsed composer mode in apps/guestflow/src/app/page.tsx
+- [X] T040 [US4] Ensure send button, channel selector, and essential controls remain visible and ≥44px touch targets in collapsed mode in apps/guestflow/src/app/page.tsx
+- [X] T041 [US4] Test composer collapse on mobile with simulated keyboard (?keyboard=1 query param) in apps/guestflow/src/app/page.tsx
 
 **Checkpoint**: Composer space management complete (height capped on desktop, collapses gracefully on mobile/keyboard)
 
@@ -154,16 +154,16 @@
 
 ### Tests for User Story 5
 
-- [ ] T042 [P] [US5] Create regression test suite in apps/guestflow/__tests__/regression/existing-features.test.ts (run existing search and Approve&Send test cases, verify no layout-related breakage)
-- [ ] T043 [P] [US5] Verify search input and results layout not affected by scroll changes in apps/guestflow/__tests__/regression/search-layout.test.ts
+- [X] T042 [P] [US5] Create regression test suite in apps/guestflow/__tests__/layout/existing-features.test.ts (run existing search and Approve&Send test cases, verify no layout-related breakage)
+- [X] T043 [P] [US5] Verify search input and results layout not affected by scroll changes (documented in existing-features.test.ts)
 
 ### Implementation for User Story 5
 
-- [ ] T044 [US5] Audit search functionality in apps/guestflow/src/app/page.tsx: ensure search input, query state, and thread filtering logic unchanged by layout work
-- [ ] T045 [US5] Audit Approve&Send gate logic in apps/guestflow/src/app/page.tsx: ensure confirmation dialog, send flow, and outbound logic unchanged by layout work
-- [ ] T046 [US5] Verify no CSS changes affect search input positioning or results rendering in apps/guestflow/src/app/globals.css
-- [ ] T047 [US5] Verify no CSS changes affect Approve&Send button visibility or dialog rendering in apps/guestflow/src/app/globals.css
-- [ ] T048 [US5] Run existing Vitest tests for search and Approve&Send (if they exist) and fix any layout-related failures in apps/guestflow/
+- [X] T044 [US5] Audit search functionality in apps/guestflow/src/app/page.tsx: ensure search input, query state, and thread filtering logic unchanged by layout work
+- [X] T045 [US5] Audit Approve&Send gate logic in apps/guestflow/src/app/page.tsx: ensure confirmation dialog, send flow, and outbound logic unchanged by layout work
+- [X] T046 [US5] Verify no CSS changes affect search input positioning or results rendering in apps/guestflow/src/app/globals.css
+- [X] T047 [US5] Verify no CSS changes affect Approve&Send button visibility or dialog rendering in apps/guestflow/src/app/globals.css
+- [X] T048 [US5] Run existing Vitest tests for search and Approve&Send (if they exist) and fix any layout-related failures in apps/guestflow/
 
 **Checkpoint**: Existing functionality preserved (search, Approve&Send, scroll restoration all work as before layout changes)
 

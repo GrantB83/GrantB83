@@ -56,7 +56,7 @@ function InboxHomePageInner() {
   const keyboardSim = searchParams.get('keyboard') === '1'
   const threadParam = searchParams.get('thread')
   const keyboardInsetPx = useVisualViewportInset(keyboardSim)
-  const { minMessageHeight } = useShellDimensions(chromeOffset, keyboardInsetPx)
+  const { minMessageHeight, maxComposerHeight, shellHeight } = useShellDimensions(chromeOffset, keyboardInsetPx)
 
   const [threads, setThreads] = useState<InboxThread[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -764,7 +764,7 @@ function InboxHomePageInner() {
       ))}
       composer={
         <>
-          {careWindow && (
+          {careWindow && keyboardInsetPx < 100 && shellHeight >= 500 && (
             <p
               className={`text-base px-2 py-1 rounded inbox-wrap ${
                 careWindow.state === 'closed'
@@ -880,6 +880,7 @@ function InboxHomePageInner() {
         </>
       }
       minMessageHeight={minMessageHeight}
+      maxComposerHeight={breakpoint === 'phone' ? undefined : maxComposerHeight}
     />
   )
 
