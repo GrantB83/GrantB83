@@ -1,5 +1,7 @@
 import type { DbClient } from '@/lib/db'
 import { tableHasColumn } from '@/lib/phase0-schema'
+import { GRANT_APPROVED_TEMPLATES } from '@/lib/wa-templates-seed'
+import { PROPERTY_KNOWLEDGE_SEEDS } from '@/lib/property-knowledge-seed'
 
 export const SPRINT2_TABLE_STATEMENTS: string[] = [
   `CREATE TABLE IF NOT EXISTS staff_alerts (
@@ -108,6 +110,48 @@ export const SPRINT2_BOOKING_COLUMNS: Array<{ column: string; sql: string }> = [
   { column: 'guest_email_verified', sql: 'ALTER TABLE bookings ADD COLUMN guest_email_verified TEXT' },
 ]
 
+const WHATSAPP_TABLE_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS wa_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    language TEXT NOT NULL DEFAULT 'en',
+    body TEXT NOT NULL,
+    variable_mapping TEXT NOT NULL DEFAULT '{}',
+    content_sid TEXT,
+    approval_status TEXT NOT NULL DEFAULT 'approved_by_grant_unsubmitted',
+    whatsapp_approval_status TEXT NOT NULL DEFAULT 'unsubmitted',
+    last_synced_at TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_wa_templates_name
+    ON wa_templates(tenant_id, name)`,
+  `CREATE TABLE IF NOT EXISTS property_knowledge (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL DEFAULT 1,
+    property TEXT NOT NULL,
+    section TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL DEFAULT 'ask staff',
+    last_updated_at TEXT,
+    last_updated_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_property_knowledge_unique
+    ON property_knowledge(tenant_id, property, section, key)`,
+]
+
+async function execIgnoreDup(db: DbClient, sql: string): Promise<void> {
+  try {
+    await db.exec(sql)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (!/already exists|duplicate/i.test(message)) throw error
+  }
+}
+
 export async function ensureSprint2Schema(db: DbClient): Promise<void> {
   for (const sql of SPRINT2_TABLE_STATEMENTS) {
     await db.exec(sql)
@@ -151,4 +195,57 @@ export async function recordNbSyncRun(
       input.message || null
     )
   return Number(result.lastInsertRowid || 0)
+}
+
+export async function ensureSprint2WhatsappSchema(db: DbClient, tenantId = 1): Promise<void> {
+  for (const sql of WHATSAPP_TABLE_STATEMENTS) {
+    await execIgnoreDup(db, sql)
+  }
+  await seedTemplatesIfEmpty(db, tenantId)
+  await seedKnowledgeIfEmpty(db, tenantId)
+}
+
+async function seedTemplatesIfEmpty(db: DbClient, tenantId: number): Promise<void> {
+  const countRow = (await db
+    .prepare('SELECT COUNT(*) as n FROM wa_templates WHERE tenant_id = ?')
+    .get(tenantId)) as { n?: number } | undefined
+  if (Number(countRow?.n || 0) > 0) return
+
+  for (const template of GRANT_APPROVED_TEMPLATES) {
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO wa_templates (
+          tenant_id, name, category, language, body, variable_mapping,
+          content_sid, approval_status, whatsapp_approval_status
+        ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)`
+      )
+      .run(
+        tenantId,
+        template.name,
+        template.category,
+        template.language,
+        template.body,
+        JSON.stringify(template.variableMapping),
+        'approved_by_grant_unsubmitted',
+        'unsubmitted'
+      )
+  }
+}
+
+async function seedKnowledgeIfEmpty(db: DbClient, tenantId: number): Promise<void> {
+  const countRow = (await db
+    .prepare('SELECT COUNT(*) as n FROM property_knowledge WHERE tenant_id = ?')
+    .get(tenantId)) as { n?: number } | undefined
+  if (Number(countRow?.n || 0) > 0) return
+
+  const now = new Date().toISOString()
+  for (const row of PROPERTY_KNOWLEDGE_SEEDS) {
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO property_knowledge (
+          tenant_id, property, section, key, value, source, last_updated_at, last_updated_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'seed')`
+      )
+      .run(tenantId, row.property, row.section, row.key, row.value, row.source, now)
+  }
 }

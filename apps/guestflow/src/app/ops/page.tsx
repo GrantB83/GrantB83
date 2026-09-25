@@ -97,6 +97,14 @@ export default function OpsPage() {
             color="indigo"
           />
           <OpsToolCard
+            href="/ops/property-knowledge"
+            icon={<FileText className="w-8 h-8 text-amber-700" />}
+            title="Property Knowledge"
+            description="Staff-editable facts for draft replies — no invented amenities"
+            cliTool="(web-only)"
+            color="amber"
+          />
+          <OpsToolCard
             href="/ops/nightsbridge-import"
             icon={<Upload className="w-8 h-8 text-teal-600" />}
             title="NightsBridge Import"

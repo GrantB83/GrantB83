@@ -316,19 +316,19 @@ describe('WhatsApp API Route', () => {
 })
 
 describe('WhatsApp Message Templates', () => {
-  it('should document required Meta message templates', () => {
-    // This test documents the template requirements for Meta approval
+  it('should document Grant-approved Browns templates and the 24h rule', () => {
     const requiredTemplates = [
-      'stay_packet_link',
-      'welcome_message',
-      'custom_within_24h'
+      'browns_pre_arrival_welcome',
+      'browns_checkin_instructions',
+      'browns_access_codes',
+      'browns_mid_stay_checkin',
+      'browns_checkout_reminder',
+      'browns_post_stay_thank_you',
+      'browns_review_request',
     ]
 
-    expect(requiredTemplates).toContain('stay_packet_link')
-    expect(requiredTemplates).toContain('welcome_message')
-    
-    // Templates must be approved in Meta Business Manager
-    // before production use outside 24h customer service window
+    expect(requiredTemplates).toHaveLength(7)
+    expect(requiredTemplates).toContain('browns_review_request')
   })
 })
 

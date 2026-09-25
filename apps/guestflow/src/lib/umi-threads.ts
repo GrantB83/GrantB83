@@ -13,6 +13,12 @@ import {
   TEMP_NUDGE_HOURS,
 } from '@/lib/umi-sort'
 import { isActiveGuestBooking, isOwnerBlock } from '@/lib/booking-filters'
+import {
+  computeCareWindow,
+  loadLastWabaInboundAt,
+  loadLastWabaInboundAtByThread,
+  type CareWindow,
+} from '@/lib/whatsapp-care-window'
 
 export interface ResolveInboundInput {
   from: string
@@ -64,6 +70,7 @@ export interface InboxThread {
   sortBucket: 0 | 1 | 2
   hygieneStatus: string | null
   fromNumber: string
+  careWindow?: CareWindow
 }
 
 interface BookingMatch {
@@ -734,7 +741,7 @@ export async function listInboxThreads(
   options: { filter?: 'all' | 'needs-attention'; q?: string } = {}
 ): Promise<InboxThread[]> {
   const extra = await extraAttentionByBooking(db, tenantId)
-  const rows = ((await db
+  const rows = ((await db)
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
               b.suite_or_unit, b.nightsbridge_booking_id
@@ -752,6 +759,16 @@ export async function listInboxThreads(
       nightsbridge_booking_id?: string
     }
   >
+
+  let lastWabaByThread = new Map<number, string>()
+  try {
+    lastWabaByThread = await loadLastWabaInboundAtByThread(
+      db,
+      rows.map((row) => asNumber(row.id))
+    )
+  } catch {
+    lastWabaByThread = new Map()
+  }
 
   const threads: InboxThread[] = []
   for (const row of rows) {
@@ -778,6 +795,7 @@ export async function listInboxThreads(
       sortBucket: 2,
       hygieneStatus: row.hygiene_status,
       fromNumber: row.from_number,
+      careWindow: computeCareWindow(lastWabaByThread.get(asNumber(row.id)) || null),
     }
     thread.sortBucket = inboxSortBucket(thread)
     threads.push(thread)
@@ -858,6 +876,14 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
   const linkCandidates =
     thread.thread_kind === 'temp' ? await listLinkCandidates(db, tenantId, thread.from_number) : []
 
+  let lastWaba: string | null = null
+  try {
+    lastWaba = await loadLastWabaInboundAt(db, asNumber(thread.id))
+  } catch {
+    lastWaba = null
+  }
+  const careWindow = computeCareWindow(lastWaba)
+
   return {
     id: asNumber(thread.id),
     threadKind: thread.thread_kind === 'booking' ? 'booking' : 'temp',
@@ -875,6 +901,7 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
     status: thread.status,
     hygieneStatus: thread.hygiene_status,
     metadata: parseJson(thread.metadata),
+    careWindow,
     openDraft,
     linkCandidates,
     messages: messages.map((message) => ({
