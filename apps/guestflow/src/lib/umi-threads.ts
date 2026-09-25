@@ -1,4 +1,5 @@
 import type { DbClient } from '@/lib/db'
+import { ensureContactSchema } from '@/lib/contact-schema'
 import { upsertGuestContact } from '@/lib/guest-contacts'
 import { normalizeEmail, normalizeZaE164 } from '@/lib/phone'
 import { sqliteTableExists } from '@/lib/approvals-queue'
@@ -817,10 +818,14 @@ export async function listInboxThreads(
 }
 
 export async function getThreadDetail(db: DbClient, tenantId: number, threadId: number) {
+  await ensureUmiSchema(db)
+  await ensureContactSchema(db)
   const thread = (await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
-              b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone
+              b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone,
+              b.guest_email as booking_email, b.guest_phone_source as booking_phone_source,
+              b.guest_email_source as booking_email_source, b.guest_email_kind as booking_email_kind
        FROM inbound_threads t
        LEFT JOIN bookings b ON b.id = t.booking_id
        WHERE t.id = ? AND t.tenant_id = ?`
@@ -898,6 +903,11 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
     defaultOutboundChannel: thread.last_inbound_channel || thread.last_channel || 'whatsapp_cloud',
     fromNumber: thread.from_number,
     bookingPhone: thread.booking_phone || null,
+    guestPhone: thread.booking_phone || null,
+    guestEmail: thread.booking_email || null,
+    guestPhoneSource: thread.booking_phone_source || null,
+    guestEmailSource: thread.booking_email_source || null,
+    guestEmailKind: thread.booking_email_kind || null,
     status: thread.status,
     hygieneStatus: thread.hygiene_status,
     metadata: parseJson(thread.metadata),

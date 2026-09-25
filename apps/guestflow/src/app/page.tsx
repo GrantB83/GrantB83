@@ -51,6 +51,11 @@ interface ThreadDetail {
   lastInboundChannel: string | null
   defaultOutboundChannel: string
   fromNumber: string
+  guestPhone?: string | null
+  guestEmail?: string | null
+  guestPhoneSource?: string | null
+  guestEmailSource?: string | null
+  guestEmailKind?: string | null
   status: string
   hygieneStatus: string | null
   openDraft: { text: string; source: string; kind: string } | null
@@ -111,6 +116,9 @@ export default function InboxHomePage() {
   const [channel, setChannel] = useState('whatsapp')
   const [emailTo, setEmailTo] = useState('')
   const [linkBookingId, setLinkBookingId] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactNote, setContactNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [approvedTemplates, setApprovedTemplates] = useState<
@@ -146,8 +154,12 @@ export default function InboxHomePage() {
       setDraft(data.thread.openDraft?.text || '')
       setChannel(sendChannel(data.thread.defaultOutboundChannel))
       setEmailTo(
-        data.thread.fromNumber?.includes('@') ? data.thread.fromNumber : ''
+        data.thread.guestEmail ||
+          (data.thread.fromNumber?.includes('@') ? data.thread.fromNumber : '')
       )
+      setContactPhone(data.thread.guestPhone || '')
+      setContactEmail(data.thread.guestEmail || '')
+      setContactNote(null)
       setLinkBookingId('')
       setSelectedTemplate('')
       setTemplateVars({})
@@ -271,6 +283,33 @@ export default function InboxHomePage() {
         return
       }
       await loadInbox()
+      await loadThread(selectedId)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveContacts = async () => {
+    if (!selectedId) return
+    setBusy(true)
+    setError(null)
+    setContactNote(null)
+    try {
+      const response = await fetch(`/api/umi/threads/${selectedId}/contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: contactPhone, email: contactEmail }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.error || 'Could not save contact')
+        return
+      }
+      setContactNote(
+        data.phoneApplied || data.emailApplied
+          ? 'Saved staff contact (not sent)'
+          : 'No change — a higher-rank source already holds this field'
+      )
       await loadThread(selectedId)
     } finally {
       setBusy(false)
@@ -433,6 +472,40 @@ export default function InboxHomePage() {
                       {detail.careWindow.label}
                     </p>
                   )}
+                  {detail.bookingId ? (
+                    <div className="mt-3 text-xs text-slate-600 space-y-2 max-w-md">
+                      <p>
+                        Phone {detail.guestPhone || '—'}
+                        {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
+                        {' · '}
+                        Email {detail.guestEmail || '—'}
+                        {detail.guestEmailKind === 'relay' ? ' (relay)' : ''}
+                        {detail.guestEmailSource ? ` · ${detail.guestEmailSource}` : ''}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          value={contactPhone}
+                          onChange={(event) => setContactPhone(event.target.value)}
+                          placeholder="Staff phone"
+                          className="border rounded px-2 py-1 text-sm"
+                        />
+                        <input
+                          value={contactEmail}
+                          onChange={(event) => setContactEmail(event.target.value)}
+                          placeholder="Staff email"
+                          className="border rounded px-2 py-1 text-sm"
+                        />
+                        <button
+                          onClick={saveContacts}
+                          disabled={busy}
+                          className="px-2 py-1 bg-slate-800 text-white rounded disabled:opacity-50"
+                        >
+                          Save contact
+                        </button>
+                      </div>
+                      {contactNote && <p className="text-emerald-700">{contactNote}</p>}
+                    </div>
+                  ) : null}
                 </div>
                 {detail.threadKind === 'temp' && (
                   <div className="text-xs bg-amber-50 border border-amber-200 rounded-lg p-3 max-w-sm">

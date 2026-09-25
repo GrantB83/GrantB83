@@ -16,6 +16,7 @@ interface Booking {
   children: number
   notes: string
   guestPhone: string
+  guestEmail?: string
 }
 
 interface PortalData {
@@ -73,6 +74,10 @@ export default function GuestPortalPage() {
   const [portalData, setPortalData] = useState<PortalData | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [selfPhone, setSelfPhone] = useState('')
+  const [selfEmail, setSelfEmail] = useState('')
+  const [selfNote, setSelfNote] = useState('')
+  const [selfBusy, setSelfBusy] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -91,6 +96,8 @@ export default function GuestPortalPage() {
 
       if (res.ok) {
         setPortalData(data)
+        setSelfPhone(data.booking?.guestPhone || '')
+        setSelfEmail(data.booking?.guestEmail || '')
       } else {
         setError(data.error || 'Unable to access stay information')
       }
@@ -224,6 +231,47 @@ export default function GuestPortalPage() {
                 <p className="text-gray-900">{booking.notes}</p>
               </div>
             )}
+
+            <div className="pt-4 border-t border-gray-200 space-y-3">
+              <p className="text-sm font-medium text-gray-900">Confirm your contact details</p>
+              <p className="text-xs text-gray-500">
+                Used only for this stay. Nothing is sent when you save.
+              </p>
+              <input
+                value={selfPhone}
+                onChange={(event) => setSelfPhone(event.target.value)}
+                placeholder="Mobile number"
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+              <input
+                value={selfEmail}
+                onChange={(event) => setSelfEmail(event.target.value)}
+                placeholder="Email"
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+              />
+              <button
+                disabled={selfBusy}
+                onClick={async () => {
+                  setSelfBusy(true)
+                  setSelfNote('')
+                  try {
+                    const res = await fetch(`/api/guest-portal/${token}/contacts`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ phone: selfPhone, email: selfEmail }),
+                    })
+                    const data = await res.json()
+                    setSelfNote(res.ok ? 'Saved. Thank you.' : data.error || 'Could not save')
+                  } finally {
+                    setSelfBusy(false)
+                  }
+                }}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50"
+              >
+                Save my contacts
+              </button>
+              {selfNote && <p className="text-sm text-gray-700">{selfNote}</p>}
+            </div>
           </div>
         </div>
 

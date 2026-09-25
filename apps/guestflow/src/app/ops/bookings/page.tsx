@@ -18,6 +18,10 @@ interface Booking {
   notes: string
   lateCheckIn: boolean
   guestPhone: string
+  guestEmail?: string
+  guestEmailKind?: string
+  guestPhoneSource?: string
+  guestEmailSource?: string
   status: string
 }
 
@@ -26,6 +30,10 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editPhone, setEditPhone] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editNote, setEditNote] = useState('')
 
   useEffect(() => {
     loadBookings()
@@ -137,6 +145,17 @@ export default function BookingsPage() {
                         {booking.guestPhone && (
                           <div className="text-xs text-gray-500">{booking.guestPhone}</div>
                         )}
+                        {booking.guestEmail && (
+                          <div className="text-xs text-gray-500">
+                            {booking.guestEmail}
+                            {booking.guestEmailKind === 'relay' ? ' · relay' : ''}
+                          </div>
+                        )}
+                        {(booking.guestPhoneSource || booking.guestEmailSource) && (
+                          <div className="text-[10px] text-gray-400">
+                            {booking.guestPhoneSource || '—'} / {booking.guestEmailSource || '—'}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -165,6 +184,17 @@ export default function BookingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingId(booking.id)
+                            setEditPhone(booking.guestPhone || '')
+                            setEditEmail(booking.guestEmail || '')
+                            setEditNote('')
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition whitespace-nowrap"
+                        >
+                          Contact
+                        </button>
                         <button
                           onClick={() => copyPortalLink(booking.id)}
                           className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition whitespace-nowrap"
@@ -212,6 +242,51 @@ export default function BookingsPage() {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {editingId && (
+        <div className="mt-6 bg-white border border-slate-200 rounded-xl p-6">
+          <h3 className="font-semibold text-gray-900 mb-2">Staff contact entry</h3>
+          <p className="text-sm text-gray-600 mb-3">
+            Saves phone/email on this booking only. Does not send. Cannot overwrite A&amp;D values.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={editPhone}
+              onChange={(event) => setEditPhone(event.target.value)}
+              placeholder="Phone"
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+            <input
+              value={editEmail}
+              onChange={(event) => setEditEmail(event.target.value)}
+              placeholder="Email"
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+            <button
+              onClick={async () => {
+                setEditNote('')
+                const res = await fetch(`/api/ops/bookings/${editingId}/contacts`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ phone: editPhone, email: editEmail }),
+                })
+                const data = await res.json()
+                if (!res.ok) {
+                  setEditNote(data.error || 'Save failed')
+                  return
+                }
+                setEditNote('Saved (not sent)')
+                setEditingId(null)
+                loadBookings()
+              }}
+              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm"
+            >
+              Save contact
+            </button>
+          </div>
+          {editNote && <p className="text-sm text-slate-600 mt-2">{editNote}</p>}
         </div>
       )}
 
