@@ -61,7 +61,7 @@ export default function Navigation() {
             </div>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
+              className="md:hidden inbox-tap p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
