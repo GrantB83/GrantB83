@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ensureContactSchema } from '@/lib/contact-schema'
 import { getDbAsync } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const db = await getDbAsync()
+    await ensureContactSchema(db)
     
     // Base query for both arrivals and departures
     const baseQuery = `
@@ -32,6 +34,10 @@ export async function GET(req: NextRequest) {
         b.notes,
         b.late_check_in as lateCheckIn,
         b.guest_phone as guestPhone,
+        b.guest_email as guestEmail,
+        b.guest_phone_source as guestPhoneSource,
+        b.guest_email_source as guestEmailSource,
+        b.guest_email_kind as guestEmailKind,
         b.status,
         b.created_at as createdAt,
         p.name as propertyFullName

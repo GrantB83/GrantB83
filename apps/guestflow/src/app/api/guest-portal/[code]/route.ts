@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ensureContactSchema } from '@/lib/contact-schema'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { hashToken, getStayPhase, shouldShowAccessCodes } from '@/lib/token'
 import { CODES_UNRESOLVED_REASON, propertyFacingDetails, resolveAccessCodesForSuite } from '@/lib/property-resolve'
@@ -22,6 +23,7 @@ export async function GET(
     }
 
     const db = await getDbAsync()
+    await ensureContactSchema(db)
     const tokenHash = hashToken(token)
 
     // Find token and associated booking
@@ -42,6 +44,7 @@ export async function GET(
         b.children,
         b.notes,
         b.guest_phone as guestPhone,
+        b.guest_email as guestEmail,
         p.name as propertyFullName,
         p.location as propertyLocation
       FROM guest_tokens gt
@@ -125,7 +128,8 @@ export async function GET(
         adults: booking.adults || 2,
         children: booking.children || 0,
         notes: booking.notes || '',
-        guestPhone: booking.guestPhone || ''
+        guestPhone: booking.guestPhone || '',
+        guestEmail: booking.guestEmail || ''
       },
       property: {
         name: propertyDisplayName,

@@ -5,8 +5,10 @@ import {
   fetchReceivedEmail,
   normalizeInboundEmailPayload,
 } from '@/lib/email'
+import { applyBookingContact } from '@/lib/contact-apply'
 import { ingestInboundMessage, verifySharedSecret } from '@/lib/inbound-ingest'
 import { ingestNbEmail, looksLikeNbInbound } from '@/lib/nb-email-ingest'
+import { matchStayAtBooking } from '@/lib/stay-at-match'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +76,41 @@ export async function POST(request: NextRequest) {
       senderAddress: normalized.from,
       sourceTag: 'email',
     })
+
+    try {
+      const bookings = ((await db
+        .prepare(
+          `SELECT id, guest_name, check_in, check_out, nightsbridge_booking_id
+           FROM bookings
+           WHERE tenant_id = ? AND COALESCE(status, '') NOT IN ('cancelled', 'canceled')`
+        )
+        .all(tenantId)) || []) as Array<{
+        id: number
+        guest_name: string
+        check_in: string
+        check_out: string
+        nightsbridge_booking_id: string | null
+      }>
+      const matched = matchStayAtBooking(bookings, {
+        from: normalized.from,
+        subject: normalized.subject,
+        text: composed,
+      })
+      if (matched) {
+        await applyBookingContact(db, {
+          tenantId,
+          bookingId: matched.id,
+          email: normalized.from,
+          source: 'stay_at',
+          sourceRef: normalized.externalMessageId || 'stay-at-inbound',
+          displayName: matched.guest_name,
+          lastStayAt: matched.check_out,
+          nbid: matched.nightsbridge_booking_id,
+        })
+      }
+    } catch (contactError) {
+      console.warn('stay@ contact capture skipped:', contactError)
+    }
 
     return NextResponse.json(result)
   } catch (error) {

@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDbAsync, type DbClient } from '@/lib/db'
+import { getDbAsync } from '@/lib/db'
 import * as XLSX from 'xlsx'
-import { format, parseISO, addDays } from 'date-fns'
-import { upsertGuestContact } from '@/lib/guest-contacts'
+import { format } from 'date-fns'
+import { applyBookingContact } from '@/lib/contact-apply'
+import { ensureContactSchema } from '@/lib/contact-schema'
+import { isBlockGuestName } from '@/lib/contact-provenance'
+import {
+  parseArrivalsDeparturesGrid,
+  pickAdEmail,
+  pickAdPhone,
+  type ParsedAdBooking,
+} from '@/lib/arrivals-departures-parse'
 import {
   upsertBooking,
   determineImportWindow,
@@ -10,7 +18,6 @@ import {
 } from '@/lib/nightsbridge-upsert'
 import { guardedSoftCancel } from '@/lib/nb-reconcile'
 import { ensureSprint2Schema, recordNbSyncRun } from '@/lib/sprint2-schema'
-import { mapNbSectionRow, type ParsedBooking } from '@/lib/nightsbridge-section-parse'
 import { randomUUID } from 'crypto'
 import { isCancelledStatus, isOwnerBlock } from '@/lib/booking-filters'
 
@@ -133,13 +140,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Helper function to parse MM/DD/YYYY to YYYY-MM-DD
-    function parseDateMDY(dateStr: string): string {
-      const [month, day, year] = dateStr.split('/')
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
-    }
-
-    // 4. Parse sectioned Excel file (Arrival/Departure sections)
+    // 4. Parse sectioned Excel file (Arrival/Departure sections).
+    // Multi-room rows that share a Booking ID merge into one booking.
     const workbook = XLSX.read(fileBuffer, { type: 'array' })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
@@ -152,91 +154,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const parsedBookings: ParsedBooking[] = []
+    const parsed = parseArrivalsDeparturesGrid(jsonData, targetDate)
+    const parsedBookings: ParsedAdBooking[] = parsed.bookings
     const missingFields: MissingField[] = []
-    const bookingsByNbId = new Map<string, ParsedBooking>()
-
-    let currentSection: 'arrival' | 'departure' | null = null
-    let currentSectionDate: string | null = null
-    let currentHeaders: string[] = []
-
-    for (let i = 0; i < jsonData.length; i++) {
-      const row = jsonData[i]
-      if (!row || !row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
-        continue
-      }
-
-      const firstCell = String(row[0] || '').trim()
-
-      // Detect section headers: "Arrival: MM/DD/YYYY" or "Departure: MM/DD/YYYY"
-      const arrivalMatch = firstCell.match(/^Arrival:\s*(\d{1,2}\/\d{1,2}\/\d{4})$/i)
-      const departureMatch = firstCell.match(/^Departure:\s*(\d{1,2}\/\d{1,2}\/\d{4})$/i)
-
-      if (arrivalMatch) {
-        currentSection = 'arrival'
-        currentSectionDate = parseDateMDY(arrivalMatch[1])
-        currentHeaders = []
-        continue
-      } else if (departureMatch) {
-        currentSection = 'departure'
-        currentSectionDate = parseDateMDY(departureMatch[1])
-        currentHeaders = []
-        continue
-      }
-
-      // Detect column headers row (Room Name, Guest Name, Guest 2, Number of Guests, Booking ID, Notes, Nights)
-      if (currentSection && currentHeaders.length === 0) {
-        const potentialHeaders = row.map((h: any) =>
-          String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-        )
-        if (potentialHeaders.some(h => h.includes('room') || h.includes('guest'))) {
-          currentHeaders = potentialHeaders
-          continue
-        }
-      }
-
-      // Parse data rows
-      if (currentSection && currentSectionDate && currentHeaders.length > 0) {
-        const booking: any = mapNbSectionRow(currentHeaders, row)
-
-        // Skip rows without required fields
-        if (!booking.guestName || !booking.suiteOrUnit) {
-          continue
-        }
-
-        // Calculate check-in/check-out from section date + nights
-        if (currentSection === 'arrival') {
-          booking.checkInDate = currentSectionDate
-          booking.checkOutDate = booking.nights
-            ? format(addDays(parseISO(currentSectionDate), booking.nights), 'yyyy-MM-dd')
-            : currentSectionDate
-          booking.status = format(parseISO(targetDate), 'yyyy-MM-dd') === currentSectionDate ? 'arriving' : ''
-        } else if (currentSection === 'departure') {
-          booking.checkOutDate = currentSectionDate
-          booking.checkInDate = booking.nights
-            ? format(addDays(parseISO(currentSectionDate), -booking.nights), 'yyyy-MM-dd')
-            : currentSectionDate
-          booking.status = format(parseISO(targetDate), 'yyyy-MM-dd') === currentSectionDate ? 'departing' : ''
-        }
-
-        // Detect late check-in
-        booking.lateCheckIn = booking.notes && booking.notes.toLowerCase().includes('late')
-
-        // Defaults
-        if (!booking.adults) booking.adults = 2
-        if (!booking.children) booking.children = 0
-
-        // Dedupe by Booking ID across sections (keep first occurrence)
-        if (booking.bookingId) {
-          if (!bookingsByNbId.has(booking.bookingId)) {
-            bookingsByNbId.set(booking.bookingId, booking as ParsedBooking)
-            parsedBookings.push(booking as ParsedBooking)
-          }
-        } else {
-          parsedBookings.push(booking as ParsedBooking)
-        }
-      }
-    }
 
     if (parsedBookings.length === 0) {
       try {
@@ -261,6 +181,8 @@ export async function POST(request: NextRequest) {
 
     // 5. Save to database (async for Production Turso compatibility)
     const db = await getDbAsync()
+    await ensureSprint2Schema(db)
+    await ensureContactSchema(db)
     
     // Get Browns tenant ID with robust resolution strategy
     type TenantRow = { id: number; name: string }
@@ -338,22 +260,33 @@ export async function POST(request: NextRequest) {
           unchanged++
         }
 
-        // Upsert guest contact only when phone is present (never invent PII)
-        const phone = booking.guestPhone || booking.guestPhone2
-        if (phone && phone.trim()) {
+        const phone = pickAdPhone(booking)
+        const email = pickAdEmail(booking)
+        if (!isBlockGuestName(booking.guestName) && (phone || email)) {
           try {
-            await upsertGuestContact(db as any, {
+            await applyBookingContact(db, {
               tenantId,
-              phone: phone.trim(),
-              email: booking.guestEmail || booking.guestEmail2 || null,
+              bookingId: result.id,
+              phone,
+              email,
+              source: 'arrivals_departures',
+              sourceRef: `ad:${importBatchId}`,
               displayName: booking.guestName || null,
               lastStayAt: booking.checkOutDate || booking.checkInDate || null,
               lastSuite: booking.suiteOrUnit || null,
-              source: 'nb',
               nbid: booking.bookingId || null,
             })
           } catch (contactErr: any) {
-            console.warn(`guest_contacts upsert skipped for ${booking.guestName}:`, contactErr.message)
+            console.warn(`booking contact apply skipped for ${booking.guestName}:`, contactErr.message)
+          }
+        }
+        if (booking.extraRooms && booking.extraRooms.length > 0) {
+          try {
+            await db
+              .prepare(`UPDATE bookings SET extra_rooms = ? WHERE id = ?`)
+              .run(JSON.stringify(booking.extraRooms), result.id)
+          } catch {
+            // extra_rooms column is additive; ignore if a fixture predates it
           }
         }
       } catch (err: any) {

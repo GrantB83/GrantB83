@@ -40,8 +40,26 @@ export interface ParsedBooking {
   guestEmail?: string
   guestPhone2?: string
   guestEmail2?: string
+  extraRooms?: string[]
   nights?: number
   lateCheckIn: boolean
+}
+
+export function mergeSuiteDisplay(primary?: string, extraRooms?: string[]): string {
+  const parts: string[] = []
+  const seen = new Set<string>()
+  for (const raw of [primary, ...(extraRooms || [])]) {
+    if (!raw) continue
+    for (const piece of String(raw).split(/\s*·\s*/)) {
+      const trimmed = piece.trim()
+      if (!trimmed) continue
+      const key = trimmed.toLowerCase().replace(/\s+/g, ' ')
+      if (seen.has(key)) continue
+      seen.add(key)
+      parts.push(trimmed)
+    }
+  }
+  return parts.join(' · ')
 }
 
 /**
@@ -110,7 +128,8 @@ export async function upsertBooking(
   batchId: string
 ): Promise<UpsertResult> {
   const guestNameNorm = normalizeGuestName(booking.guestName)
-  const suiteOrUnitNorm = normalizeSuite(booking.suiteOrUnit)
+  const suiteDisplay = mergeSuiteDisplay(booking.suiteOrUnit, booking.extraRooms) || booking.suiteOrUnit
+  const suiteOrUnitNorm = normalizeSuite(suiteDisplay)
   
   const now = new Date().toISOString()
 
@@ -121,7 +140,7 @@ export async function upsertBooking(
 
   if (booking.bookingId) {
     existingBooking = await db.prepare(`
-      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name 
+      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name, suite_or_unit
       FROM bookings 
       WHERE tenant_id = ? AND nightsbridge_booking_id = ?
     `).get(tenantId, booking.bookingId)
@@ -130,7 +149,7 @@ export async function upsertBooking(
   // Fallback: Try to find by natural key
   if (!existingBooking) {
     existingBooking = await db.prepare(`
-      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name 
+      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name, suite_or_unit
       FROM bookings 
       WHERE tenant_id = ? 
         AND guest_name_norm = ? 
@@ -149,6 +168,7 @@ export async function upsertBooking(
       (booking.children || 0) !== existingBooking.children ||
       (booking.notes || '') !== (existingBooking.notes || '') ||
       (booking.lateCheckIn ? 1 : 0) !== existingBooking.late_check_in ||
+      suiteDisplay !== (existingBooking.suite_or_unit || '') ||
       (propertyName != null && propertyName !== existingBooking.property_name)
 
     if (!hasChanges) {
@@ -156,7 +176,8 @@ export async function upsertBooking(
       return { action: 'unchanged', id: existingBooking.id }
     }
 
-    // Update existing booking (mutable fields only). property_name only when resolved.
+    // Update existing booking (mutable fields only). Suite updates on multi-room
+    // merge; property_name only when resolved; contacts are applied separately.
     await db.prepare(`
       UPDATE bookings
       SET guest_phone = ?,
@@ -165,6 +186,8 @@ export async function upsertBooking(
           children = ?,
           notes = ?,
           late_check_in = ?,
+          suite_or_unit = ?,
+          suite_or_unit_norm = ?,
           updated_at = ?,
           last_import_at = ?,
           import_batch_id = ?,
@@ -178,6 +201,8 @@ export async function upsertBooking(
       booking.children || 0,
       booking.notes || '',
       booking.lateCheckIn ? 1 : 0,
+      suiteDisplay,
+      suiteOrUnitNorm,
       now,
       now,
       batchId,
@@ -216,7 +241,7 @@ export async function upsertBooking(
       tenantId,
       booking.guestName,
       guestNameNorm,
-      booking.suiteOrUnit,
+      suiteDisplay,
       suiteOrUnitNorm,
       booking.checkInDate,
       booking.checkOutDate,

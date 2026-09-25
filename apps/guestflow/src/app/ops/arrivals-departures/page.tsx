@@ -18,6 +18,8 @@ interface Booking {
   notes: string
   lateCheckIn: boolean
   guestPhone: string
+  guestEmail?: string
+  guestEmailKind?: string
   status: string
 }
 
@@ -129,7 +131,7 @@ export default function ArrivalsDeparturesPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Property</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Suite/Room</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guests</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone / Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -159,7 +161,13 @@ export default function ArrivalsDeparturesPage() {
                       {booking.adults || 0}A / {booking.children || 0}C
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {booking.guestPhone || '—'}
+                      <div>{booking.guestPhone || '—'}</div>
+                      {booking.guestEmail && (
+                        <div className="text-xs text-gray-500">
+                          {booking.guestEmail}
+                          {booking.guestEmailKind === 'relay' ? ' · relay' : ''}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
