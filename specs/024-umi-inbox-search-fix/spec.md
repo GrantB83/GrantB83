@@ -26,6 +26,8 @@ Staff need to quickly find existing guest threads by searching any text that app
 4. **Given** staff searches for "grant830318", **When** a thread has sender "grant830318@gmail.com", **Then** the thread appears in results (existing functionality maintained)
 5. **Given** staff searches for "GrAnT830318" (mixed case), **When** matching against "grant830318@gmail.com", **Then** the thread appears (case-insensitive matching)
 6. **Given** staff searches for "INBOUND TEST" (multi-token), **When** a message contains "GF-INBOUND-TEST-20260925", **Then** the thread appears (partial phrase matching)
+7. **Given** a booking has Nightsbridge reference "NB-12345", **When** staff searches for "NB-12345" or "12345", **Then** the booking/thread appears (case-insensitive, partial matching)
+8. **Given** a booking has internal booking ID 789, **When** staff searches for "789", **Then** the booking/thread appears
 
 ---
 
@@ -67,6 +69,8 @@ Staff need all existing threads to appear in the inbox list and be retrievable b
 - **FR-005**: System MUST support partial word and phrase matching (e.g., searching "DIRECT2" matches "GF-INBOUND-TEST-20260925-DIRECT2")
 - **FR-006**: System MUST tokenize multi-word queries on whitespace and AND tokens together (e.g., "INBOUND TEST" requires both tokens present)
 - **FR-007**: System MUST maintain existing search functionality for bookerName, fromNumber, suite, nbid, bookingId
+- **FR-007a**: System MUST search by Nightsbridge booking reference (nightsbridge_booking_id / nbid) with case-insensitive and partial matching
+- **FR-007b**: System MUST search by internal booking ID (bookings.id / bookingId) with partial matching
 - **FR-008**: System MUST include threads with thread_kind=temp in inbox list results
 - **FR-009**: System MUST include threads with status=drafted in inbox list results
 - **FR-010**: System MUST correctly resolve tenant_id matching for authenticated staff users
@@ -89,6 +93,8 @@ Staff need all existing threads to appear in the inbox list and be retrievable b
 - **SC-005**: Search matches are case-insensitive (e.g., "DIRECT2" matches "direct2")
 - **SC-006**: Search supports partial phrases (e.g., "INBOUND TEST" matches messages containing both tokens)
 - **SC-007**: All test cases covering subject hit, preview hit, body hit, cross-channel body, case-insensitive, partial phrase, and existing thread retrieval pass
+- **SC-008**: Staff can find booking by Nightsbridge reference (e.g., searching "NB-12345" or partial "12345" returns the booking)
+- **SC-009**: Staff can find booking by internal booking ID (e.g., searching "789" returns booking with id=789)
 
 ## Assumptions
 

@@ -299,6 +299,98 @@ describe('UMI Inbox Search', () => {
       const results = await listInboxThreads(db, 1, { q: 'John' })
       expect(results.some(t => t.id === Number(threadId))).toBe(true)
     })
+
+    it('should find booking by Nightsbridge reference (full)', async () => {
+      // Create booking with NB reference
+      const bookingId = db.prepare(`
+        INSERT INTO bookings (tenant_id, guest_name, nightsbridge_booking_id, status)
+        VALUES (1, 'Test Guest', 'NB-12345', 'confirmed')
+      `).run().lastInsertRowid as number
+
+      // Create thread linked to booking
+      const threadId = db.prepare(`
+        INSERT INTO inbound_threads (tenant_id, from_number, source, booking_id, thread_kind, last_message_at)
+        VALUES (1, 'test@example.com', 'email', ?, 'booking', datetime('now'))
+      `).run(bookingId).lastInsertRowid as number
+
+      db.prepare(`
+        INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+        VALUES (?, 1, 'test@example.com', 'Booking message', datetime('now'))
+      `).run(threadId)
+
+      // Search by full NB reference
+      const results = await listInboxThreads(db, 1, { q: 'NB-12345' })
+      expect(results.some(t => t.id === Number(threadId))).toBe(true)
+    })
+
+    it('should find booking by Nightsbridge reference (partial)', async () => {
+      // Create booking with NB reference
+      const bookingId = db.prepare(`
+        INSERT INTO bookings (tenant_id, guest_name, nightsbridge_booking_id, status)
+        VALUES (1, 'Test Guest', 'NB-67890', 'confirmed')
+      `).run().lastInsertRowid as number
+
+      // Create thread linked to booking
+      const threadId = db.prepare(`
+        INSERT INTO inbound_threads (tenant_id, from_number, source, booking_id, thread_kind, last_message_at)
+        VALUES (1, 'test@example.com', 'email', ?, 'booking', datetime('now'))
+      `).run(bookingId).lastInsertRowid as number
+
+      db.prepare(`
+        INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+        VALUES (?, 1, 'test@example.com', 'Booking message', datetime('now'))
+      `).run(threadId)
+
+      // Search by partial NB reference (just the number part)
+      const results = await listInboxThreads(db, 1, { q: '67890' })
+      expect(results.some(t => t.id === Number(threadId))).toBe(true)
+    })
+
+    it('should find booking by Nightsbridge reference (case-insensitive)', async () => {
+      // Create booking with NB reference
+      const bookingId = db.prepare(`
+        INSERT INTO bookings (tenant_id, guest_name, nightsbridge_booking_id, status)
+        VALUES (1, 'Test Guest', 'NB-11111', 'confirmed')
+      `).run().lastInsertRowid as number
+
+      // Create thread linked to booking
+      const threadId = db.prepare(`
+        INSERT INTO inbound_threads (tenant_id, from_number, source, booking_id, thread_kind, last_message_at)
+        VALUES (1, 'test@example.com', 'email', ?, 'booking', datetime('now'))
+      `).run(bookingId).lastInsertRowid as number
+
+      db.prepare(`
+        INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+        VALUES (?, 1, 'test@example.com', 'Booking message', datetime('now'))
+      `).run(threadId)
+
+      // Search with lowercase (NB ref is uppercase)
+      const results = await listInboxThreads(db, 1, { q: 'nb-11111' })
+      expect(results.some(t => t.id === Number(threadId))).toBe(true)
+    })
+
+    it('should find booking by internal booking ID', async () => {
+      // Create booking with known ID
+      const bookingId = db.prepare(`
+        INSERT INTO bookings (tenant_id, guest_name, status)
+        VALUES (1, 'Test Guest', 'confirmed')
+      `).run().lastInsertRowid as number
+
+      // Create thread linked to booking
+      const threadId = db.prepare(`
+        INSERT INTO inbound_threads (tenant_id, from_number, source, booking_id, thread_kind, last_message_at)
+        VALUES (1, 'test@example.com', 'email', ?, 'booking', datetime('now'))
+      `).run(bookingId).lastInsertRowid as number
+
+      db.prepare(`
+        INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+        VALUES (?, 1, 'test@example.com', 'Booking message', datetime('now'))
+      `).run(threadId)
+
+      // Search by booking ID (convert to string for search)
+      const results = await listInboxThreads(db, 1, { q: String(bookingId) })
+      expect(results.some(t => t.bookingId === Number(bookingId))).toBe(true)
+    })
   })
 
   describe('User Story 2: Missing Thread Surface Fix', () => {

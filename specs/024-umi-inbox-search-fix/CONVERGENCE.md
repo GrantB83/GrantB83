@@ -9,7 +9,7 @@ The implementation **fully satisfies** all requirements, acceptance criteria, an
 
 ## Requirements Coverage
 
-### Functional Requirements (12/12 Complete)
+### Functional Requirements (14/14 Complete)
 
 | ID | Requirement | Status | Evidence |
 |----|-------------|--------|----------|
@@ -20,13 +20,15 @@ The implementation **fully satisfies** all requirements, acceptance criteria, an
 | FR-005 | Partial word/phrase matching | ✅ Complete | `.includes()` allows substring matching |
 | FR-006 | Multi-token AND logic | ✅ Complete | `tokenizeSearchQuery()` + `tokens.every()` |
 | FR-007 | Preserve existing search fields | ✅ Complete | `existingFieldsMatch` checks first |
+| FR-007a | Search by Nightsbridge booking ref (case-insensitive, partial) | ✅ Complete | `nightsbridgeBookingId` in existingFieldsMatch with `.toLowerCase()` and `.includes()` |
+| FR-007b | Search by internal booking ID (partial) | ✅ Complete | `bookingId` in existingFieldsMatch with partial matching |
 | FR-008 | Include thread_kind=temp | ✅ Complete | Query excludes only `status='linked'` |
 | FR-009 | Include status=drafted | ✅ Complete | Query excludes only `status='linked'` |
 | FR-010 | Correct tenant_id filtering | ✅ Complete | `WHERE t.tenant_id = ?` in all queries |
 | FR-011 | getThreadDetail returns data | ✅ Complete | No exclusions in query |
 | FR-012 | SQL injection safe | ✅ Complete | Parameterized queries throughout |
 
-### Success Criteria (7/7 Complete)
+### Success Criteria (9/9 Complete)
 
 | ID | Criterion | Status | Evidence |
 |----|-----------|--------|----------|
@@ -36,7 +38,9 @@ The implementation **fully satisfies** all requirements, acceptance criteria, an
 | SC-004 | Thread 49 detail not 404 | ✅ Complete | Test: "getThreadDetail returns thread" |
 | SC-005 | Case-insensitive matching | ✅ Complete | Test: "Case-insensitive search works" |
 | SC-006 | Partial phrase support | ✅ Complete | Test: "Partial phrase matching works" |
-| SC-007 | All acceptance tests pass | ✅ Complete | 10+ tests cover all scenarios |
+| SC-007 | All acceptance tests pass | ✅ Complete | 15+ tests cover all scenarios |
+| SC-008 | Find by Nightsbridge ref | ✅ Complete | Tests: "by Nightsbridge reference (full/partial/case-insensitive)" |
+| SC-009 | Find by internal booking ID | ✅ Complete | Test: "by internal booking ID" |
 
 ### User Stories (2/2 Complete)
 
@@ -100,8 +104,8 @@ The implementation **fully satisfies** all requirements, acceptance criteria, an
 ## Findings
 
 **Zero gaps found.** The implementation:
-- Satisfies all 12 functional requirements
-- Meets all 7 success criteria
+- Satisfies all 14 functional requirements
+- Meets all 9 success criteria
 - Implements both user stories completely
 - Includes comprehensive test coverage
 - Maintains backward compatibility

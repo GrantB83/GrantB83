@@ -17,12 +17,12 @@ Query strings are tokenized on whitespace, and ALL tokens must match for a threa
 
 ### Search Fields
 
-**Existing fields** (preserved):
+**Existing fields** (preserved and enhanced):
 - `bookerName` - Guest name
-- `fromNumber` - Contact identifier
+- `fromNumber` - Contact identifier (email or phone)
 - `suite` - Property unit
-- `nightsbridgeBookingId` - Booking system ID
-- `bookingId` - Internal booking ID
+- `nightsbridgeBookingId` - **Nightsbridge booking reference** (e.g., "NB-12345") - Case-insensitive, partial matching
+- `bookingId` - **Internal booking ID** (e.g., 789) - Partial matching
 
 **NEW extended fields**:
 - `metadata.subject` - Email subject line (parsed from JSON)
@@ -42,6 +42,9 @@ Query strings are tokenized on whitespace, and ALL tokens must match for a threa
 | `grant830318` | Existing field OR any message contains "grant830318" |
 | `INBOUND TEST` | Thread has "INBOUND" somewhere AND "TEST" somewhere |
 | `booking inquiry` | Subject OR message contains both "booking" and "inquiry" |
+| `NB-12345` | Nightsbridge booking reference matches "NB-12345" (case-insensitive) |
+| `12345` | Partial match on Nightsbridge reference containing "12345" |
+| `789` | Internal booking ID equals 789 (or partial match) |
 
 ## Thread Surface Fix Investigation
 
