@@ -9,13 +9,13 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   const isGuest = pathname.startsWith('/guest')
-  const isStaffLogin = pathname === '/staff-login'
   const requestHeaders = new Headers(request.headers)
+  
+  // Set pathname header for layout to read
+  requestHeaders.set('x-pathname', pathname)
+  
   if (isGuest) {
     requestHeaders.set('x-is-guest-route', 'true')
-  }
-  if (isStaffLogin) {
-    requestHeaders.set('x-is-staff-login', 'true')
   }
 
   if (isGuestPortalHost(host || undefined)) {

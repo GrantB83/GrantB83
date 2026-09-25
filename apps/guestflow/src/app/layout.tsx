@@ -28,10 +28,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // SSR-safe: read guest route flag from middleware header
+  // SSR-safe: read route flags and pathname from headers
   const headersList = headers()
   const isGuestRoute = headersList.get('x-is-guest-route') === 'true'
-  const isStaffLogin = headersList.get('x-is-staff-login') === 'true'
+  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || ''
+  
+  // Hide staff chrome on guest routes AND on unauthenticated staff-login
+  const isStaffLogin = pathname === '/staff-login'
   const showStaffChrome = !isGuestRoute && !isStaffLogin
 
   return (
