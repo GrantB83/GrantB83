@@ -324,7 +324,7 @@ export default function NeedsApprovalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -341,7 +341,7 @@ export default function NeedsApprovalPage() {
             <button
               onClick={() => fetchApprovals(true)}
               disabled={refreshing}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              className="p-2 rounded-lg hover:bg-accent disabled:opacity-50"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -474,7 +474,7 @@ export default function NeedsApprovalPage() {
                         {!isCopyOnlyItem(item) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleEditAndApprove(); }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                            className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2"
                           >
                             <Edit className="w-4 h-4" />
                             {editMode ? 'Save & Approve (E)' : 'Edit & approve (E)'}
@@ -588,7 +588,7 @@ export default function NeedsApprovalPage() {
                           <button
                             onClick={(e) => { e.stopPropagation(); handleSend(); }}
                             disabled={sendingGuest}
-                            className="w-full px-4 py-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="w-full px-4 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
                           >
                             <MessageSquare className="w-5 h-5" />
                             {guestChannel === 'email'
