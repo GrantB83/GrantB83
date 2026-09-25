@@ -200,7 +200,7 @@ describe('staff-alert-filters', () => {
   describe('shouldExcludeFromAlerts (combined)', () => {
     const testPhones = new Set(['+27000000001', '27000000001'])
     
-    it('should exclude test phone threads', async () => {
+    it('should exclude test phone threads with reason', async () => {
       db.prepare('INSERT INTO inbound_threads (id, from_number) VALUES (1, "+27000000001")').run()
       
       const result = await shouldExcludeFromAlerts(
@@ -208,10 +208,11 @@ describe('staff-alert-filters', () => {
         { id: 1, from_number: '+27000000001' },
         testPhones
       )
-      expect(result).toBe(true)
+      expect(result.excluded).toBe(true)
+      expect(result.reason).toBe('test_phone')
     })
     
-    it('should exclude smoke test threads', async () => {
+    it('should exclude smoke test threads with reason', async () => {
       db.prepare('INSERT INTO inbound_threads (id, guest_name) VALUES (1, "T-48")').run()
       
       const result = await shouldExcludeFromAlerts(
@@ -219,10 +220,11 @@ describe('staff-alert-filters', () => {
         { id: 1, guest_name: 'T-48' },
         testPhones
       )
-      expect(result).toBe(true)
+      expect(result.excluded).toBe(true)
+      expect(result.reason).toBe('smoke_marker')
     })
     
-    it('should exclude empty BLOCK bookings', async () => {
+    it('should exclude empty BLOCK bookings with reason', async () => {
       db.prepare('INSERT INTO bookings (id, guest_name) VALUES (1, "BLOCK 5376")').run()
       db.prepare('INSERT INTO inbound_threads (id, booking_id) VALUES (1, 1)').run()
       
@@ -231,7 +233,8 @@ describe('staff-alert-filters', () => {
         { id: 1, booking_id: 1 },
         testPhones
       )
-      expect(result).toBe(true)
+      expect(result.excluded).toBe(true)
+      expect(result.reason).toBe('empty_block')
     })
     
     it('should NOT exclude legitimate guest threads', async () => {
@@ -242,7 +245,8 @@ describe('staff-alert-filters', () => {
         { id: 1, from_number: '+27821234567', guest_name: 'Jane Doe' },
         testPhones
       )
-      expect(result).toBe(false)
+      expect(result.excluded).toBe(false)
+      expect(result.reason).toBeUndefined()
     })
   })
 })

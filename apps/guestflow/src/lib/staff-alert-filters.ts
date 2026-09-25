@@ -115,7 +115,7 @@ export async function isEmptyBlockBooking(
  * @param db - Database client
  * @param thread - Thread object to check
  * @param testPhones - Set of known test phone numbers
- * @returns Promise<true> if thread should be excluded from alerts
+ * @returns Promise with exclusion result and optional reason for debugging
  */
 export async function shouldExcludeFromAlerts(
   db: DbClient,
@@ -127,15 +127,21 @@ export async function shouldExcludeFromAlerts(
     booking_id?: number | null
   },
   testPhones: Set<string>
-): Promise<boolean> {
+): Promise<{ excluded: boolean; reason?: string }> {
   // Check 1: Test phone (cheapest - in-memory set lookup)
-  if (isTestPhoneThread(thread.from_number, testPhones)) return true
+  if (isTestPhoneThread(thread.from_number, testPhones)) {
+    return { excluded: true, reason: 'test_phone' }
+  }
   
   // Check 2: Smoke test marker (cheap - string pattern match)
-  if (isSmokeTestThread(thread)) return true
+  if (isSmokeTestThread(thread)) {
+    return { excluded: true, reason: 'smoke_marker' }
+  }
   
   // Check 3: Empty BLOCK booking (most expensive - DB query)
-  if (await isEmptyBlockBooking(db, thread)) return true
+  if (await isEmptyBlockBooking(db, thread)) {
+    return { excluded: true, reason: 'empty_block' }
+  }
   
-  return false
+  return { excluded: false }
 }

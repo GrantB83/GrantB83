@@ -394,9 +394,18 @@ export async function evaluateUnanswered(
     if (await latestInboundIsSpam(db, threadId)) continue
 
     // Alert noise filter: Exclude test phones, smoke markers, and empty BLOCK bookings
-    if (isTestPhoneThread(String(thread.from_number || ''), TEST_SINK_PHONES)) continue
-    if (isSmokeTestThread({ guest_name: String(thread.guest_name || ''), metadata: String(thread.metadata || '') })) continue
-    if (await isEmptyBlockBooking(db, { id: threadId, booking_id: Number(thread.booking_id || 0) || null })) continue
+    if (isTestPhoneThread(String(thread.from_number || ''), TEST_SINK_PHONES)) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: test_phone`)
+      continue
+    }
+    if (isSmokeTestThread({ guest_name: String(thread.guest_name || ''), metadata: String(thread.metadata || '') })) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: smoke_marker`)
+      continue
+    }
+    if (await isEmptyBlockBooking(db, { id: threadId, booking_id: Number(thread.booking_id || 0) || null })) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: empty_block`)
+      continue
+    }
 
     const action = classifyUnanswered({ inboundAt, now: input.now })
     if (action === 'wait') continue
