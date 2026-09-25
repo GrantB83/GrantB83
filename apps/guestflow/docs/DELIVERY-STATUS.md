@@ -25,7 +25,7 @@
 | --- | --- |
 | `POST /api/webhooks/twilio/status` | Twilio StatusCallback. Verified with `TWILIO_AUTH_TOKEN`. |
 | `POST /api/webhooks/resend` | Resend **delivery** events (not inbound mail). `RESEND_WEBHOOK_SECRET` or Svix headers. |
-| `POST /api/cron/delivery-poll` | Poll after 10 min (`DELIVERY_POLL_AFTER_MINUTES`) if no callback. `CRON_SECRET`. |
+| `GET`/`POST /api/cron/delivery-poll` | Poll after 10 min (`DELIVERY_POLL_AFTER_MINUTES`) if no callback. `CRON_SECRET`. **Not** registered in `vercel.json`: Hobby Vercel rejects `*/10` (sub-daily). Trigger from an external scheduler (`Authorization: Bearer $CRON_SECRET`) or add `*/10 * * * *` after a Pro upgrade. |
 | `NEXT_PUBLIC_BASE_URL` or `VERCEL_URL` | Absolute StatusCallback URL. Not hardcoded to production. |
 | `DELIVERY_STUCK_PENDING_MINUTES` | Default 15. |
 | `STAFF_IDENTITY` | Optional override for the current staff helper. |

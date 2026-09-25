@@ -13,7 +13,7 @@ function authorize(request: NextRequest): boolean {
   return headerSecret === envSecret || querySecret === envSecret || auth === envSecret
 }
 
-export async function POST(request: NextRequest) {
+async function runPoll(request: NextRequest) {
   if (!process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 503 })
   }
@@ -29,4 +29,13 @@ export async function POST(request: NextRequest) {
     console.error('[delivery-poll]', error)
     return NextResponse.json({ success: false, error: 'Poll failed' }, { status: 500 })
   }
+}
+
+/** Vercel Cron and external schedulers use GET + Bearer CRON_SECRET. */
+export async function GET(request: NextRequest) {
+  return runPoll(request)
+}
+
+export async function POST(request: NextRequest) {
+  return runPoll(request)
 }

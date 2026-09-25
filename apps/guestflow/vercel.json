@@ -9,10 +9,6 @@
     {
       "path": "/api/cron/nightsbridge-reminder",
       "schedule": "0 17 * * *"
-    },
-    {
-      "path": "/api/cron/delivery-poll",
-      "schedule": "*/10 * * * *"
     }
   ]
 }
