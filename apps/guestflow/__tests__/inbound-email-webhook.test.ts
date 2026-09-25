@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/db', () => ({
@@ -140,5 +141,78 @@ describe('POST /api/inbound/email', () => {
         externalMessageId: 'em_99',
       })
     )
+  })
+
+  it('accepts Resend email.received with valid Svix signature', async () => {
+    const svixSecret = 'whsec_dGVzdHNlY3JldA=='
+    const svixKey = Buffer.from('testsecret')
+    delete process.env.INBOUND_WEBHOOK_SECRET
+    process.env.RESEND_INBOUND_WEBHOOK_SECRET = svixSecret
+
+    const { ingestInboundMessage } = await import('@/lib/inbound-ingest')
+    vi.mocked(ingestInboundMessage).mockResolvedValue({
+      success: true,
+      messageId: 11,
+      threadId: 5,
+      queuedForApproval: true,
+      status: 'drafted',
+    })
+
+    const body = JSON.stringify({
+      from: 'guest@example.com',
+      text: 'Svix signed inbound',
+      timestamp: '2026-09-20T12:00:00.000Z',
+      source: 'email',
+    })
+    const svixId = 'msg_inbound_1'
+    const svixTimestamp = '1726833600'
+    const expected = crypto
+      .createHmac('sha256', svixKey)
+      .update(`${svixId}.${svixTimestamp}.${body}`)
+      .digest('base64')
+
+    const { POST } = await import('@/app/api/inbound/email/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'svix-id': svixId,
+          'svix-timestamp': svixTimestamp,
+          'svix-signature': `v1,${expected}`,
+        },
+        body,
+      }) as any
+    )
+    const data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data.success).toBe(true)
+    expect(ingestInboundMessage).toHaveBeenCalled()
+  })
+
+  it('rejects Svix headers with invalid signature', async () => {
+    process.env.RESEND_INBOUND_WEBHOOK_SECRET = 'whsec_dGVzdHNlY3JldA=='
+    delete process.env.INBOUND_WEBHOOK_SECRET
+
+    const body = JSON.stringify({
+      from: 'guest@example.com',
+      text: 'Bad sig',
+      timestamp: '2026-09-20T12:00:00.000Z',
+    })
+
+    const { POST } = await import('@/app/api/inbound/email/route')
+    const response = await POST(
+      new Request('http://localhost:3100/api/inbound/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'svix-id': 'msg_bad',
+          'svix-timestamp': '100',
+          'svix-signature': 'v1,invalidsignature',
+        },
+        body,
+      }) as any
+    )
+    expect(response.status).toBe(401)
   })
 })

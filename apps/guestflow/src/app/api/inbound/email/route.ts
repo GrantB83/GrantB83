@@ -6,30 +6,32 @@ import {
   normalizeInboundEmailPayload,
 } from '@/lib/email'
 import { applyBookingContact } from '@/lib/contact-apply'
-import { ingestInboundMessage, verifySharedSecret } from '@/lib/inbound-ingest'
+import { ingestInboundMessage } from '@/lib/inbound-ingest'
+import { verifyResendInboundEmailRequest } from '@/lib/resend-delivery-webhook'
 import { ingestNbEmail, looksLikeNbInbound } from '@/lib/nb-email-ingest'
 import { matchStayAtBooking } from '@/lib/stay-at-match'
 
 export const dynamic = 'force-dynamic'
 
-function verifyEmailWebhook(request: NextRequest): boolean {
-  return verifySharedSecret(
-    request,
-    [process.env.RESEND_WEBHOOK_SECRET, process.env.INBOUND_WEBHOOK_SECRET],
-    ['x-webhook-secret']
-  )
-}
-
 export async function POST(request: NextRequest) {
   try {
-    if (!verifyEmailWebhook(request)) {
+    const rawBody = await request.text()
+    if (!verifyResendInboundEmailRequest(request, rawBody)) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - invalid webhook secret' },
         { status: 401 }
       )
     }
 
-    const raw = await request.json()
+    let raw: unknown
+    try {
+      raw = rawBody ? JSON.parse(rawBody) : {}
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON' },
+        { status: 400 }
+      )
+    }
     const normalized = normalizeInboundEmailPayload(raw)
     if (!normalized) {
       return NextResponse.json(
@@ -131,6 +133,10 @@ export async function GET() {
     version: '1.0',
     status: 'ready',
     accepts: 'POST Resend email.received or normalized { from, text, timestamp }',
-    secured: Boolean(process.env.RESEND_WEBHOOK_SECRET || process.env.INBOUND_WEBHOOK_SECRET),
+    secured: Boolean(
+      process.env.RESEND_INBOUND_WEBHOOK_SECRET ||
+        process.env.RESEND_WEBHOOK_SECRET ||
+        process.env.INBOUND_WEBHOOK_SECRET
+    ),
   })
 }
