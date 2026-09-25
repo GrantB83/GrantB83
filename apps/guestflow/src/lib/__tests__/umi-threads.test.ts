@@ -322,4 +322,71 @@ describe('umi threads', () => {
     await listInboxThreads(db, 1)
     expect(writes).toBe(0)
   })
+
+  it('includes drafted temp and booking threads in inbox list', async () => {
+    // Create temp thread 48 with status='drafted' (ops@)
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (id, tenant_id, source, from_number, status, thread_kind, first_message_at, last_message_at, guest_name)
+         VALUES (48, 1, 'email', 'ops@example.com', 'drafted', 'temp', '2026-09-24T10:00:00.000Z', '2026-09-24T10:00:00.000Z', 'Ops Team')`
+      )
+      .run()
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+         VALUES (48, 1, 'ops@example.com', 'Test message from ops', '2026-09-24T10:00:00.000Z')`
+      )
+      .run()
+
+    // Create temp thread 49 with status='drafted' (grant830318@ with DIRECT2 marker)
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (id, tenant_id, source, from_number, status, thread_kind, first_message_at, last_message_at, guest_name, metadata)
+         VALUES (49, 1, 'email', 'grant830318@gmail.com', 'drafted', 'temp', '2026-09-24T10:05:00.000Z', '2026-09-24T10:05:00.000Z', 'Grant Brown', '{"subject":"DIRECT2"}')`
+      )
+      .run()
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+         VALUES (49, 1, 'grant830318@gmail.com', 'DIRECT2 test message', '2026-09-24T10:05:00.000Z')`
+      )
+      .run()
+
+    // Create booking thread 50 with status='drafted'
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (id, tenant_id, source, from_number, status, thread_kind, booking_id, first_message_at, last_message_at)
+         VALUES (50, 1, 'twilio_whatsapp', '+27821234567', 'drafted', 'booking', 10, '2026-09-24T10:10:00.000Z', '2026-09-24T10:10:00.000Z')`
+      )
+      .run()
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp)
+         VALUES (50, 1, '+27821234567', 'Booking inquiry', '2026-09-24T10:10:00.000Z')`
+      )
+      .run()
+
+    const inbox = await listInboxThreads(db, 1)
+    const ids = inbox.map((t) => t.id)
+
+    expect(ids).toContain(48)
+    expect(ids).toContain(49)
+    expect(ids).toContain(50)
+
+    const thread48 = inbox.find((t) => t.id === 48)
+    const thread49 = inbox.find((t) => t.id === 49)
+    const thread50 = inbox.find((t) => t.id === 50)
+
+    expect(thread48).toBeDefined()
+    expect(thread48?.threadKind).toBe('temp')
+    expect(thread48?.fromNumber).toBe('ops@example.com')
+
+    expect(thread49).toBeDefined()
+    expect(thread49?.threadKind).toBe('temp')
+    expect(thread49?.fromNumber).toBe('grant830318@gmail.com')
+
+    expect(thread50).toBeDefined()
+    expect(thread50?.threadKind).toBe('booking')
+    expect(thread50?.bookingId).toBe(10)
+  })
 })
