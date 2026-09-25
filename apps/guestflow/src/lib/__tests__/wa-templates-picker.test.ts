@@ -18,6 +18,20 @@ function row(name: string, whatsapp: string): WaTemplateRow {
   }
 }
 
+/** Meta / Twilio reject bodies whose last substantive token is a variable (e.g. 2388299). */
+function bodyEndsWithVariable(body: string): boolean {
+  const trimmed = body.trimEnd()
+  return /\{\{\d+\}\}[.!?]?\s*$/.test(trimmed)
+}
+
+describe('Grant-approved WhatsApp seed bodies', () => {
+  it('do not end with a template variable (Meta 2388299)', () => {
+    for (const template of GRANT_APPROVED_TEMPLATES) {
+      expect(bodyEndsWithVariable(template.body), template.name).toBe(false)
+    }
+  })
+})
+
 describe('WhatsApp template picker filter', () => {
   it('seeds all 7 Grant-approved names and hides them until WhatsApp approved', () => {
     expect(GRANT_APPROVED_TEMPLATES).toHaveLength(7)
