@@ -124,7 +124,7 @@ export default function ArrivalsDeparturesPage() {
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <div className="inline-block min-w-full align-middle px-4 sm:px-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-primary text-white">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guest</th>
@@ -138,7 +138,7 @@ export default function ArrivalsDeparturesPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
+                  <tr key={booking.id} className="hover:bg-muted">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {type === 'arrival' && booking.checkInDate 
@@ -248,7 +248,7 @@ export default function ArrivalsDeparturesPage() {
       </Link>
 
       <div className="mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-white rounded-full text-xs font-medium mb-3">
           Arrivals & Departures 🛬🛫
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">

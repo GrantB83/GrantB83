@@ -244,7 +244,7 @@ export default function LeadDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={handleCopyWebdirectLink}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-700 transition"
           >
             {copiedLink ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
             {copiedLink ? 'Copied!' : 'Copy WEBDIRECT Link'}
@@ -410,7 +410,7 @@ export default function LeadDetailPage() {
           <button
             onClick={handleSaveNote}
             disabled={!newNote.trim() || savingNote}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
+            className="mt-2 px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
           >
             {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {savingNote ? 'Saving...' : 'Save Note'}

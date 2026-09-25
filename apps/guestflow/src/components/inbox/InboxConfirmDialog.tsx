@@ -50,7 +50,7 @@ export function InboxConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="inbox-tap flex-1 bg-blue-600 text-white rounded-lg text-base disabled:opacity-50"
+            className="inbox-tap flex-1 bg-primary text-white rounded-lg text-base disabled:opacity-50"
           >
             Confirm Approve&amp;Send
           </button>

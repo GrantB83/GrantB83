@@ -24,7 +24,7 @@ export async function OutboundRedirectBanner() {
   return (
     <div
       data-outbound-banner
-      className="bg-blue-500 text-white text-center font-medium border-b border-blue-600 px-3 py-1.5 text-xs sm:px-4 sm:py-3 sm:text-sm inbox-wrap"
+      className="bg-secondary text-primary text-center font-semibold border-b border-secondary-600 px-3 py-1.5 text-xs sm:px-4 sm:py-3 sm:text-sm inbox-wrap"
       role="alert"
       aria-live="polite"
     >

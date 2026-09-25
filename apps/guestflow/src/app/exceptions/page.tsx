@@ -244,7 +244,7 @@ export default function ExceptionsPage() {
                       {ex.status === 'new' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(ex.id, 'triaged'); }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700"
                         >
                           Triage
                         </button>
@@ -252,7 +252,7 @@ export default function ExceptionsPage() {
                       {ex.status === 'triaged' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); updateStatus(ex.id, 'in_progress'); }}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700"
                         >
                           Start Work
                         </button>

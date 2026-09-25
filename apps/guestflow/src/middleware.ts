@@ -10,6 +10,10 @@ export async function middleware(request: NextRequest) {
 
   const isGuest = pathname.startsWith('/guest')
   const requestHeaders = new Headers(request.headers)
+  
+  // Set pathname header for layout to read
+  requestHeaders.set('x-pathname', pathname)
+  
   if (isGuest) {
     requestHeaders.set('x-is-guest-route', 'true')
   }
@@ -74,6 +78,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!staff-login|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 }

@@ -320,7 +320,7 @@ export default function InboundQueuePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -337,7 +337,7 @@ export default function InboundQueuePage() {
             <button
               onClick={() => fetchQueue(true)}
               disabled={refreshing}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              className="p-2 rounded-lg hover:bg-accent disabled:opacity-50"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -526,7 +526,7 @@ export default function InboundQueuePage() {
                         e.stopPropagation()
                         updateThreadStatus(thread.threadId, 'classified')
                       }}
-                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+                      className="flex-1 px-3 py-1.5 bg-primary text-white rounded text-sm font-medium hover:bg-primary-700"
                     >
                       Review
                     </button>

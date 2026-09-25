@@ -1,0 +1,29 @@
+The Browns GuestFlow guest-portal brand capture
+Observed: 2026-09-24 (UTC-5)
+Scope: observation only; no credentials, tokens, guest PII, or form submissions used.
+
+ROUTES / ACCESS RESULTS
+- https://guestflow.thebrowns.co.za/guest/login — route exists (page title: "Your Stay Details - The Browns"). With no access token/code, renders an empty-state/error card: "Unable to Access" / "Invalid access link" and contact mailto stay@thebrowns.co.za. No login form fields are exposed in this state.
+- https://guestflow.thebrowns.co.za/guest/stay — route exists (same page title). With no access token/code, renders the same "Unable to Access" / "Invalid access link" card. Stay hub is gated; needs a valid magic/access link. No stay data or guest PII shown.
+- https://guestflow.thebrowns.co.za/guest/test-code — route exists (same page title). Invalid/empty token state renders the same "Unable to Access" / "Invalid access link" card. Captured as valid evidence; no token invented or submitted.
+- https://stay.thebrowns.co.za/ — does not resolve as a usable guest surface (browser reported certificate/host access failure; per probe, stay.thebrowns.co.za does not resolve). No screenshot taken because it is not a confirmed working route.
+- No 404 page observed on the three confirmed guest routes above; all loaded the branded guest error/empty state.
+
+VISIBLE GUEST SURFACES / NAV
+- No guest navigation or links to check-in, Wi-Fi, access codes, parking, house rules, directions, contact, or rebook were visible in the ungated state. Only visible link is the stay@thebrowns.co.za mailto contact.
+- The real hub path is expected to be /guest/[code], but no code was invented or tested.
+
+VISUAL / BRAND NOTES (approximate from captured state)
+- Overall background: very pale cool blue, approximately #EAF7FE / #E8F6FD.
+- Centered white card with rounded corners and soft gray-blue drop shadow.
+- Error panel: pale blush/pink fill with light red border; red/pink home icon in a circular blush badge.
+- Heading: dark charcoal/navy, bold sans-serif, centered: "Unable to Access".
+- Body copy: medium gray sans-serif; contact email is bright cyan/blue and bold-ish.
+- Typography observed is a rounded/modern sans UI treatment. No clear Playfair display serif or Montserrat-specific treatment could be verified in this gated state.
+- No Browns CI/logo mark or wordmark is visible in these guest empty/error states.
+- Compared with Browns SoT targets (#0A3775 navy, #FAC72E gold, Playfair H1 + Montserrat UI, CI mark): the captured guest state is a light blue/white/pink/cyan palette and does not visibly express the navy/gold palette, serif H1, or CI mark.
+
+SCREENSHOT INDEX
+01-guest-login.png — /guest/login; centered Invalid access link empty/error state.
+02-guest-stay-gated.png — /guest/stay; same gated Invalid access link state; confirms stay hub requires access link/token.
+03-guest-test-code-invalid.png — /guest/test-code; invalid/empty token evidence, same gated state.
