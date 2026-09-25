@@ -59,17 +59,17 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US1] Create layout calculation test for minimum message height in apps/guestflow/__tests__/layout/message-height.test.ts (mock viewport 1280×800, verify message area ≥240px and ≥35% shell height)
-- [ ] T012 [P] [US1] Create flexbox scroll container test in apps/guestflow/__tests__/layout/scroll-containers.test.ts (verify flex-1 overflow-y-auto on messages, min-h-0 on parents)
+- [X] T011 [P] [US1] Create layout calculation test for minimum message height in apps/guestflow/__tests__/layout/message-height.test.ts (mock viewport 1280×800, verify message area ≥240px and ≥35% shell height)
+- [X] T012 [P] [US1] Create flexbox scroll container test in apps/guestflow/__tests__/layout/scroll-containers.test.ts (verify flex-1 overflow-y-auto on messages, min-h-0 on parents)
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Refine ThreadLayoutShell flexbox layout: ensure parent has min-h-0, messages area has flex-1 overflow-y-auto, header/composer have shrink-0 in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T014 [US1] Add minimum height constraint to messages area: calculate max(240px, 35% of shell height) dynamically based on chromeOffset and keyboardInsetPx in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T015 [US1] Create useShellDimensions hook to calculate shellHeight, minMessageHeight, and maxComposerHeight in apps/guestflow/src/components/inbox/useShellDimensions.ts
-- [ ] T016 [US1] Wire useShellDimensions hook into ThreadLayoutShell to provide minMessageHeight as inline style or CSS variable in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T017 [US1] Update .inbox-shell CSS if needed to ensure position: fixed with correct top/bottom bounds in apps/guestflow/src/app/globals.css
-- [ ] T018 [US1] Verify message transcript scroll behavior: only messages scroll, not entire thread pane in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T013 [US1] Refine ThreadLayoutShell flexbox layout: ensure parent has min-h-0, messages area has flex-1 overflow-y-auto, header/composer have shrink-0 in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T014 [US1] Add minimum height constraint to messages area: calculate max(240px, 35% of shell height) dynamically based on chromeOffset and keyboardInsetPx in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T015 [US1] Create useShellDimensions hook to calculate shellHeight, minMessageHeight, and maxComposerHeight in apps/guestflow/src/components/inbox/useShellDimensions.ts
+- [X] T016 [US1] Wire useShellDimensions hook into ThreadLayoutShell to provide minMessageHeight as inline style or CSS variable in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T017 [US1] Update .inbox-shell CSS if needed to ensure position: fixed with correct top/bottom bounds in apps/guestflow/src/app/globals.css
+- [X] T018 [US1] Verify message transcript scroll behavior: only messages scroll, not entire thread pane in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently (desktop message height meets criteria)
 

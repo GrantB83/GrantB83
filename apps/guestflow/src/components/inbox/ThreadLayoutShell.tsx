@@ -14,6 +14,8 @@ interface ThreadLayoutShellProps {
   extraHeader?: ReactNode
   messages: ReactNode
   composer: ReactNode
+  /** Minimum height for message transcript area (US1: ≥240px or ≥35% shell) */
+  minMessageHeight?: number
 }
 
 export function ThreadLayoutShell({
@@ -27,6 +29,7 @@ export function ThreadLayoutShell({
   extraHeader,
   messages,
   composer,
+  minMessageHeight,
 }: ThreadLayoutShellProps) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -63,7 +66,10 @@ export function ThreadLayoutShell({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0">
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0"
+        style={minMessageHeight ? { minHeight: `${minMessageHeight}px` } : undefined}
+      >
         {messages}
       </div>
 
