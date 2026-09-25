@@ -28,6 +28,7 @@ function createDb() {
       late_check_in BOOLEAN DEFAULT 0,
       guest_phone TEXT,
       status TEXT,
+      property_name TEXT,
       nightsbridge_booking_id TEXT,
       last_import_at DATETIME,
       import_batch_id TEXT,
@@ -35,6 +36,14 @@ function createDb() {
       last_seen_import_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE property_access_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id INTEGER NOT NULL DEFAULT 1,
+      property TEXT NOT NULL,
+      code_type TEXT NOT NULL,
+      suite TEXT NOT NULL DEFAULT '',
+      code_value TEXT NOT NULL
     );
     CREATE TABLE inbound_threads (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
