@@ -74,9 +74,17 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type')
 
     if (contentType?.includes('multipart/form-data')) {
-      // File upload via multipart
-      const formData = await request.formData()
-      const file = formData.get('file') as File | null
+      // File upload via multipart. Empty/malformed bodies throw in Next formData().
+      let file: File | null = null
+      try {
+        const formData = await request.formData()
+        file = formData.get('file') as File | null
+      } catch {
+        return NextResponse.json(
+          { error: 'No file provided', message: 'Upload file as multipart/form-data with field name "file"' },
+          { status: 400 }
+        )
+      }
 
       if (!file) {
         return NextResponse.json(

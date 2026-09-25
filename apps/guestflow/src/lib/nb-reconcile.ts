@@ -65,6 +65,12 @@ export function applyFieldWrite(input: {
   }
 
   if (field === 'status') {
+    const incomingCancelled = String(input.incoming.value || '').toLowerCase() === 'cancelled'
+    const currentCancelled = String(input.current.value || '').toLowerCase() === 'cancelled'
+    // Cancellation always wins over an older NEW / active status (event-time exception).
+    if (incomingCancelled && !currentCancelled) {
+      return { action: 'write', reason: 'cancellation_wins' }
+    }
     if (newer(input.incoming.at, input.current.at) || !input.current.at) return { action: 'write', reason: 'newest_wins' }
     return { action: 'keep', reason: 'older_event' }
   }

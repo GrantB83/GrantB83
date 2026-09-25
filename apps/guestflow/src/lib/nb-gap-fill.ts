@@ -30,8 +30,13 @@ function unique(values: string[]): string[] {
 
 export function verbatimPresent(value: string, source: string): boolean {
   if (!value || !source) return false
-  const digits = value.replace(/\D/g, '')
-  if (digits.length >= 9 && source.replace(/\D/g, '').includes(digits)) return true
+  const valueDigits = value.replace(/\D/g, '')
+  const sourceDigits = source.replace(/\D/g, '')
+  // ZA local 0xx vs +27xx: compare the last 9 national digits.
+  if (valueDigits.length >= 9) {
+    const national = valueDigits.slice(-9)
+    if (sourceDigits.includes(national) || sourceDigits.includes(valueDigits)) return true
+  }
   return source.toLowerCase().includes(value.toLowerCase())
 }
 

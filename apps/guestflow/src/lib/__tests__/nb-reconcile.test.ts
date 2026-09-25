@@ -32,6 +32,16 @@ describe('NB reconciliation conflict matrix', () => {
     expect(frozen.action).toBe('alt')
   })
 
+  it('lets an older cancellation overwrite an active NEW status', () => {
+    const cancel = applyFieldWrite({
+      field: 'status',
+      current: { value: 'confirmed', source: 'email', at: '2026-09-25T10:00:00.000Z' },
+      incoming: { value: 'cancelled', source: 'email', at: '2026-09-25T08:00:00.000Z' },
+    })
+    expect(cancel.action).toBe('write')
+    expect(cancel.reason).toBe('cancellation_wins')
+  })
+
   it('trips the mass-cancel guard above 50%', () => {
     expect(shouldTripMassCancelGuard(10, 6)).toBe(true)
     expect(shouldTripMassCancelGuard(10, 5)).toBe(false)
