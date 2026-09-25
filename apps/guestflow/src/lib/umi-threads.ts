@@ -14,6 +14,8 @@ import {
   TEMP_NUDGE_HOURS,
 } from '@/lib/umi-sort'
 import { isActiveGuestBooking, isOwnerBlock } from '@/lib/booking-filters'
+import { ensureDeliverySchema } from '@/lib/delivery-schema'
+import { isStuckPending } from '@/lib/delivery-status'
 import {
   computeCareWindow,
   loadLastWabaInboundAt,
@@ -736,12 +738,37 @@ export async function ensureArrivingBookingThreads(
   return
 }
 
+async function deliveryAttentionThreadIds(db: DbClient): Promise<Set<number>> {
+  const flagged = new Set<number>()
+  try {
+    await ensureDeliverySchema(db)
+    const rows = ((await db
+      .prepare(
+        `SELECT thread_id, delivery_status, queued_at
+         FROM inbound_messages
+         WHERE direction = 'outbound'
+           AND (COALESCE(delivery_status, 'pending') = 'failed'
+             OR COALESCE(delivery_status, 'pending') = 'pending')`
+      )
+      .all()) || []) as Array<{ thread_id: number; delivery_status?: string; queued_at?: string }>
+    for (const row of rows) {
+      if (row.delivery_status === 'failed' || isStuckPending(row.delivery_status || 'pending', row.queued_at)) {
+        flagged.add(asNumber(row.thread_id))
+      }
+    }
+  } catch {
+    // delivery columns may be absent in narrow fixtures
+  }
+  return flagged
+}
+
 export async function listInboxThreads(
   db: DbClient,
   tenantId: number,
   options: { filter?: 'all' | 'needs-attention'; q?: string } = {}
 ): Promise<InboxThread[]> {
   const extra = await extraAttentionByBooking(db, tenantId)
+  const deliveryAttention = await deliveryAttentionThreadIds(db)
   const rows = ((await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
@@ -792,7 +819,7 @@ export async function listInboxThreads(
       preview: preview.preview,
       pendingReply,
       hasOpenDraft: preview.hasOpenDraft || hasExtra,
-      needsAttention: unansweredInbound,
+      needsAttention: unansweredInbound || deliveryAttention.has(asNumber(row.id)),
       sortBucket: 2,
       hygieneStatus: row.hygiene_status,
       fromNumber: row.from_number,
@@ -820,6 +847,7 @@ export async function listInboxThreads(
 export async function getThreadDetail(db: DbClient, tenantId: number, threadId: number) {
   await ensureUmiSchema(db)
   await ensureContactSchema(db)
+  await ensureDeliverySchema(db)
   const thread = (await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
@@ -836,7 +864,9 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
   const messages = ((await db
     .prepare(
       `SELECT id, direction, channel, source_tag, sender_address, message_text,
-              message_timestamp, is_spam, draft_reply, draft_source, status, from_number
+              message_timestamp, is_spam, draft_reply, draft_source, status, from_number,
+              delivery_status, delivery_read, delivery_error_plain, queued_at,
+              sent_to_test_sink, resend_of, resent_by
        FROM inbound_messages
        WHERE thread_id = ?
        ORDER BY message_timestamp ASC, id ASC`
@@ -914,7 +944,10 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
     careWindow,
     openDraft,
     linkCandidates,
-    messages: messages.map((message) => ({
+    messages: messages.map((message) => {
+      const deliveryStatus = message.delivery_status || (message.direction === 'outbound' ? 'pending' : null)
+      const stuckPending = isStuckPending(deliveryStatus, message.queued_at)
+      return {
       id: asNumber(message.id),
       direction: message.direction,
       channel: message.channel || mapSourceToChannel(thread.source),
@@ -925,7 +958,19 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       isSpam: Boolean(message.is_spam),
       draftReply: message.draft_reply || null,
       draftSource: message.draft_source || null,
-    })),
+      deliveryStatus,
+      deliveryRead: Boolean(message.delivery_read),
+      deliveryErrorPlain: message.delivery_error_plain || null,
+      queuedAt: message.queued_at || null,
+      sentToTestSink: Boolean(message.sent_to_test_sink),
+      resendOf: message.resend_of ? asNumber(message.resend_of) : null,
+      resentBy: message.resent_by || null,
+      stuckPending,
+      canResend:
+        message.direction === 'outbound' &&
+        (deliveryStatus === 'failed' || stuckPending),
+      }
+    }),
   }
 }
 

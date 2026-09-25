@@ -25,6 +25,7 @@
     "db:migrate:umi": "node scripts/migrate-umi-v21.js",
     "db:migrate:staff-users": "node scripts/migrate-staff-users.js",
     "db:migrate:sprint2": "node scripts/migrate-sprint2-alerts-nb.js",
+    "db:migrate:delivery-status": "node scripts/migrate-sprint2-delivery-status.js",
     "db:migrate:inbound-status": "node scripts/migrate-add-inbound-message-status.js",
     "db:migrate:phase17": "node scripts/migrate-phase17-incremental-bookings.js",
     "seed:browns": "node scripts/seed-browns-data.js",

@@ -60,6 +60,12 @@ export async function sendSms(input: { to: string; body: string }): Promise<Send
     }
   }
 
+  const { getTwilioStatusCallbackUrl } = await import('./delivery-status')
+  const statusCallback = getTwilioStatusCallbackUrl()
+  if (statusCallback) {
+    formBody.append('StatusCallback', statusCallback)
+  }
+
   const authHeader = `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`
   const response = await fetch(apiUrl, {
     method: 'POST',

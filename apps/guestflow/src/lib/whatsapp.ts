@@ -51,6 +51,7 @@ interface SendResult {
   timestamp: string
   sandboxMode?: boolean // Indicates if this was a dry-run
   provider?: WhatsAppProvider // Which provider was used
+  redirected?: boolean
 }
 
 /**
@@ -208,6 +209,12 @@ async function sendViaTwilio(
     formBody.append('MessagingServiceSid', config.messagingServiceSid)
   } else {
     formBody.append('From', fromNumber)
+  }
+
+  const { getTwilioStatusCallbackUrl } = await import('./delivery-status')
+  const statusCallback = getTwilioStatusCallbackUrl()
+  if (statusCallback) {
+    formBody.append('StatusCallback', statusCallback)
   }
 
   // Call Twilio API with Basic auth
@@ -378,6 +385,8 @@ export async function sendWhatsAppMessage(
       messageText += `\n\n🔗 View Your Booking Portal:\n${params.portalUrl}`
     }
 
+    const redirected = Boolean(resolution.redirected)
+
     // SANDBOX MODE: Dry-run without calling live API
     if (provider === 'sandbox') {
       const sandboxMessageId = `sandbox_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -394,7 +403,8 @@ export async function sendWhatsAppMessage(
         messageId: sandboxMessageId,
         timestamp,
         sandboxMode: true,
-        provider: 'sandbox'
+        provider: 'sandbox',
+        redirected
       }
     }
 
@@ -407,11 +417,13 @@ export async function sendWhatsAppMessage(
           error: 'Twilio not configured (missing TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_WHATSAPP_FROM)',
           timestamp,
           sandboxMode: false,
-          provider: 'twilio'
+          provider: 'twilio',
+          redirected
         }
       }
       
-      return await sendViaTwilio(params, config, timestamp)
+      const twilioResult = await sendViaTwilio(params, config, timestamp)
+      return { ...twilioResult, redirected }
     }
 
     // META LIVE MODE
@@ -422,11 +434,13 @@ export async function sendWhatsAppMessage(
         error: 'Meta WhatsApp not configured (missing WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, or WHATSAPP_BUSINESS_ACCOUNT_ID)',
         timestamp,
         sandboxMode: false,
-        provider: 'meta'
+        provider: 'meta',
+        redirected
       }
     }
 
-    return await sendViaMeta(params, metaConfig, timestamp)
+    const metaResult = await sendViaMeta(params, metaConfig, timestamp)
+    return { ...metaResult, redirected }
 
   } catch (error) {
     console.error('WhatsApp send error:', error)

@@ -19,6 +19,7 @@ export interface SendEmailResult {
   messageId?: string
   timestamp: string
   error?: string
+  redirected?: boolean
 }
 
 export interface ReceivedEmailContent {
@@ -143,12 +144,14 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       success: true,
       timestamp,
       messageId: payload?.id || null,
+      redirected: Boolean(resolution?.redirected),
     }
   } catch (error) {
     return {
       success: false,
       timestamp,
       error: error instanceof Error ? error.message : 'Email send failed',
+      redirected: Boolean(resolution?.redirected),
     }
   }
 }

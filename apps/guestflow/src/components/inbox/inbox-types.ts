@@ -63,6 +63,14 @@ export interface ThreadDetail {
     body: string
     timestamp: string
     isSpam: boolean
+    deliveryStatus?: 'pending' | 'delivered' | 'failed' | string | null
+    deliveryRead?: boolean
+    deliveryErrorPlain?: string | null
+    sentToTestSink?: boolean
+    stuckPending?: boolean
+    canResend?: boolean
+    resendOf?: number | null
+    resentBy?: string | null
   }>
   careWindow?: {
     state: 'open' | 'closing_soon' | 'closed'

@@ -14,7 +14,8 @@ import {
 import { CHANNEL_BADGES, type UmiChannel } from '@/lib/umi-channels'
 import { InboxConfirmDialog } from '@/components/inbox/InboxConfirmDialog'
 import { InboxLayoutShell } from '@/components/inbox/InboxLayoutShell'
-import { ThreadBubbleStatusSlot, ThreadLayoutShell } from '@/components/inbox/ThreadLayoutShell'
+import { OutboundDeliveryBubble } from '@/components/inbox/OutboundDeliveryBubble'
+import { ThreadLayoutShell } from '@/components/inbox/ThreadLayoutShell'
 import { FIXTURE_DETAILS, FIXTURE_THREADS } from '@/components/inbox/inbox-fixture'
 import type { InboxThread, ThreadDetail } from '@/components/inbox/inbox-types'
 import { useInboxBreakpoint } from '@/components/inbox/useInboxBreakpoint'
@@ -79,6 +80,9 @@ function InboxHomePageInner() {
   const [templateSid, setTemplateSid] = useState('')
   const [templateRendered, setTemplateRendered] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [resendConfirm, setResendConfirm] = useState<{ messageId: number; stuck: boolean } | null>(
+    null
+  )
   const [listCollapsed, setListCollapsed] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
@@ -323,6 +327,60 @@ function InboxHomePageInner() {
         return
       }
       setConfirmOpen(false)
+      await loadInbox()
+      await loadThread(selectedId)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const requestResend = (messageId: number, stuck: boolean) => {
+    setResendConfirm({ messageId, stuck })
+  }
+
+  const runResend = async () => {
+    if (!selectedId || !resendConfirm) return
+    const { messageId, stuck } = resendConfirm
+    setBusy(true)
+    setError(null)
+    try {
+      if (useFixture) {
+        setResendConfirm(null)
+        return
+      }
+      const tokenRes = await fetch('/api/inbound/confirm-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId: selectedId, purpose: 'resend', messageId }),
+      })
+      const tokenData = await tokenRes.json()
+      if (!tokenData.success || !tokenData.confirmToken) {
+        setError(tokenData.error || 'Could not issue confirmToken for resend.')
+        return
+      }
+      const sendRes = await fetch('/api/inbound/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          confirmToken: tokenData.confirmToken,
+          acknowledgeDuplicate: stuck,
+        }),
+      })
+      const sendData = await sendRes.json()
+      if (sendData.windowClosed) {
+        setError(
+          sendData.template?.name
+            ? `WhatsApp 24h window is closed. Offer approved template: ${sendData.template.name}`
+            : 'WhatsApp 24h window is closed. No WhatsApp-approved template is available.'
+        )
+        return
+      }
+      if (!sendData.success) {
+        setError(sendData.details || sendData.error || 'Resend failed')
+        return
+      }
+      setResendConfirm(null)
       await loadInbox()
       await loadThread(selectedId)
     } finally {
@@ -643,7 +701,7 @@ function InboxHomePageInner() {
                   Filtered
                 </span>
               )}
-              <ThreadBubbleStatusSlot />
+              <OutboundDeliveryBubble message={message} busy={busy} onResend={requestResend} />
             </div>
             {message.channel === 'email' && (
               <p className="text-base opacity-80 mb-1 inbox-wrap">
@@ -797,6 +855,44 @@ function InboxHomePageInner() {
         onCancel={() => setConfirmOpen(false)}
         onConfirm={runApproveAndSend}
       />
+      {resendConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-3 bg-slate-900/50">
+          <div
+            data-inbox-resend-confirm
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md bg-white rounded-xl shadow-xl p-4 space-y-4"
+          >
+            <h3 className="text-lg font-semibold text-slate-900 inbox-wrap">Resend this message?</h3>
+            <p className="text-base text-slate-700 inbox-wrap">
+              Same content, fresh confirmToken. Approve&amp;Send rules still apply. No auto-send.
+            </p>
+            {resendConfirm.stuck ? (
+              <p className="text-base text-amber-800 inbox-wrap">
+                This message is still pending — a duplicate delivery may reach the guest.
+              </p>
+            ) : null}
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => setResendConfirm(null)}
+                disabled={busy}
+                className="inbox-tap flex-1 border rounded-lg text-base disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runResend}
+                disabled={busy}
+                className="inbox-tap flex-1 bg-blue-600 text-white rounded-lg text-base disabled:opacity-50"
+              >
+                Confirm resend
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {keyboardSim && keyboardInsetPx > 0 && (
         <div
           data-inbox-keyboard-sim
