@@ -930,16 +930,24 @@ export async function listInboxThreads(
   const deliveryAttention = await deliveryAttentionThreadIds(db)
   const extraFor = (bookingId: number | null) =>
     bookingId ? extra.get(asNumber(bookingId)) : undefined
-  const rows = ((await db
+  const rawResult = await db
     .prepare(
-      `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
-              b.suite_or_unit, b.nightsbridge_booking_id
+      `SELECT 
+         t.id, t.tenant_id, t.source, t.from_number, t.guest_name, t.status,
+         t.booking_id, t.thread_kind, t.guest_contact_id, t.last_channel,
+         t.last_inbound_channel, t.last_outbound_at, t.last_inbound_at,
+         t.pending_reply, t.expires_at, t.nudged_at, t.hygiene_status,
+         t.last_message_at, t.metadata,
+         b.guest_name as booking_guest_name, b.check_in, b.check_out,
+         b.suite_or_unit, b.nightsbridge_booking_id
        FROM inbound_threads t
        LEFT JOIN bookings b ON b.id = t.booking_id
        WHERE t.tenant_id = ?
          AND COALESCE(t.status, '') <> 'linked'`
     )
-    .all(tenantId)) || []) as Array<
+    .all(tenantId)
+  
+  const rows = (rawResult || []) as Array<
     UmiThreadRow & {
       booking_guest_name?: string
       check_in?: string
@@ -948,6 +956,16 @@ export async function listInboxThreads(
       nightsbridge_booking_id?: string
     }
   >
+
+  // Debug: Log SQL query result count and IDs
+  if (rows.length > 0) {
+    const rowIds = rows.map((r) => asNumber(r.id))
+    const maxRowId = Math.max(...rowIds)
+    console.log(`[listInboxThreads] SQL query returned ${rows.length} rows, max ID: ${maxRowId}`)
+    if (!rowIds.includes(48) || !rowIds.includes(49) || !rowIds.includes(50)) {
+      console.log(`[listInboxThreads] Missing IDs in SQL result: 48=${rowIds.includes(48)}, 49=${rowIds.includes(49)}, 50=${rowIds.includes(50)}`)
+    }
+  }
 
   let lastWabaByThread = new Map<number, string>()
   try {
