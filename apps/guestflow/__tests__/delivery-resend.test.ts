@@ -44,6 +44,11 @@ vi.mock('@/lib/wa-window', () => ({
 }))
 
 vi.mock('@/lib/staff-identity', () => ({
+  getStaffIdentityFromRequest: async () => ({
+    actor: 'Grant',
+    email: 'grant@thebrowns.co.za',
+    source: 'staff-session',
+  }),
   getStaffIdentity: () => ({ actor: 'Grant', source: 'legacy-staff' }),
 }))
 
@@ -69,6 +74,10 @@ function createDb() {
       whatsapp_message_id TEXT,
       send_error TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE inbound_threads (
+      id INTEGER PRIMARY KEY,
+      guest_name TEXT
     );
     CREATE TABLE send_confirm_tokens (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +110,7 @@ function createDb() {
 async function seedFailed(db: ReturnType<typeof createDb>['db'], id = 1) {
   await ensurePhase0Schema(db)
   await ensureDeliverySchema(db)
+  db.prepare(`INSERT OR IGNORE INTO inbound_threads (id, guest_name) VALUES (7, 'Test Guest')`).run()
   db.prepare(
     `INSERT INTO inbound_messages (
       id, thread_id, message_text, message_timestamp, direction, channel, from_number,

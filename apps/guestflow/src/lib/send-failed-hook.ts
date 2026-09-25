@@ -20,7 +20,8 @@ export function onSendFailed(event: SendFailedEvent): void {
 }
 
 async function runSendFailedAlert(event: SendFailedEvent): Promise<void> {
-  if (!event.db) {
+  const db = event.db
+  if (!db) {
     console.warn('[onSendFailed]', {
       threadId: event.threadId,
       messageId: event.messageId,
@@ -33,7 +34,7 @@ async function runSendFailedAlert(event: SendFailedEvent): Promise<void> {
 
   let actorEmail = event.actorEmail ?? null
   if (!actorEmail) {
-    const row = (await event.db
+    const row = (await db
       .prepare(`SELECT guest_name, last_handler_email FROM inbound_threads WHERE id = ?`)
       .get(event.threadId)) as { guest_name?: string; last_handler_email?: string } | undefined
     actorEmail = row?.last_handler_email || null
@@ -43,7 +44,7 @@ async function runSendFailedAlert(event: SendFailedEvent): Promise<void> {
   }
 
   await notifyFailedApproveSend({
-    db: event.db,
+    db,
     actorEmail,
     threadId: event.threadId,
     guestFirstName: event.guestFirstName,

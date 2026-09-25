@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     const channel = sendChannel(original.channel)
-    if (channel === 'whatsapp' || channel === 'whatsapp_web') {
+    if (channel === 'whatsapp') {
       const window = await getWindowState(db, Number(original.thread_id))
       if (!window.open) {
         const template = await findApprovedTemplateFor(db, {
