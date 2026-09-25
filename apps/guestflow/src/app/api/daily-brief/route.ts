@@ -102,6 +102,7 @@ export async function GET(req: NextRequest) {
       briefText,
       bookings,
       generatedAt: snapshot.generatedAt,
+      ownerBlocksToday: snapshot.ownerBlocksToday || 0,
       enqueueSupported: enqueueGate.enqueueSupported,
       enqueueBlocker: enqueueGate.enqueueBlocker,
       approvalQueuePath: enqueueGate.approvalQueuePath,

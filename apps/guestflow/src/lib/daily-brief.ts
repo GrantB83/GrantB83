@@ -80,7 +80,7 @@ export interface DailyBriefSnapshot {
   tomorrow: DailyBriefDaySlice
   exceptions: DailyBriefExceptions
   generatedAt: string
-  ownerBlocksToday: number
+  ownerBlocksToday?: number
 }
 
 const LATE_KEYWORDS = ['late', 'after-hours', 'after hours', 'delayed']
@@ -344,7 +344,7 @@ export function generateWhatsAppBrief(snapshot: DailyBriefSnapshot): string {
   lines.push(`In-house today: ${today.inHouse.length}`)
   lines.push(`Departures today: ${today.departures.length}`)
   lines.push(`Arrivals tomorrow: ${tomorrow.arrivals.length}`)
-  if (snapshot.ownerBlocksToday > 0) {
+  if ((snapshot.ownerBlocksToday || 0) > 0) {
     lines.push(`Owner blocks: ${snapshot.ownerBlocksToday}`)
   }
   lines.push('')
