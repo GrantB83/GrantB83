@@ -33,7 +33,7 @@ export const GRANT_APPROVED_TEMPLATES: GrantApprovedTemplateSeed[] = [
     name: 'browns_checkin_instructions',
     category: 'utility',
     language: 'en',
-    body: 'Hi {{1}}, check-in at {{2}} is from 14:00. Address: {{3}}. Once the gate has opened please drive through. Do not wait in the gate. Housekeepers are at 279 Blue Crane Drive until 17:00 and will show you to your room. After 17:00 we send self check-in details. Parking: {{4}}.',
+    body: 'Hi {{1}}, check-in at {{2}} is from 14:00. Address: {{3}}. Once the gate has opened please drive through. Do not wait in the gate. Housekeepers are at 279 Blue Crane Drive until 17:00 and will show you to your room. After 17:00 we send self check-in details. Parking: {{4}}. Thank you.',
     variableMapping: {
       '1': 'guest_name',
       '2': 'property_name',
