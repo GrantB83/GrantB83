@@ -68,6 +68,7 @@ function DailyBriefContent() {
           tomorrow: data.tomorrow,
           exceptions: data.exceptions,
           generatedAt: data.generatedAt,
+          ownerBlocksToday: data.ownerBlocksToday || 0,
         })
         setBriefText(data.briefText || '')
         setEnqueueSupported(Boolean(data.enqueueSupported))

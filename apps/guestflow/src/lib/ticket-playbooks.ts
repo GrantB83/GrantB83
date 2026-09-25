@@ -12,8 +12,8 @@
 
 import type { OutlierCategory } from './inbound-classifier'
 import type { DbClient } from './db'
-import { resolveAccessCodes } from './access-codes'
 import { ACCESS_CODE_PLACEHOLDER } from './access-codes-schema'
+import { CODES_UNRESOLVED_REASON, resolveAccessCodesForSuite } from './property-resolve'
 
 export interface TicketPlaybook {
   category: OutlierCategory
@@ -376,20 +376,23 @@ export async function generateTicketDrafts(
   askStaffFlags: string[]
 }> {
   const playbook = TICKET_PLAYBOOKS[category]
+  const extraAskStaff: string[] = []
   
   // Resolve access codes if DB connection provided
   let gateCode = ACCESS_CODE_PLACEHOLDER
-  if (context.db && context.tenantId && context.property) {
-    const propertyKey = context.property.toLowerCase().includes('cottage') 
-      ? 'cottage' 
-      : 'main-house'
-    const codes = await resolveAccessCodes(
-      context.db, 
-      context.tenantId, 
-      propertyKey, 
+  if (context.db && context.tenantId && context.suiteNumber) {
+    const resolved = await resolveAccessCodesForSuite(
+      context.db,
+      context.tenantId,
       context.suiteNumber
     )
-    gateCode = codes.gateCode
+    if (resolved.ok) {
+      gateCode = resolved.codes.gateCode
+    } else {
+      extraAskStaff.push(CODES_UNRESOLVED_REASON)
+    }
+  } else if (context.db && context.tenantId) {
+    extraAskStaff.push(CODES_UNRESOLVED_REASON)
   }
   
   // Replace template variables
@@ -427,6 +430,6 @@ export async function generateTicketDrafts(
     staffBrief,
     staffBriefReady: !hasAskStaffFlags,
     priority: playbook.priority,
-    askStaffFlags: playbook.askStaffFlags
+    askStaffFlags: [...playbook.askStaffFlags, ...extraAskStaff]
   }
 }

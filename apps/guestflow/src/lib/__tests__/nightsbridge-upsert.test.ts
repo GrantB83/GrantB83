@@ -16,7 +16,11 @@ import {
   type ParsedBooking,
 } from '../nightsbridge-upsert'
 
-describe('nightsbridge-upsert', () => {
+function asDb(db: Database.Database) {
+  return db as unknown as Parameters<typeof upsertBooking>[0]
+}
+
+describe('nightsbridge-upsert', async () => {
   let db: Database.Database
   let tenantId: number
 
@@ -46,6 +50,7 @@ describe('nightsbridge-upsert', () => {
         late_check_in BOOLEAN DEFAULT 0,
         guest_phone TEXT,
         status TEXT,
+        property_name TEXT,
         nightsbridge_booking_id TEXT,
         last_import_at DATETIME,
         import_batch_id TEXT,
@@ -62,6 +67,15 @@ describe('nightsbridge-upsert', () => {
 
       CREATE UNIQUE INDEX idx_bookings_natural_key 
       ON bookings(tenant_id, guest_name_norm, check_in, check_out, suite_or_unit_norm);
+
+      CREATE TABLE property_access_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id INTEGER NOT NULL DEFAULT 1,
+        property TEXT NOT NULL,
+        code_type TEXT NOT NULL,
+        suite TEXT NOT NULL DEFAULT '',
+        code_value TEXT NOT NULL
+      );
     `)
 
     // Insert test tenant
@@ -73,49 +87,49 @@ describe('nightsbridge-upsert', () => {
     db.close()
   })
 
-  describe('normalizeGuestName', () => {
-    it('should convert to lowercase', () => {
+  describe('normalizeGuestName', async () => {
+    it('should convert to lowercase', async () => {
       expect(normalizeGuestName('Sarah Henderson')).toBe('sarah henderson')
       expect(normalizeGuestName('JOHN DOE')).toBe('john doe')
     })
 
-    it('should trim whitespace', () => {
+    it('should trim whitespace', async () => {
       expect(normalizeGuestName('  Sarah Henderson  ')).toBe('sarah henderson')
     })
 
-    it('should collapse multiple spaces', () => {
+    it('should collapse multiple spaces', async () => {
       expect(normalizeGuestName('Sarah  Henderson')).toBe('sarah henderson')
       expect(normalizeGuestName('Sarah   Henderson')).toBe('sarah henderson')
     })
 
-    it('should handle empty string', () => {
+    it('should handle empty string', async () => {
       expect(normalizeGuestName('')).toBe('')
     })
   })
 
-  describe('normalizeSuite', () => {
-    it('should convert to lowercase', () => {
+  describe('normalizeSuite', async () => {
+    it('should convert to lowercase', async () => {
       expect(normalizeSuite('Luxury Suite 1')).toBe('luxury suite 1')
       expect(normalizeSuite('GARDEN SUITE')).toBe('garden suite')
     })
 
-    it('should trim whitespace', () => {
+    it('should trim whitespace', async () => {
       expect(normalizeSuite('  Luxury Suite 1  ')).toBe('luxury suite 1')
     })
 
-    it('should collapse multiple spaces', () => {
+    it('should collapse multiple spaces', async () => {
       expect(normalizeSuite('Luxury  Suite  1')).toBe('luxury suite 1')
     })
 
-    it('should handle empty string', () => {
+    it('should handle empty string', async () => {
       expect(normalizeSuite('')).toBe('')
     })
   })
 
-  describe('upsertBooking', () => {
+  describe('upsertBooking', async () => {
     const batchId = 'test-batch-123'
 
-    it('should insert new booking with nbid', () => {
+    it('should insert new booking with nbid', async () => {
       const booking: ParsedBooking = {
         guestName: 'Sarah Henderson',
         suiteOrUnit: 'Luxury Suite 1',
@@ -130,7 +144,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const result = upsertBooking(db, booking, tenantId, batchId)
+      const result = await upsertBooking(asDb(db), booking, tenantId, batchId)
 
       expect(result.action).toBe('inserted')
       expect(result.id).toBeGreaterThan(0)
@@ -145,7 +159,7 @@ describe('nightsbridge-upsert', () => {
       expect(inserted.source).toBe('nb')
     })
 
-    it('should update existing booking with same nbid', () => {
+    it('should update existing booking with same nbid', async () => {
       const booking: ParsedBooking = {
         guestName: 'Sarah Henderson',
         suiteOrUnit: 'Luxury Suite 1',
@@ -161,7 +175,7 @@ describe('nightsbridge-upsert', () => {
       }
 
       // First insert
-      const first = upsertBooking(db, booking, tenantId, batchId)
+      const first = await upsertBooking(asDb(db), booking, tenantId, batchId)
       expect(first.action).toBe('inserted')
 
       // Update with same nbid but different phone
@@ -171,7 +185,7 @@ describe('nightsbridge-upsert', () => {
         notes: 'Late arrival ~19:00',
       }
 
-      const second = upsertBooking(db, updated, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), updated, tenantId, 'batch-2')
       expect(second.action).toBe('updated')
       expect(second.id).toBe(first.id) // Same row
 
@@ -182,7 +196,7 @@ describe('nightsbridge-upsert', () => {
       expect(record.nightsbridge_booking_id).toBe('NB12345')
     })
 
-    it('should update existing booking with natural key (no nbid)', () => {
+    it('should update existing booking with natural key (no nbid)', async () => {
       const booking: ParsedBooking = {
         guestName: 'Emma Thompson',
         suiteOrUnit: 'Garden Suite',
@@ -197,7 +211,7 @@ describe('nightsbridge-upsert', () => {
       }
 
       // First insert (no nbid)
-      const first = upsertBooking(db, booking, tenantId, batchId)
+      const first = await upsertBooking(asDb(db), booking, tenantId, batchId)
       expect(first.action).toBe('inserted')
 
       // Update with same natural key but different status
@@ -207,7 +221,7 @@ describe('nightsbridge-upsert', () => {
         adults: 2,
       }
 
-      const second = upsertBooking(db, updated, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), updated, tenantId, 'batch-2')
       expect(second.action).toBe('updated')
       expect(second.id).toBe(first.id) // Same row
 
@@ -217,7 +231,7 @@ describe('nightsbridge-upsert', () => {
       expect(record.adults).toBe(2)
     })
 
-    it('should return unchanged when no mutable fields change', () => {
+    it('should return unchanged when no mutable fields change', async () => {
       const booking: ParsedBooking = {
         guestName: 'James Wilson',
         suiteOrUnit: 'Family Suite',
@@ -233,16 +247,16 @@ describe('nightsbridge-upsert', () => {
       }
 
       // First insert
-      const first = upsertBooking(db, booking, tenantId, batchId)
+      const first = await upsertBooking(asDb(db), booking, tenantId, batchId)
       expect(first.action).toBe('inserted')
 
       // Reimport with exact same data
-      const second = upsertBooking(db, booking, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), booking, tenantId, 'batch-2')
       expect(second.action).toBe('unchanged')
       expect(second.id).toBe(first.id)
     })
 
-    it('should preserve immutable fields on update', () => {
+    it('should preserve immutable fields on update', async () => {
       const booking: ParsedBooking = {
         guestName: 'Test Guest',
         suiteOrUnit: 'Test Suite',
@@ -253,7 +267,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const first = upsertBooking(db, booking, tenantId, batchId)
+      const first = await upsertBooking(asDb(db), booking, tenantId, batchId)
       const originalRecord = db.prepare('SELECT * FROM bookings WHERE id = ?').get(first.id) as any
 
       // Try to "update" with different guest_name, dates, etc (should not change these)
@@ -262,7 +276,7 @@ describe('nightsbridge-upsert', () => {
         guestPhone: '+27999888777', // This should update
       }
 
-      const second = upsertBooking(db, updated, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), updated, tenantId, 'batch-2')
       const updatedRecord = db.prepare('SELECT * FROM bookings WHERE id = ?').get(second.id) as any
 
       // Immutable fields preserved
@@ -278,7 +292,7 @@ describe('nightsbridge-upsert', () => {
       expect(updatedRecord.guest_phone).toBe('+27999888777')
     })
 
-    it('should handle case-insensitive name matching via normalization', () => {
+    it('should handle case-insensitive name matching via normalization', async () => {
       const booking1: ParsedBooking = {
         guestName: 'Sarah Henderson',
         suiteOrUnit: 'Luxury Suite 1',
@@ -288,7 +302,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const first = upsertBooking(db, booking1, tenantId, batchId)
+      const first = await upsertBooking(asDb(db), booking1, tenantId, batchId)
 
       // Same booking with different casing
       const booking2: ParsedBooking = {
@@ -301,14 +315,58 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const second = upsertBooking(db, booking2, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), booking2, tenantId, 'batch-2')
       expect(second.action).toBe('updated') // Matches via normalized natural key
       expect(second.id).toBe(first.id)
     })
+
+    it('sets property_name when lockbox property resolves', async () => {
+      db.prepare(
+        `INSERT INTO property_access_codes (tenant_id, property, code_type, suite, code_value)
+         VALUES (1, 'cottage', 'lockbox', 'The Falcon Suite', 'TEST_LOCK')`
+      ).run()
+      const result = await upsertBooking(
+        asDb(db),
+        {
+          guestName: 'Lockbox Guest',
+          suiteOrUnit: 'The Falcon Suite',
+          checkInDate: '2026-09-20',
+          checkOutDate: '2026-09-22',
+          status: 'arriving',
+          lateCheckIn: false,
+        },
+        tenantId,
+        batchId
+      )
+      const record = db.prepare('SELECT property_name FROM bookings WHERE id = ?').get(result.id) as {
+        property_name: string | null
+      }
+      expect(record.property_name).toMatch(/Cottage/)
+    })
+
+    it('leaves property_name NULL when lockbox property is unresolved', async () => {
+      const result = await upsertBooking(
+        asDb(db),
+        {
+          guestName: 'Unknown Suite Guest',
+          suiteOrUnit: 'No Such Suite',
+          checkInDate: '2026-09-20',
+          checkOutDate: '2026-09-22',
+          status: 'arriving',
+          lateCheckIn: false,
+        },
+        tenantId,
+        batchId
+      )
+      const record = db.prepare('SELECT property_name FROM bookings WHERE id = ?').get(result.id) as {
+        property_name: string | null
+      }
+      expect(record.property_name).toBeNull()
+    })
   })
 
-  describe('determineImportWindow', () => {
-    it('should return min/max dates from bookings', () => {
+  describe('determineImportWindow', async () => {
+    it('should return min/max dates from bookings', async () => {
       const bookings: ParsedBooking[] = [
         {
           guestName: 'Guest 1',
@@ -341,17 +399,17 @@ describe('nightsbridge-upsert', () => {
       expect(window.maxDate).toBe('2026-09-25')
     })
 
-    it('should return today for empty bookings', () => {
+    it('should return today for empty bookings', async () => {
       const window = determineImportWindow([])
       expect(window.minDate).toMatch(/^\d{4}-\d{2}-\d{2}$/) // YYYY-MM-DD format
       expect(window.maxDate).toBe(window.minDate) // Same as minDate
     })
   })
 
-  describe('softCancelDisappearedBookings', () => {
+  describe('softCancelDisappearedBookings', async () => {
     const batchId = 'test-batch-123'
 
-    it('should cancel booking within window but missing from import', () => {
+    it('should cancel booking within window but missing from import', async () => {
       // Insert existing booking
       const existing: ParsedBooking = {
         guestName: 'Emma Thompson',
@@ -363,7 +421,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const existingResult = upsertBooking(db, existing, tenantId, 'batch-0')
+      const existingResult = await upsertBooking(asDb(db), existing, tenantId, 'batch-0')
 
       // Import window covers this booking, but booking is missing from new import
       const importWindow = {
@@ -383,7 +441,7 @@ describe('nightsbridge-upsert', () => {
         },
       ]
 
-      const cancelledCount = softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
+      const cancelledCount = await softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
       expect(cancelledCount).toBe(1)
 
       // Verify Emma is now cancelled
@@ -392,7 +450,7 @@ describe('nightsbridge-upsert', () => {
       expect(record.last_seen_import_at).toBeTruthy()
     })
 
-    it('should NOT cancel booking outside import window', () => {
+    it('should NOT cancel booking outside import window', async () => {
       // Insert booking for October (outside Sept 20-25 window)
       const existing: ParsedBooking = {
         guestName: 'James Wilson',
@@ -404,7 +462,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const existingResult = upsertBooking(db, existing, tenantId, 'batch-0')
+      const existingResult = await upsertBooking(asDb(db), existing, tenantId, 'batch-0')
 
       // Import window does NOT cover James
       const importWindow = {
@@ -414,7 +472,7 @@ describe('nightsbridge-upsert', () => {
 
       const parsedBookings: ParsedBooking[] = [] // No bookings in import
 
-      const cancelledCount = softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
+      const cancelledCount = await softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
       expect(cancelledCount).toBe(0) // James should NOT be cancelled
 
       // Verify James still has original status
@@ -422,7 +480,7 @@ describe('nightsbridge-upsert', () => {
       expect(record.status).toBe('arriving') // NOT cancelled
     })
 
-    it('should reactivate cancelled booking when it reappears', () => {
+    it('should reactivate cancelled booking when it reappears', async () => {
       // Insert and cancel booking
       const booking: ParsedBooking = {
         guestName: 'Sarah Henderson',
@@ -434,7 +492,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const first = upsertBooking(db, booking, tenantId, 'batch-1')
+      const first = await upsertBooking(asDb(db), booking, tenantId, 'batch-1')
       db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('cancelled', first.id)
 
       // Booking reappears in new import with updated status
@@ -443,7 +501,7 @@ describe('nightsbridge-upsert', () => {
         status: 'inhouse',
       }
 
-      const second = upsertBooking(db, reappeared, tenantId, 'batch-2')
+      const second = await upsertBooking(asDb(db), reappeared, tenantId, 'batch-2')
       expect(second.action).toBe('updated')
 
       // Verify status is back to active (not cancelled)
@@ -451,7 +509,7 @@ describe('nightsbridge-upsert', () => {
       expect(record.status).toBe('inhouse') // Reactivated
     })
 
-    it('should match by nbid when cancelling', () => {
+    it('should match by nbid when cancelling', async () => {
       // Insert booking with nbid
       const booking: ParsedBooking = {
         guestName: 'Test Guest',
@@ -463,7 +521,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const existing = upsertBooking(db, booking, tenantId, 'batch-0')
+      const existing = await upsertBooking(asDb(db), booking, tenantId, 'batch-0')
 
       const importWindow = {
         minDate: '2026-09-20',
@@ -475,14 +533,14 @@ describe('nightsbridge-upsert', () => {
         { ...booking, status: 'inhouse' },
       ]
 
-      const cancelledCount = softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
+      const cancelledCount = await softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
       expect(cancelledCount).toBe(0)
 
       const record = db.prepare('SELECT * FROM bookings WHERE id = ?').get(existing.id) as any
       expect(record.status).toBe('arriving') // NOT cancelled (matched by nbid)
     })
 
-    it('should match by natural key when nbid is missing', () => {
+    it('should match by natural key when nbid is missing', async () => {
       // Insert booking without nbid
       const booking: ParsedBooking = {
         guestName: 'Natural Key Guest',
@@ -493,7 +551,7 @@ describe('nightsbridge-upsert', () => {
         lateCheckIn: false,
       }
 
-      const existing = upsertBooking(db, booking, tenantId, 'batch-0')
+      const existing = await upsertBooking(asDb(db), booking, tenantId, 'batch-0')
 
       const importWindow = {
         minDate: '2026-09-20',
@@ -505,7 +563,7 @@ describe('nightsbridge-upsert', () => {
         { ...booking, status: 'inhouse' },
       ]
 
-      const cancelledCount = softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
+      const cancelledCount = await softCancelDisappearedBookings(db, tenantId, importWindow, batchId, parsedBookings)
       expect(cancelledCount).toBe(0)
 
       const record = db.prepare('SELECT * FROM bookings WHERE id = ?').get(existing.id) as any

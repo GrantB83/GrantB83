@@ -259,9 +259,8 @@ export async function POST(request: NextRequest) {
       const timeoutException = await db.prepare(`
         INSERT INTO guest_tickets (
           tenant_id, thread_id, guest_name, guest_phone,
-          category, priority, status, subject, description,
-          problem_description, context_found, reason_stopped, suggested_next_step
-        ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?)
+          category, priority, status, subject, description, staff_brief
+        ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)
       `).run(
         tenantId,
         thread.id,
@@ -271,10 +270,7 @@ export async function POST(request: NextRequest) {
         'medium',
         `Classification Timeout - ${payload.from}`,
         payload.text,
-        `Original message: ${payload.text.substring(0, 100)}...`,
-        `Processing started at ${new Date(startTime).toISOString()}`,
-        `Classification timeout after ${TIMEOUT_MS}ms`,
-        `Manual review and classify required`
+        `Classification timeout after ${TIMEOUT_MS}ms. Processing started at ${new Date(startTime).toISOString()}. Manual review and classify required.`
       )
 
       return jsonSafeResponse({
@@ -480,9 +476,8 @@ export async function POST(request: NextRequest) {
         const exceptionInsert = await db.prepare(`
           INSERT INTO guest_tickets (
             tenant_id, thread_id, guest_name, guest_phone,
-            category, priority, status, subject, description,
-            problem_description, context_found, reason_stopped, suggested_next_step
-          ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?)
+            category, priority, status, subject, description, staff_brief
+          ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)
         `).run(
           tenantId,
           thread.id,
@@ -492,10 +487,7 @@ export async function POST(request: NextRequest) {
           'high',
           `Missing Rate Card - ${classification.extractedData.guestName || 'Guest'}`,
           payload.text,
-          `Guest inquiry for ${checkIn}${checkOut ? ` to ${checkOut}` : ''}, ${classification.extractedData.adults || '?'} adults`,
-          `Property: ${property}, Check-in: ${checkIn}, Adults: ${classification.extractedData.adults || 'unknown'}`,
-          `No rate card found for requested dates`,
-          `Upload rate card at /ops/rate-cards or manually quote`
+          `Guest inquiry for ${checkIn}${checkOut ? ` to ${checkOut}` : ''}, ${classification.extractedData.adults || '?'} adults. Property: ${property}. No rate card found for requested dates. Manually quote; do not invent rates.`
         )
 
         exception = {

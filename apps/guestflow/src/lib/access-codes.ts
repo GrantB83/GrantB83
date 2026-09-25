@@ -23,7 +23,7 @@ import {
  * Normalize suite name for matching
  * Removes common prefixes and normalizes whitespace
  */
-function normalizeSuiteName(suite: string): string {
+export function normalizeSuiteName(suite: string): string {
   if (!suite) return ''
   
   return suite
@@ -37,7 +37,7 @@ function normalizeSuiteName(suite: string): string {
  * Check if a suite name matches the target suite
  * Uses normalized contains matching
  */
-function suiteMatches(dbSuite: string, targetSuite: string): boolean {
+export function suiteMatches(dbSuite: string, targetSuite: string): boolean {
   if (!dbSuite || !targetSuite) return false
   
   const normalizedDb = normalizeSuiteName(dbSuite)

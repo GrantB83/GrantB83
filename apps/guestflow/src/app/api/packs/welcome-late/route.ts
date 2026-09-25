@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { format } from 'date-fns'
+import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
+import { CODES_UNRESOLVED_REASON, propertyFacingDetails, resolvePropertyForSuite } from '@/lib/property-resolve'
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
     const date = targetDate || format(new Date(), 'yyyy-MM-dd')
 
     // Generate pack contents
-    const packMd = generatePackMd(bookings, date, timestamp)
+    const packMd = await generatePackMd(bookings, date, timestamp)
     const approvalMd = generateApprovalMd(bookings, date)
     const bookingsJson = JSON.stringify(bookings, null, 2)
     const manifestJson = generateManifest(packName, timestamp, bookings, date)
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
   }
 }
 
-function generatePackMd(bookings: any[], date: string, timestamp: string): string {
+async function generatePackMd(bookings: any[], date: string, timestamp: string): Promise<string> {
   const lines: string[] = []
   
   lines.push('# Browns Welcome & Late Check-In Pipeline Pack')
@@ -81,10 +83,15 @@ function generatePackMd(bookings: any[], date: string, timestamp: string): strin
     lines.push('## Welcome Message Drafts')
     lines.push('')
     
-    arrivals.forEach((booking: any, idx: number) => {
+    for (const [idx, booking] of arrivals.entries()) {
       lines.push(`### ${idx + 1}. ${booking.guestName || '[GUEST NAME]'}`)
       lines.push('')
-      lines.push(`**Property:** ${booking.propertyName || booking.suiteOrUnit || '[PROPERTY]'}`)
+      const suite = booking.suiteOrUnit || booking.roomNumber || ''
+      const db = await getDbAsync()
+      const tenantId = await getDefaultTenantIdAsync()
+      const propertyKey = await resolvePropertyForSuite(db, tenantId, suite)
+      const facing = propertyFacingDetails(propertyKey)
+      lines.push(`**Property:** ${facing.displayName}`)
       lines.push(`**Check-in:** ${booking.checkInDate}`)
       lines.push(`**Check-out:** ${booking.checkOutDate || '[TBD]'}`)
       lines.push(`**Guests:** ${booking.adults || '?'} adults${booking.children ? `, ${booking.children} children` : ''}`)
@@ -94,27 +101,15 @@ function generatePackMd(bookings: any[], date: string, timestamp: string): strin
         lines.push('⚠️ **Missing:** Guest phone number [DO NOT INVENT]')
         lines.push('')
       }
+      if (!propertyKey) {
+        lines.push(`⚠️ **${CODES_UNRESOLVED_REASON}** — draft without gate/lockbox/WiFi codes`)
+        lines.push('')
+      }
       
-      // Determine property type (cottage vs main-house)
-      const propertyNameLower = (booking.propertyName || '').toLowerCase()
-      const suiteLower = (booking.suiteOrUnit || '').toLowerCase()
-      const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
-      
-      const propertyDisplayName = isCottage 
-        ? "The Browns' Cottage Suites"
-        : "The Browns' Luxury Suites"
-      
-      const propertyAddress = isCottage
-        ? '278 Blue Crane Drive, Dullstroom'
-        : '279 Blue Crane Drive, Dullstroom'
-      
-      const mapsUrl = isCottage
-        ? 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8'
-        : '[MAPS URL TBD]'
-      
-      const parkingInstructions = isCottage
-        ? 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.'
-        : '[PARKING TBD]'
+      const propertyDisplayName = facing.displayName
+      const propertyAddress = facing.address || '[ASK STAFF]'
+      const mapsUrl = facing.mapsUrl || '[ASK STAFF]'
+      const parkingInstructions = facing.parkingInstructions || '[ASK STAFF]'
       
       lines.push('**Draft Message (Cottage Falcon v1):**')
       lines.push('```')
@@ -144,7 +139,7 @@ function generatePackMd(bookings: any[], date: string, timestamp: string): strin
       lines.push('Grant & Liana Brown')
       lines.push('```')
       lines.push('')
-    })
+    }
   } else {
     lines.push('## Welcome Message Drafts')
     lines.push('')

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { hashToken, getStayPhase, shouldShowAccessCodes } from '@/lib/token'
-import { resolveAccessCodes } from '@/lib/access-codes'
+import { CODES_UNRESOLVED_REASON, propertyFacingDetails, resolveAccessCodesForSuite } from '@/lib/property-resolve'
 
 /**
  * Guest portal access via magic token
@@ -100,35 +100,15 @@ export async function GET(
     // Extract property and suite from booking data
     const tenantId = await getDefaultTenantIdAsync()
     
-    // Determine property from BOTH propertyName and suiteOrUnit (cottage vs main-house)
-    // Check both fields since propertyName might be generic while suite contains "Cottage Suites - X"
-    const propertyNameLower = booking.propertyName?.toLowerCase() || ''
-    const suiteLower = booking.suiteOrUnit?.toLowerCase() || ''
-    const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
-    const property = isCottage ? 'cottage' : 'main-house'
-    
-    // Extract suite - use suiteOrUnit directly for matching
-    // The resolveAccessCodes function will handle normalization
     const suite = booking.suiteOrUnit || ''
-    
-    const accessCodes = await resolveAccessCodes(db, tenantId, property, suite || undefined)
-    
-    // Property-specific values from environment (Cottage Falcon template port)
-    const propertyDisplayName = isCottage 
-      ? (process.env.PROPERTY_NAME_COTTAGE || "The Browns' Cottage Suites")
-      : (process.env.PROPERTY_NAME_MAIN || "The Browns' Luxury Suites")
-    
-    const propertyAddress = isCottage
-      ? (process.env.PROPERTY_ADDRESS_COTTAGE || '278 Blue Crane Drive, Dullstroom')
-      : (process.env.PROPERTY_ADDRESS_MAIN || '279 Blue Crane Drive, Dullstroom')
-    
-    const mapsUrl = isCottage
-      ? (process.env.PROPERTY_MAPS_URL_COTTAGE || 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8')
-      : process.env.PROPERTY_MAPS_URL_MAIN
-    
-    const parkingInstructions = isCottage
-      ? (process.env.PROPERTY_PARKING_COTTAGE || 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.')
-      : (process.env.PROPERTY_PARKING_MAIN || 'Parking details will be provided upon arrival')
+    const resolvedCodes = await resolveAccessCodesForSuite(db, tenantId, suite)
+    const facing = propertyFacingDetails(resolvedCodes.ok ? resolvedCodes.property : null)
+    const accessCodes = resolvedCodes.ok ? resolvedCodes.codes : null
+    const codesUnresolved = !resolvedCodes.ok
+    const propertyDisplayName = facing.displayName
+    const propertyAddress = facing.address
+    const mapsUrl = facing.mapsUrl
+    const parkingInstructions = facing.parkingInstructions || 'Parking details will be provided upon arrival'
 
     // Build portal data response
     // IMPORTANT: Never invent WiFi passwords, directions, phone numbers, access codes, or other details
@@ -163,20 +143,19 @@ export async function GET(
       },
       stayPacket: {
         wifi: {
-          // WiFi credentials from DB-first resolution with env fallback
-          // Use resolved WiFi from access codes SoR
-          network: accessCodes.wifi.network,
-          password: accessCodes.wifi.password
+          network: accessCodes?.wifi.network || '',
+          password: accessCodes?.wifi.password || '',
         },
         accessCodes: {
-          // Time-gated: only show from 24h before check-in through checkout
-          // DB-first resolution with env fallback, fail-closed to [ASK STAFF]
-          available: showAccessCodes,
-          gateCode: showAccessCodes ? accessCodes.gateCode : '',
-          doorCode: showAccessCodes ? accessCodes.doorCode : '',
-          lockboxCode: showAccessCodes && accessCodes.lockboxCode ? accessCodes.lockboxCode : '',
-          message: showAccessCodes ? '' : 'Access codes will be available 24 hours before your check-in date'
+          available: showAccessCodes && !codesUnresolved,
+          gateCode: showAccessCodes && accessCodes ? accessCodes.gateCode : '',
+          doorCode: showAccessCodes && accessCodes ? accessCodes.doorCode : '',
+          lockboxCode: showAccessCodes && accessCodes?.lockboxCode ? accessCodes.lockboxCode : '',
+          message: codesUnresolved
+            ? CODES_UNRESOLVED_REASON
+            : (showAccessCodes ? '' : 'Access codes will be available 24 hours before your check-in date')
         },
+        needsAttentionReason: codesUnresolved ? CODES_UNRESOLVED_REASON : undefined,
         checkIn: {
           from: '14:00',
           to: ''

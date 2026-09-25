@@ -91,8 +91,8 @@ describe('Outlier Category Detection', () => {
 })
 
 describe('Ticket Draft Generation', () => {
-  it('should generate guest reply and staff brief for lost_key', () => {
-    const { guestReply, staffBrief, priority, askStaffFlags } = generateTicketDrafts(
+  it('should generate guest reply and staff brief for lost_key', async () => {
+    const { guestReply, staffBrief, priority, askStaffFlags } = await generateTicketDrafts(
       'lost_key',
       {
         guestName: 'John Smith',
@@ -111,8 +111,8 @@ describe('Ticket Draft Generation', () => {
     expect(askStaffFlags.length).toBeGreaterThan(0)
   })
 
-  it('should never invent contact details', () => {
-    const { guestReply, staffBrief } = generateTicketDrafts(
+  it('should never invent contact details', async () => {
+    const { guestReply, staffBrief } = await generateTicketDrafts(
       'gate_access',
       {
         guestName: 'Jane Doe',
@@ -125,8 +125,8 @@ describe('Ticket Draft Generation', () => {
     expect(staffBrief).toContain('[')
   })
 
-  it('should never invent rates for special events', () => {
-    const { guestReply } = generateTicketDrafts(
+  it('should never invent rates for special events', async () => {
+    const { guestReply } = await generateTicketDrafts(
       'special_event',
       {
         guestName: 'Bob Johnson',
@@ -154,8 +154,8 @@ describe('Ticket Draft Generation', () => {
     expect(TICKET_PLAYBOOKS.maintenance_other.escalationContact).toBe('maintenance')
   })
 
-  it('should flag staff_brief_ready correctly', () => {
-    const { staffBriefReady: readyWithAskFlags } = generateTicketDrafts(
+  it('should flag staff_brief_ready correctly', async () => {
+    const { staffBriefReady: readyWithAskFlags } = await generateTicketDrafts(
       'lost_key',
       { guestName: 'Test' }
     )
@@ -187,8 +187,8 @@ describe('Ticket Playbook Content', () => {
     }
   })
 
-  it('should use known Browns facts in templates', () => {
-    const { guestReply } = generateTicketDrafts(
+  it('should use known Browns facts in templates', async () => {
+    const { guestReply } = await generateTicketDrafts(
       'restaurant_recs',
       { guestName: 'Test Guest' }
     )

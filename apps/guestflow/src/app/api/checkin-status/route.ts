@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
 import { inferCheckinStatuses, generateLateCheckinInstructions } from '@/lib/checkin-inference'
+import { ACTIVE_GUEST_BOOKING_SQL, isActiveGuestBooking } from '@/lib/booking-filters'
+import { johannesburgTodayIso } from '@/lib/daily-brief'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,19 +21,20 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const tenantId = parseInt(searchParams.get('tenant_id') || '1')
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
+    const date = searchParams.get('date') || johannesburgTodayIso()
     const needsLateCheckinOnly = searchParams.get('needs_late_checkin') === 'true'
 
     const db = await getDbAsync()
 
-    // Get bookings for the specified date
-    const bookings = await db.prepare(`
+    // Get bookings for the specified date (active guests only, SAST date)
+    const rawBookings = await db.prepare(`
       SELECT * FROM bookings
       WHERE tenant_id = ?
-      AND check_in >= ?
-      AND check_in < datetime(?, '+1 day')
+      AND substr(check_in, 1, 10) = ?
+      AND ${ACTIVE_GUEST_BOOKING_SQL}
       ORDER BY check_in ASC
-    `).all(tenantId, date, date) as any[]
+    `).all(tenantId, date) as any[]
+    const bookings = rawBookings.filter(isActiveGuestBooking)
 
     // Get check-in events for these bookings
     const bookingIds = bookings.map(b => b.id)
@@ -70,6 +73,7 @@ export async function GET(request: NextRequest) {
       statuses: statusesWithInstructions,
       stats: {
         total: statuses.length,
+        unknown: statuses.filter(s => s.checkinStatus === 'unknown').length,
         notArrived: statuses.filter(s => s.checkinStatus === 'not_arrived').length,
         arrived: statuses.filter(s => s.checkinStatus === 'arrived').length,
         inHouse: statuses.filter(s => s.checkinStatus === 'in_house').length,

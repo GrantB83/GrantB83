@@ -10,6 +10,8 @@ import {
 } from '@/lib/daily-brief'
 import { resolveStaffOpsEnqueueGate } from '@/lib/daily-brief-enqueue'
 import { enqueueStaffOpsDraft } from '@/lib/staff-ops-drafts'
+import { ACTIVE_GUEST_BOOKING_SQL } from '@/lib/booking-filters'
+import { attachResolvedPropertyNames, countOwnerBlocksForDate } from '@/lib/property-resolve'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,17 +74,21 @@ export async function POST(req: NextRequest) {
         b.adults,
         b.children,
         b.notes,
-        b.late_check_in
+        b.late_check_in,
+        b.status
       FROM bookings b
       WHERE b.tenant_id = ?
         AND date(b.check_in) <= date(?)
         AND date(b.check_out) >= date(?)
+        AND ${ACTIVE_GUEST_BOOKING_SQL}
       ORDER BY b.check_in ASC, b.guest_name ASC
     `
       )
       .all(tenantId, tomorrowDate, targetDate)) as RawBookingRow[]
 
-    const snapshot = buildDailyBriefSnapshot(tenant.id, tenant.name, targetDate, rows)
+    const enrichedRows = await attachResolvedPropertyNames(db, tenantId, rows)
+    const snapshot = buildDailyBriefSnapshot(tenant.id, tenant.name, targetDate, enrichedRows)
+    snapshot.ownerBlocksToday = await countOwnerBlocksForDate(db, tenantId, targetDate)
     const briefText = generateWhatsAppBrief(snapshot)
 
     const hasOperations =

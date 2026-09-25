@@ -6,14 +6,13 @@ import { mapSourceToChannel, type UmiChannel } from '@/lib/umi-channels'
 import { computeDedupKey } from '@/lib/umi-dedup'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import {
-  addDaysIsoDate,
   inboxSortBucket,
-  isArrivingSoon,
   sastDateString,
   sortInboxThreads,
   TEMP_EXPIRE_DAYS,
   TEMP_NUDGE_HOURS,
 } from '@/lib/umi-sort'
+import { isActiveGuestBooking, isOwnerBlock } from '@/lib/booking-filters'
 
 export interface ResolveInboundInput {
   from: string
@@ -133,16 +132,21 @@ export async function findDuplicateMessage(
   return null
 }
 
+function rejectInactiveBookings<T extends BookingMatch>(rows: T[]): T[] {
+  return rows.filter((row) => isActiveGuestBooking(row) && !isOwnerBlock(row))
+}
+
 async function loadBookings(db: DbClient, tenantId: number): Promise<BookingMatch[]> {
-  const where = `WHERE tenant_id = ? AND COALESCE(status, '') NOT IN ('cancelled', 'canceled')`
+  const where = `WHERE tenant_id = ? AND COALESCE(status, '') NOT IN ('cancelled', 'canceled') AND UPPER(TRIM(COALESCE(guest_name, ''))) != 'BLOCK'`
   try {
-    return ((await db
+    const rows = ((await db
       .prepare(
         `SELECT id, guest_name, guest_phone, guest_email, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
          FROM bookings
          ${where}`
       )
       .all(tenantId)) || []) as BookingMatch[]
+    return rejectInactiveBookings(rows)
   } catch {
     try {
       const rows = ((await db
@@ -152,7 +156,7 @@ async function loadBookings(db: DbClient, tenantId: number): Promise<BookingMatc
            ${where}`
         )
         .all(tenantId)) || []) as BookingMatch[]
-      return rows.map((row) => ({ ...row, guest_email: null }))
+      return rejectInactiveBookings(rows.map((row) => ({ ...row, guest_email: null })))
     } catch {
       return []
     }
@@ -655,6 +659,38 @@ async function latestMessagePreview(
   }
 }
 
+async function hasUnansweredInbound(db: DbClient, threadId: number): Promise<boolean> {
+  try {
+    const inbound = (await db
+      .prepare(
+        `SELECT COUNT(*) as c FROM inbound_messages
+         WHERE thread_id = ? AND COALESCE(direction, 'inbound') = 'inbound'`
+      )
+      .get(threadId)) as { c: number } | undefined
+    if (!inbound || Number(inbound.c) === 0) return false
+
+    const lastIn = (await db
+      .prepare(
+        `SELECT message_timestamp FROM inbound_messages
+         WHERE thread_id = ? AND COALESCE(direction, 'inbound') = 'inbound'
+         ORDER BY message_timestamp DESC, id DESC LIMIT 1`
+      )
+      .get(threadId)) as { message_timestamp?: string } | undefined
+    const lastOut = (await db
+      .prepare(
+        `SELECT message_timestamp FROM inbound_messages
+         WHERE thread_id = ? AND direction = 'outbound'
+         ORDER BY message_timestamp DESC, id DESC LIMIT 1`
+      )
+      .get(threadId)) as { message_timestamp?: string } | undefined
+
+    if (!lastOut?.message_timestamp) return true
+    return String(lastIn?.message_timestamp || '') > String(lastOut.message_timestamp)
+  } catch {
+    return false
+  }
+}
+
 async function extraAttentionByBooking(
   db: DbClient,
   tenantId: number
@@ -682,54 +718,14 @@ async function extraAttentionByBooking(
 }
 
 export async function ensureArrivingBookingThreads(
-  db: DbClient,
-  tenantId: number,
-  now: Date = new Date()
+  _db: DbClient,
+  _tenantId: number,
+  _now: Date = new Date()
 ): Promise<void> {
-  await ensureUmiSchema(db)
-  const today = sastDateString(now)
-  const tomorrow = addDaysIsoDate(today, 1)
-  const bookings = ((await db
-    .prepare(
-      `SELECT id, guest_name, guest_phone, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
-       FROM bookings
-       WHERE tenant_id = ?
-         AND COALESCE(status, '') NOT IN ('cancelled', 'canceled')
-         AND substr(check_in, 1, 10) IN (?, ?)`
-    )
-    .all(tenantId, today, tomorrow)) || []) as BookingMatch[]
-
-  const extra = await extraAttentionByBooking(db, tenantId)
-  const extraIds = [...extra.keys()]
-  let extraBookings: BookingMatch[] = []
-  if (extraIds.length > 0) {
-    extraBookings = ((await db
-      .prepare(
-        `SELECT id, guest_name, guest_phone, check_in, check_out, suite_or_unit, nightsbridge_booking_id, status
-         FROM bookings WHERE tenant_id = ? AND id IN (${extraIds.map(() => '?').join(',')})`
-      )
-      .all(tenantId, ...extraIds)) || []) as BookingMatch[]
-  }
-
-  const seen = new Set<number>()
-  for (const booking of [...bookings, ...extraBookings]) {
-    const id = asNumber(booking.id)
-    if (seen.has(id)) continue
-    seen.add(id)
-    const existing = await findBookingThread(db, tenantId, id)
-    if (existing) continue
-    const from = normalizeZaE164(booking.guest_phone) || `booking:${id}`
-    await insertThread(db, {
-      tenantId,
-      source: 'nb',
-      from,
-      timestamp: new Date().toISOString(),
-      kind: 'booking',
-      bookingId: id,
-      guestName: booking.guest_name,
-      channel: 'whatsapp_cloud',
-    })
-  }
+  // Sprint 2 (N): do not auto-create empty booking threads. Threads are
+  // created only when a real inbound or outbound message exists. Owner
+  // BLOCKs stay excluded from loadBookings / listLinkCandidates.
+  return
 }
 
 export async function listInboxThreads(
@@ -737,14 +733,6 @@ export async function listInboxThreads(
   tenantId: number,
   options: { filter?: 'all' | 'needs-attention'; q?: string } = {}
 ): Promise<InboxThread[]> {
-  await ensureUmiSchema(db)
-  await applyTempHygiene(db, tenantId)
-  try {
-    await ensureArrivingBookingThreads(db, tenantId)
-  } catch {
-    // bookings table may be missing in narrow fixtures
-  }
-
   const extra = await extraAttentionByBooking(db, tenantId)
   const rows = ((await db
     .prepare(
@@ -769,7 +757,8 @@ export async function listInboxThreads(
   for (const row of rows) {
     const preview = await latestMessagePreview(db, asNumber(row.id))
     const hasExtra = row.booking_id ? extra.has(asNumber(row.booking_id)) : false
-    const pendingReply = Boolean(row.pending_reply) || preview.hasOpenDraft
+    const unansweredInbound = await hasUnansweredInbound(db, asNumber(row.id))
+    const pendingReply = unansweredInbound
     const thread: InboxThread = {
       id: asNumber(row.id),
       threadKind: row.thread_kind === 'booking' ? 'booking' : 'temp',
@@ -785,13 +774,7 @@ export async function listInboxThreads(
       preview: preview.preview,
       pendingReply,
       hasOpenDraft: preview.hasOpenDraft || hasExtra,
-      needsAttention:
-        pendingReply ||
-        preview.hasOpenDraft ||
-        hasExtra ||
-        row.thread_kind === 'temp' ||
-        row.hygiene_status === 'nudged' ||
-        row.hygiene_status === 'expired',
+      needsAttention: unansweredInbound,
       sortBucket: 2,
       hygieneStatus: row.hygiene_status,
       fromNumber: row.from_number,
@@ -816,7 +799,6 @@ export async function listInboxThreads(
 }
 
 export async function getThreadDetail(db: DbClient, tenantId: number, threadId: number) {
-  await ensureUmiSchema(db)
   const thread = (await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
