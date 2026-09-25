@@ -60,7 +60,7 @@ function InboxHomePageInner() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [detail, setDetail] = useState<ThreadDetail | null>(null)
   const [filter, setFilter] = useState<'all' | 'needs-attention'>('all')
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(searchParams.get('q') || '')
   const [loading, setLoading] = useState(true)
   const [draft, setDraft] = useState('')
   const [channel, setChannel] = useState('whatsapp')
@@ -95,6 +95,15 @@ function InboxHomePageInner() {
     const url = query ? `${pathname}?${query}` : pathname
     if (mode === 'push') router.push(url)
     else router.replace(url, { scroll: false })
+  }
+
+  const syncSearchParam = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value.trim()) params.set('q', value.trim())
+    else params.delete('q')
+    const query = params.toString()
+    const url = query ? `${pathname}?${query}` : pathname
+    router.replace(url, { scroll: false })
   }
 
   const rememberListScroll = () => {
@@ -184,6 +193,20 @@ function InboxHomePageInner() {
     loadInbox()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, useFixture])
+
+  useEffect(() => {
+    const urlQ = searchParams.get('q') || ''
+    if (urlQ !== q) {
+      loadInbox()
+      return
+    }
+    const timer = setTimeout(() => {
+      syncSearchParam(q)
+      loadInbox()
+    }, 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q])
 
   useEffect(() => {
     if (!ready) return

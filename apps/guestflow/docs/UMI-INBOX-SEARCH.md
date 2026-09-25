@@ -133,10 +133,18 @@ npm test -- umi-inbox-search
 
 1. **Staff Login**: Navigate to `/staff-login`
 2. **Search Tests**:
-   - Enter "DIRECT2" → Expect thread 49 visible
-   - Enter "grant830318" → Expect thread(s) with that sender
-   - Enter "INBOUND TEST" → Expect threads with both tokens
-3. **Thread Retrieval**: Direct URL `/thread/49` → Expect thread detail (not 404)
+   - URL: `/?q=DIRECT2` → Expect thread 49 visible in filtered list
+   - URL: `/?q=grant830318` → Expect thread(s) with that sender
+   - URL: `/?q=INBOUND%20TEST` → Expect threads with both tokens
+3. **Thread Retrieval**: 
+   - Direct URL: `/?thread=49` → Opens thread detail panel
+   - With search: `/?thread=49&q=DIRECT2` → Opens thread with search filter active
+   - **Note**: Thread deep-link format is `/?thread=<id>` (query param), NOT `/thread/<id>` (route)
+
+**Fixture Mode** (`?fixture=1`):
+- Fixture search is simplified: searches `bookerName`, `suite`, and `nightsbridgeBookingId` only
+- Does NOT search subject/preview/body fields (fixtures lack full message data)
+- Use live mode for full search testing
 
 ## Performance
 

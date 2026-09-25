@@ -284,17 +284,23 @@ npm test -- umi-inbox-search
 1. Navigate to staff login: `https://guestflow-<pr-id>.vercel.app/staff-login`
 2. Log in with staff credentials
 3. Navigate to inbox: `https://guestflow-<pr-id>.vercel.app/`
-4. **Test Search**:
-   - Enter "DIRECT2" in search box → Expect thread 49 visible
-   - Enter "grant830318" → Expect thread 49 visible (sender match)
-   - Enter "INBOUND TEST" → Expect thread 49 visible (multi-token)
-   - Enter "INBOUND FOOBAR" → Expect thread 49 NOT visible (missing token)
-5. **Test Thread Retrieval**:
-   - Direct URL: `https://guestflow-<pr-id>.vercel.app/thread/49`
-   - Expect: Thread detail page loads (not 404)
+4. **Test Search via URL**:
+   - URL: `https://guestflow-<pr-id>.vercel.app/?q=DIRECT2` → Expect thread 49 visible in filtered list
+   - URL: `https://guestflow-<pr-id>.vercel.app/?q=grant830318` → Expect thread 49 visible (sender match)
+   - URL: `https://guestflow-<pr-id>.vercel.app/?q=INBOUND%20TEST` → Expect thread 49 visible (multi-token)
+   - URL: `https://guestflow-<pr-id>.vercel.app/?q=INBOUND%20FOOBAR` → Expect thread 49 NOT visible (missing token)
+5. **Test Search via Input**:
+   - Type "DIRECT2" in search box (should update URL to `?q=DIRECT2` and filter list)
+   - Clear search (should remove `?q=` from URL and show all threads)
+6. **Test Thread Retrieval**:
+   - Direct URL: `https://guestflow-<pr-id>.vercel.app/?thread=49`
+   - Expect: Thread detail panel opens (not 404)
+   - With search: `https://guestflow-<pr-id>.vercel.app/?thread=49&q=DIRECT2`
+   - Expect: Thread opens with search filter active
+   - **Note**: Thread deep-link is `/?thread=<id>` (query param), NOT `/thread/<id>` (route)
    - Verify: Message with "DIRECT2" marker visible
 
-**Success**: All manual tests pass; no 404 errors; search results correct.
+**Success**: All manual tests pass; no 404 errors; search results correct; URL syncs with search input.
 
 ## Rollback Plan
 
