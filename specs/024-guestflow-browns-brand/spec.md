@@ -157,17 +157,30 @@ Some UI elements indicate WhatsApp as the communication channel (inbound queue, 
 - **FR-016**: Access codes ops tools MUST use Browns color tokens
 - **FR-017**: Draft tools and staff ops utilities MUST use Browns palette
 
-**Phase 2b — Guest Portal Chrome (GFM LOCK via CoS 25 Sep)**
+**Phase 2b — Guest Portal Chrome (GFM LOCK via CoS 25 Sep + Design Addendum 24 Sep)**
+
+**DESIGN ADDENDUM RECEIVED**: Authoritative visual SoT from Design team at `guestflow-brand/proposal-2026-09-24/ADDENDUM-guest-portal.md`. Mockups: 01-guest-stay-hub-proposed.png (authenticated hub with placeholder labels), 02-guest-invalid-proposed.png (Unable to Access error state).
 
 **SCOPE LOCK**: Phase 2b covers exactly six product-sensitive surfaces (visual restyle only):
-1. Magic-link entry + expired/invalid states
-2. Access codes display (pins/lockbox SoR — NEVER invent codes or values)
+1. Magic-link entry + expired/invalid states ("Unable to Access" card)
+2. Access codes display (pins/lockbox SoR — time-gated; NEVER invent codes or values)
 3. WiFi SoR / network_ask_staff display
 4. Stay summary facts
 5. Check-in/arrival chips/CTAs (if present)
 6. Contact handoff to +27600200825 / stay@thebrowns.co.za (From/redirect unchanged)
 
-**HARD CONSTRAINT**: Do not change copy logic, gates, or data — restyle chrome/tokens/type/logo only on these six surfaces. Design addendum forthcoming for before/after; until then remap existing UI 1:1 onto Phase 0 tokens.
+**AUTHENTICATED HUB SECTIONS** (source-evidenced from page.tsx; no invention without valid magic-link):
+- Stay summary (guest name, check-in/check-out dates, suite)
+- Wi-Fi (network/password or network_ask_staff flag)
+- Access codes (gate code, door code — time-gated display)
+- Parking
+- Directions
+- House rules
+- Contact (phone +27600200825, email stay@thebrowns.co.za)
+- Rebook/next-stay
+- Loading / Unable to Access empty-states
+
+**HARD CONSTRAINT**: Do not change copy logic, gates, or data — restyle chrome/tokens/type/logo only on these surfaces. Replace pale cool-blue wash (#EAF7FE) with warm muted #F6F5F3; multicolor section headers with navy/gold restraint; cyan links with primary navy; add Browns CI mark; apply Playfair H1 to "Unable to Access" and hub page title; Montserrat for all dense UI.
 
 - **FR-018**: Guest portal page (src/app/guest/[code]/page.tsx) MUST display Browns heritage CI logo
 - **FR-019**: Guest portal MUST use Phase 0 Browns token system (navy, gold, muted, accent, Montserrat UI, Playfair H1) on all six GFM-locked surfaces

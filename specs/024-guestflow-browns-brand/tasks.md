@@ -102,14 +102,25 @@ This is a Next.js web application. Paths:
 **Goal**: Guests see Browns brand in portal pages across exactly six product-sensitive surfaces (visual restyle only)
 
 **GFM LOCK (25 Sep)**: Phase 2b covers exactly six surfaces:
-1. Magic-link entry + expired/invalid states
-2. Access codes display (pins/lockbox SoR — NEVER invent codes or values)
+1. Magic-link entry + expired/invalid states ("Unable to Access" card)
+2. Access codes display (pins/lockbox SoR — time-gated; NEVER invent codes or values)
 3. WiFi SoR / network_ask_staff display
 4. Stay summary facts
 5. Check-in/arrival chips/CTAs (if present)
 6. Contact handoff to +27600200825 / stay@thebrowns.co.za (From/redirect unchanged)
 
-**HARD CONSTRAINT**: Do not change copy logic, gates, or data — restyle chrome/tokens/type/logo only on these six surfaces. Design addendum forthcoming; until then remap existing UI 1:1 onto Phase 0 tokens.
+**DESIGN ADDENDUM (24 Sep READY)**: Authoritative visual SoT from Design team. Mockups: `public/design/guest-portal/01-guest-stay-hub-proposed.png` (authenticated hub), `02-guest-invalid-proposed.png` (error state). Before screenshots: `01-guest-login-before.png`, `02-guest-stay-gated-before.png`, `03-guest-test-code-invalid-before.png`.
+
+**AUTHENTICATED HUB SECTIONS** (source-evidenced; no invention):
+- Stay summary (guest name, dates, suite)
+- Wi-Fi (network/password or network_ask_staff)
+- Access codes (gate, door — time-gated)
+- Parking, Directions, House rules
+- Contact (+27600200825, stay@thebrowns.co.za)
+- Rebook/next-stay
+- Loading / Unable to Access empty-states
+
+**HARD CONSTRAINT**: Do not change copy logic, gates, or data — restyle chrome/tokens/type/logo only. Replace pale cool-blue wash (#EAF7FE) with warm muted #F6F5F3; multicolor section headers with navy/gold restraint; cyan links with primary navy; add Browns CI mark; Playfair H1 on titles/empty-states; Montserrat dense UI.
 
 **Independent Test**: Generate test guest magic-link (scripts/smoke-portal.mjs or manual); click link; verify guest portal displays Browns logo, navy/gold colors, Playfair heading, Montserrat UI across all six GFM-locked surfaces; existing data/logic preserved
 
