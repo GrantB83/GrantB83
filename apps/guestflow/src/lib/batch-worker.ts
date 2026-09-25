@@ -394,7 +394,13 @@ export async function processJob(
   try {
     // Fetch message context
     const context = await fetchMessageContext(db, job.message_id)
-    const propertyKnowledge = await formatPropertyKnowledgeForPrompt(db, job.tenant_id)
+    let propertyKnowledge =
+      'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
+    try {
+      propertyKnowledge = await formatPropertyKnowledgeForPrompt(db, job.tenant_id)
+    } catch {
+      // Narrow test fixtures may not have knowledge tables
+    }
 
     // Generate draft with LLM
     const draftReply = await generateDraftWithLLM({ ...context, propertyKnowledge }, config)

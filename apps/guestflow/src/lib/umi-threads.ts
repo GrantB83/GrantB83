@@ -741,7 +741,7 @@ export async function listInboxThreads(
   options: { filter?: 'all' | 'needs-attention'; q?: string } = {}
 ): Promise<InboxThread[]> {
   const extra = await extraAttentionByBooking(db, tenantId)
-  const rows = ((await db)
+  const rows = ((await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
               b.suite_or_unit, b.nightsbridge_booking_id

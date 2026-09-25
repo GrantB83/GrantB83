@@ -312,8 +312,8 @@ describe('POST /api/inbound/send', () => {
       label: 'Window closed',
       remainingMs: 0,
       closingSoon: false,
-      lastWabaInboundAt: null,
-      windowExpiresAt: null,
+      lastWabaInboundAt: '',
+      windowExpiresAt: '',
     })
     vi.doMock('@/lib/email', () => ({
       sendEmail: vi.fn(async () => ({

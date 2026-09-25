@@ -23,8 +23,8 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 **Purpose**: Feature directory already exists; lock GuestFlow touch-points
 
-- [ ] T001 Record feature path in `.specify/feature.json` and keep the diff inside `apps/guestflow/` plus `specs/019-sprint2-whatsapp/`
-- [ ] T002 [P] Confirm `apps/guestflow/next.config.mjs` has no `typescript.ignoreBuildErrors`
+- [x] T001 Record feature path in `.specify/feature.json` and keep the diff inside `apps/guestflow/` plus `specs/019-sprint2-whatsapp/`
+- [x] T002 [P] Confirm `apps/guestflow/next.config.mjs` has no `typescript.ignoreBuildErrors`
 
 ---
 
@@ -32,9 +32,9 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 **Purpose**: Schema ensure + shared types before stories
 
-- [ ] T003 Add `ensureSprint2WhatsappSchema` creating `wa_templates` (name, category, language, body, variable_mapping, content_sid, approval_status, whatsapp_approval_status, last_synced_at) and `property_knowledge` (property, section, key, value, source, last_updated_*) in `apps/guestflow/src/lib/sprint2-schema.ts`
-- [ ] T004 [P] Add unused Production-safe migration script `apps/guestflow/scripts/migrate-sprint2-whatsapp.js` that refuses `libsql://` / production Turso URLs unless `ALLOW_PROD_TURSO=NEVER` (script is not run in this package)
-- [ ] T005 [P] Extend `SendMessageRequest` with optional `contentSid` and `contentVariables` in `apps/guestflow/src/types/inbound.ts`
+- [x] T003 Add `ensureSprint2WhatsappSchema` creating `wa_templates` (name, category, language, body, variable_mapping, content_sid, approval_status, whatsapp_approval_status, last_synced_at) and `property_knowledge` (property, section, key, value, source, last_updated_*) in `apps/guestflow/src/lib/sprint2-schema.ts`
+- [x] T004 [P] Add unused Production-safe migration script `apps/guestflow/scripts/migrate-sprint2-whatsapp.js` that refuses `libsql://` / production Turso URLs unless `ALLOW_PROD_TURSO=NEVER` (script is not run in this package)
+- [x] T005 [P] Extend `SendMessageRequest` with optional `contentSid` and `contentVariables` in `apps/guestflow/src/types/inbound.ts`
 
 **Checkpoint**: Foundation ready
 
@@ -48,13 +48,13 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 ### Tests for User Story 1
 
-- [ ] T006 [P] [US1] Write window math tests (open, exact 24h closed, 24h+1m closed, timezone UTC vs SAST, Web inbound does not open) in `apps/guestflow/src/lib/__tests__/whatsapp-care-window.test.ts`
+- [x] T006 [P] [US1] Write window math tests (open, exact 24h closed, 24h+1m closed, timezone UTC vs SAST, Web inbound does not open) in `apps/guestflow/src/lib/__tests__/whatsapp-care-window.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement `computeCareWindow` / `formatWindowLabel` / `isWabaCloudInbound` in `apps/guestflow/src/lib/whatsapp-care-window.ts`
-- [ ] T008 [US1] Load last WABA inbound timestamps and attach `careWindow` in `apps/guestflow/src/lib/umi-threads.ts` (`listInboxThreads`, `getThreadDetail`)
-- [ ] T009 [US1] Show header + composer badge (`Window open, closes in Xh Ym` / `Window closed`) and inbox closed/closing-soon marks in `apps/guestflow/src/app/page.tsx`
+- [x] T007 [US1] Implement `computeCareWindow` / `formatWindowLabel` / `isWabaCloudInbound` in `apps/guestflow/src/lib/whatsapp-care-window.ts`
+- [x] T008 [US1] Load last WABA inbound timestamps and attach `careWindow` in `apps/guestflow/src/lib/umi-threads.ts` (`listInboxThreads`, `getThreadDetail`)
+- [x] T009 [US1] Show header + composer badge (`Window open, closes in Xh Ym` / `Window closed`) and inbox closed/closing-soon marks in `apps/guestflow/src/app/page.tsx`
 
 **Checkpoint**: US1 independently testable
 
@@ -68,13 +68,13 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Add 409 (no Twilio) and email/SMS unaffected cases in `apps/guestflow/__tests__/inbound-send-handler.test.ts`
+- [x] T010 [P] [US2] Add 409 (no Twilio) and email/SMS unaffected cases in `apps/guestflow/__tests__/inbound-send-handler.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Guard WhatsApp Cloud free-text in `apps/guestflow/src/app/api/inbound/send/route.ts` (409 before confirmToken consume; no Twilio)
-- [ ] T012 [US2] Switch composer to template mode and warn in confirm dialog when closed or closing-soon in `apps/guestflow/src/app/page.tsx`
-- [ ] T013 [US2] Replace the “Twilio does not have this restriction” comments in `apps/guestflow/src/lib/whatsapp.ts` and update `apps/guestflow/__tests__/whatsapp.test.ts` if it asserts the old note
+- [x] T011 [US2] Guard WhatsApp Cloud free-text in `apps/guestflow/src/app/api/inbound/send/route.ts` (409 before confirmToken consume; no Twilio)
+- [x] T012 [US2] Switch composer to template mode and warn in confirm dialog when closed or closing-soon in `apps/guestflow/src/app/page.tsx`
+- [x] T013 [US2] Replace the “Twilio does not have this restriction” comments in `apps/guestflow/src/lib/whatsapp.ts` and update `apps/guestflow/__tests__/whatsapp.test.ts` if it asserts the old note
 
 **Checkpoint**: US1 + US2 work together
 
@@ -88,18 +88,18 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] Write picker filter tests in `apps/guestflow/src/lib/__tests__/wa-templates-picker.test.ts`
-- [ ] T015 [P] [US3] Write SoR variable-fill tests (lockbox.property main-house despite “cottage” in suite name; missing property → no codes) in `apps/guestflow/src/lib/__tests__/wa-template-fill.test.ts`
+- [x] T014 [P] [US3] Write picker filter tests in `apps/guestflow/src/lib/__tests__/wa-templates-picker.test.ts`
+- [x] T015 [P] [US3] Write SoR variable-fill tests (lockbox.property main-house despite “cottage” in suite name; missing property → no codes) in `apps/guestflow/src/lib/__tests__/wa-template-fill.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T016 [P] [US3] Seed seven Grant-approved bodies + mappings in `apps/guestflow/src/lib/wa-templates-seed.ts` (review URL static; status `approved_by_grant_unsubmitted`; no SIDs)
-- [ ] T017 [US3] Implement catalogue helpers + approved-only filter + read-only Twilio Content fetch in `apps/guestflow/src/lib/wa-templates.ts`
-- [ ] T018 [US3] Implement `resolveCodesFromLockboxProperty` (exact suite match; property from lockbox field only) in `apps/guestflow/src/lib/access-codes-from-lockbox.ts`
-- [ ] T019 [US3] Add `GET /api/ops/wa-templates`, fill, and read-only sync routes under `apps/guestflow/src/app/api/ops/wa-templates/`
-- [ ] T020 [US3] Add ContentSid + ContentVariables path (redirect still applies) in `apps/guestflow/src/lib/whatsapp.ts`
-- [ ] T021 [US3] Wire template picker (empty-state copy) and template Approve&Send payload in `apps/guestflow/src/app/page.tsx` and `apps/guestflow/src/app/api/inbound/send/route.ts`
-- [ ] T022 [US3] Add `apps/guestflow/scripts/submit-wa-templates.ts` requiring `--i-have-grant-go-ahead`; do not run it; add npm script `wa:submit-templates` in `apps/guestflow/package.json`
+- [x] T016 [P] [US3] Seed seven Grant-approved bodies + mappings in `apps/guestflow/src/lib/wa-templates-seed.ts` (review URL static; status `approved_by_grant_unsubmitted`; no SIDs)
+- [x] T017 [US3] Implement catalogue helpers + approved-only filter + read-only Twilio Content fetch in `apps/guestflow/src/lib/wa-templates.ts`
+- [x] T018 [US3] Implement `resolveCodesFromLockboxProperty` (exact suite match; property from lockbox field only) in `apps/guestflow/src/lib/access-codes-from-lockbox.ts`
+- [x] T019 [US3] Add `GET /api/ops/wa-templates`, fill, and read-only sync routes under `apps/guestflow/src/app/api/ops/wa-templates/`
+- [x] T020 [US3] Add ContentSid + ContentVariables path (redirect still applies) in `apps/guestflow/src/lib/whatsapp.ts`
+- [x] T021 [US3] Wire template picker (empty-state copy) and template Approve&Send payload in `apps/guestflow/src/app/page.tsx` and `apps/guestflow/src/app/api/inbound/send/route.ts`
+- [x] T022 [US3] Add `apps/guestflow/scripts/submit-wa-templates.ts` requiring `--i-have-grant-go-ahead`; do not run it; add npm script `wa:submit-templates` in `apps/guestflow/package.json`
 
 **Checkpoint**: US3 independently testable
 
@@ -113,17 +113,17 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 ### Tests for User Story 4
 
-- [ ] T023 [P] [US4] Write knowledge format/upsert tests in `apps/guestflow/src/lib/__tests__/property-knowledge.test.ts`
-- [ ] T024 [P] [US4] Write prompt-level no-fact-outside-KB guard in `apps/guestflow/src/lib/__tests__/draft-prompt-kb.test.ts`
+- [x] T023 [P] [US4] Write knowledge format/upsert tests in `apps/guestflow/src/lib/__tests__/property-knowledge.test.ts`
+- [x] T024 [P] [US4] Write prompt-level no-fact-outside-KB guard in `apps/guestflow/src/lib/__tests__/draft-prompt-kb.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T025 [P] [US4] Seed only sourced facts in `apps/guestflow/src/lib/property-knowledge-seed.ts` (unknowns empty/`ask staff`)
-- [ ] T026 [US4] Implement ensure/list/upsert/format in `apps/guestflow/src/lib/property-knowledge.ts`
-- [ ] T027 [US4] Add ops APIs `apps/guestflow/src/app/api/ops/property-knowledge/route.ts` and `upsert/route.ts`
-- [ ] T028 [US4] Add staff UI `apps/guestflow/src/app/ops/property-knowledge/page.tsx` + manager and an Ops card in `apps/guestflow/src/app/ops/page.tsx`
-- [ ] T029 [US4] Inject `{property_knowledge}` and no-invent instruction in `apps/guestflow/prompts/DRAFT_PROMPT.md` and `apps/guestflow/src/lib/batch-worker.ts`
-- [ ] T030 [US4] Add 10-question fixture `apps/guestflow/__tests__/fixtures/kb-eval-questions.json`
+- [x] T025 [P] [US4] Seed only sourced facts in `apps/guestflow/src/lib/property-knowledge-seed.ts` (unknowns empty/`ask staff`)
+- [x] T026 [US4] Implement ensure/list/upsert/format in `apps/guestflow/src/lib/property-knowledge.ts`
+- [x] T027 [US4] Add ops APIs `apps/guestflow/src/app/api/ops/property-knowledge/route.ts` and `upsert/route.ts`
+- [x] T028 [US4] Add staff UI `apps/guestflow/src/app/ops/property-knowledge/page.tsx` + manager and an Ops card in `apps/guestflow/src/app/ops/page.tsx`
+- [x] T029 [US4] Inject `{property_knowledge}` and no-invent instruction in `apps/guestflow/prompts/DRAFT_PROMPT.md` and `apps/guestflow/src/lib/batch-worker.ts`
+- [x] T030 [US4] Add 10-question fixture `apps/guestflow/__tests__/fixtures/kb-eval-questions.json`
 
 **Checkpoint**: All stories independently functional
 
@@ -131,9 +131,9 @@ description: "Task list for Sprint 2 WhatsApp window, templates, and property kn
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T031 [P] List every seed source in `specs/019-sprint2-whatsapp/seed-sources.md`
-- [ ] T032 Run GuestFlow targeted tests + `tsc --noEmit`; keep `ignoreBuildErrors` unset
-- [ ] T033 Mark tasks complete and prepare PR body (how the warning works, Spec Kit evidence, test output, submit script usage NOT run, follow-ups)
+- [x] T031 [P] List every seed source in `specs/019-sprint2-whatsapp/seed-sources.md`
+- [x] T032 Run GuestFlow targeted tests + `tsc --noEmit`; keep `ignoreBuildErrors` unset
+- [x] T033 Mark tasks complete and prepare PR body (how the warning works, Spec Kit evidence, test output, submit script usage NOT run, follow-ups)
 
 ---
 
