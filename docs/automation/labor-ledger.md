@@ -4,8 +4,12 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 
 | Phase | Ritual removed | Est. hours/week before | Est. hours/week after | Actual before (Grant) | Actual after (Grant) | Live since | Evidence artefact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+<<<<<<< HEAD
 | GuestFlow staff users + Decision L | Share one staff password; redeploy to flip outbound redirect | 0.3–0.5 + lockout / redeploy | 0 (Users + header toggle) | | | 2026-09-25 coded | `apps/guestflow/docs/STAFF-USERS.md` |
 | GuestFlow Sprint 2 data-fixes | Eyeball cancelled/BLOCK rows, guess Cottage vs Main House from suite names, and triage empty Inbox threads | 1–2 (stay morning) | 0.2 scan brief + exceptions | | | 2026-09-25 on main (#221) | Preview `/ops/daily-brief` + `/api/exceptions` |
+=======
+| GuestFlow S2 contacts | Hunt NB / A&D / stay@ for phone+email; lose multi-room booker thread | 1–2 (stay morning) | 0.2 review missing/relay flags + staff/self-fill | | | 2026-09-25 coded | `apps/guestflow/docs/SPRINT2-CONTACTS.md` |
+>>>>>>> b352c57 (docs(automation): record Sprint 2 contacts status and ledger)
 | GuestFlow UMI v2.1 | Rewrite the same guest reply in WA + Gmail + SMS, then hunt Needs Approval | 3–5 (stay morning) | 0.5 in-thread review + Approve&Send | | | 2026-09-24 coded | `apps/guestflow/docs/UMI-V21.md` |
 | GuestFlow Phase 0 | Send because a draft body exists (staff cookie + body) | 0.5–1 risk/recovery | 0 (approve + one-time confirmToken) | | | 2026-09-20 coded | `apps/guestflow/docs/PHASE0-SAFETY.md` |
 | GuestFlow P0/P1 | 07:00 copy guest reply into Gmail + paste WhatsApp Web | 3–5 (stay morning) | 0.5 review + confirm Send / clicker | | | 2026-09-20 coded | `apps/guestflow/docs/EMAIL-CONTROL-CENTER.md` |
