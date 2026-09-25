@@ -148,7 +148,7 @@ export async function shouldExcludeFromAlerts(
   }
   
   // Check 3: Empty BLOCK booking (most expensive - DB query)
-  if (await isEmptyBlockBooking(db, thread)) {
+  if (await isEmptyBlockBooking(db, { id: thread.id, booking_id: thread.booking_id ?? null })) {
     return { excluded: true, reason: 'empty_block' }
   }
   
