@@ -25,10 +25,10 @@
 
 **Purpose**: Project initialization and verification of existing infrastructure
 
-- [ ] T001 Verify Next.js 14.2, React 18.3, TypeScript 5.5, and Vitest 1.0 are installed per package.json
-- [ ] T002 [P] Verify existing inbox components present: InboxLayoutShell.tsx, ThreadLayoutShell.tsx, inbox-types.ts
-- [ ] T003 [P] Verify existing hooks present: useInboxChromeOffset.ts, useVisualViewportInset.ts, useInboxBreakpoint.ts
-- [ ] T004 [P] Verify globals.css contains .inbox-shell styles
+- [X] T001 Verify Next.js 14.2, React 18.3, TypeScript 5.5, and Vitest 1.0 are installed per package.json
+- [X] T002 [P] Verify existing inbox components present: InboxLayoutShell.tsx, ThreadLayoutShell.tsx, inbox-types.ts
+- [X] T003 [P] Verify existing hooks present: useInboxChromeOffset.ts, useVisualViewportInset.ts, useInboxBreakpoint.ts
+- [X] T004 [P] Verify globals.css contains .inbox-shell styles
 
 ---
 
@@ -38,12 +38,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Audit current InboxLayoutShell component structure and document existing flexbox layout in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
-- [ ] T006 [P] Audit current ThreadLayoutShell component structure and document existing header/messages/composer layout in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
-- [ ] T007 [P] Audit current useInboxChromeOffset hook implementation and document operations nav height measurement logic in apps/guestflow/src/components/inbox/useInboxChromeOffset.ts
-- [ ] T008 [P] Audit current LIST_SCROLL_KEY scroll restoration mechanism in apps/guestflow/src/app/page.tsx and document sessionStorage usage
-- [ ] T009 Create baseline layout test infrastructure in apps/guestflow/__tests__/layout/setup.test.ts with viewport mocking utilities
-- [ ] T010 [P] Document current .inbox-shell CSS rules (position, overflow, top/bottom) in apps/guestflow/src/app/globals.css
+- [X] T005 Audit current InboxLayoutShell component structure and document existing flexbox layout in apps/guestflow/src/components/inbox/InboxLayoutShell.tsx
+- [X] T006 [P] Audit current ThreadLayoutShell component structure and document existing header/messages/composer layout in apps/guestflow/src/components/inbox/ThreadLayoutShell.tsx
+- [X] T007 [P] Audit current useInboxChromeOffset hook implementation and document operations nav height measurement logic in apps/guestflow/src/components/inbox/useInboxChromeOffset.ts
+- [X] T008 [P] Audit current LIST_SCROLL_KEY scroll restoration mechanism in apps/guestflow/src/app/page.tsx and document sessionStorage usage
+- [X] T009 Create baseline layout test infrastructure in apps/guestflow/__tests__/layout/setup.test.ts with viewport mocking utilities
+- [X] T010 [P] Document current .inbox-shell CSS rules (position, overflow, top/bottom) in apps/guestflow/src/app/globals.css
 
 **Checkpoint**: Foundation documented - user story implementation can now begin in parallel
 
