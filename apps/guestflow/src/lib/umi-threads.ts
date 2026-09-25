@@ -74,6 +74,8 @@ export interface InboxThread {
   hygieneStatus: string | null
   fromNumber: string
   careWindow?: CareWindow
+  arrivalStage?: string | null
+  attentionReason?: string | null
 }
 
 interface BookingMatch {
@@ -246,7 +248,7 @@ function pickUniqueBooking(matches: BookingMatch[], now = new Date()): BookingMa
   return [...matches].sort((a, b) => String(b.check_in).localeCompare(String(a.check_in)))[0] || null
 }
 
-async function findBookingThread(
+export async function findBookingThread(
   db: DbClient,
   tenantId: number,
   bookingId: number
@@ -460,6 +462,48 @@ export async function resolveUmiThread(
     contactId: contact?.id ?? null,
   })
   return { thread: created, channel, dedupKey, created: true }
+}
+
+export async function ensureBookingThreadForOutbound(
+  db: DbClient,
+  tenantId: number,
+  booking: {
+    id: number
+    guest_name?: string | null
+    guest_phone?: string | null
+    guest_email?: string | null
+  },
+  input: { timestamp: string; channel: UmiChannel; source: string; from: string }
+): Promise<UmiThreadRow> {
+  await ensureUmiSchema(db)
+  const existing = await findBookingThread(db, tenantId, booking.id)
+  if (existing) return existing
+
+  let contactId: number | null = null
+  try {
+    const contact = await upsertGuestContact(db, {
+      tenantId,
+      phone: booking.guest_phone,
+      email: booking.guest_email,
+      displayName: booking.guest_name,
+      source: 'nb',
+    })
+    contactId = contact?.id ?? null
+  } catch {
+    contactId = null
+  }
+
+  return insertThread(db, {
+    tenantId,
+    source: input.source,
+    from: input.from,
+    timestamp: input.timestamp,
+    kind: 'booking',
+    bookingId: booking.id,
+    guestName: booking.guest_name,
+    channel: input.channel,
+    contactId,
+  })
 }
 
 export async function markThreadPendingDraft(db: DbClient, threadId: number): Promise<void> {
@@ -704,8 +748,8 @@ async function hasUnansweredInbound(db: DbClient, threadId: number): Promise<boo
 async function extraAttentionByBooking(
   db: DbClient,
   tenantId: number
-): Promise<Map<number, string>> {
-  const flags = new Map<number, string>()
+): Promise<Map<number, { kind: string; stage?: string | null; reason?: string | null; hasDraft?: boolean }>> {
+  const flags = new Map<number, { kind: string; stage?: string | null; reason?: string | null; hasDraft?: boolean }>()
   if (await sqliteTableExists(db, 'welcome_drafts')) {
     const rows = ((await db
       .prepare(
@@ -713,7 +757,7 @@ async function extraAttentionByBooking(
          WHERE tenant_id = ? AND status = 'pending_approval' AND booking_id IS NOT NULL`
       )
       .all(tenantId)) || []) as Array<{ booking_id: number }>
-    for (const row of rows) flags.set(asNumber(row.booking_id), 'welcome')
+    for (const row of rows) flags.set(asNumber(row.booking_id), { kind: 'welcome', hasDraft: true })
   }
   if (await sqliteTableExists(db, 'late_checkin_drafts')) {
     const rows = ((await db
@@ -722,7 +766,31 @@ async function extraAttentionByBooking(
          WHERE tenant_id = ? AND status = 'pending_approval' AND booking_id IS NOT NULL`
       )
       .all(tenantId)) || []) as Array<{ booking_id: number }>
-    for (const row of rows) flags.set(asNumber(row.booking_id), 'late_checkin')
+    for (const row of rows) flags.set(asNumber(row.booking_id), { kind: 'late_checkin', hasDraft: true })
+  }
+  if (await sqliteTableExists(db, 'arrival_drafts')) {
+    const rows = ((await db
+      .prepare(
+        `SELECT booking_id, stage_label, attention_reason, draft_body
+         FROM arrival_drafts
+         WHERE tenant_id = ?
+           AND status IN ('drafted', 'needs_attention', 'template_pending_approval')
+           AND booking_id IS NOT NULL`
+      )
+      .all(tenantId)) || []) as Array<{
+      booking_id: number
+      stage_label?: string | null
+      attention_reason?: string | null
+      draft_body?: string | null
+    }>
+    for (const row of rows) {
+      flags.set(asNumber(row.booking_id), {
+        kind: 'arrival',
+        stage: row.stage_label || null,
+        reason: row.attention_reason || null,
+        hasDraft: Boolean(row.draft_body),
+      })
+    }
   }
   return flags
 }
@@ -769,6 +837,8 @@ export async function listInboxThreads(
 ): Promise<InboxThread[]> {
   const extra = await extraAttentionByBooking(db, tenantId)
   const deliveryAttention = await deliveryAttentionThreadIds(db)
+  const extraFor = (bookingId: number | null) =>
+    bookingId ? extra.get(asNumber(bookingId)) : undefined
   const rows = ((await db
     .prepare(
       `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
@@ -801,7 +871,8 @@ export async function listInboxThreads(
   const threads: InboxThread[] = []
   for (const row of rows) {
     const preview = await latestMessagePreview(db, asNumber(row.id))
-    const hasExtra = row.booking_id ? extra.has(asNumber(row.booking_id)) : false
+    const extraFlag = extraFor(row.booking_id ? asNumber(row.booking_id) : null)
+    const hasExtra = Boolean(extraFlag)
     const unansweredInbound = await hasUnansweredInbound(db, asNumber(row.id))
     const pendingReply = unansweredInbound
     const thread: InboxThread = {
@@ -818,12 +889,20 @@ export async function listInboxThreads(
       lastMessageAt: row.last_message_at,
       preview: preview.preview,
       pendingReply,
-      hasOpenDraft: preview.hasOpenDraft || hasExtra,
-      needsAttention: unansweredInbound || deliveryAttention.has(asNumber(row.id)),
+      hasOpenDraft:
+        preview.hasOpenDraft ||
+        Boolean(extraFlag?.hasDraft) ||
+        (hasExtra && extraFlag?.kind !== 'arrival'),
+      needsAttention:
+        unansweredInbound ||
+        hasExtra ||
+        deliveryAttention.has(asNumber(row.id)),
       sortBucket: 2,
       hygieneStatus: row.hygiene_status,
       fromNumber: row.from_number,
       careWindow: computeCareWindow(lastWabaByThread.get(asNumber(row.id)) || null),
+      arrivalStage: extraFlag?.stage || null,
+      attentionReason: extraFlag?.reason || null,
     }
     thread.sortBucket = inboxSortBucket(thread)
     threads.push(thread)
@@ -874,14 +953,37 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
     .all(threadId)) || []) as any[]
 
   let openDraft: { text: string; source: string; kind: string } | null = null
+  let arrivalStage: string | null = null
+  let attentionReason: string | null = null
+  if (thread.booking_id && (await sqliteTableExists(db, 'arrival_drafts'))) {
+    const arrival = (await db
+      .prepare(
+        `SELECT draft_body, stage_label, attention_reason, status
+         FROM arrival_drafts
+         WHERE tenant_id = ? AND booking_id = ?
+           AND status IN ('drafted', 'needs_attention', 'template_pending_approval')
+         ORDER BY CASE stage WHEN 'day-of' THEN 0 WHEN 't-1' THEN 1 ELSE 2 END
+         LIMIT 1`
+      )
+      .get(tenantId, thread.booking_id)) as
+      | { draft_body?: string | null; stage_label?: string | null; attention_reason?: string | null; status?: string }
+      | undefined
+    if (arrival) {
+      arrivalStage = arrival.stage_label || null
+      attentionReason = arrival.attention_reason || null
+      if (arrival.draft_body) {
+        openDraft = { text: arrival.draft_body, source: 'heuristic', kind: `arrival:${arrival.stage_label || 'stage'}` }
+      }
+    }
+  }
   const inboundDraft = [...messages].reverse().find((message) => message.draft_reply)
-  if (inboundDraft?.draft_reply) {
+  if (!openDraft && inboundDraft?.draft_reply) {
     openDraft = {
       text: inboundDraft.draft_reply,
       source: inboundDraft.draft_source || 'heuristic',
       kind: 'inbound',
     }
-  } else if (thread.booking_id) {
+  } else if (!openDraft && thread.booking_id) {
     if (await sqliteTableExists(db, 'welcome_drafts')) {
       const welcome = (await db
         .prepare(
@@ -942,6 +1044,8 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
     hygieneStatus: thread.hygiene_status,
     metadata: parseJson(thread.metadata),
     careWindow,
+    arrivalStage,
+    attentionReason,
     openDraft,
     linkCandidates,
     messages: messages.map((message) => {
