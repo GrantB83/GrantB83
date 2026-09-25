@@ -84,15 +84,23 @@ describe('staff-alert-filters', () => {
   })
   
   describe('isSmokeTestThread', () => {
-    it('should detect T-XX markers in guest_name', () => {
+    it('should detect specific T-44 and T-48 probe markers', () => {
       expect(isSmokeTestThread({ guest_name: 'T-44' })).toBe(true)
       expect(isSmokeTestThread({ guest_name: 'T-48' })).toBe(true)
-      expect(isSmokeTestThread({ guest_name: 't-99' })).toBe(true) // case-insensitive
+      expect(isSmokeTestThread({ guest_name: 't-probe' })).toBe(true)
+      expect(isSmokeTestThread({ guest_name: 'T-TEST' })).toBe(true)
     })
     
-    it('should detect thread XX markers in guest_name', () => {
+    it('should NOT match overly broad T-XX patterns', () => {
+      // Tightened to avoid false positives on real guests
+      expect(isSmokeTestThread({ guest_name: 'T-99' })).toBe(false)
+      expect(isSmokeTestThread({ guest_name: 'T-12' })).toBe(false)
+    })
+    
+    it('should detect specific thread 44/48 markers', () => {
       expect(isSmokeTestThread({ guest_name: 'thread 44' })).toBe(true)
       expect(isSmokeTestThread({ guest_name: 'THREAD 48' })).toBe(true)
+      expect(isSmokeTestThread({ guest_name: 'inbound thread 44' })).toBe(true)
     })
     
     it('should detect GF-INBOUND-TEST marker', () => {
@@ -100,10 +108,16 @@ describe('staff-alert-filters', () => {
       expect(isSmokeTestThread({ guest_name: 'gf-inbound-test' })).toBe(true)
     })
     
-    it('should detect smoke markers in metadata subject', () => {
+    it('should detect explicit smoke test markers in metadata', () => {
       expect(isSmokeTestThread({ metadata: '{"subject":"GF-INBOUND-TEST"}' })).toBe(true)
-      expect(isSmokeTestThread({ metadata: '{"subject":"SMOKE test"}' })).toBe(true)
-      expect(isSmokeTestThread({ metadata: '{"subject":"TEST message"}' })).toBe(true)
+      expect(isSmokeTestThread({ metadata: '{"subject":"SMOKE TEST"}' })).toBe(true)
+      expect(isSmokeTestThread({ metadata: '{"subject":"TEST MESSAGE"}' })).toBe(true)
+    })
+    
+    it('should NOT match vague test keywords', () => {
+      // Avoid false positives on messages containing "test" in normal context
+      expect(isSmokeTestThread({ metadata: '{"subject":"Latest update"}' })).toBe(false)
+      expect(isSmokeTestThread({ metadata: '{"subject":"testing waters"}' })).toBe(false)
     })
     
     it('should handle invalid JSON in metadata', () => {
@@ -114,6 +128,7 @@ describe('staff-alert-filters', () => {
     it('should return false for legitimate guest names', () => {
       expect(isSmokeTestThread({ guest_name: 'John Smith' })).toBe(false)
       expect(isSmokeTestThread({ guest_name: 'Jane Doe' })).toBe(false)
+      expect(isSmokeTestThread({ guest_name: 'T. Richardson' })).toBe(false) // Name with T. initial
     })
     
     it('should handle null and missing fields', () => {
@@ -135,16 +150,21 @@ describe('staff-alert-filters', () => {
       expect(result).toBe(true)
     })
     
-    it('should detect owner-block patterns (Nomsa, Sakhile)', async () => {
-      // Nomsa owner block
-      db.prepare('INSERT INTO bookings (id, guest_name) VALUES (1, "Nomsa 5464")').run()
+    it('should detect OWNER BLOCK pattern', async () => {
+      db.prepare('INSERT INTO bookings (id, guest_name) VALUES (1, "OWNER BLOCK")').run()
       db.prepare('INSERT INTO inbound_threads (id, booking_id) VALUES (1, 1)').run()
       expect(await isEmptyBlockBooking(db, { id: 1, booking_id: 1 })).toBe(true)
+    })
+    
+    it('should NOT match bare guest first names', async () => {
+      // Tightened: Nomsa/Sakhile were example shells with NB refs, not a rule to silence every guest with those names
+      db.prepare('INSERT INTO bookings (id, guest_name) VALUES (1, "Nomsa")').run()
+      db.prepare('INSERT INTO inbound_threads (id, booking_id) VALUES (1, 1)').run()
+      expect(await isEmptyBlockBooking(db, { id: 1, booking_id: 1 })).toBe(false)
       
-      // Sakhile owner block
-      db.prepare('INSERT INTO bookings (id, guest_name) VALUES (2, "Sakhile 5630")').run()
+      db.prepare('INSERT INTO bookings (id, guest_name) VALUES (2, "Sakhile")').run()
       db.prepare('INSERT INTO inbound_threads (id, booking_id) VALUES (2, 2)').run()
-      expect(await isEmptyBlockBooking(db, { id: 2, booking_id: 2 })).toBe(true)
+      expect(await isEmptyBlockBooking(db, { id: 2, booking_id: 2 })).toBe(false)
     })
     
     it('should return false for BLOCK booking with messages', async () => {

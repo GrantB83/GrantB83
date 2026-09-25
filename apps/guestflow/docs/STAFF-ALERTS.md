@@ -31,19 +31,20 @@ Threads from known test phone numbers are excluded:
 
 ### 2. Smoke Test Markers
 
-Threads with explicit smoke test identifiers are excluded:
-- **guest_name patterns**: `T-44`, `T-48`, `thread 44`, `thread 48`, `GF-INBOUND-TEST` (case-insensitive)
-- **metadata.subject patterns**: `GF-INBOUND-TEST`, `SMOKE`, `TEST` (case-insensitive)
+Threads with explicit smoke test identifiers are excluded (tightened to avoid false positives):
+- **guest_name patterns**: `T-44`, `T-48`, `T-PROBE`, `T-TEST`, `thread 44`, `thread 48`, `inbound thread 44`, `GF-INBOUND-TEST` (case-insensitive)
+- **metadata.subject patterns**: `GF-INBOUND-TEST`, `SMOKE TEST`, `TEST MESSAGE` (explicit markers, case-insensitive)
 - **Example**: Thread with guest_name "T-48" or metadata `{"subject":"GF-INBOUND-TEST"}` will not alert
+- **Non-example**: Generic "T-99" or "T. Richardson" (guest with T. initial) will NOT be excluded
 
 ### 3. Empty BLOCK Bookings
 
 Booking placeholder threads with zero actual inbound guest messages are excluded:
-- **BLOCK patterns**: `BLOCK`, `BLOCK 5376` (exact BLOCK or BLOCK followed by numbers)
-- **Owner-block patterns**: `NOMSA`, `SAKHILE` (known owner names, case-insensitive)
+- **BLOCK patterns**: `BLOCK`, `BLOCK 5376`, `OWNER BLOCK` (inventory/owner-block shells)
 - **Message count**: Must have 0 inbound messages (excludes spam and outbound)
-- **Example**: Booking "BLOCK 5376" with no messages will not alert; if a guest message arrives later, alerts resume
+- **Example**: Booking "BLOCK 5376" or "OWNER BLOCK" with no messages will not alert; if a guest message arrives later, alerts resume
 - **Non-example**: Booking "BLOCK 5376" with 1+ inbound messages WILL alert (not excluded)
+- **Tightened**: Bare guest first names like "Nomsa" or "Sakhile" are NOT excluded (those were example empty shells with NB refs in requirements, not a blanket rule)
 
 ### Implementation
 

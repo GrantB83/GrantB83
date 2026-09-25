@@ -32,7 +32,8 @@ export function isTestPhoneThread(
 
 /**
  * Check if a thread should be excluded from staff alerts based on smoke test markers.
- * Checks guest_name and metadata.subject for test patterns like T-44, GF-INBOUND-TEST.
+ * Checks guest_name and metadata.subject for explicit test patterns.
+ * Uses specific markers to avoid false positives on real guest names.
  * 
  * @param thread - Thread object with guest_name and metadata fields
  * @returns true if thread has smoke test markers and should be excluded
@@ -41,15 +42,22 @@ export function isSmokeTestThread(thread: {
   guest_name?: string | null
   metadata?: string | null
 }): boolean {
-  // Check guest_name for markers
+  // Check guest_name for explicit smoke test markers
   const name = String(thread.guest_name || '').toUpperCase()
-  if (name.match(/T-\d+|THREAD\s+\d+|GF-INBOUND-TEST/)) return true
   
-  // Check metadata.subject for markers
+  // Match specific probe patterns: T-44, T-48, thread 44, thread 48, inbound thread XX
+  // Avoid over-broad T-\d+ that could match real guests with "T-" in names
+  if (name.match(/^T-(44|48|PROBE|TEST)\b/)) return true
+  if (name.match(/^(INBOUND\s+)?THREAD\s+(44|48)\b/)) return true
+  if (name.match(/GF-INBOUND-TEST/)) return true
+  
+  // Check metadata.subject for explicit test markers
   try {
     const meta = thread.metadata ? JSON.parse(thread.metadata) : {}
     const subject = String(meta.subject || '').toUpperCase()
-    if (subject.match(/GF-INBOUND-TEST|SMOKE|TEST/)) return true
+    if (subject.match(/GF-INBOUND-TEST/)) return true
+    if (subject.match(/\bSMOKE\s+TEST\b/)) return true
+    if (subject.match(/^TEST\s+(MESSAGE|THREAD)\b/)) return true
   } catch {
     // Invalid JSON or missing subject - not a smoke test
   }
@@ -85,9 +93,10 @@ export async function isEmptyBlockBooking(
   
   if (!booking) return false
   
-  // Check if guest_name matches BLOCK patterns
+  // Check if guest_name matches BLOCK/owner-block patterns
+  // Match "BLOCK", "BLOCK 5376", "OWNER BLOCK" but NOT bare guest names
   const name = String(booking.guest_name || '').toUpperCase()
-  if (!name.match(/BLOCK|NOMSA|SAKHILE/)) return false
+  if (!name.match(/\b(BLOCK|OWNER\s+BLOCK)\b/)) return false
   
   // Count inbound messages (not outbound, not spam)
   let count: { c: number } | undefined
