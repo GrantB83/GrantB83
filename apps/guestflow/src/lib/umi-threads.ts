@@ -932,7 +932,7 @@ export async function listInboxThreads(
     bookingId ? extra.get(asNumber(bookingId)) : undefined
   const rawResult = await db
     .prepare(
-      `SELECT 
+      `SELECT DISTINCT
          t.id, t.tenant_id, t.source, t.from_number, t.guest_name, t.status,
          t.booking_id, t.thread_kind, t.guest_contact_id, t.last_channel,
          t.last_inbound_channel, t.last_outbound_at, t.last_inbound_at,
@@ -960,8 +960,16 @@ export async function listInboxThreads(
   // Debug: Log SQL query result count and IDs
   if (rows.length > 0) {
     const rowIds = rows.map((r) => asNumber(r.id))
+    const uniqueIds = [...new Set(rowIds)]
     const maxRowId = Math.max(...rowIds)
-    console.log(`[listInboxThreads] SQL query returned ${rows.length} rows, max ID: ${maxRowId}`)
+    const maxUniqueId = Math.max(...uniqueIds)
+    console.log(`[listInboxThreads] SQL query returned ${rows.length} rows, ${uniqueIds.length} unique IDs, max ID: ${maxRowId}`)
+    if (rows.length !== uniqueIds.length) {
+      console.warn(`[listInboxThreads] WARNING: JOIN row multiplication detected! ${rows.length} rows but only ${uniqueIds.length} unique thread IDs`)
+      // Find duplicates
+      const duplicates = rowIds.filter((id, index) => rowIds.indexOf(id) !== index)
+      console.warn(`[listInboxThreads] Duplicate thread IDs:`, [...new Set(duplicates)])
+    }
     if (!rowIds.includes(48) || !rowIds.includes(49) || !rowIds.includes(50)) {
       console.log(`[listInboxThreads] Missing IDs in SQL result: 48=${rowIds.includes(48)}, 49=${rowIds.includes(49)}, 50=${rowIds.includes(50)}`)
     }
@@ -978,9 +986,19 @@ export async function listInboxThreads(
   }
 
   const threads: InboxThread[] = []
+  const processedIds = new Set<number>() // Deduplicate in case of JOIN row multiplication
+  
   for (const row of rows) {
     try {
       const threadId = asNumber(row.id)
+      
+      // Skip if already processed (JOIN row multiplication)
+      if (processedIds.has(threadId)) {
+        console.warn(`[listInboxThreads] Skipping duplicate row for thread ${threadId}`)
+        continue
+      }
+      processedIds.add(threadId)
+      
       const bookingId = row.booking_id ? asNumber(row.booking_id) : null
       
       const preview = await latestMessagePreview(db, threadId)

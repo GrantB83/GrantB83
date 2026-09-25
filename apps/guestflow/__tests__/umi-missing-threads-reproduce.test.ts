@@ -179,6 +179,54 @@ describe('Missing threads reproduction (48-50)', () => {
     expect(detail49?.messages).toEqual([])
   })
 
+  it('ensures list IDs are subset of inbound_threads IDs (no phantom booking IDs)', async () => {
+    // Create threads 1-10
+    for (let i = 1; i <= 10; i++) {
+      db.prepare(`
+        INSERT INTO inbound_threads (
+          id, tenant_id, source, from_number, guest_name, status,
+          first_message_at, last_message_at, thread_kind, booking_id,
+          last_channel, last_inbound_channel, last_inbound_at, pending_reply
+        ) VALUES (?, 1, 'whatsapp', '+27821234567', 'Guest ${i}', 'new', 
+                  '2026-09-01T10:00:00Z', '2026-09-01T10:00:00Z', 'booking', ?,
+                  'whatsapp_cloud', 'whatsapp_cloud', '2026-09-01T10:00:00Z', 1)
+      `).run(i, i * 10)
+    }
+
+    // Create bookings 10-100 (so booking IDs > thread IDs)
+    for (let i = 1; i <= 10; i++) {
+      db.prepare(`
+        INSERT INTO bookings (id, tenant_id, guest_name, check_in, check_out, status)
+        VALUES (?, 1, 'Guest ${i}', '2026-10-01', '2026-10-03', 'confirmed')
+      `).run(i * 10)
+    }
+
+    const threads = await listInboxThreads(db, 1)
+    expect(threads.length).toBe(10)
+
+    // Verify all thread IDs are in range 1-10 (from inbound_threads)
+    const threadIds = threads.map((t) => t.id)
+    for (const id of threadIds) {
+      expect(id).toBeGreaterThanOrEqual(1)
+      expect(id).toBeLessThanOrEqual(10)
+    }
+
+    // Verify no thread IDs match booking IDs (10, 20, 30, ... 100)
+    const bookingIds = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    for (const bookingId of bookingIds) {
+      expect(threadIds).not.toContain(bookingId)
+    }
+
+    // Verify raw/query/list counts match
+    const rawCount = (db.prepare(`SELECT COUNT(*) as count FROM inbound_threads WHERE tenant_id = 1 AND COALESCE(status, '') <> 'linked'`).get() as any).count
+    const queryCount = (db.prepare(`SELECT COUNT(DISTINCT t.id) as count FROM inbound_threads t WHERE t.tenant_id = 1 AND COALESCE(t.status, '') <> 'linked'`).get() as any).count
+    const listCount = threads.length
+
+    expect(rawCount).toBe(10)
+    expect(queryCount).toBe(10)
+    expect(listCount).toBe(10)
+  })
+
   it('handles threads with draft_jobs but no inbound_messages', async () => {
     // Create thread 48 with a draft_job but no messages
     db.prepare(`
