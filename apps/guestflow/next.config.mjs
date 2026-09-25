@@ -22,6 +22,7 @@ const nextConfig = {
   
   // Turbopack configuration (Next.js 16+)
   turbopack: {
+    root: __dirname,  // Explicitly set workspace root to apps/guestflow directory
     resolveAlias: {
       '@': path.join(__dirname, 'src'),
     },
