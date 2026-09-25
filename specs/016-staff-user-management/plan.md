@@ -6,7 +6,7 @@
 
 ## Summary
 
-Replace GuestFlow’s shared-password cookie with named staff users identified by **email** (optional display name; identical full access, no roles), bcryptjs password hashes, per-user sessions (random ID in `guestflow_staff_session`, SHA-256 in Turso/sqlite), Ops Users page, logout, bootstrap from `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD`, and default-on legacy `legacy@guestflow.local` + `STAFF_PASSWORD` login. Add/remove are server-guarded (no self-remove, no last-user remove, revoke sessions on remove). DB-backed login rate limit keyed by IP+email. Migrate script included but not applied to Production.
+Replace GuestFlow’s shared-password cookie with named staff users identified by **email** (optional display name; identical full access, no roles), bcryptjs password hashes, per-user sessions (random ID in `guestflow_staff_session`, SHA-256 in Turso/sqlite), Ops Users page, logout, bootstrap from `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD`, and default-on legacy `legacy@guestflow.local` + `STAFF_PASSWORD` login. Add/remove are server-guarded (no self-remove, no last-user remove, revoke sessions on remove). DB-backed login rate limit keyed by IP+email. **Decision L (Grant CLEAR 19:05 CT):** persist outbound redirect ON/OFF in an `app_settings` row, header toggle (confirm to turn OFF), fail-closed ON, one resolver for WA/SMS/email/WA Web jobs. Migrate script included but not applied to Production.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Replace GuestFlow’s shared-password cookie with named staff users identified b
 
 **Performance Goals**: Login and Users list for a handful of staff in one query; middleware session lookup one indexed hash read
 
-**Constraints**: No roles/RBAC; no guest send; outbound redirect unchanged; confirmToken / Approve&Send logic unchanged except actor email (or display name + email) stamp; no Production migrate/deploy; never log passwords or hashes; Edge middleware cannot use better-sqlite3; email is the only login id
+**Constraints**: No roles/RBAC; no guest send; confirmToken / Approve&Send logic unchanged except actor email (or display name + email) stamp; Decision L header toggle + settings row (no Production migrate/deploy); never log passwords or hashes; Edge middleware cannot use better-sqlite3; email is the only login id
 
 **Scale/Scope**: Single property staff (Grant, Liana, a few ops people). Touch `apps/guestflow` + this spec dir + `docs/automation/STATUS.md` + `docs/automation/labor-ledger.md`
 
@@ -34,7 +34,7 @@ Replace GuestFlow’s shared-password cookie with named staff users identified b
 
 | Principle | Status | How this plan complies |
 | --- | --- | --- |
-| I. Human-Gated Guest Send | PASS | No send-path behaviour change; confirmToken stays required; no auto-send |
+| I. Human-Gated Guest Send | PASS | ConfirmToken stays required; no auto-send; Decision L only rewrites To after approve |
 | II. Fail-Closed Facts | PASS | No guest facts invented; auth fail-closed in production |
 | III. Booking SoR vs Comms SoR | PASS | No booking/comms schema changes |
 | IV. Channel Identity Freeze | PASS | No number or From changes |
@@ -43,7 +43,7 @@ Replace GuestFlow’s shared-password cookie with named staff users identified b
 
 Auth/env-secret handling is in the Safety Constraints “do not touch without Grant approval” list. **This Cloud Agent assignment is that approval** for staff user management only. Agent still must not print secrets, apply Production migrate, or deploy Production.
 
-Post-design re-check: still PASS. Complexity is four new tables + login/session helpers + one Ops page.
+Post-design re-check: still PASS. Complexity is five new tables (staff four + `app_settings`) + login/session helpers + Users page + header redirect toggle.
 
 ## Project Structure
 
@@ -57,7 +57,8 @@ specs/016-staff-user-management/
 ├── quickstart.md
 ├── contracts/
 │   ├── api-staff-auth.md
-│   └── api-staff-users.md
+│   ├── api-staff-users.md
+│   └── api-outbound-redirect.md
 └── tasks.md
 ```
 
@@ -79,7 +80,10 @@ apps/guestflow/
 ├── src/app/staff-login/page.tsx
 ├── src/app/ops/users/page.tsx
 ├── src/app/ops/page.tsx                    # Users card under Ops
-├── src/components/Navigation.tsx           # logout only
+├── src/components/Navigation.tsx           # logout + Decision L toggle
+├── src/components/OutboundRedirectToggle.tsx
+├── src/app/api/staff/outbound-redirect/route.ts
+├── src/lib/outbound-redirect.ts            # DB settings row; env is seed only
 ├── src/app/api/ops/access-codes/upsert/route.ts  # actor stamp
 ├── src/app/api/inbound/send/route.ts       # actor stamp if trivial
 ├── src/lib/__tests__/staff-auth.test.ts

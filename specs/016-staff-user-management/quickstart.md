@@ -24,13 +24,13 @@ cd apps/guestflow
 node scripts/migrate-staff-users.js
 ```
 
-Expected: creates `staff_users`, `staff_sessions`, `staff_user_audit`, `staff_login_attempts` (and indexes). If bootstrap env is set and the users table is empty, inserts one hashed user.
+Expected: creates `staff_users`, `staff_sessions`, `staff_user_audit`, `staff_login_attempts`, `app_settings` (and indexes). If bootstrap env is set and the users table is empty, inserts one hashed user. Seeds `outbound_redirect=on` unless `OUTBOUND_MODE=live`.
 
 ## Automated tests
 
 ```bash
 cd apps/guestflow
-npm test -- src/lib/__tests__/staff-auth.test.ts __tests__/staff-users-api.test.ts __tests__/staff-login-ui.test.ts
+npm test -- src/lib/__tests__/staff-auth.test.ts src/lib/__tests__/outbound-redirect.test.ts __tests__/staff-users-api.test.ts __tests__/staff-login-ui.test.ts __tests__/outbound-redirect-api.test.ts
 npm run lint
 npm run build
 ```
@@ -47,7 +47,8 @@ Expected: add/remove, self-remove, last-user, hashed storage, session revoke, le
 6. Remove the second user with confirm — their next request is refused
 7. Confirm you cannot remove yourself; with one user left, remove is refused
 8. Optional: change own password; old password fails
-9. Confirm outbound-redirect banner still matches today; Approve&Send / confirmToken unchanged
+9. Confirm header shows Redirect ON/OFF; banner and `/api/health` match the live setting
+10. Flip OFF after confirm; flip ON; Approve&Send / confirmToken unchanged — nothing auto-sends
 
 ## Access URLs
 

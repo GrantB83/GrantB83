@@ -50,7 +50,7 @@ Tables are new. No role, owner, or permission column on any of them.
 | target | TEXT | NOT NULL (target email) |
 | created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
 
-Dedicated table (do not overload guest `audit_log` or access-code audit).
+Dedicated table (do not overload guest `audit_log` or access-code audit). Decision L also writes `action=outbound_redirect_flip` with `target` = `on->off` or `off->on`.
 
 ## staff_login_attempts
 
@@ -62,6 +62,21 @@ Dedicated table (do not overload guest `audit_log` or access-code audit).
 | attempted_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP |
 
 **Rules**: count rows for `(ip, email)` in the last 15 minutes; block at ≥ 5 failures; delete that pair on success.
+
+## app_settings (Decision L)
+
+| Column | Type | Constraints |
+| --- | --- | --- |
+| key | TEXT | PRIMARY KEY (`outbound_redirect`) |
+| value | TEXT | NOT NULL (`on` or `off`; anything else treated as `on` at read time) |
+| updated_at | DATETIME | NOT NULL |
+| updated_by | TEXT | NOT NULL (actor email, or `seed`) |
+
+**Rules**:
+- Seed ON (`INSERT OR IGNORE`). `OUTBOUND_MODE=live` may seed `off`; otherwise seed `on`
+- After seed, env is ignored for resolution
+- Missing / unreadable / garbage / DB error → ON
+- One global row, not per user
 
 ## Indexes
 

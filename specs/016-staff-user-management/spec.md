@@ -11,6 +11,7 @@
 **Clarifications**
 
 - Session 2026-09-24 (Grant): login identifier is **email**, not username. Bootstrap env is `GUESTFLOW_BOOTSTRAP_EMAIL` / `GUESTFLOW_BOOTSTRAP_PASSWORD`.
+- Session 2026-09-25 (Grant CLEAR 19:05 CT): Sprint 2 Decision L — a header outbound-redirect toggle, one shared global setting, persist at runtime, fail closed to ON, no redeploy.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -101,6 +102,27 @@ When someone adds or removes a user, the system records the actor email, the act
 
 ---
 
+### User Story 6 - Flip outbound redirect from the header (Priority: P1) — Decision L
+
+A signed-in staff member always sees the current outbound-redirect state in the site header/top bar. They can flip the one shared global switch. ON means guest sends go to the test sinks (current safe behaviour). OFF means guest sends go to the real recipients. Turning OFF requires an explicit confirm. The change takes effect immediately without a redeploy. If the stored value is missing, unreadable, garbage, or the store errors, the switch behaves as ON.
+
+**Why this priority**: Grant CLEAR 19:05 CT. Staff must stop redeploying to test live recipients, without losing fail-closed safety.
+
+**Independent Test**: Signed-in user sees ON in the header. Flip to OFF after confirm; a subsequent send resolution uses the real recipient. Flip back to ON; resolution uses sinks. Missing / garbage / store error all resolve as ON. An unsigned request to change it is refused. Approve&Send and confirm-to-send stay required; nothing auto-sends.
+
+**Acceptance Scenarios**:
+
+1. **Given** a signed-in staff user, **When** they view any staff page, **Then** the header clearly shows whether outbound redirect is ON or OFF
+2. **Given** redirect is ON, **When** a guest send is approved and confirmed, **Then** WhatsApp, SMS, email, and WhatsApp Web jobs go to the test sinks (not the real guest)
+3. **Given** a signed-in user, **When** they turn the switch OFF and confirm, **Then** later guest sends go to their real recipients
+4. **Given** a signed-in user, **When** they try to turn the switch OFF, **Then** they must confirm before it changes
+5. **Given** the stored value is missing, unreadable, garbage, or the store fails, **When** a send is resolved, **Then** redirect is treated as ON
+6. **Given** no signed-in session, **When** someone tries to change the switch, **Then** the change is refused
+7. **Given** any signed-in user, **When** they flip the switch, **Then** a record stores their email, the time, and the old and new values
+8. **Given** a flip, **When** the existing staff banner and health outbound status are read, **Then** they match the live stored value
+
+---
+
 ### Edge Cases
 
 - Empty, whitespace-only, invalid, or duplicate emails are rejected; emails are stored lowercase and compared case-insensitively
@@ -111,8 +133,10 @@ When someone adds or removes a user, the system records the actor email, the act
 - A user who is the only remaining user and also tries to remove themselves is refused for both reasons
 - Legacy reserved email is a session attribution, not a removable listed user unless a real user with that email was added
 - Bootstrap does nothing when bootstrap env is missing and the user list is empty; staff are not invented
-- Existing guest portal, confirm-to-send, Approve&Send, and outbound-redirect behaviour stay as they are today
+- Existing guest portal, confirm-to-send, and Approve&Send stay as they are today (Decision L only changes where an already-approved send is delivered)
 - Guest-facing hosts continue to hide staff/ops routes
+- A missing or broken outbound-redirect setting never delivers to a real guest
+- Turning the switch OFF without the confirm step in the header does not happen from the normal UI; the server still accepts an authenticated OFF write (confirm is a human gate in the header)
 
 ## Requirements *(mandatory)*
 
@@ -141,17 +165,31 @@ When someone adds or removes a user, the system records the actor email, the act
 - **FR-021**: Add and remove MUST write an audit record with actor email, action, target email, and timestamp
 - **FR-022**: A signed-in user MUST be able to change their own password by proving the current password
 - **FR-023**: A schema-migrate script MUST exist for the new user, session, and audit tables and MUST NOT be applied to Production by the implementing agent
-- **FR-024**: Guest send, confirm-token, Approve&Send, outbound redirect, templates, and nav structure MUST stay unchanged except for adding Users under Ops and adding logout
+- **FR-024**: Guest send, confirm-token, Approve&Send, templates, and nav structure MUST stay unchanged except for adding Users under Ops, logout, and the Decision L header redirect toggle
 - **FR-025**: Approve&Send and access-code changes MUST stamp the acting email, or the display name if set while still storing the email
 - **FR-026**: Email MUST be required, validated, stored lowercase, and unique on the normalized value
 - **FR-027**: Display name MUST be optional and MUST NOT be used as the login identifier
+- **FR-028**: The staff header/top bar MUST show a control wired to the single shared outbound-redirect setting and MUST always display the current ON/OFF state
+- **FR-029**: Any signed-in user MUST be able to flip that setting (no roles); there is one global value, not a per-user preference
+- **FR-030**: ON MUST send guest WhatsApp, SMS, email, and WhatsApp Web jobs to the test sinks; OFF MUST send them to the real recipients
+- **FR-031**: The setting MUST persist so a flip takes effect at runtime with no redeploy
+- **FR-032**: First persist MUST seed ON; the environment outbound-mode value is only that seed default
+- **FR-033**: Missing, unreadable, or garbage stored values, and any store error, MUST fail closed to ON
+- **FR-034**: Every flip MUST write an audit record with the acting user’s email, the time, and the old and new values
+- **FR-035**: Turning OFF MUST require an explicit confirm in the header
+- **FR-036**: The existing staff banner and health outbound status MUST read the live stored value
+- **FR-037**: Every outbound path (WhatsApp, SMS, email, WhatsApp Web jobs) MUST use one resolver; nothing bypasses it
+- **FR-038**: Approve&Send and confirm-to-send MUST stay required; nothing auto-sends
+- **FR-039**: The settings store MUST be included in the staff migrate script and MUST NOT be applied to Production by the implementing agent
+- **FR-040**: An unauthenticated change request MUST be refused
 
 ### Key Entities
 
 - **Staff user**: A person who can sign in. Attributes: email (login id), optional display name, password hash (never shown), created time, created-by email, last-login time. No role or owner flag.
 - **Staff session**: A single sign-in. Attributes: hash of the random session identifier, which user it belongs to (or reserved legacy email attribution), created time, expiry, last-seen time.
-- **User audit event**: A record that an actor email added or removed a target email at a time.
+- **User audit event**: A record that an actor email added or removed a target email at a time, or flipped outbound redirect from an old value to a new value.
 - **Login attempt**: A failed or counted sign-in used only to enforce the per-address-and-email rate limit.
+- **Outbound redirect setting**: One shared ON/OFF value. ON = send to test sinks. OFF = send to real recipients. Missing/garbage/error = ON.
 
 ## Success Criteria *(mandatory)*
 
@@ -165,6 +203,10 @@ When someone adds or removes a user, the system records the actor email, the act
 - **SC-006**: Staff stop sharing one password as the only way to give or revoke access — adding or removing a person replaces asking Grant to change a single shared secret
 - **SC-007**: Login abuse from one address + email is throttled so a burst of failures does not keep succeeding at guessing
 - **SC-008**: The same email with different capital letters counts as one user; invalid emails never become users
+- **SC-009**: Staff can read the header state and flip outbound redirect (with confirm on OFF) in one visit, without a redeploy
+- **SC-010**: After the switch is ON, 100% of resolved guest sends go to sinks; after OFF, 100% go to the intended recipients
+- **SC-011**: Missing, garbage, or store-error reads treat redirect as ON 100% of the time
+- **SC-012**: Every flip leaves an audit record with actor email, time, and old/new values; unsigned change attempts fail 100% of the time
 
 ## Assumptions
 
@@ -176,7 +218,8 @@ When someone adds or removes a user, the system records the actor email, the act
 - Bootstrap env values are set by Grant in the host environment; agents do not invent or commit them
 - Reserved legacy email is for the shared-password transition and is not created as a normal removable user by bootstrap
 - Stamping the acting email (or display name plus email) on Approve&Send / access-code writes is in scope
-- Outbound redirect stays exactly as it is today
+- Decision L replaces env-only outbound mode for delivery: the stored ON/OFF value is authoritative after seed; env outbound-mode is seed default only
+- Test sinks stay the existing Grant WhatsApp and email sinks
 - No Production schema apply, no Production deploy, no guest messages
 - Runtime table-ensure is acceptable only if it matches the existing GuestFlow ensure-schema pattern; the migrate script remains the official Production apply path after Grant approval
 
@@ -186,4 +229,4 @@ Sharing one staff password and asking Grant to rotate it when someone should los
 
 ## Artefact Grant can use this week
 
-Staff login at `/staff-login` (email + password), Users at `/ops/users`, and logout in the staff console — on Preview only until Grant approves deploy and migration.
+Staff login at `/staff-login` (email + password), Users at `/ops/users`, logout, and the header outbound-redirect toggle — on Preview only until Grant approves deploy and migration.

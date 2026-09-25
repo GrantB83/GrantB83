@@ -61,4 +61,22 @@
 
 ## 10. Scope freeze
 
-**Decision**: No roles column. Users is an Ops card + `/ops/users` only. Logout in existing nav chrome. No template, confirmToken, or outbound-redirect changes.
+**Decision**: No roles column. Users is an Ops card + `/ops/users` only. Logout in existing nav chrome. No template or confirmToken changes.
+
+## 11. Decision L — outbound redirect toggle (Grant CLEAR 19:05 CT)
+
+**Decision**:
+- One shared `app_settings` row `key=outbound_redirect`, `value` `on` | `off`
+- Seed ON. `OUTBOUND_MODE` is seed default only (`live` → seed `off`; anything else → `on`). After seed, the row is authoritative
+- Fail closed: missing row, unreadable value, garbage, or any DB error → ON
+- OFF sends to the real recipient. Decision L supersedes `OUTBOUND_LIVE_CLEAR` as the live gate (no redeploy)
+- Sinks stay env `OUTBOUND_REDIRECT_TO_WA` / `OUTBOUND_REDIRECT_TO_EMAIL`. ON + missing sink still throws (never fall through to guest To)
+- Header toggle for any signed-in user; confirm required to turn OFF
+- Banner and `/api/health` `outboundMode` / `outboundRedirect` read the live row
+- One async resolver used by Twilio WA, SMS, Resend email, and WA Web `send_jobs`
+- Flip writes `staff_user_audit` (`action=outbound_redirect_flip`, `target=old->new`, `actor` email)
+- Settings DDL lives in `migrate-staff-users.js`. Agent does not apply Production
+
+**Rationale**: Grant must flip Preview to real recipients without a Vercel env + redeploy, without losing fail-closed safety.
+
+**Alternatives considered**: Keep env-only `OUTBOUND_MODE` (requires redeploy); keep `OUTBOUND_LIVE_CLEAR` dual-gate (blocks OFF until another env change).

@@ -158,6 +158,32 @@
 
 ---
 
+## Phase 9: User Story 6 - Header outbound redirect toggle (Priority: P1) — Decision L
+
+**Goal**: Persist ON/OFF in `app_settings`, header toggle with confirm-on-OFF, fail-closed ON, one resolver for all outbound channels. Grant CLEAR 19:05 CT.
+
+**Independent Test**: Resolver ON/OFF/missing/throw/garbage; audit on flip; 401 unauthenticated; every channel calls the resolver; banner + health read live DB
+
+### Tests for User Story 6
+
+- [x] T042 [P] [US6] Resolver ON, OFF, missing, DB throws, garbage (all but OFF → ON) plus flip audit in `apps/guestflow/src/lib/__tests__/outbound-redirect.test.ts`
+- [x] T043 [P] [US6] API 401 unauthenticated and flip audit in `apps/guestflow/__tests__/outbound-redirect-api.test.ts`
+- [x] T044 [P] [US6] Source test that WA, SMS, email, send_jobs use the resolver and header confirms OFF in `apps/guestflow/__tests__/staff-login-ui.test.ts`
+
+### Implementation for User Story 6
+
+- [x] T045 [US6] Add `app_settings` DDL + ON seed (`OUTBOUND_MODE` seed default only) to `apps/guestflow/scripts/migrate-staff-users.js` and `apps/guestflow/src/lib/staff-users-schema.ts`
+- [x] T046 [US6] DB-backed fail-closed resolver + `setOutboundRedirect` audit write in `apps/guestflow/src/lib/outbound-redirect.ts`
+- [x] T047 [US6] Await resolver in `apps/guestflow/src/lib/whatsapp.ts`, `apps/guestflow/src/lib/sms.ts`, `apps/guestflow/src/lib/email.ts`, `apps/guestflow/src/lib/send-jobs.ts`
+- [x] T048 [US6] Banner and `/api/health` read live DB in `apps/guestflow/src/components/outbound-redirect-banner.tsx` and `apps/guestflow/src/app/api/health/route.ts`
+- [x] T049 [US6] GET/POST `/api/staff/outbound-redirect` (401 without session) in `apps/guestflow/src/app/api/staff/outbound-redirect/route.ts`
+- [x] T050 [US6] Header toggle with always-visible ON/OFF and confirm-to-OFF in `apps/guestflow/src/components/OutboundRedirectToggle.tsx` and `apps/guestflow/src/components/Navigation.tsx`
+- [x] T051 [US6] Docs: `apps/guestflow/docs/STAFF-USERS.md`, `apps/guestflow/.env.example`, `docs/automation/STATUS.md`, `docs/automation/labor-ledger.md`
+
+**Checkpoint**: Decision L ships ON, fail-closed, no Production migrate
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -170,6 +196,7 @@
 - **US4 (Phase 6)**: Depends on US1 session
 - **US5 (Phase 7)**: Depends on US2 add/remove
 - **Polish (Phase 8)**: Depends on stories above
+- **US6 (Phase 9)**: Depends on US1 session + Foundational schema/migrate
 
 ### User Story Dependencies
 
@@ -178,6 +205,7 @@
 - **User Story 3 (P1)**: After US1 login route exists
 - **User Story 4 (P2)**: After US1
 - **User Story 5 (P2)**: After US2
+- **User Story 6 (P1) Decision L**: After US1 session
 
 ### Parallel Opportunities
 
@@ -191,6 +219,7 @@
 - **US3**: Bootstrap once + legacy flag on/off
 - **US4**: Own password only
 - **US5**: Audit rows present
+- **US6**: Resolver fail-closed; header toggle; 401; channels use resolver
 
 ### Suggested MVP
 
@@ -210,4 +239,4 @@ US1 + Foundational (named session login). Full request needs US2 + US3 in the sa
 - Do not apply `migrate-staff-users.js` to Production
 - Do not merge the PR
 - Do not send guest messages
-- Outbound redirect stays on exactly as today
+- Outbound redirect ships ON (Decision L); do not apply Production migrate
