@@ -953,42 +953,59 @@ export async function listInboxThreads(
 
   const threads: InboxThread[] = []
   for (const row of rows) {
-    const preview = await latestMessagePreview(db, asNumber(row.id))
-    const extraFlag = extraFor(row.booking_id ? asNumber(row.booking_id) : null)
-    const hasExtra = Boolean(extraFlag)
-    const unansweredInbound = await hasUnansweredInbound(db, asNumber(row.id))
-    const pendingReply = unansweredInbound
-    const thread: InboxThread = {
-      id: asNumber(row.id),
-      threadKind: row.thread_kind === 'booking' ? 'booking' : 'temp',
-      bookingId: row.booking_id ? asNumber(row.booking_id) : null,
-      bookerName: row.booking_guest_name || row.guest_name || row.from_number || 'Unknown',
-      suite: row.suite_or_unit || null,
-      checkIn: row.check_in ? String(row.check_in).slice(0, 10) : null,
-      checkOut: row.check_out ? String(row.check_out).slice(0, 10) : null,
-      nightsbridgeBookingId: row.nightsbridge_booking_id || null,
-      lastChannel: row.last_channel,
-      lastInboundChannel: row.last_inbound_channel,
-      lastMessageAt: row.last_message_at,
-      preview: preview.preview,
-      pendingReply,
-      hasOpenDraft:
-        preview.hasOpenDraft ||
-        Boolean(extraFlag?.hasDraft) ||
-        (hasExtra && extraFlag?.kind !== 'arrival'),
-      needsAttention:
-        unansweredInbound ||
-        hasExtra ||
-        deliveryAttention.has(asNumber(row.id)),
-      sortBucket: 2,
-      hygieneStatus: row.hygiene_status,
-      fromNumber: row.from_number,
-      careWindow: computeCareWindow(lastWabaByThread.get(asNumber(row.id)) || null),
-      arrivalStage: extraFlag?.stage || null,
-      attentionReason: extraFlag?.reason || null,
+    try {
+      const threadId = asNumber(row.id)
+      const bookingId = row.booking_id ? asNumber(row.booking_id) : null
+      
+      const preview = await latestMessagePreview(db, threadId)
+      const extraFlag = extraFor(bookingId)
+      const hasExtra = Boolean(extraFlag)
+      const unansweredInbound = await hasUnansweredInbound(db, threadId)
+      const pendingReply = unansweredInbound
+      
+      const thread: InboxThread = {
+        id: threadId,
+        threadKind: row.thread_kind === 'booking' ? 'booking' : 'temp',
+        bookingId,
+        bookerName: row.booking_guest_name || row.guest_name || row.from_number || 'Unknown',
+        suite: row.suite_or_unit || null,
+        checkIn: row.check_in ? String(row.check_in).slice(0, 10) : null,
+        checkOut: row.check_out ? String(row.check_out).slice(0, 10) : null,
+        nightsbridgeBookingId: row.nightsbridge_booking_id || null,
+        lastChannel: row.last_channel,
+        lastInboundChannel: row.last_inbound_channel,
+        lastMessageAt: row.last_message_at,
+        preview: preview.preview,
+        pendingReply,
+        hasOpenDraft:
+          preview.hasOpenDraft ||
+          Boolean(extraFlag?.hasDraft) ||
+          (hasExtra && extraFlag?.kind !== 'arrival'),
+        needsAttention:
+          unansweredInbound ||
+          hasExtra ||
+          deliveryAttention.has(threadId),
+        sortBucket: 2,
+        hygieneStatus: row.hygiene_status,
+        fromNumber: row.from_number,
+        careWindow: computeCareWindow(lastWabaByThread.get(threadId) || null),
+        arrivalStage: extraFlag?.stage || null,
+        attentionReason: extraFlag?.reason || null,
+      }
+      thread.sortBucket = inboxSortBucket(thread)
+      threads.push(thread)
+    } catch (error) {
+      const threadId = asNumber(row.id)
+      console.error(`[listInboxThreads] Failed to process thread ${threadId}:`, error)
+      console.error(`[listInboxThreads] Thread ${threadId} row data:`, JSON.stringify({
+        id: row.id,
+        thread_kind: row.thread_kind,
+        status: row.status,
+        booking_id: row.booking_id,
+        from_number: row.from_number,
+      }))
+      continue
     }
-    thread.sortBucket = inboxSortBucket(thread)
-    threads.push(thread)
   }
 
   let result = sortInboxThreads(threads)

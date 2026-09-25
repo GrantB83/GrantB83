@@ -38,10 +38,31 @@ export async function GET(request: NextRequest) {
       const rawMaxId = rawMaxIdRow?.max_id == null ? null : Number(rawMaxIdRow.max_id)
       const rawCount = rawCountRow?.count == null ? 0 : Number(rawCountRow.count)
       
+      // Check the SQL query results directly to see if threads are returned by the LEFT JOIN
+      const rawQueryRows = ((await db
+        .prepare(
+          `SELECT t.id, t.thread_kind, t.status, t.booking_id, b.id as booking_exists
+           FROM inbound_threads t
+           LEFT JOIN bookings b ON b.id = t.booking_id
+           WHERE t.tenant_id = ?
+             AND COALESCE(t.status, '') <> 'linked'`
+        )
+        .all(tenantId)) || []) as Array<{ id: number; thread_kind: string; status: string; booking_id: number | null; booking_exists: number | null }>
+      
+      const queryIds = rawQueryRows.map((r) => Number(r.id))
+      const queryMaxId = queryIds.length > 0 ? Math.max(...queryIds) : null
+      
       response.debug = {
         tenantId,
         rawMaxId,
         rawCount,
+        queryMaxId,
+        queryCount: rawQueryRows.length,
+        query48_49_50: {
+          '48': rawQueryRows.find((r) => Number(r.id) === 48) || null,
+          '49': rawQueryRows.find((r) => Number(r.id) === 49) || null,
+          '50': rawQueryRows.find((r) => Number(r.id) === 50) || null,
+        },
       }
     }
     
