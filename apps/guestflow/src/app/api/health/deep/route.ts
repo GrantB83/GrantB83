@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
+import { staffApiResponseInit } from '@/lib/json-safe'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export async function GET() {
   const timestamp = new Date().toISOString()
-  const headers = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-  }
+  const { headers } = staffApiResponseInit()
   try {
     const db = await getDbAsync()
     await db.prepare('SELECT 1 AS ok').get()
