@@ -1,7 +1,7 @@
 # GuestFlow Phase 1 — Batch LLM Draft Pilot
 
-**Status**: Implemented (Grant CLEAR 20 Sep 2026)  
-**Spec**: `specs/008-guestflow-phase1-batch-drafts/spec.md`
+**Status**: Sprint 3 S Ultra-only realignment (draft — MERGE HOLD for GFM)  
+**Spec**: `specs/027-sprint3-phase1-ultra-only/` (queue/contract SoR remains `specs/008-guestflow-phase1-batch-drafts/spec.md`)
 
 ## Overview
 
@@ -27,12 +27,14 @@ The `/api/inbound/webhook` endpoint now:
 
 ### 2. Batch Worker
 
-A new batch worker (`scripts/batch-worker.ts`) processes queued draft jobs:
+A batch worker (`scripts/batch-worker.ts`) processes queued draft jobs:
 
-- Claims pending jobs in batches
-- Calls LLM with a QC'd prompt template
+- Claims pending jobs in batches only when a Cursor Ultra path is present
+- Loads the QC'd prompt template + property knowledge (the Ultra Cloud Agent is the model)
 - Upserts drafts via authenticated API (`POST /api/drafts/upsert`)
 - Updates job status (`pending` → `claimed` → `done`/`failed`)
+- **Refuses the whole batch** (no claims) if the Ultra path is unavailable
+- **Does not** call OpenAI `chat.completions` and **does not** require `OPENAI_API_KEY`
 
 ### 3. Batch Contract
 
@@ -51,19 +53,17 @@ The batch worker enforces these hard rules:
 
 ### Prerequisites
 
-1. **Environment Variables** (set in Cursor Cloud Agent secrets or local `.env`):
+1. **Environment Variables** (set in Cursor Cloud Agent secrets or local `.env` — names only):
    - `GUESTFLOW_API_URL` - GuestFlow API base URL (e.g., `https://guestflow.yourdomain.com`)
    - `DRAFT_WORKER_SECRET` - Draft worker authentication secret (distinct from `CRON_SECRET`)
    - `TURSO_DATABASE_URL` - Turso database URL
    - `TURSO_AUTH_TOKEN` - Turso auth token
-   - `OPENAI_API_KEY` - OpenAI API key (required for LLM calls, fail-closed if unset)
-   - `OPENAI_API_BASE` - Optional, defaults to `https://api.openai.com/v1`
-   - `LLM_MODEL` - Optional, defaults to `gpt-4o-mini`
+   - **Do not set `OPENAI_API_KEY` for Production Phase 1.** It is ignored and is not a draft path.
 
-2. **LLM Provider** (OpenAI-compatible API):
-   - The worker calls OpenAI-compatible chat completions endpoint
-   - Supports OpenAI, Azure OpenAI, or compatible providers via `OPENAI_API_BASE`
-   - Fail-closed: if `OPENAI_API_KEY` is unset, jobs fail immediately with clear error
+2. **LLM Provider** (Cursor Ultra Cloud Agent only):
+   - The Cloud Agent generates drafts with its own model (Cursor Ultra Models pool)
+   - Fail-closed: live runs without `--dry-run`, `--drafts-file`, or an injected generator refuse the batch and claim nothing
+   - See `docs/CURSOR-ULTRA-BATCH-LAUNCH.md`
 
 ### Manual Run
 
@@ -79,39 +79,26 @@ npm run batch-worker -- --dry-run
 ```
 
 Dry run:
-- Claims jobs as normal
-- Generates placeholder drafts (no real LLM call)
+- May claim jobs to exercise the batch contract
+- Generates placeholder drafts (no model call)
 - Does NOT upsert to the database
 - Useful for testing batch logic without affecting production
+- Do not run against Production Turso
 
-### Cursor Cloud Agent Run
+Live without `--dry-run` or `--drafts-file` **refuses the batch** (exit ≠ 0, zero claims).
 
-To launch a Cursor Cloud Agent batch worker:
+### Cursor Ultra Cloud Agent Run
 
-```typescript
-// In your orchestrator (e.g., Grok Bot or manual Cursor launch)
-const agent = await cursor.cloudAgents.create({
-  name: 'GuestFlow Phase 1 Batch Worker',
-  environment: 'guestflow-production',
-  branch: 'main',
-  task: `
-    Run the GuestFlow Phase 1 batch draft worker:
-    
-    1. cd apps/guestflow
-    2. npm run batch-worker
-    3. Report results (jobs claimed, succeeded, failed)
-    
-    Stop after one batch completes. Do not loop or wait.
-  `,
-  secrets: [
-    'GUESTFLOW_API_URL',
-    'DRAFT_WORKER_SECRET',
-    'TURSO_DATABASE_URL',
-    'TURSO_AUTH_TOKEN',
-    'OPENAI_API_KEY'  // Required for LLM calls
-  ]
-})
-```
+Launch a **Cursor Ultra** Cloud Agent (not a standalone OpenAI script). Full prompt: `docs/CURSOR-ULTRA-BATCH-LAUNCH.md`.
+
+Secrets to attach (names only):
+
+- `GUESTFLOW_API_URL`
+- `DRAFT_WORKER_SECRET`
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+
+Do **not** attach or set `OPENAI_API_KEY` for this Production Phase 1 path.
 
 ## Batch Worker Output
 
@@ -310,15 +297,11 @@ WHERE draft_source = 'human'
 
 **Solution**: Fewer than 5 pending jobs exist AND oldest job is less than 20 minutes old. The batch worker waits for either condition: ≥5 jobs OR oldest job ≥20 minutes.
 
-### "LLM generation requires Cursor Ultra environment"
+### "Draft generation requires Cursor Ultra Cloud Agent"
 
-**Old error** (pre-fix). Now uses real OpenAI-compatible API.
+**Expected** on a live standalone run. The Ultra path is missing.
 
-**Solution**: Set `OPENAI_API_KEY` environment variable. The worker now calls OpenAI chat completions (or compatible API via `OPENAI_API_BASE`).
-
-### "LLM API key required"
-
-**Solution**: Set `OPENAI_API_KEY` in environment variables or Cursor Cloud Agent secrets. Worker fails closed if unset.
+**Solution**: Launch the worker as a Cursor Ultra Cloud Agent (see `CURSOR-ULTRA-BATCH-LAUNCH.md`), or pass `--drafts-file` with CA-written replies, or use `--dry-run` for contract testing. Do not set `OPENAI_API_KEY` — it is ignored.
 
 ### Failed jobs with "Upsert failed (401)"
 
@@ -337,6 +320,8 @@ WHERE draft_source = 'human'
 - ✅ No auto-send (all drafts require Approve & Send)
 - ✅ Outbound redirect mode respected
 - ✅ Edit/reject rates measurable via `draft_source`
+- ✅ Fail-closed: no OpenAI / third-party chat-completion key on the Production Phase 1 path
+- ✅ Refuse batch (no claim) when the Ultra path is unavailable
 
 ## Out of Scope (Phase 1)
 
@@ -346,7 +331,8 @@ WHERE draft_source = 'human'
 - `stock_order` intent
 - Staff UI for `draft_source` display (database queries sufficient for pilot)
 - Automatic retry of failed jobs (manual or future cron)
-- Fine-tuned LLM models (use provider defaults)
+- Fine-tuned LLM models (Cursor Ultra CA is the model)
+- stay@ From flip, ads, or redirect go-live (separate Sprint 3 items)
 
 ## Next Steps (Phase 2+)
 
@@ -359,7 +345,9 @@ After Phase 1 pilot runs for ≥1 week with measurable edit/reject rates:
 
 ## References
 
-- Spec: `specs/008-guestflow-phase1-batch-drafts/spec.md`
+- Spec (Ultra-only): `specs/027-sprint3-phase1-ultra-only/`
+- Spec (original queue/contract): `specs/008-guestflow-phase1-batch-drafts/spec.md`
+- Launch: `docs/CURSOR-ULTRA-BATCH-LAUNCH.md`
 - Phase 0 Safety: `docs/PHASE0-SAFETY.md`
 - Outbound Redirect: PR #194
 - Draft Worker Auth: `src/lib/draft-worker-auth.ts`
