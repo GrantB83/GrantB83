@@ -549,6 +549,21 @@ function InboxHomePageInner() {
                   Draft
                 </span>
               )}
+              {thread.arrivalStage && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                  {thread.arrivalStage}
+                </span>
+              )}
+              {thread.needsAttention && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
+                  Needs attention
+                </span>
+              )}
+              {thread.attentionReason && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-rose-50 text-rose-700">
+                  {thread.attentionReason}
+                </span>
+              )}
               {thread.hygieneStatus === 'nudged' && (
                 <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
                   Stale temp
@@ -594,19 +609,26 @@ function InboxHomePageInner() {
         </>
       }
       headerBadgeSlot={
-        detail.careWindow ? (
-          <span
-            className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
-              detail.careWindow.state === 'closed'
-                ? 'bg-slate-200 text-slate-800'
-                : detail.careWindow.state === 'closing_soon'
-                  ? 'bg-orange-100 text-orange-800'
-                  : 'bg-emerald-50 text-emerald-800'
-            }`}
-          >
-            {detail.careWindow.label}
-          </span>
-        ) : null
+        <>
+          {detail.arrivalStage ? (
+            <span className="text-xs inline-flex px-2 py-1 rounded bg-blue-100 text-blue-800 inbox-wrap">
+              {detail.arrivalStage}
+            </span>
+          ) : null}
+          {detail.careWindow ? (
+            <span
+              className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
+                detail.careWindow.state === 'closed'
+                  ? 'bg-slate-200 text-slate-800'
+                  : detail.careWindow.state === 'closing_soon'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-emerald-50 text-emerald-800'
+              }`}
+            >
+              {detail.careWindow.label}
+            </span>
+          ) : null}
+        </>
       }
       extraHeader={
         <>

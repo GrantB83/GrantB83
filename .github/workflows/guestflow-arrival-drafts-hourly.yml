@@ -1,0 +1,28 @@
+# Hobby fallback: Vercel Hobby rejects hourly cron (Preview would fail).
+# This workflow hits the same idempotent GET /api/cron/arrival-drafts each hour.
+# Secrets: CRON_SECRET, GUESTFLOW_BASE_URL (Preview or Production host).
+# The handler no-ops before 06:00 Africa/Johannesburg and never sends.
+name: GuestFlow arrival drafts (hourly Hobby fallback)
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger arrival-drafts cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GUESTFLOW_BASE_URL: ${{ secrets.GUESTFLOW_BASE_URL }}
+        run: |
+          if [ -z "$CRON_SECRET" ] || [ -z "$GUESTFLOW_BASE_URL" ]; then
+            echo "Skipping: CRON_SECRET or GUESTFLOW_BASE_URL secret is not set."
+            exit 0
+          fi
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            "${GUESTFLOW_BASE_URL%/}/api/cron/arrival-drafts"

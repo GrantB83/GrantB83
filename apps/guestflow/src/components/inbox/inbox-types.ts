@@ -24,6 +24,8 @@ export interface InboxThread {
     label: string
     closingSoon: boolean
   }
+  arrivalStage?: string | null
+  attentionReason?: string | null
 }
 
 export interface ThreadDetail {
@@ -78,6 +80,8 @@ export interface ThreadDetail {
     closingSoon: boolean
     windowExpiresAt: string | null
   }
+  arrivalStage?: string | null
+  attentionReason?: string | null
 }
 
 export type InboxBreakpoint = 'phone' | 'tablet' | 'desktop'

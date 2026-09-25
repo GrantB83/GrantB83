@@ -13,6 +13,8 @@ import { getCareWindowForThread } from '@/lib/whatsapp-care-window'
 import { ensureDeliverySchema } from '@/lib/delivery-schema'
 import { plainDeliveryError } from '@/lib/delivery-status'
 import { onSendFailed } from '@/lib/send-failed-hook'
+import { markArrivalDraftSent, refreshArrivalDraftCodesAtSend } from '@/lib/arrival-drafts'
+import { ACCESS_CODES_BLOCK_START } from '@/lib/arrival-drafts-config'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
 import { stampLastHandler } from '@/lib/staff-alerts'
@@ -147,12 +149,23 @@ export async function POST(request: NextRequest) {
     const contentSid = typeof body.contentSid === 'string' ? body.contentSid.trim() : ''
     const contentVariables =
       body.contentVariables && typeof body.contentVariables === 'object' ? body.contentVariables : undefined
-    const outboundBody = (body.body || latestMessage?.draft_reply || '').trim()
+    let outboundBody = (body.body || latestMessage?.draft_reply || '').trim()
     if (!outboundBody && !contentSid) {
       return NextResponse.json(
         { success: false, error: 'Thread has no draft reply to send' } as SendMessageResponse,
         { status: 400 }
       )
+    }
+
+    if (outboundBody.includes(ACCESS_CODES_BLOCK_START)) {
+      try {
+        const refreshed = await refreshArrivalDraftCodesAtSend(db, { threadId, body: outboundBody })
+        if (refreshed.refreshed) {
+          outboundBody = refreshed.body.trim()
+        }
+      } catch {
+        // arrival_drafts schema may be absent in older fixtures
+      }
     }
 
     const isWhatsAppCloud = channel !== 'email' && channel !== 'whatsapp_web' && channel !== 'sms'
@@ -247,6 +260,11 @@ export async function POST(request: NextRequest) {
           channel: 'email',
           status: 'sent',
         })
+        try {
+          await markArrivalDraftSent(db, threadId)
+        } catch {
+          // optional
+        }
         await writeEmailAudit(db, threadId, 'sent', to, sendResult.messageId || null, sendResult.timestamp, actingActor)
         await stampLastHandler(db, threadId, staffSession?.email)
 
@@ -405,6 +423,11 @@ export async function POST(request: NextRequest) {
           channel: 'sms',
           status: 'sent',
         })
+        try {
+          await markArrivalDraftSent(db, threadId)
+        } catch {
+          // optional
+        }
         await stampLastHandler(db, threadId, staffSession?.email)
         return NextResponse.json({
           success: true,
@@ -495,6 +518,11 @@ export async function POST(request: NextRequest) {
         channel: 'whatsapp_cloud',
         status: 'sent',
       })
+      try {
+        await markArrivalDraftSent(db, threadId)
+      } catch {
+        // optional
+      }
       await stampLastHandler(db, threadId, staffSession?.email)
 
       return NextResponse.json({
