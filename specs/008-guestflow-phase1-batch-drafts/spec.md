@@ -6,6 +6,8 @@
 
 **Status**: Ready for planning
 
+**Ultra-only realignment (Sprint 3 S)**: `specs/027-sprint3-phase1-ultra-only/` is the SoR for removing the OpenAI chat-completion fallback. This folder remains the original Phase 1 enqueue + batch-contract spec.
+
 **Input**: Grant CLEAR (20 Sep 2026) for GuestFlow Phase 1: Cursor Ultra–metered batch LLM draft worker that fills draft_reply via POST /api/drafts/upsert (DRAFT_WORKER_SECRET), while inbound webhooks only enqueue draft_jobs (no sync LLM on Vercel). Batch contract: ≥5 jobs OR 20 min wait, 07:00–21:00 Africa/Johannesburg window, one CA/worker in flight, ≤6 batches/day soft cap Phase 1. Intents: general_question, maintenance_other, low-confidence only. No auto-send, From unchanged, respect outbound redirect.
 
 ## User Scenarios & Testing *(mandatory)*

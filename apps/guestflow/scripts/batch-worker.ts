@@ -1,29 +1,58 @@
 #!/usr/bin/env tsx
 /**
- * GuestFlow Phase 1 Batch Draft Worker
- * 
+ * GuestFlow Phase 1 Batch Draft Worker (Cursor Ultra Only)
+ *
  * Usage:
  *   npm run batch-worker
  *   npm run batch-worker -- --dry-run
- * 
- * Environment variables:
+ *   npm run batch-worker -- --drafts-file ./drafts.json
+ *
+ * Environment variables (names only — never commit values):
  *   GUESTFLOW_API_URL - GuestFlow API base URL (required)
  *   DRAFT_WORKER_SECRET - Draft worker authentication secret (required)
  *   TURSO_DATABASE_URL or DATABASE_URL - Database URL (required)
  *   TURSO_AUTH_TOKEN - Database auth token (required if using Turso)
- * 
+ *
  * Batch contract:
  *   - Claims ≥5 pending jobs OR all if 20 min elapsed
  *   - Window: 07:00–21:00 Africa/Johannesburg
  *   - One worker in flight at a time
  *   - Soft cap: ≤6 batches/day
+ *
+ * CURSOR ULTRA ONLY: This worker must be run BY a Cursor Ultra Cloud Agent
+ * (or given --drafts-file / --dry-run). No OPENAI_API_KEY. Refuse the batch
+ * if the Ultra path is unavailable.
  */
 
+import { readFileSync } from 'fs'
 import { getDbAsync } from '../src/lib/db'
-import { runBatch, type BatchWorkerConfig } from '../src/lib/batch-worker'
+import { runBatch, ULTRA_PATH_UNAVAILABLE, type BatchWorkerConfig } from '../src/lib/batch-worker'
 
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
+
+function readFlag(name: string): string | undefined {
+  const idx = args.indexOf(name)
+  if (idx === -1) return undefined
+  return args[idx + 1]
+}
+
+function loadDraftsFile(path: string): Record<number, string> {
+  const raw = readFileSync(path, 'utf-8')
+  const parsed = JSON.parse(raw) as Record<string, string>
+  const map: Record<number, string> = {}
+  for (const [key, value] of Object.entries(parsed)) {
+    const id = Number(key)
+    if (!Number.isFinite(id) || typeof value !== 'string' || !value.trim()) {
+      throw new Error(`Invalid drafts-file entry for "${key}"`)
+    }
+    map[id] = value
+  }
+  if (Object.keys(map).length === 0) {
+    throw new Error('drafts-file must contain at least one messageId → draft map')
+  }
+  return map
+}
 
 async function main() {
   // Validate environment
@@ -44,24 +73,35 @@ async function main() {
     process.exit(1)
   }
 
+  const draftsPath = readFlag('--drafts-file')
+  let draftsByMessageId: Record<number, string> | undefined
+  if (draftsPath) {
+    try {
+      draftsByMessageId = loadDraftsFile(draftsPath)
+    } catch (error) {
+      console.error('❌ Failed to read --drafts-file:', error)
+      process.exit(1)
+    }
+  }
+
   // Get database client (uses getDbAsync which handles Turso or SQLite)
   const db = await getDbAsync()
 
-  // Configure batch worker
   const config: BatchWorkerConfig = {
     guestflowApiUrl: apiUrl,
     draftWorkerSecret: secret,
-    llmProvider: 'openai', // Default; override via Cursor Ultra
-    dryRun
+    dryRun,
+    draftsByMessageId
   }
 
-  console.log('🚀 GuestFlow Phase 1 Batch Worker')
-  console.log('=====================================')
+  console.log('🚀 GuestFlow Phase 1 Batch Worker (Cursor Ultra Only)')
+  console.log('=====================================================')
   console.log(`API URL: ${apiUrl}`)
   console.log(`Dry Run: ${dryRun ? 'YES' : 'NO'}`)
+  console.log('Provider: Cursor Ultra Cloud Agent (no external API)')
+  console.log(`Drafts file: ${draftsPath || '(none)'}`)
   console.log('')
 
-  // Run batch
   try {
     const result = await runBatch(db, config)
 
@@ -71,7 +111,12 @@ async function main() {
     console.log('')
 
     if (result.skippedReason) {
+      const refusedUltra = result.skippedReason.includes('Cursor Ultra')
       console.log(`⏭️  Skipped: ${result.skippedReason}`)
+      if (refusedUltra) {
+        console.error(ULTRA_PATH_UNAVAILABLE)
+        process.exit(1)
+      }
       process.exit(0)
     }
 

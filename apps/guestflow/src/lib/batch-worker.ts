@@ -4,24 +4,64 @@ import { join } from 'path'
 import { buildDraftPrompt, formatPropertyKnowledgeForPrompt } from '@/lib/property-knowledge'
 
 /**
- * Phase 1 batch worker logic for LLM draft generation.
- * 
+ * Phase 1 batch worker logic for Cursor Ultra draft generation.
+ *
  * Batch contract:
  * - Claim ≥5 pending jobs OR every 20 min
  * - Window: 07:00–21:00 Africa/Johannesburg
  * - One worker in flight at a time
  * - Soft cap: ≤6 batches/day
+ *
+ * Design: the Cursor Ultra Cloud Agent IS the LLM. No OpenAI / chat.completions
+ * fallback. OPENAI_API_KEY is ignored. Refuse the whole batch if the Ultra path
+ * is unavailable (no dry-run, no injected generator, no drafts map).
  */
+
+export const ULTRA_PATH_UNAVAILABLE =
+  'Draft generation requires Cursor Ultra Cloud Agent. ' +
+  'This worker must be launched by Coding/Grok as a Cursor Ultra CA task, ' +
+  'or given --drafts-file / an injected generator. ' +
+  'OPENAI_API_KEY is ignored and is not a Production Phase 1 path. ' +
+  'See apps/guestflow/docs/CURSOR-ULTRA-BATCH-LAUNCH.md.'
 
 export interface BatchWorkerConfig {
   guestflowApiUrl: string
   draftWorkerSecret: string
-  llmProvider: 'openai' | 'anthropic' // extensible for Cursor Ultra
-  llmApiKey?: string
   minJobsForBatch?: number // default 5
   maxWaitMinutes?: number // default 20
   softCapPerDay?: number // default 6
   dryRun?: boolean
+  /** CA- or test-supplied replies keyed by inbound message id. */
+  draftsByMessageId?: Record<number, string>
+  /** Test clock for SAST window; production omits this. */
+  now?: Date
+}
+
+export interface DraftContext {
+  fromNumber: string
+  messageText: string
+  guestName: string | null
+  intent: string | null
+  confidence: number | null
+  propertyKnowledge?: string
+  messageId?: number
+  prompt?: string
+}
+
+export type DraftGenerator = (
+  context: DraftContext,
+  config: BatchWorkerConfig
+) => Promise<string>
+
+export function isCursorUltraPathAvailable(
+  config: BatchWorkerConfig,
+  draftGenerator?: DraftGenerator
+): boolean {
+  if (config.dryRun) return true
+  if (typeof draftGenerator === 'function') return true
+  const drafts = config.draftsByMessageId
+  if (drafts && Object.keys(drafts).length > 0) return true
+  return false
 }
 
 export interface ClaimedJob {
@@ -56,8 +96,7 @@ export interface BatchRunResult {
 /**
  * Check if current time is within the batch window (07:00–21:00 SAST).
  */
-export function isWithinBatchWindow(): boolean {
-  const now = new Date()
+export function isWithinBatchWindow(now: Date = new Date()): boolean {
   const sastFormatter = new Intl.DateTimeFormat('en-ZA', {
     timeZone: 'Africa/Johannesburg',
     hour: '2-digit',
@@ -262,28 +301,22 @@ export async function fetchMessageContext(
   }
 }
 
+const EMPTY_KB =
+  'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
+
 /**
- * Generate draft using LLM (OpenAI-compatible API).
+ * Load the QC'd prompt template with message context and property knowledge.
+ * The Cursor Ultra Cloud Agent reads this prompt and writes the reply itself.
  */
-export async function generateDraftWithLLM(
-  context: {
-    fromNumber: string
-    messageText: string
-    guestName: string | null
-    intent: string | null
-    confidence: number | null
-    propertyKnowledge?: string
-  },
-  config: BatchWorkerConfig
+export async function loadPromptForDraft(
+  context: DraftContext,
+  _config: BatchWorkerConfig
 ): Promise<string> {
-  // Load prompt template
   const promptPath = join(process.cwd(), 'prompts', 'DRAFT_PROMPT.md')
   const promptTemplate = readFileSync(promptPath, 'utf-8')
-  const propertyKnowledge =
-    context.propertyKnowledge ||
-    'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
+  const propertyKnowledge = context.propertyKnowledge || EMPTY_KB
 
-  const prompt = buildDraftPrompt(promptTemplate, {
+  return buildDraftPrompt(promptTemplate, {
     fromNumber: context.fromNumber,
     guestName: context.guestName,
     intent: context.intent,
@@ -291,63 +324,28 @@ export async function generateDraftWithLLM(
     messageText: context.messageText,
     propertyKnowledge,
   })
+}
 
+/**
+ * Generate a draft via Cursor Ultra only.
+ * Dry-run returns a placeholder. A drafts map (CA --drafts-file) supplies text.
+ * Otherwise fail-closed. Never reads OPENAI_API_KEY.
+ */
+export async function generateDraftWithCursorUltra(
+  context: DraftContext,
+  config: BatchWorkerConfig
+): Promise<string> {
   if (config.dryRun) {
     return `[DRY RUN] Draft for message: "${context.messageText.substring(0, 50)}..."`
   }
 
-  // Real LLM call via OpenAI-compatible API
-  const apiKey = config.llmApiKey || process.env.OPENAI_API_KEY
-  const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1'
-  const model = process.env.LLM_MODEL || 'gpt-4o-mini'
-
-  if (!apiKey) {
-    throw new Error(
-      'LLM API key required: set OPENAI_API_KEY environment variable or pass llmApiKey in config'
-    )
+  const mapped =
+    context.messageId != null ? config.draftsByMessageId?.[context.messageId] : undefined
+  if (mapped && mapped.trim()) {
+    return mapped.trim()
   }
 
-  try {
-    const response = await fetch(`${apiBase}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
-    })
-
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`LLM API error (${response.status}): ${error}`)
-    }
-
-    const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>
-    }
-    const draft = data.choices?.[0]?.message?.content
-
-    if (!draft) {
-      throw new Error('LLM returned empty response')
-    }
-
-    return draft.trim()
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`LLM generation failed: ${error.message}`)
-    }
-    throw error
-  }
+  throw new Error(ULTRA_PATH_UNAVAILABLE)
 }
 
 /**
@@ -385,25 +383,35 @@ export async function upsertDraft(
 
 /**
  * Process a single claimed job.
+ *
+ * Optional draftGenerator lets tests or a Cursor Ultra CA supply the reply.
+ * Default path is generateDraftWithCursorUltra (fail-closed / dry-run / drafts map).
  */
 export async function processJob(
   db: DbClient,
   job: ClaimedJob,
-  config: BatchWorkerConfig
+  config: BatchWorkerConfig,
+  draftGenerator?: DraftGenerator
 ): Promise<ProcessResult> {
   try {
     // Fetch message context
     const context = await fetchMessageContext(db, job.message_id)
-    let propertyKnowledge =
-      'Knowledge base is empty — ask staff for every factual question.\n\nDrafts MUST NOT state facts that are not in this knowledge base. For anything missing or marked ask staff, tell the guest to ask staff.'
+    let propertyKnowledge = EMPTY_KB
     try {
       propertyKnowledge = await formatPropertyKnowledgeForPrompt(db, job.tenant_id)
     } catch {
       // Narrow test fixtures may not have knowledge tables
     }
 
-    // Generate draft with LLM
-    const draftReply = await generateDraftWithLLM({ ...context, propertyKnowledge }, config)
+    const draftContext: DraftContext = {
+      ...context,
+      propertyKnowledge,
+      messageId: job.message_id,
+    }
+    draftContext.prompt = await loadPromptForDraft(draftContext, config)
+
+    const generator = draftGenerator || generateDraftWithCursorUltra
+    const draftReply = await generator(draftContext, config)
 
     // Upsert draft via API and update thread status
     if (!config.dryRun) {
@@ -452,16 +460,34 @@ export async function processJob(
 
 /**
  * Run a batch of draft jobs.
+ *
+ * Optional draftGenerator allows Cursor Ultra CA or tests to provide replies.
+ * Without dry-run, generator, or drafts map, refuses the batch before claim.
  */
 export async function runBatch(
   db: DbClient,
-  config: BatchWorkerConfig
+  config: BatchWorkerConfig,
+  draftGenerator?: DraftGenerator
 ): Promise<BatchRunResult> {
   const batchId = `batch-${Date.now()}`
   const startedAt = new Date()
 
+  if (!isCursorUltraPathAvailable(config, draftGenerator)) {
+    return {
+      batchId,
+      startedAt,
+      completedAt: new Date(),
+      jobsClaimed: 0,
+      jobsProcessed: 0,
+      jobsSucceeded: 0,
+      jobsFailed: 0,
+      results: [],
+      skippedReason: ULTRA_PATH_UNAVAILABLE
+    }
+  }
+
   // Check window
-  if (!isWithinBatchWindow()) {
+  if (!isWithinBatchWindow(config.now)) {
     return {
       batchId,
       startedAt,
@@ -532,7 +558,7 @@ export async function runBatch(
   // Process jobs
   const results: ProcessResult[] = []
   for (const job of jobs) {
-    const result = await processJob(db, job, config)
+    const result = await processJob(db, job, config, draftGenerator)
     results.push(result)
   }
 
