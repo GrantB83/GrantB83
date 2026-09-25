@@ -1,6 +1,6 @@
 # Staff email alerts — what fires and when
 
-Internal staff mail via existing Resend. **Not a guest send.** Guest outbound redirect is bypassed. Recipients are login emails from the users table (PR #215). `ALERT_FALLBACK_EMAIL` is used only when no users exist. The reserved `legacy@guestflow.local` address is never emailed. Removed users stop receiving immediately. One email per issue per recipient per **2 hours**, plus a resolved note when the issue clears.
+Internal staff mail via existing Resend. **Not a guest send.** Guest outbound redirect is bypassed (`sendEmail({ skipRedirect: true })`). Staff alerts do **not** duplicate Decision L (`app_settings.outbound_redirect`); they skip the shared resolver so an ON toggle still delivers to login emails. Recipients are login emails from the users table (PR #215). `ALERT_FALLBACK_EMAIL` is used only when no users exist. The reserved `legacy@guestflow.local` address is never emailed. Removed users stop receiving immediately. One email per issue per recipient per **2 hours**, plus a resolved note when the issue clears.
 
 Thresholds live in `src/lib/ops-settings.ts` (shared with Nightsbridge sync). Do not copy them.
 

@@ -141,12 +141,12 @@ export async function ingestNbEmail(db: DbClient, input: NbIngestInput): Promise
     }
   }
 
-  if (isCancel && existingCancelled && lastEvent && thisEvent < lastEvent) {
+  if (existing && isCancel && existingCancelled && lastEvent && thisEvent < lastEvent) {
     await insertEvent(db, messageId, receivedAt, emailDate, input.from, parsed, 'stale')
     return { ok: true, nb: true, eventStatus: 'stale', type: parsed.type, nbRef: parsed.nbRef, bookingId: Number(existing.id) }
   }
 
-  if (!isCancel && existingCancelled && lastEvent && thisEvent < lastEvent) {
+  if (existing && !isCancel && existingCancelled && lastEvent && thisEvent < lastEvent) {
     await insertEvent(db, messageId, receivedAt, emailDate, input.from, parsed, 'stale')
     return { ok: true, nb: true, eventStatus: 'stale', type: parsed.type, nbRef: parsed.nbRef, bookingId: Number(existing.id) }
   }

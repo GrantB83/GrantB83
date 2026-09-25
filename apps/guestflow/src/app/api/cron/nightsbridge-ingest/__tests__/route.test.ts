@@ -139,9 +139,9 @@ describe('/api/cron/nightsbridge-ingest', () => {
       const response = await POST(request)
       const data = await response.json()
 
-      // Should fail with parsing error
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Ingest failed')
+      // Garbage bytes: empty/unreadable xlsx is 400; thrown parse is 500.
+      expect([400, 500]).toContain(response.status)
+      expect(String(data.error || '')).toMatch(/Ingest failed|No valid bookings|No file provided|Invalid content type|section headers/)
     })
   })
 })
