@@ -23,6 +23,11 @@ import {
 import { guestFirstName, sendStaffAlertEmail } from '@/lib/staff-alert-email'
 import { ensureSprint2Schema } from '@/lib/sprint2-schema'
 import { ensureStaffUsersSchema } from '@/lib/staff-users-schema'
+import {
+  isTestPhoneThread,
+  isSmokeTestThread,
+  isEmptyBlockBooking,
+} from '@/lib/staff-alert-filters'
 
 export type AlertKind =
   | 'unanswered'
@@ -37,7 +42,13 @@ export type AlertKind =
 export const TEST_SINK_ADDRESSES = new Set(
   ['grant830318@gmail.com', 'legacy@guestflow.local'].map((value) => value.toLowerCase())
 )
-export const TEST_SINK_PHONES = new Set(['+15124064300', '15124064300', '+27600200825'])
+export const TEST_SINK_PHONES = new Set([
+  '+15124064300',
+  '15124064300',
+  '+27600200825',
+  '+27000000001',
+  '27000000001',
+])
 
 export async function listActiveAlertEmails(db: DbClient): Promise<string[]> {
   await ensureStaffUsersSchema(db)
@@ -361,7 +372,7 @@ export async function evaluateUnanswered(
     threads = (await db
       .prepare(
         `SELECT t.id, t.last_inbound_at, t.last_outbound_at, t.last_handler_email, t.pending_reply,
-                t.from_number, t.guest_name, t.booking_id, t.thread_kind
+                t.from_number, t.guest_name, t.booking_id, t.thread_kind, t.metadata
          FROM inbound_threads t
          WHERE t.pending_reply = 1`
       )
@@ -381,6 +392,20 @@ export async function evaluateUnanswered(
     if (thread.last_outbound_at && new Date(String(thread.last_outbound_at)) >= inboundAt) continue
     if (isStaffOrTestPeer(String(thread.from_number || ''), staffEmails)) continue
     if (await latestInboundIsSpam(db, threadId)) continue
+
+    // Alert noise filter: Exclude test phones, smoke markers, and empty BLOCK bookings
+    if (isTestPhoneThread(String(thread.from_number || ''), TEST_SINK_PHONES)) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: test_phone`)
+      continue
+    }
+    if (isSmokeTestThread({ guest_name: String(thread.guest_name || ''), metadata: String(thread.metadata || '') })) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: smoke_marker`)
+      continue
+    }
+    if (await isEmptyBlockBooking(db, { id: threadId, booking_id: Number(thread.booking_id || 0) || null })) {
+      console.log(`[staff-alerts] Thread ${threadId} excluded from alerts: empty_block`)
+      continue
+    }
 
     const action = classifyUnanswered({ inboundAt, now: input.now })
     if (action === 'wait') continue

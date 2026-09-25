@@ -7,7 +7,6 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   output: 'standalone',
   
   // Production optimizations
@@ -21,7 +20,15 @@ const nextConfig = {
     NEXT_PUBLIC_APP_ENV: process.env.NODE_ENV || 'development',
   },
   
-  // Webpack configuration for module resolution
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {
+    root: __dirname,  // Explicitly set workspace root to apps/guestflow directory
+    resolveAlias: {
+      '@': path.join(__dirname, 'src'),
+    },
+  },
+  
+  // Webpack configuration for module resolution (fallback)
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
