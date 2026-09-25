@@ -27,7 +27,7 @@ jobs:
             echo "GUESTFLOW_EVALUATE_URL / GUESTFLOW_APP_URL or CRON_SECRET unset; skipping."
             exit 0
           fi
-          code=$(curl -sS -o /tmp/gf-eval.json -w '%{http_code}' --max-time 40 \
+          code=$(curl -sS -o /tmp/gf-eval.json -w '%{http_code}' --max-time 120 \
             -X POST \
             -H "x-cron-secret: ${CRON_SECRET}" \
             "$url" || echo 000)

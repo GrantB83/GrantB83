@@ -60,12 +60,12 @@ jobs:
           PY
               fi
             fi
-            gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body 0
-            gh variable set GUESTFLOW_HEALTH_ALERTED --body 0
+            gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body 0 -R "${{ github.repository }}"
+            gh variable set GUESTFLOW_HEALTH_ALERTED --body 0 -R "${{ github.repository }}"
             exit 0
           fi
           streak=$((streak + 1))
-          gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body "$streak"
+          gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body "$streak" -R "${{ github.repository }}"
           if [ "$streak" -ge 2 ] && [ "$alerted" != "1" ]; then
             to="${GUESTFLOW_ALERT_EMAILS:-$ALERT_FALLBACK_EMAIL}"
             if [ -n "${RESEND_API_KEY:-}" ] && [ -n "${RESEND_FROM_EMAIL:-}" ] && [ -n "$to" ]; then
@@ -86,6 +86,6 @@ jobs:
           urllib.request.urlopen(req, timeout=20)
           PY
             fi
-            gh variable set GUESTFLOW_HEALTH_ALERTED --body 1
+            gh variable set GUESTFLOW_HEALTH_ALERTED --body 1 -R "${{ github.repository }}"
           fi
           exit 1
