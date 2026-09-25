@@ -184,10 +184,18 @@ function InboxHomePageInner() {
   }
 
   useEffect(() => {
-    const previous = document.body.style.overflow
+    const html = document.documentElement
+    const previousHtmlOverflow = html.style.overflow
+    const previousBodyOverflow = document.body.style.overflow
+    html.classList.add('inbox-lock')
+    document.body.classList.add('inbox-lock')
+    html.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = previous
+      html.classList.remove('inbox-lock')
+      document.body.classList.remove('inbox-lock')
+      html.style.overflow = previousHtmlOverflow
+      document.body.style.overflow = previousBodyOverflow
     }
   }, [])
 
@@ -492,7 +500,7 @@ function InboxHomePageInner() {
 
   const listPane = (
     <>
-      <div className="p-4 border-b space-y-3 shrink-0">
+      <div className="inbox-list-header p-4 border-b space-y-3 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-600" />
@@ -543,7 +551,7 @@ function InboxHomePageInner() {
             key={thread.id}
             type="button"
             onClick={() => openThread(thread.id)}
-            className={`w-full text-left px-4 py-3 min-h-[44px] border-b hover:bg-slate-50 ${
+            className={`inbox-list-row w-full text-left px-4 py-3 min-h-[44px] border-b hover:bg-slate-50 ${
               selectedId === thread.id ? 'bg-blue-50' : ''
             }`}
           >

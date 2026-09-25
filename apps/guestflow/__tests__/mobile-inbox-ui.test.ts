@@ -58,6 +58,19 @@ describe('Sprint 2 mobile inbox UI contract', () => {
     expect(banner).toContain('data-outbound-banner')
   })
 
+  it('pins staff chrome and widens phone panes without changing send gates', () => {
+    const staffChrome = read('../src/components/StaffChrome.tsx')
+    const layout = read('../src/app/layout.tsx')
+    expect(staffChrome).toContain('data-ops-chrome')
+    expect(layout).toContain('StaffChrome')
+    expect(page).toContain('inbox-lock')
+    expect(page).toContain('inbox-list-scroll')
+    expect(css).toContain('.ops-chrome')
+    expect(css).toContain('data-inbox-breakpoint="phone"')
+    expect(page).toContain("fetch('/api/inbound/confirm-token'")
+    expect(page).toContain('Approve&Send required — never auto-sent')
+  })
+
   it('does not ignore TypeScript build errors', () => {
     expect(nextConfig).not.toContain('ignoreBuildErrors')
   })
