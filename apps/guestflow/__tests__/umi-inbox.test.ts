@@ -52,6 +52,7 @@ describe('GET /api/umi/inbox', () => {
     expect(data.success).toBe(true)
     expect(data.threads[0].sortBucket).toBe(0)
     expect(listInboxThreads).toHaveBeenCalled()
+    expect(response.headers.get('cache-control')).toMatch(/no-store/)
   })
 
   it('GET /api/umi/inbox is a read-only list (no ensureArriving write hook)', async () => {
