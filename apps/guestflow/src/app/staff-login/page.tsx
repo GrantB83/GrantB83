@@ -52,7 +52,7 @@ function StaffLoginForm() {
             className="h-20 w-auto"
           />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">
+        <h1 className="text-3xl font-bold font-serif text-white mb-2">
           Staff login
         </h1>
         <p className="text-slate-300">

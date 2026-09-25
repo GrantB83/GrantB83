@@ -844,7 +844,7 @@ function InboxHomePageInner() {
               type="button"
               onClick={requestApproveAndSend}
               disabled={busy || (!draft.trim() && !selectedTemplate)}
-              className="inbox-tap px-3 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-1 text-base disabled:opacity-50"
+              className="inbox-tap px-3 bg-primary text-white rounded-lg flex items-center justify-center gap-1 text-base disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
               Approve
@@ -907,7 +907,7 @@ function InboxHomePageInner() {
                 type="button"
                 onClick={runResend}
                 disabled={busy}
-                className="inbox-tap flex-1 bg-blue-600 text-white rounded-lg text-base disabled:opacity-50"
+                className="inbox-tap flex-1 bg-primary text-white rounded-lg text-base disabled:opacity-50"
               >
                 Confirm resend
               </button>

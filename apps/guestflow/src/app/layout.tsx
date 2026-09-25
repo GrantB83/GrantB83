@@ -31,6 +31,8 @@ export default function RootLayout({
   // SSR-safe: read guest route flag from middleware header
   const headersList = headers()
   const isGuestRoute = headersList.get('x-is-guest-route') === 'true'
+  const isStaffLogin = headersList.get('x-is-staff-login') === 'true'
+  const showStaffChrome = !isGuestRoute && !isStaffLogin
 
   return (
     <html lang="en">
@@ -39,7 +41,7 @@ export default function RootLayout({
       </head>
       <body className={`${montserrat.variable} ${playfairDisplay.variable} font-sans`}>
         <TenantProvider>
-          {!isGuestRoute && (
+          {showStaffChrome && (
             <>
               <OutboundRedirectBanner />
               <Navigation />

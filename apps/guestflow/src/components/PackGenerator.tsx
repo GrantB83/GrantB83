@@ -68,7 +68,7 @@ export function PackGenerator({
             <button
               onClick={handleGenerate}
               disabled={disabled || loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
+              className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition flex items-center gap-2"
             >
               {loading ? (
                 <>
@@ -123,7 +123,7 @@ export function PackGenerator({
                 <div className="flex gap-2">
                   <button
                     onClick={handleDownload}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     Download Pack

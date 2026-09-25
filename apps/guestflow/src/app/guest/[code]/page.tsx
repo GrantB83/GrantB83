@@ -461,6 +461,23 @@ export default function GuestPortalPage() {
             </div>
           </div>
           <div className="p-6 space-y-4">
+            {/* WhatsApp Contact (From: +27600200825 - display only) */}
+            <div className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-gray-600" />
+              <div>
+                <p className="text-sm text-gray-600">WhatsApp</p>
+                <a 
+                  href="https://wa.me/27600200825" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-primary hover:text-primary-700"
+                >
+                  +27 600 200 825
+                </a>
+              </div>
+            </div>
+
+            {/* Phone Contact (if available) */}
             {property.contact.phone && (
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gray-600" />
@@ -473,23 +490,7 @@ export default function GuestPortalPage() {
               </div>
             )}
 
-            {property.contact.whatsapp && (
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="text-sm text-gray-600">WhatsApp</p>
-                  <a 
-                    href={`https://wa.me/${property.contact.whatsapp.replace(/\D/g, '')}`} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-primary hover:text-primary-700"
-                  >
-                    {property.contact.whatsapp}
-                  </a>
-                </div>
-              </div>
-            )}
-
+            {/* Email Contact (stay@thebrowns.co.za) */}
             {property.contact.email && (
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gray-600" />
