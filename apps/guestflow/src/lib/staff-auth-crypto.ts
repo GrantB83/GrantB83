@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs'
+import { compare, hash } from 'bcryptjs'
 import { createHash, randomBytes } from 'crypto'
 import { STAFF_SESSION_COOKIE } from '@/lib/staff-session-cookie'
 
@@ -18,11 +18,11 @@ export function bcryptRounds(): number {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, bcryptRounds())
+  return hash(password, bcryptRounds())
 }
 
 export async function verifyPassword(password: string, passwordHash: string): Promise<boolean> {
-  return bcrypt.compare(password, passwordHash)
+  return compare(password, passwordHash)
 }
 
 export function looksLikePasswordHash(value: string): boolean {
