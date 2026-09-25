@@ -1,0 +1,37 @@
+# Hobby Vercel rejects sub-daily crons, so the 10-minute delivery poll
+# is driven here. Same CRON_SECRET as alerts-evaluate / arrival-drafts.
+# Route: GET/POST /api/cron/delivery-poll — never sends; status poll only.
+name: GuestFlow delivery poll (10m Hobby fallback)
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/cron/delivery-poll
+        env:
+          GUESTFLOW_APP_URL: ${{ vars.GUESTFLOW_APP_URL }}
+          GUESTFLOW_DELIVERY_POLL_URL: ${{ vars.GUESTFLOW_DELIVERY_POLL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          url="${GUESTFLOW_DELIVERY_POLL_URL:-}"
+          if [ -z "$url" ] && [ -n "${GUESTFLOW_APP_URL:-}" ]; then
+            url="${GUESTFLOW_APP_URL%/}/api/cron/delivery-poll"
+          fi
+          if [ -z "$url" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "GUESTFLOW_DELIVERY_POLL_URL / GUESTFLOW_APP_URL or CRON_SECRET unset; skipping."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/gf-delivery-poll.json -w '%{http_code}' --max-time 120 \
+            -X POST \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "$url" || echo 000)
+          echo "HTTP $code"
+          cat /tmp/gf-delivery-poll.json || true
+          test "$code" = "200"
