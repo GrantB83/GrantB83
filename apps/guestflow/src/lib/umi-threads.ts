@@ -830,6 +830,89 @@ async function deliveryAttentionThreadIds(db: DbClient): Promise<Set<number>> {
   return flagged
 }
 
+/**
+ * Helper: Parse thread metadata JSON safely and extract subject field
+ */
+function parseThreadMetadata(metadata: string | null): { subject?: string } {
+  const parsed = parseJson(metadata)
+  return {
+    subject: typeof parsed.subject === 'string' ? parsed.subject : undefined,
+  }
+}
+
+/**
+ * Helper: Fetch all messages for a thread
+ */
+async function fetchThreadMessages(
+  db: DbClient,
+  threadId: number,
+  tenantId: number
+): Promise<Array<{ message_text: string }>> {
+  try {
+    const messages = ((await db
+      .prepare(
+        `SELECT message_text FROM inbound_messages WHERE thread_id = ? AND tenant_id = ?`
+      )
+      .all(threadId, tenantId)) || []) as Array<{ message_text: string }>
+    return messages
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Helper: Tokenize search query - split on whitespace and normalize
+ */
+function tokenizeSearchQuery(query: string): string[] {
+  return query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token.length > 0)
+}
+
+/**
+ * Check if all search tokens match in thread subject
+ */
+function matchesSubject(subject: string | undefined, tokens: string[]): boolean {
+  if (!subject) return false
+  const lowerSubject = subject.toLowerCase()
+  return tokens.every((token) => lowerSubject.includes(token))
+}
+
+/**
+ * Check if all search tokens match in any message body
+ */
+function matchesMessageBodies(messages: Array<{ message_text: string }>, tokens: string[]): boolean {
+  const allText = messages.map((m) => m.message_text.toLowerCase()).join(' ')
+  return tokens.every((token) => allText.includes(token))
+}
+
+/**
+ * Extended search: Check if all tokens match in subject or message bodies
+ */
+async function searchThreadsByContentExt(
+  db: DbClient,
+  threadId: number,
+  tenantId: number,
+  metadata: string | null,
+  tokens: string[]
+): Promise<boolean> {
+  // Check subject
+  const { subject } = parseThreadMetadata(metadata)
+  if (matchesSubject(subject, tokens)) {
+    return true
+  }
+
+  // Check message bodies
+  const messages = await fetchThreadMessages(db, threadId, tenantId)
+  if (matchesMessageBodies(messages, tokens)) {
+    return true
+  }
+
+  return false
+}
+
 export async function listInboxThreads(
   db: DbClient,
   tenantId: number,
@@ -913,12 +996,47 @@ export async function listInboxThreads(
     result = result.filter((thread) => thread.needsAttention)
   }
   if (options.q?.trim()) {
-    const q = options.q.trim().toLowerCase()
-    result = result.filter((thread) =>
-      [thread.bookerName, thread.fromNumber, thread.suite, thread.nightsbridgeBookingId, String(thread.bookingId || '')]
+    const query = options.q.trim()
+    const tokens = tokenizeSearchQuery(query)
+    
+    // Filter threads: existing fields + extended content search
+    const matchedThreads: InboxThread[] = []
+    for (const thread of result) {
+      // First check existing fields (backward compatibility)
+      const existingFieldsMatch = [
+        thread.bookerName,
+        thread.fromNumber,
+        thread.suite,
+        thread.nightsbridgeBookingId,
+        String(thread.bookingId || ''),
+      ]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q))
-    )
+        .some((value) => {
+          const lowerValue = String(value).toLowerCase()
+          return tokens.every((token) => lowerValue.includes(token))
+        })
+
+      if (existingFieldsMatch) {
+        matchedThreads.push(thread)
+        continue
+      }
+
+      // Extended search: subject and message bodies
+      const row = rows.find((r) => asNumber(r.id) === thread.id)
+      if (row) {
+        const contentMatch = await searchThreadsByContentExt(
+          db,
+          thread.id,
+          tenantId,
+          row.metadata,
+          tokens
+        )
+        if (contentMatch) {
+          matchedThreads.push(thread)
+        }
+      }
+    }
+    result = matchedThreads
   }
   return result
 }
