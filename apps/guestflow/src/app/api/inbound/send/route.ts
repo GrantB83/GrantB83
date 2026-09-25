@@ -15,7 +15,7 @@ import { plainDeliveryError } from '@/lib/delivery-status'
 import { onSendFailed } from '@/lib/send-failed-hook'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
-import { notifyFailedApproveSend, stampLastHandler } from '@/lib/staff-alerts'
+import { stampLastHandler } from '@/lib/staff-alerts'
 import { guestFirstName } from '@/lib/staff-alert-email'
 
 export const dynamic = 'force-dynamic'

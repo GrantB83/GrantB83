@@ -45,6 +45,14 @@ vi.mock('@/lib/umi-threads', () => ({
   markThreadOutbound: vi.fn(async () => {}),
 }))
 
+vi.mock('@/lib/delivery-schema', () => ({
+  ensureDeliverySchema: vi.fn(async () => {}),
+}))
+
+vi.mock('@/lib/send-failed-hook', () => ({
+  onSendFailed: vi.fn(),
+}))
+
 vi.mock('@/lib/db', () => ({
   getDbAsync: vi.fn(async () => mockDb),
 }))
