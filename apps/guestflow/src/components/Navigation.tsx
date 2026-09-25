@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Calendar, Home, Menu, MessageSquare, MoreHorizontal, X, ArrowLeftRight } from 'lucide-react'
+import { Calendar, Home, LogOut, Menu, MessageSquare, MoreHorizontal, X, ArrowLeftRight } from 'lucide-react'
 import { useState } from 'react'
+import { OutboundRedirectToggle } from '@/components/OutboundRedirectToggle'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -43,6 +44,18 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <OutboundRedirectToggle />
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch('/api/staff-auth/logout', { method: 'POST' })
+                window.location.href = '/staff-login'
+              }}
+              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium text-slate-200 hover:bg-slate-700"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Logout
+            </button>
             <div className="hidden sm:block px-3 py-1 bg-slate-700 text-slate-200 rounded text-xs font-medium">
               Internal Ops
             </div>
@@ -71,6 +84,21 @@ export default function Navigation() {
               <MobileNavLink href="/ops" icon={<Home className="w-5 h-5" />} active={isActive('/ops')} onClick={closeMobileMenu}>
                 Ops / More Tools
               </MobileNavLink>
+              <div className="px-4 py-2">
+                <OutboundRedirectToggle />
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  closeMobileMenu()
+                  await fetch('/api/staff-auth/logout', { method: 'POST' })
+                  window.location.href = '/staff-login'
+                }}
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium text-slate-300 hover:text-white hover:bg-slate-700"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         )}

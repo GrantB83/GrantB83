@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 function StaffLoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,17 +23,19 @@ function StaffLoginForm() {
       const response = await fetch('/api/staff-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       })
 
       if (response.ok) {
         const redirect = searchParams.get('redirect') || '/'
         router.push(redirect)
         router.refresh()
+      } else if (response.status === 429) {
+        setError('Too many login attempts. Try again later.')
       } else {
-        setError('Invalid password. Contact Browns admin for access.')
+        setError('Invalid email or password. Contact Browns admin for access.')
       }
-    } catch (err) {
+    } catch {
       setError('Login failed. Please try again.')
     } finally {
       setLoading(false)
@@ -63,18 +66,37 @@ function StaffLoginForm() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-800 focus:border-transparent text-gray-900"
+              placeholder="you@thebrowns.co.za"
+              autoFocus
+            />
+          </div>
+
+          <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Staff Password
+              Password
             </label>
             <input
               type="password"
               id="password"
+              name="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-800 focus:border-transparent text-gray-900"
-              placeholder="Enter staff password"
-              autoFocus
+              placeholder="Enter password"
             />
           </div>
 
@@ -96,6 +118,8 @@ function StaffLoginForm() {
         <div className="mt-6 pt-6 border-t border-gray-200">
           <p className="text-xs text-gray-600 text-center">
             This is an internal operations console for Browns staff only.
+            <br />
+            Shared-password transition: email <code>legacy@guestflow.local</code> until that flag is retired.
             <br />
             Contact Grant at grant@thebrowns.co.za for access.
           </p>

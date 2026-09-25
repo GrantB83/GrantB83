@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Key,
-  ListChecks
+  ListChecks,
+  Users
 } from 'lucide-react'
 
 export default function OpsPage() {
@@ -102,6 +103,14 @@ export default function OpsPage() {
             description="Parse NightsBridge CSV bookings and detect gaps"
             cliTool="browns-nightsbridge-bookings-adapter"
             color="teal"
+          />
+          <OpsToolCard
+            href="/ops/users"
+            icon={<Users className="w-8 h-8 text-slate-600" />}
+            title="Users"
+            description="Add or remove staff logins. Everyone has the same full access."
+            cliTool="(web-only)"
+            color="slate"
           />
         </div>
       </div>

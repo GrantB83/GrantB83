@@ -1,59 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDbAsync } from '@/lib/db'
+import { authenticateStaff, clientIpFromHeaders } from '@/lib/staff-auth'
+import { applyStaffSessionCookie } from '@/lib/staff-session'
 
-// Base64 encoding helper for consistency with middleware
-function base64Encode(str: string): string {
-  return Buffer.from(str).toString('base64')
-}
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const { password } = await request.json()
-    const staffPassword = process.env.STAFF_PASSWORD
-    const isProduction = process.env.NODE_ENV === 'production'
+    const body = await request.json().catch(() => ({}))
+    const email = typeof body.email === 'string' ? body.email : ''
+    const password = typeof body.password === 'string' ? body.password : ''
+    const db = await getDbAsync()
+    const result = await authenticateStaff(db, {
+      email,
+      password,
+      ip: clientIpFromHeaders(request.headers),
+    })
 
-    if (!staffPassword) {
-      // Development mode - allow any password
-      if (!isProduction) {
-        const response = NextResponse.json({ success: true })
-        response.cookies.set('staff_auth', 'dev', {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-        })
-        return response
-      }
-      
-      return NextResponse.json(
-        { error: 'Staff password not configured' },
-        { status: 500 }
-      )
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status })
     }
 
-    // Verify password
-    if (password === staffPassword) {
-      const authToken = base64Encode(staffPassword)
-      
-      const response = NextResponse.json({ success: true })
-      response.cookies.set('staff_auth', authToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      })
-      
-      return response
-    }
-
-    return NextResponse.json(
-      { error: 'Invalid password' },
-      { status: 401 }
-    )
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Login failed' },
-      { status: 500 }
-    )
+    const response = NextResponse.json({
+      success: true,
+      email: result.email,
+      display_name: result.displayName,
+    })
+    applyStaffSessionCookie(response, result.rawToken)
+    return response
+  } catch {
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }
 

@@ -340,7 +340,7 @@ export async function sendWhatsAppMessage(
     let resolution
     try {
       const { resolveOutboundRecipient } = await import('./outbound-redirect')
-      resolution = resolveOutboundRecipient({
+      resolution = await resolveOutboundRecipient({
         channel: 'whatsapp',
         intendedTo: params.to
       })

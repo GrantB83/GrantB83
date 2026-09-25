@@ -5,7 +5,7 @@ import { getOutboundStatus } from '@/lib/outbound-redirect'
 export async function GET() {
   try {
     const db = await getDbAsync()
-    const outboundStatus = getOutboundStatus()
+    const outboundStatus = await getOutboundStatus(db)
     
     return NextResponse.json({ 
       status: 'ok',

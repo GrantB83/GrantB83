@@ -1,39 +1,26 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { isGuestPortalHost, isGuestRoute } from '@/lib/portal-url'
+import { STAFF_SESSION_COOKIE, isWellFormedSessionToken } from '@/lib/staff-session-cookie'
+import { lookupStaffSessionEdge } from '@/lib/staff-session-edge'
 
-// Edge-compatible base64 encoding (Buffer is not available in Edge Runtime)
-function base64Encode(str: string): string {
-  return btoa(str)
-}
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const host = request.headers.get('host')
   const pathname = request.nextUrl.pathname
 
-  // Set guest route flag for SSR-safe layout rendering (forward on REQUEST, not response)
   const isGuest = pathname.startsWith('/guest')
   const requestHeaders = new Headers(request.headers)
   if (isGuest) {
     requestHeaders.set('x-is-guest-route', 'true')
   }
 
-  // Host-aware routing: if this is the dedicated guest portal host (e.g., stay.thebrowns.co.za),
-  // only serve guest-facing routes and block staff/ops routes to prevent CRM leakage
   if (isGuestPortalHost(host || undefined)) {
     if (isGuestRoute(pathname)) {
-      // Allow guest routes on the portal host (preserve request headers)
       return NextResponse.next({ request: { headers: requestHeaders } })
-    } else {
-      // Block staff/ops routes on the portal host
-      return NextResponse.json(
-        { error: 'Not found' },
-        { status: 404 }
-      )
     }
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Skip auth for static files and API routes that don't need auth
   if (
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api/health') ||
@@ -51,23 +38,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  // Check if staff password is required (production only)
   const staffPassword = process.env.STAFF_PASSWORD
-  
-  // Skip auth in development if no password is set
+
   if (!staffPassword && process.env.NODE_ENV === 'development') {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  // Check for auth cookie
-  const authCookie = request.cookies.get('staff_auth')
-  
-  // Verify auth cookie matches password hash (simple approach for internal staff access)
-  if (authCookie?.value === base64Encode(staffPassword || '')) {
+  const sessionToken = request.cookies.get(STAFF_SESSION_COOKIE)?.value
+  const hasTurso = Boolean(process.env.DATABASE_URL && process.env.TURSO_AUTH_TOKEN)
+
+  if (sessionToken && hasTurso) {
+    const session = await lookupStaffSessionEdge(sessionToken)
+    if (session) {
+      return NextResponse.next({ request: { headers: requestHeaders } })
+    }
+  } else if (
+    sessionToken &&
+    process.env.NODE_ENV === 'development' &&
+    isWellFormedSessionToken(sessionToken)
+  ) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
-  // Redirect to login page if not authenticated
   if (request.nextUrl.pathname !== '/staff-login') {
     const loginUrl = new URL('/staff-login', request.url)
     loginUrl.searchParams.set('redirect', request.nextUrl.pathname)
@@ -79,14 +71,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - /staff-login (login page itself)
-     * - /_next/static (static files)
-     * - /_next/image (image optimization files)
-     * - /favicon.ico (favicon file)
-     * - /public (public files)
-     */
     '/((?!staff-login|_next/static|_next/image|favicon.ico|public).*)',
   ],
 }

@@ -96,7 +96,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   let effectiveTo = to
   try {
     const { resolveOutboundRecipient } = await import('./outbound-redirect')
-    resolution = resolveOutboundRecipient({
+    resolution = await resolveOutboundRecipient({
       channel: 'email',
       intendedTo: to
     })
