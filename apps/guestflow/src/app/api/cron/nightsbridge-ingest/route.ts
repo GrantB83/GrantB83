@@ -6,9 +6,10 @@ import { upsertGuestContact } from '@/lib/guest-contacts'
 import {
   upsertBooking,
   determineImportWindow,
-  softCancelDisappearedBookings,
   type ParsedBooking as NbParsedBooking,
 } from '@/lib/nightsbridge-upsert'
+import { guardedSoftCancel } from '@/lib/nb-reconcile'
+import { ensureSprint2Schema, recordNbSyncRun } from '@/lib/sprint2-schema'
 import { mapNbSectionRow, type ParsedBooking } from '@/lib/nightsbridge-section-parse'
 import { randomUUID } from 'crypto'
 import { isCancelledStatus, isOwnerBlock } from '@/lib/booking-filters'
@@ -38,6 +39,7 @@ interface MissingField {
  * Query: ?secret=<CRON_SECRET> (alternative to header)
  */
 export async function POST(request: NextRequest) {
+  const startedAt = new Date().toISOString()
   try {
     // 1. Verify CRON_SECRET
     const headerSecret = request.headers.get('x-cron-secret')
@@ -229,6 +231,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (parsedBookings.length === 0) {
+      try {
+        const db = await getDbAsync()
+        await ensureSprint2Schema(db)
+        await recordNbSyncRun(db, {
+          layer: 'batch',
+          startedAt,
+          ok: false,
+          code: 'ZERO_ROWS',
+          rows: 0,
+          message: 'No valid bookings found in file',
+        })
+      } catch {
+        // schema/record best-effort
+      }
       return NextResponse.json(
         { error: 'No valid bookings found in file. Ensure file has Arrival/Departure sections with data rows.' },
         { status: 400 }
@@ -337,14 +353,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Phase 17: Soft-cancel bookings that disappeared from import window
-    const cancelled = await softCancelDisappearedBookings(
+    await ensureSprint2Schema(db)
+    const cancelResult = await guardedSoftCancel(
       db,
       tenantId,
       importWindow,
       importBatchId,
-      parsedBookings as NbParsedBooking[]
+      parsedBookings as NbParsedBooking[],
+      startedAt
     )
+    const cancelled = cancelResult.cancelled
+    if (!cancelResult.guarded) {
+      await recordNbSyncRun(db, {
+        layer: 'batch',
+        startedAt,
+        ok: true,
+        code: 'OK',
+        rows: parsedBookings.length,
+        message: `inserted=${inserted} updated=${updated} cancelled=${cancelled}`,
+      })
+    }
 
     // 6. P1: Auto-enqueue welcome and late check-in drafts after successful import
     const now = new Date()
@@ -493,6 +521,19 @@ The Browns Team`
 
   } catch (error: any) {
     console.error('Nightsbridge ingest error:', error)
+    try {
+      const db = await getDbAsync()
+      await recordNbSyncRun(db, {
+        layer: 'batch',
+        startedAt,
+        ok: false,
+        code: 'ERROR',
+        rows: 0,
+        message: error.message,
+      })
+    } catch {
+      // ignore
+    }
     return NextResponse.json(
       { 
         error: 'Ingest failed', 

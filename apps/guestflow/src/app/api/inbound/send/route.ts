@@ -11,6 +11,8 @@ import { markThreadOutbound } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
+import { notifyFailedApproveSend, stampLastHandler } from '@/lib/staff-alerts'
+import { guestFirstName } from '@/lib/staff-alert-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
     const thread = (await db
       .prepare(
         `
-      SELECT id, from_number, status, guest_name, metadata, last_inbound_channel, last_channel
+      SELECT id, from_number, status, guest_name, metadata, last_inbound_channel, last_channel, booking_id
       FROM inbound_threads
       WHERE id = ?
     `
@@ -212,6 +214,7 @@ export async function POST(request: NextRequest) {
           status: 'sent',
         })
         await writeEmailAudit(db, threadId, 'sent', to, sendResult.messageId || null, sendResult.timestamp, actingActor)
+        await stampLastHandler(db, threadId, staffSession?.email)
 
         return NextResponse.json({
           success: true,
@@ -245,6 +248,15 @@ export async function POST(request: NextRequest) {
         },
       ])
       await writeEmailAudit(db, threadId, 'failed', to, null, sendResult.timestamp, actingActor)
+      await notifyFailedApproveSend({
+        db,
+        actorEmail: staffSession?.email,
+        threadId,
+        guestFirstName: guestFirstName(thread.guest_name),
+        bookingRef: `T-${threadId}`,
+        channel: 'email',
+        attemptId: sendResult.timestamp,
+      }).catch(() => undefined)
 
       return NextResponse.json(
         {
@@ -334,6 +346,7 @@ export async function POST(request: NextRequest) {
           channel: 'sms',
           status: 'sent',
         })
+        await stampLastHandler(db, threadId, staffSession?.email)
         return NextResponse.json({
           success: true,
           data: {
@@ -346,6 +359,15 @@ export async function POST(request: NextRequest) {
         } as SendMessageResponse)
       }
 
+      await notifyFailedApproveSend({
+        db,
+        actorEmail: staffSession?.email,
+        threadId,
+        guestFirstName: guestFirstName(thread.guest_name),
+        bookingRef: `T-${threadId}`,
+        channel: 'sms',
+        attemptId: sendResult.timestamp,
+      }).catch(() => undefined)
       return NextResponse.json(
         {
           success: false,
@@ -397,6 +419,7 @@ export async function POST(request: NextRequest) {
         channel: 'whatsapp_cloud',
         status: 'sent',
       })
+      await stampLastHandler(db, threadId, staffSession?.email)
 
       return NextResponse.json({
         success: true,
@@ -432,6 +455,15 @@ export async function POST(request: NextRequest) {
         args: [threadId],
       },
     ])
+    await notifyFailedApproveSend({
+      db,
+      actorEmail: staffSession?.email,
+      threadId,
+      guestFirstName: guestFirstName(thread.guest_name),
+      bookingRef: `T-${threadId}`,
+      channel: 'whatsapp',
+      attemptId: sendResult.timestamp,
+    }).catch(() => undefined)
 
     return NextResponse.json(
       {

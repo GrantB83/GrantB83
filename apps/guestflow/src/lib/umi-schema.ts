@@ -32,6 +32,7 @@ export const UMI_THREAD_COLUMNS: Array<{ column: string; sql: string }> = [
     column: 'linked_from_thread_id',
     sql: 'ALTER TABLE inbound_threads ADD COLUMN linked_from_thread_id INTEGER',
   },
+  { column: 'last_handler_email', sql: 'ALTER TABLE inbound_threads ADD COLUMN last_handler_email TEXT' },
 ]
 
 export const UMI_MESSAGE_COLUMNS: Array<{ column: string; sql: string }> = [

@@ -3,6 +3,7 @@ import { getDbAsync } from '@/lib/db'
 import { removeStaffUser } from '@/lib/staff-auth'
 import { getStaffSessionFromRequest } from '@/lib/staff-session'
 import { ensureStaffUsersSchema } from '@/lib/staff-users-schema'
+import { publishActiveAlertEmails } from '@/lib/publish-alert-emails'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,5 +26,6 @@ export async function DELETE(
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status })
   }
+  await publishActiveAlertEmails(db).catch(() => undefined)
   return NextResponse.json({ success: true })
 }
