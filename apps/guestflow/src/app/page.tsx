@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   CheckCircle,
@@ -11,78 +12,14 @@ import {
   Send,
 } from 'lucide-react'
 import { CHANNEL_BADGES, type UmiChannel } from '@/lib/umi-channels'
-
-interface InboxThread {
-  id: number
-  threadKind: 'booking' | 'temp'
-  bookingId: number | null
-  bookerName: string
-  suite: string | null
-  checkIn: string | null
-  checkOut: string | null
-  nightsbridgeBookingId: string | null
-  lastChannel: string | null
-  lastInboundChannel: string | null
-  lastMessageAt: string | null
-  preview: string
-  pendingReply: boolean
-  hasOpenDraft: boolean
-  needsAttention: boolean
-  sortBucket: 0 | 1 | 2
-  hygieneStatus: string | null
-  fromNumber: string
-  careWindow?: {
-    state: 'open' | 'closing_soon' | 'closed'
-    label: string
-    closingSoon: boolean
-  }
-}
-
-interface ThreadDetail {
-  id: number
-  threadKind: 'booking' | 'temp'
-  bookingId: number | null
-  bookerName: string
-  suite: string | null
-  checkIn: string | null
-  checkOut: string | null
-  nightsbridgeBookingId: string | null
-  lastChannel: string | null
-  lastInboundChannel: string | null
-  defaultOutboundChannel: string
-  fromNumber: string
-  guestPhone?: string | null
-  guestEmail?: string | null
-  guestPhoneSource?: string | null
-  guestEmailSource?: string | null
-  guestEmailKind?: string | null
-  status: string
-  hygieneStatus: string | null
-  openDraft: { text: string; source: string; kind: string } | null
-  linkCandidates: Array<{
-    id: number
-    guestName: string
-    checkIn: string
-    checkOut: string
-    suite: string | null
-  }>
-  messages: Array<{
-    id: number
-    direction: 'inbound' | 'outbound'
-    channel: UmiChannel | string
-    sourceTag?: string | null
-    senderAddress?: string | null
-    body: string
-    timestamp: string
-    isSpam: boolean
-  }>
-  careWindow?: {
-    state: 'open' | 'closing_soon' | 'closed'
-    label: string
-    closingSoon: boolean
-    windowExpiresAt: string | null
-  }
-}
+import { InboxConfirmDialog } from '@/components/inbox/InboxConfirmDialog'
+import { InboxLayoutShell } from '@/components/inbox/InboxLayoutShell'
+import { ThreadBubbleStatusSlot, ThreadLayoutShell } from '@/components/inbox/ThreadLayoutShell'
+import { FIXTURE_DETAILS, FIXTURE_THREADS } from '@/components/inbox/inbox-fixture'
+import type { InboxThread, ThreadDetail } from '@/components/inbox/inbox-types'
+import { useInboxBreakpoint } from '@/components/inbox/useInboxBreakpoint'
+import { useInboxChromeOffset } from '@/components/inbox/useInboxChromeOffset'
+import { useVisualViewportInset } from '@/components/inbox/useVisualViewportInset'
 
 const CHANNELS: Array<{ id: string; label: string }> = [
   { id: 'whatsapp', label: 'WhatsApp Cloud' },
@@ -90,6 +27,8 @@ const CHANNELS: Array<{ id: string; label: string }> = [
   { id: 'email', label: 'Email' },
   { id: 'sms', label: 'SMS' },
 ]
+
+const LIST_SCROLL_KEY = 'inbox-list-scroll'
 
 function badge(channel?: string | null): string {
   if (channel && channel in CHANNEL_BADGES) return CHANNEL_BADGES[channel as UmiChannel]
@@ -105,7 +44,17 @@ function sendChannel(value?: string | null): string {
   return 'whatsapp'
 }
 
-export default function InboxHomePage() {
+function InboxHomePageInner() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { breakpoint, ready } = useInboxBreakpoint()
+  const chromeOffset = useInboxChromeOffset()
+  const useFixture = searchParams.get('fixture') === '1'
+  const keyboardSim = searchParams.get('keyboard') === '1'
+  const threadParam = searchParams.get('thread')
+  const keyboardInsetPx = useVisualViewportInset(keyboardSim)
+
   const [threads, setThreads] = useState<InboxThread[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [detail, setDetail] = useState<ThreadDetail | null>(null)
@@ -129,53 +78,133 @@ export default function InboxHomePage() {
   const [templateVars, setTemplateVars] = useState<Record<string, string>>({})
   const [templateSid, setTemplateSid] = useState('')
   const [templateRendered, setTemplateRendered] = useState('')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [listCollapsed, setListCollapsed] = useState(false)
+  const listScrollRef = useRef<HTMLDivElement>(null)
+  const pushedThreadRef = useRef(false)
+
+  const writeQuery = (id: number | null, mode: 'push' | 'replace') => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (id) params.set('thread', String(id))
+    else params.delete('thread')
+    const query = params.toString()
+    const url = query ? `${pathname}?${query}` : pathname
+    if (mode === 'push') router.push(url)
+    else router.replace(url, { scroll: false })
+  }
+
+  const rememberListScroll = () => {
+    if (listScrollRef.current) {
+      sessionStorage.setItem(LIST_SCROLL_KEY, String(listScrollRef.current.scrollTop))
+    }
+  }
+
+  const restoreListScroll = () => {
+    const stored = Number(sessionStorage.getItem(LIST_SCROLL_KEY) || '0')
+    requestAnimationFrame(() => {
+      if (listScrollRef.current) listScrollRef.current.scrollTop = stored
+    })
+  }
 
   const loadInbox = async () => {
     setLoading(true)
     try {
+      if (useFixture) {
+        const rows =
+          filter === 'needs-attention'
+            ? FIXTURE_THREADS.filter((thread) => thread.needsAttention)
+            : FIXTURE_THREADS
+        const query = q.trim().toLowerCase()
+        setThreads(
+          query
+            ? rows.filter((thread) =>
+                `${thread.bookerName} ${thread.suite || ''} ${thread.nightsbridgeBookingId || ''}`
+                  .toLowerCase()
+                  .includes(query)
+              )
+            : rows
+        )
+        return
+      }
       const params = new URLSearchParams({ filter })
       if (q.trim()) params.set('q', q.trim())
       const response = await fetch(`/api/umi/inbox?${params.toString()}`)
       const data = await response.json()
       if (data.success) {
         setThreads(data.threads)
-        if (!selectedId && data.threads[0]) setSelectedId(data.threads[0].id)
       }
     } finally {
       setLoading(false)
     }
   }
 
+  const applyDetail = (thread: ThreadDetail) => {
+    setDetail(thread)
+    setDraft(thread.openDraft?.text || '')
+    setChannel(sendChannel(thread.defaultOutboundChannel))
+    setEmailTo(
+      thread.guestEmail || (thread.fromNumber?.includes('@') ? thread.fromNumber : '')
+    )
+    setContactPhone(thread.guestPhone || '')
+    setContactEmail(thread.guestEmail || '')
+    setContactNote(null)
+    setLinkBookingId('')
+    setSelectedTemplate('')
+    setTemplateVars({})
+    setTemplateSid('')
+    setTemplateRendered('')
+  }
+
   const loadThread = async (id: number) => {
+    if (useFixture) {
+      const fixture = FIXTURE_DETAILS[id]
+      if (fixture) applyDetail(fixture)
+      return
+    }
     const response = await fetch(`/api/umi/threads/${id}`)
     const data = await response.json()
     if (data.success) {
-      setDetail(data.thread)
-      setDraft(data.thread.openDraft?.text || '')
-      setChannel(sendChannel(data.thread.defaultOutboundChannel))
-      setEmailTo(
-        data.thread.guestEmail ||
-          (data.thread.fromNumber?.includes('@') ? data.thread.fromNumber : '')
-      )
-      setContactPhone(data.thread.guestPhone || '')
-      setContactEmail(data.thread.guestEmail || '')
-      setContactNote(null)
-      setLinkBookingId('')
-      setSelectedTemplate('')
-      setTemplateVars({})
-      setTemplateSid('')
-      setTemplateRendered('')
+      applyDetail(data.thread)
     }
   }
 
   useEffect(() => {
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [])
+
+  useEffect(() => {
     loadInbox()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter])
+  }, [filter, useFixture])
+
+  useEffect(() => {
+    if (!ready) return
+    if (threadParam) {
+      const fromQuery = Number(threadParam)
+      if (!Number.isNaN(fromQuery)) setSelectedId(fromQuery)
+      return
+    }
+    if (breakpoint === 'phone') {
+      pushedThreadRef.current = false
+      setSelectedId(null)
+      restoreListScroll()
+    }
+  }, [ready, breakpoint, threadParam])
+
+  useEffect(() => {
+    if (!ready || breakpoint === 'phone' || threadParam || selectedId || !threads[0]) return
+    setSelectedId(threads[0].id)
+  }, [ready, breakpoint, threadParam, threads, selectedId])
 
   useEffect(() => {
     if (selectedId) loadThread(selectedId)
-  }, [selectedId])
+    else setDetail(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, useFixture])
 
   const selected = useMemo(
     () => threads.find((thread) => thread.id === selectedId) || null,
@@ -201,7 +230,9 @@ export default function InboxHomePage() {
 
   useEffect(() => {
     if (!selectedTemplate || !selectedId) return
-    fetch(`/api/ops/wa-templates/fill?threadId=${selectedId}&name=${encodeURIComponent(selectedTemplate)}`)
+    fetch(
+      `/api/ops/wa-templates/fill?threadId=${selectedId}&name=${encodeURIComponent(selectedTemplate)}`
+    )
       .then((response) => response.json())
       .then((data) => {
         if (!data.success) return
@@ -212,11 +243,21 @@ export default function InboxHomePage() {
       .catch(() => {})
   }, [selectedTemplate, selectedId])
 
+  const confirmWindowWarning =
+    channel === 'whatsapp' && careWindow
+      ? careWindow.state === 'closed'
+        ? 'WARNING: WhatsApp window is closed. Free-text will be refused (409). Use an approved template.'
+        : careWindow.state === 'closing_soon'
+          ? 'WARNING: WhatsApp window closes in about 5 minutes. Switch to a template if this send might miss the window.'
+          : null
+      : null
+
   const saveDraft = async () => {
     if (!selectedId || !draft.trim()) return
     setBusy(true)
     setError(null)
     try {
+      if (useFixture) return
       await fetch(`/api/umi/threads/${selectedId}/draft`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -227,29 +268,28 @@ export default function InboxHomePage() {
     }
   }
 
-  const approveAndSend = async () => {
-    const usingTemplate = forceTemplateMode && Boolean(selectedTemplate)
+  const usingTemplate = forceTemplateMode && Boolean(selectedTemplate)
+
+  const requestApproveAndSend = () => {
     if (!selectedId) return
     if (!usingTemplate && !draft.trim()) return
     if (forceTemplateMode && careWindow?.state === 'closed' && !selectedTemplate) {
       setError('Window closed. Pick a WhatsApp-approved template (none until Grant submits).')
       return
     }
-    const windowNote =
-      channel === 'whatsapp' && careWindow
-        ? careWindow.state === 'closed'
-          ? '\n\nWARNING: WhatsApp window is closed. Free-text will be refused (409). Use an approved template.'
-          : careWindow.state === 'closing_soon'
-            ? '\n\nWARNING: WhatsApp window closes in about 5 minutes. Switch to a template if this send might miss the window.'
-            : ''
-        : ''
-    const confirmed = window.confirm(
-      `Approve & Send on ${CHANNELS.find((item) => item.id === channel)?.label || channel}?\n\nRedirect sinks stay on until a separate go-live CLEAR. No auto-send.${windowNote}`
-    )
-    if (!confirmed) return
+    setConfirmOpen(true)
+  }
+
+  const runApproveAndSend = async () => {
+    if (!selectedId) return
+    if (!usingTemplate && !draft.trim()) return
     setBusy(true)
     setError(null)
     try {
+      if (useFixture) {
+        setConfirmOpen(false)
+        return
+      }
       await saveDraft()
       await fetch(`/api/umi/threads/${selectedId}/approve`, { method: 'POST' })
       const tokenRes = await fetch('/api/inbound/confirm-token', {
@@ -282,6 +322,7 @@ export default function InboxHomePage() {
         setError(sendData.details || sendData.error || 'Send failed')
         return
       }
+      setConfirmOpen(false)
       await loadInbox()
       await loadThread(selectedId)
     } finally {
@@ -295,6 +336,7 @@ export default function InboxHomePage() {
     setError(null)
     setContactNote(null)
     try {
+      if (useFixture) return
       const response = await fetch(`/api/umi/threads/${selectedId}/contacts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,6 +363,7 @@ export default function InboxHomePage() {
     setBusy(true)
     setError(null)
     try {
+      if (useFixture) return
       const response = await fetch(`/api/umi/threads/${selectedId}/link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,362 +381,444 @@ export default function InboxHomePage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-slate-100 flex">
-      <aside className="w-full max-w-md border-r bg-white flex flex-col">
-        <div className="p-4 border-b space-y-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-              Inbox
-            </h1>
-            <button
-              onClick={() => loadInbox()}
-              className="p-2 rounded hover:bg-slate-100"
-              title="Refresh"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-            <input
-              value={q}
-              onChange={(event) => setQ(event.target.value)}
-              onKeyDown={(event) => event.key === 'Enter' && loadInbox()}
-              placeholder="Search booker, suite, booking…"
-              className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={filter === 'needs-attention'}
-              onChange={(event) =>
-                setFilter(event.target.checked ? 'needs-attention' : 'all')
-              }
-            />
-            Needs attention
-          </label>
+  const openThread = (id: number) => {
+    rememberListScroll()
+    setSelectedId(id)
+    if (breakpoint === 'phone') {
+      pushedThreadRef.current = true
+      writeQuery(id, 'push')
+    } else {
+      writeQuery(id, 'replace')
+    }
+  }
+
+  const closeThread = () => {
+    rememberListScroll()
+    if (pushedThreadRef.current) {
+      pushedThreadRef.current = false
+      router.back()
+      return
+    }
+    setSelectedId(null)
+    writeQuery(null, 'replace')
+    restoreListScroll()
+  }
+
+  const pane = breakpoint === 'phone' && selectedId ? 'thread' : 'list'
+  const channelLabel = CHANNELS.find((item) => item.id === channel)?.label || channel
+
+  const listPane = (
+    <>
+      <div className="p-4 border-b space-y-3 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-600" />
+            Inbox
+          </h1>
+          <button
+            type="button"
+            onClick={() => loadInbox()}
+            className="inbox-tap"
+            title="Refresh"
+            aria-label="Refresh inbox"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {threads.length === 0 && !loading && (
-            <p className="p-6 text-sm text-slate-500">
-              {filter === 'needs-attention'
-                ? 'Nothing needs attention.'
-                : 'No threads yet. Arrivals today/tomorrow SAST appear here once bookings exist.'}
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          <input
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && loadInbox()}
+            placeholder="Search booker, suite, booking…"
+            className="inbox-field w-full pl-9 pr-3"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-base text-slate-700 min-h-[44px]">
+          <input
+            type="checkbox"
+            checked={filter === 'needs-attention'}
+            onChange={(event) =>
+              setFilter(event.target.checked ? 'needs-attention' : 'all')
+            }
+            className="h-5 w-5"
+          />
+          Needs attention
+        </label>
+      </div>
+      <div ref={listScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+        {threads.length === 0 && !loading && (
+          <p className="p-6 text-base text-slate-500 inbox-wrap">
+            {filter === 'needs-attention'
+              ? 'Nothing needs attention.'
+              : 'No threads yet. Arrivals today/tomorrow SAST appear here once bookings exist.'}
+          </p>
+        )}
+        {threads.map((thread) => (
+          <button
+            key={thread.id}
+            type="button"
+            onClick={() => openThread(thread.id)}
+            className={`w-full text-left px-4 py-3 min-h-[44px] border-b hover:bg-slate-50 ${
+              selectedId === thread.id ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium text-base text-slate-900 inbox-wrap">{thread.bookerName}</span>
+              <span className="text-xs uppercase tracking-wide text-slate-500 shrink-0">
+                {thread.sortBucket === 0
+                  ? 'Arriving'
+                  : thread.sortBucket === 1
+                    ? 'Pending'
+                    : 'Recent'}
+              </span>
+            </div>
+            <div className="text-base text-slate-500 mt-0.5 inbox-wrap">
+              {thread.threadKind === 'temp' ? 'Temp · ' : ''}
+              {thread.suite || 'No suite'}
+              {thread.checkIn ? ` · ${thread.checkIn}` : ''}
+            </div>
+            <div className="text-base text-slate-700 mt-1 line-clamp-2 inbox-wrap">{thread.preview || '—'}</div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {thread.lastChannel && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                  {badge(thread.lastChannel)}
+                </span>
+              )}
+              {thread.hasOpenDraft && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                  Draft
+                </span>
+              )}
+              {thread.hygieneStatus === 'nudged' && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
+                  Stale temp
+                </span>
+              )}
+              {thread.careWindow?.state === 'closed' && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                  WA closed
+                </span>
+              )}
+              {thread.careWindow?.state === 'closing_soon' && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
+                  WA closing
+                </span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </>
+  )
+
+  const threadPane = !detail ? (
+    <div className="flex-1 flex items-center justify-center text-slate-500 text-base p-6">
+      Select a conversation
+    </div>
+  ) : (
+    <ThreadLayoutShell
+      showBack={breakpoint === 'phone'}
+      onBack={closeThread}
+      title={detail.bookerName}
+      facts={
+        <>
+          {detail.suite || 'Suite unknown'} · {detail.checkIn || '—'} → {detail.checkOut || '—'}
+          {detail.nightsbridgeBookingId ? ` · ${detail.nightsbridgeBookingId}` : ''}
+          {detail.bookingId ? ` · booking ${detail.bookingId}` : ''}
+        </>
+      }
+      channelLine={
+        <>
+          Last channel: {badge(detail.lastChannel)} · Default reply:{' '}
+          {badge(detail.defaultOutboundChannel)}
+        </>
+      }
+      headerBadgeSlot={
+        detail.careWindow ? (
+          <span
+            className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
+              detail.careWindow.state === 'closed'
+                ? 'bg-slate-200 text-slate-800'
+                : detail.careWindow.state === 'closing_soon'
+                  ? 'bg-orange-100 text-orange-800'
+                  : 'bg-emerald-50 text-emerald-800'
+            }`}
+          >
+            {detail.careWindow.label}
+          </span>
+        ) : null
+      }
+      extraHeader={
+        <>
+          {detail.bookingId ? (
+            <div className="mt-3 text-base text-slate-600 space-y-2 inbox-wrap">
+              <p>
+                Phone {detail.guestPhone || '—'}
+                {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
+                {' · '}
+                Email {detail.guestEmail || '—'}
+                {detail.guestEmailKind === 'relay' ? ' (relay)' : ''}
+                {detail.guestEmailSource ? ` · ${detail.guestEmailSource}` : ''}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  value={contactPhone}
+                  onChange={(event) => setContactPhone(event.target.value)}
+                  placeholder="Staff phone"
+                  className="inbox-field flex-1 min-w-[10rem]"
+                />
+                <input
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  placeholder="Staff email"
+                  className="inbox-field flex-1 min-w-[10rem]"
+                />
+                <button
+                  type="button"
+                  onClick={saveContacts}
+                  disabled={busy}
+                  className="inbox-tap px-3 bg-slate-800 text-white rounded-lg disabled:opacity-50"
+                >
+                  Save contact
+                </button>
+              </div>
+              {contactNote && <p className="text-emerald-700">{contactNote}</p>}
+            </div>
+          ) : null}
+          {detail.threadKind === 'temp' ? (
+            <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+              <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
+                <Link2 className="w-4 h-4" /> Unmatched temp
+              </div>
+              <select
+                value={linkBookingId}
+                onChange={(event) => setLinkBookingId(event.target.value)}
+                className="inbox-field w-full mb-2"
+              >
+                <option value="">Link to booking…</option>
+                {detail.linkCandidates.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={linkBooking}
+                disabled={!linkBookingId || busy}
+                className="inbox-tap w-full bg-amber-700 text-white rounded-lg disabled:opacity-50"
+              >
+                Link to booking
+              </button>
+            </div>
+          ) : null}
+        </>
+      }
+      messages={detail.messages.map((message) => (
+        <div
+          key={message.id}
+          className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+        >
+          <div
+            className={`max-w-full sm:max-w-xl rounded-2xl px-4 py-3 text-base inbox-wrap ${
+              message.direction === 'outbound'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border text-slate-800'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span
+                className={`text-xs uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                  message.direction === 'outbound'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                {badge(message.channel)}
+              </span>
+              {message.isSpam && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                  Filtered
+                </span>
+              )}
+              <ThreadBubbleStatusSlot />
+            </div>
+            {message.channel === 'email' && (
+              <p className="text-base opacity-80 mb-1 inbox-wrap">
+                source=email · sender={message.senderAddress || detail.fromNumber}
+              </p>
+            )}
+            <p className="whitespace-pre-wrap inbox-wrap">{message.body}</p>
+            <p className="text-xs opacity-70 mt-2">
+              {message.timestamp ? format(parseISO(message.timestamp), 'dd MMM HH:mm') : ''}
             </p>
-          )}
-          {threads.map((thread) => (
-            <button
-              key={thread.id}
-              onClick={() => setSelectedId(thread.id)}
-              className={`w-full text-left px-4 py-3 border-b hover:bg-slate-50 ${
-                selectedId === thread.id ? 'bg-blue-50' : ''
+          </div>
+        </div>
+      ))}
+      composer={
+        <>
+          {careWindow && (
+            <p
+              className={`text-base px-2 py-1 rounded inbox-wrap ${
+                careWindow.state === 'closed'
+                  ? 'bg-slate-200 text-slate-800'
+                  : careWindow.state === 'closing_soon'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-emerald-50 text-emerald-800'
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-slate-900 truncate">{thread.bookerName}</span>
-                <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                  {thread.sortBucket === 0
-                    ? 'Arriving'
-                    : thread.sortBucket === 1
-                      ? 'Pending'
-                      : 'Recent'}
-                </span>
-              </div>
-              <div className="text-xs text-slate-500 mt-0.5">
-                {thread.threadKind === 'temp' ? 'Temp · ' : ''}
-                {thread.suite || 'No suite'}
-                {thread.checkIn ? ` · ${thread.checkIn}` : ''}
-              </div>
-              <div className="text-sm text-slate-700 mt-1 line-clamp-2">{thread.preview || '—'}</div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {thread.lastChannel && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                    {badge(thread.lastChannel)}
-                  </span>
-                )}
-                {thread.hasOpenDraft && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                    Draft
-                  </span>
-                )}
-                {thread.hygieneStatus === 'nudged' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                    Stale temp
-                  </span>
-                )}
-                {thread.careWindow?.state === 'closed' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                    WA closed
-                  </span>
-                )}
-                {thread.careWindow?.state === 'closing_soon' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                    WA closing
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      </aside>
-
-      <section className="flex-1 flex flex-col min-w-0">
-        {!detail ? (
-          <div className="flex-1 flex items-center justify-center text-slate-500">
-            Select a conversation
+              {careWindow.label}
+            </p>
+          )}
+          {error && <p className="text-base text-red-600 inbox-wrap">{error}</p>}
+          {(selected?.hasOpenDraft || detail.openDraft) && keyboardInsetPx < 80 ? (
+            <p className="text-base text-amber-700 inbox-wrap">
+              In-thread draft ({detail.openDraft?.source || 'heuristic'}). Approve&Send required — never auto-sent.
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {CHANNELS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setChannel(item.id)}
+                className={`inbox-tap px-3 rounded-full border text-base ${
+                  channel === item.id
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <>
-            <header className="bg-white border-b px-5 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">{detail.bookerName}</h2>
-                  <p className="text-sm text-slate-600">
-                    {detail.suite || 'Suite unknown'} · {detail.checkIn || '—'} → {detail.checkOut || '—'}
-                    {detail.nightsbridgeBookingId ? ` · ${detail.nightsbridgeBookingId}` : ''}
-                    {detail.bookingId ? ` · booking ${detail.bookingId}` : ''}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Last channel: {badge(detail.lastChannel)} · Default reply: {badge(detail.defaultOutboundChannel)}
-                  </p>
-                  {detail.careWindow && (
-                    <p
-                      className={`text-xs mt-2 inline-flex px-2 py-1 rounded ${
-                        detail.careWindow.state === 'closed'
-                          ? 'bg-slate-200 text-slate-800'
-                          : detail.careWindow.state === 'closing_soon'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-emerald-50 text-emerald-800'
-                      }`}
-                    >
-                      {detail.careWindow.label}
-                    </p>
-                  )}
-                  {detail.bookingId ? (
-                    <div className="mt-3 text-xs text-slate-600 space-y-2 max-w-md">
-                      <p>
-                        Phone {detail.guestPhone || '—'}
-                        {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
-                        {' · '}
-                        Email {detail.guestEmail || '—'}
-                        {detail.guestEmailKind === 'relay' ? ' (relay)' : ''}
-                        {detail.guestEmailSource ? ` · ${detail.guestEmailSource}` : ''}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <input
-                          value={contactPhone}
-                          onChange={(event) => setContactPhone(event.target.value)}
-                          placeholder="Staff phone"
-                          className="border rounded px-2 py-1 text-sm"
-                        />
-                        <input
-                          value={contactEmail}
-                          onChange={(event) => setContactEmail(event.target.value)}
-                          placeholder="Staff email"
-                          className="border rounded px-2 py-1 text-sm"
-                        />
-                        <button
-                          onClick={saveContacts}
-                          disabled={busy}
-                          className="px-2 py-1 bg-slate-800 text-white rounded disabled:opacity-50"
-                        >
-                          Save contact
-                        </button>
-                      </div>
-                      {contactNote && <p className="text-emerald-700">{contactNote}</p>}
-                    </div>
-                  ) : null}
-                </div>
-                {detail.threadKind === 'temp' && (
-                  <div className="text-xs bg-amber-50 border border-amber-200 rounded-lg p-3 max-w-sm">
-                    <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
-                      <Link2 className="w-3 h-3" /> Unmatched temp
-                    </div>
-                    <select
-                      value={linkBookingId}
-                      onChange={(event) => setLinkBookingId(event.target.value)}
-                      className="w-full border rounded px-2 py-1 mb-2"
-                    >
-                      <option value="">Link to booking…</option>
-                      {detail.linkCandidates.map((candidate) => (
-                        <option key={candidate.id} value={candidate.id}>
-                          {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={linkBooking}
-                      disabled={!linkBookingId || busy}
-                      className="w-full bg-amber-700 text-white rounded px-2 py-1 disabled:opacity-50"
-                    >
-                      Link to booking
-                    </button>
-                  </div>
-                )}
-              </div>
-            </header>
-
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
-              {detail.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xl rounded-2xl px-4 py-3 text-sm ${
-                      message.direction === 'outbound'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white border text-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                          message.direction === 'outbound'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {badge(message.channel)}
-                      </span>
-                      {message.isSpam && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700">
-                          Filtered
-                        </span>
-                      )}
-                    </div>
-                    {message.channel === 'email' && (
-                      <p className="text-xs opacity-80 mb-1">
-                        source=email · sender={message.senderAddress || detail.fromNumber}
-                      </p>
-                    )}
-                    <p className="whitespace-pre-wrap">{message.body}</p>
-                    <p className="text-[10px] opacity-70 mt-2">
-                      {message.timestamp ? format(parseISO(message.timestamp), 'dd MMM HH:mm') : ''}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <footer className="bg-white border-t p-4 space-y-3">
-              {careWindow && (
-                <p
-                  className={`text-xs px-2 py-1 rounded ${
-                    careWindow.state === 'closed'
-                      ? 'bg-slate-200 text-slate-800'
-                      : careWindow.state === 'closing_soon'
-                        ? 'bg-orange-100 text-orange-800'
-                        : 'bg-emerald-50 text-emerald-800'
-                  }`}
-                >
-                  {careWindow.label}
-                </p>
-              )}
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              {selected?.hasOpenDraft || detail.openDraft ? (
-                <p className="text-xs text-amber-700">
-                  In-thread draft ({detail.openDraft?.source || 'heuristic'}). Approve&Send required — never auto-sent.
-                </p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                {CHANNELS.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setChannel(item.id)}
-                    className={`text-xs px-2 py-1 rounded-full border ${
-                      channel === item.id
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white text-slate-600'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
+          {forceTemplateMode && (
+            <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
+              <p className="text-base font-medium text-slate-800">Template mode</p>
+              <p className="text-base text-slate-600 inbox-wrap">
+                {approvedTemplates.length === 0
+                  ? templateEmptyReason ||
+                    'Picker shows only templates APPROVED by WhatsApp. Grant-approved copy is stored but unsubmitted — none appear until Grant’s submit go-ahead.'
+                  : 'Choose a WhatsApp-approved template. Variables are pre-filled; you can edit them.'}
+              </p>
+              <select
+                value={selectedTemplate}
+                onChange={(event) => setSelectedTemplate(event.target.value)}
+                className="inbox-field w-full"
+              >
+                <option value="">Select template…</option>
+                {approvedTemplates.map((item) => (
+                  <option key={item.name} value={item.name}>
+                    {item.name} ({item.category})
+                  </option>
                 ))}
-              </div>
-              {forceTemplateMode && (
-                <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
-                  <p className="text-xs font-medium text-slate-800">Template mode</p>
-                  <p className="text-xs text-slate-600">
-                    {approvedTemplates.length === 0
-                      ? templateEmptyReason ||
-                        'Picker shows only templates APPROVED by WhatsApp. Grant-approved copy is stored but unsubmitted — none appear until Grant’s submit go-ahead.'
-                      : 'Choose a WhatsApp-approved template. Variables are pre-filled; you can edit them.'}
-                  </p>
-                  <select
-                    value={selectedTemplate}
-                    onChange={(event) => setSelectedTemplate(event.target.value)}
-                    className="w-full border rounded px-2 py-1 text-sm"
-                  >
-                    <option value="">Select template…</option>
-                    {approvedTemplates.map((item) => (
-                      <option key={item.name} value={item.name}>
-                        {item.name} ({item.category})
-                      </option>
-                    ))}
-                  </select>
-                  {Object.keys(templateVars).length > 0 && (
-                    <div className="space-y-2">
-                      {Object.entries(templateVars).map(([key, value]) => (
-                        <label key={key} className="block text-xs text-slate-600">
-                          {`{{${key}}}`}
-                          <input
-                            value={value}
-                            onChange={(event) =>
-                              setTemplateVars((current) => ({
-                                ...current,
-                                [key]: event.target.value,
-                              }))
-                            }
-                            className="mt-1 w-full border rounded px-2 py-1 text-sm"
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  )}
+              </select>
+              {Object.keys(templateVars).length > 0 && (
+                <div className="space-y-2">
+                  {Object.entries(templateVars).map(([key, value]) => (
+                    <label key={key} className="block text-base text-slate-600">
+                      {`{{${key}}}`}
+                      <input
+                        value={value}
+                        onChange={(event) =>
+                          setTemplateVars((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        className="inbox-field mt-1 w-full"
+                      />
+                    </label>
+                  ))}
                 </div>
               )}
-              {channel === 'email' && (
-                <input
-                  value={emailTo}
-                  onChange={(event) => setEmailTo(event.target.value)}
-                  placeholder="Guest email"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-              )}
-              <textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                rows={4}
-                placeholder="Draft reply — edit before Approve&Send"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={saveDraft}
-                  disabled={busy || !draft.trim()}
-                  className="px-3 py-2 text-sm border rounded-lg disabled:opacity-50"
-                >
-                  Save draft
-                </button>
-                <button
-                  onClick={approveAndSend}
-                  disabled={busy || (!draft.trim() && !selectedTemplate)}
-                  className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg flex items-center gap-1 disabled:opacity-50"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Approve
-                  <Send className="w-4 h-4" />
-                  Send
-                </button>
-              </div>
-            </footer>
-          </>
-        )}
-      </section>
-    </div>
+            </div>
+          )}
+          {channel === 'email' && (
+            <input
+              value={emailTo}
+              onChange={(event) => setEmailTo(event.target.value)}
+              placeholder="Guest email"
+              className="inbox-field w-full"
+            />
+          )}
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            rows={keyboardInsetPx > 80 ? 2 : 4}
+            placeholder="Draft reply — edit before Approve&Send"
+            className="inbox-field w-full"
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={busy || !draft.trim()}
+              className="inbox-tap px-3 border rounded-lg text-base disabled:opacity-50"
+            >
+              Save draft
+            </button>
+            <button
+              type="button"
+              onClick={requestApproveAndSend}
+              disabled={busy || (!draft.trim() && !selectedTemplate)}
+              className="inbox-tap px-3 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-1 text-base disabled:opacity-50"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Approve
+              <Send className="w-4 h-4" />
+              Send
+            </button>
+          </div>
+        </>
+      }
+    />
+  )
+
+  return (
+    <>
+      <InboxLayoutShell
+        breakpoint={ready ? breakpoint : 'desktop'}
+        pane={pane}
+        list={listPane}
+        thread={threadPane}
+        listCollapsed={listCollapsed}
+        onToggleList={() => setListCollapsed((value) => !value)}
+        chromeOffset={chromeOffset}
+        keyboardInsetPx={keyboardInsetPx}
+      />
+      <InboxConfirmDialog
+        open={confirmOpen}
+        channelLabel={channelLabel}
+        windowWarning={confirmWindowWarning}
+        busy={busy}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={runApproveAndSend}
+      />
+      {keyboardSim && keyboardInsetPx > 0 && (
+        <div
+          data-inbox-keyboard-sim
+          aria-hidden
+          className="fixed left-0 right-0 bottom-0 z-[70] bg-slate-300 border-t border-slate-400 text-center text-base text-slate-700 pt-3"
+          style={{ height: keyboardInsetPx }}
+        >
+          On-screen keyboard (simulated)
+        </div>
+      )}
+    </>
+  )
+}
+
+export default function InboxHomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-slate-500">Loading inbox…</div>
+      }
+    >
+      <InboxHomePageInner />
+    </Suspense>
   )
 }

@@ -23,19 +23,16 @@ export async function OutboundRedirectBanner() {
 
   return (
     <div
-      style={{
-        backgroundColor: '#3b82f6',
-        color: 'white',
-        padding: '12px 16px',
-        textAlign: 'center',
-        fontSize: '14px',
-        fontWeight: '500',
-        borderBottom: '1px solid #2563eb'
-      }}
+      data-outbound-banner
+      className="bg-blue-500 text-white text-center font-medium border-b border-blue-600 px-3 py-1.5 text-xs sm:px-4 sm:py-3 sm:text-sm inbox-wrap"
       role="alert"
       aria-live="polite"
     >
-      ℹ️ Outbound Redirect ON – All guest sends go to test sinks. Flip the header switch to send to real recipients.
+      <span className="sm:hidden">Outbound redirect on — test sinks only.</span>
+      <span className="hidden sm:inline">
+        Outbound Redirect ON – All guest sends go to test sinks. Flip the header switch to send to real
+        recipients.
+      </span>
     </div>
   )
 }

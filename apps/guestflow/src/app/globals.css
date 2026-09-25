@@ -30,4 +30,42 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .inbox-wrap {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .inbox-tap {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .inbox-field {
+    min-height: 44px;
+    font-size: 16px;
+    line-height: 1.4;
+    border-width: 1px;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .inbox-slot:empty {
+    display: none;
+  }
+}
+
+.inbox-shell {
+  position: fixed;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+html {
+  overflow-x: hidden;
 }
