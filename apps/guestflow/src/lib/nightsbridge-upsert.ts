@@ -7,6 +7,20 @@
 
 import type { DbClient } from '@/lib/db'
 import { format } from 'date-fns'
+import { propertyDisplayName, resolvePropertyForSuite } from './property-resolve'
+
+async function resolvedPropertyName(
+  db: DbClient,
+  tenantId: number,
+  suite: string
+): Promise<string | null> {
+  try {
+    const key = await resolvePropertyForSuite(db, tenantId, suite)
+    return key ? propertyDisplayName(key) : null
+  } catch {
+    return null
+  }
+}
 
 /**
  * Parsed booking from Nightsbridge import
@@ -103,9 +117,11 @@ export async function upsertBooking(
   // First, try to find existing booking by nbid (if present)
   let existingBooking: any = null
   
+  const propertyName = await resolvedPropertyName(db, tenantId, booking.suiteOrUnit)
+
   if (booking.bookingId) {
     existingBooking = await db.prepare(`
-      SELECT id, guest_phone, status, adults, children, notes, late_check_in 
+      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name 
       FROM bookings 
       WHERE tenant_id = ? AND nightsbridge_booking_id = ?
     `).get(tenantId, booking.bookingId)
@@ -114,7 +130,7 @@ export async function upsertBooking(
   // Fallback: Try to find by natural key
   if (!existingBooking) {
     existingBooking = await db.prepare(`
-      SELECT id, guest_phone, status, adults, children, notes, late_check_in 
+      SELECT id, guest_phone, status, adults, children, notes, late_check_in, property_name 
       FROM bookings 
       WHERE tenant_id = ? 
         AND guest_name_norm = ? 
@@ -132,14 +148,15 @@ export async function upsertBooking(
       (booking.adults || 2) !== existingBooking.adults ||
       (booking.children || 0) !== existingBooking.children ||
       (booking.notes || '') !== (existingBooking.notes || '') ||
-      (booking.lateCheckIn ? 1 : 0) !== existingBooking.late_check_in
+      (booking.lateCheckIn ? 1 : 0) !== existingBooking.late_check_in ||
+      (propertyName != null && propertyName !== existingBooking.property_name)
 
     if (!hasChanges) {
       // No changes, return unchanged
       return { action: 'unchanged', id: existingBooking.id }
     }
 
-    // Update existing booking (mutable fields only)
+    // Update existing booking (mutable fields only). property_name only when resolved.
     await db.prepare(`
       UPDATE bookings
       SET guest_phone = ?,
@@ -151,7 +168,8 @@ export async function upsertBooking(
           updated_at = ?,
           last_import_at = ?,
           import_batch_id = ?,
-          nightsbridge_booking_id = ?
+          nightsbridge_booking_id = ?,
+          property_name = COALESCE(?, property_name)
       WHERE id = ?
     `).run(
       booking.guestPhone || booking.guestPhone2 || '',
@@ -164,6 +182,7 @@ export async function upsertBooking(
       now,
       batchId,
       booking.bookingId || null,
+      propertyName,
       existingBooking.id
     )
 
@@ -190,8 +209,9 @@ export async function upsertBooking(
         import_batch_id,
         source,
         created_at,
-        updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        updated_at,
+        property_name
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       tenantId,
       booking.guestName,
@@ -211,7 +231,8 @@ export async function upsertBooking(
       batchId,
       'nb',
       now,
-      now
+      now,
+      propertyName
     )
 
     return { action: 'inserted', id: result.lastInsertRowid as number }

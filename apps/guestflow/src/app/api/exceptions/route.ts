@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic'
 
 /**
  * GET /api/exceptions
- * 
- * Fetch exception items (missing rate cards, timeouts, tickets)
+ *
+ * Fetch exception items using live guest_tickets columns only.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
         category,
         priority,
         guest_name as guest,
-        problem_description as what_asked,
-        context_found as what_ai_found,
-        reason_stopped as why_stopped,
-        suggested_next_step as next_step,
+        subject,
+        description,
+        staff_brief,
+        guest_draft_reply,
+        assigned_to,
         status,
-        created_at,
-        metadata
+        created_at
       FROM guest_tickets
       WHERE tenant_id = ?
     `
@@ -60,13 +60,13 @@ export async function GET(request: NextRequest) {
         category: ex.category || 'general_problem',
         priority: ex.priority || 'medium',
         guest: ex.guest || 'Unknown',
-        whatAsked: ex.what_asked || 'No description',
-        whatAiFound: ex.what_ai_found || 'No context found',
-        whyStopped: ex.why_stopped || 'Exception raised',
-        nextStep: ex.next_step || 'Manual review required',
+        whatAsked: ex.subject || ex.description || 'No description',
+        whatAiFound: ex.staff_brief || 'No context found',
+        whyStopped: ex.description || ex.staff_brief || 'Exception raised',
+        nextStep: ex.staff_brief || 'Manual review required',
         status: ex.status,
         createdAt: ex.created_at,
-        metadata: ex.metadata ? JSON.parse(ex.metadata) : {}
+        metadata: {},
       }))
     })
 
@@ -81,8 +81,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * PATCH /api/exceptions
- * 
- * Update exception status
+ *
+ * Update exception status. audit_log is optional.
  */
 export async function PATCH(request: NextRequest) {
   try {
@@ -104,11 +104,14 @@ export async function PATCH(request: NextRequest) {
       WHERE id = ?
     `).run(status, exceptionId)
 
-    // Log the action
-    await db.prepare(`
-      INSERT INTO audit_log (tenant_id, actor, action, item_type, item_id, content_before, content_after, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(1, 'Grant', `status_change_${status}`, 'exception', exceptionId, '', status)
+    try {
+      await db.prepare(`
+        INSERT INTO audit_log (tenant_id, actor, action, item_type, item_id, content_before, content_after, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `).run(1, 'Grant', `status_change_${status}`, 'exception', exceptionId, '', status)
+    } catch {
+      // audit_log is not on the live Turso schema
+    }
 
     return NextResponse.json({ success: true })
 

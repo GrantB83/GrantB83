@@ -100,6 +100,43 @@ describe('buildDailyBriefSnapshot', () => {
     expect(snapshot.tomorrow.arrivals).toHaveLength(1)
     expect(snapshot.today.arrivals[0].guestName).toBe('Jane Doe')
   })
+
+  it('excludes cancelled and BLOCK rows from guest counts and missing-data', () => {
+    const rows = [
+      baseRow({ id: 1, guest_name: 'Ada Booker', status: 'confirmed' }),
+      baseRow({
+        id: 2,
+        guest_name: 'Cancelled Guest',
+        status: 'cancelled',
+        guest_phone: '',
+        suite_or_unit: '',
+        room_number: '',
+      }),
+      baseRow({
+        id: 3,
+        guest_name: 'BLOCK',
+        status: 'confirmed',
+        guest_phone: '',
+        suite_or_unit: 'Owner hold',
+      }),
+    ]
+    const snapshot = buildDailyBriefSnapshot(1, 'Browns Dullstroom', '2026-09-14', rows)
+    expect(snapshot.today.arrivals).toHaveLength(1)
+    expect(snapshot.today.arrivals[0].guestName).toBe('Ada Booker')
+    expect(snapshot.exceptions.missingData.every((row) => row.guestName !== 'BLOCK')).toBe(true)
+    expect(snapshot.exceptions.missingData.every((row) => row.guestName !== 'Cancelled Guest')).toBe(true)
+    expect(snapshot.ownerBlocksToday).toBe(1)
+  })
+
+  it('uses Property unknown – check suite and never Property TBD', () => {
+    const snapshot = buildDailyBriefSnapshot(1, 'Browns', '2026-09-14', [
+      baseRow({ property_name: '', suite_or_unit: '' }),
+    ])
+    const text = generateWhatsAppBrief(snapshot)
+    expect(text).toContain('Property unknown – check suite')
+    expect(text).not.toContain('Property TBD')
+    expect(snapshot.today.arrivals[0].propertyName).toBe('Property unknown – check suite')
+  })
 })
 
 describe('generateWhatsAppBrief', () => {

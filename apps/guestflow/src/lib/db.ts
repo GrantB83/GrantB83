@@ -605,17 +605,8 @@ function seedDefaultData(db: DbClient) {
     insertTenant.run('The Browns Luxury Guest Suites (Dullstroom)', 'Dullstroom, Mpumalanga, South Africa', 'Africa/Johannesburg')
   }
 
-  const demoTenant = db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
-  const demoTenantId = demoTenant?.id || 1
-  
-  const propertyCount = db.prepare('SELECT COUNT(*) as count FROM properties').get() as { count: number }
-  
-  if (propertyCount.count === 0) {
-    const insert = db.prepare('INSERT INTO properties (tenant_id, name, location, room_count) VALUES (?, ?, ?, ?)')
-    insert.run(demoTenantId, 'Riverside Lodge', 'Dullstroom, SA', 5)
-    insert.run(demoTenantId, 'Mountain View Suites', 'Clarens, SA', 3)
-    insert.run(demoTenantId, 'Coastal Retreat', 'Hermanus, SA', 4)
-  }
+  // Sprint 2: do not invent demo lodges (Riverside / Mountain View / Coastal).
+  // Real property identity lives on access-codes lockbox rows.
 }
 
 async function seedDefaultDataAsync(db: DbClient) {
@@ -626,17 +617,7 @@ async function seedDefaultDataAsync(db: DbClient) {
     await insertTenant.run('The Browns Luxury Guest Suites (Dullstroom)', 'Dullstroom, Mpumalanga, South Africa', 'Africa/Johannesburg')
   }
 
-  const demoTenant = await db.prepare('SELECT id FROM tenants WHERE name LIKE ? LIMIT 1').get('%Browns%') as { id: number } | undefined
-  const demoTenantId = demoTenant?.id || 1
-  
-  const propertyCount = await db.prepare('SELECT COUNT(*) as count FROM properties').get() as { count: number }
-  
-  if (propertyCount.count === 0) {
-    const insert = db.prepare('INSERT INTO properties (tenant_id, name, location, room_count) VALUES (?, ?, ?, ?)')
-    await insert.run(demoTenantId, 'Riverside Lodge', 'Dullstroom, SA', 5)
-    await insert.run(demoTenantId, 'Mountain View Suites', 'Clarens, SA', 3)
-    await insert.run(demoTenantId, 'Coastal Retreat', 'Hermanus, SA', 4)
-  }
+  // Sprint 2: do not invent demo lodges (Riverside / Mountain View / Coastal).
 }
 
 export function getDefaultTenantId(): number {

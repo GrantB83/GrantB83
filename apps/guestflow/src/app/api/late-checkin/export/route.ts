@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDbAsync } from '@/lib/db'
-import { resolveAccessCodes } from '@/lib/access-codes'
+import { CODES_UNRESOLVED_REASON, resolveAccessCodesForSuite } from '@/lib/property-resolve'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,22 +15,31 @@ export async function POST(request: NextRequest) {
     const db = await getDbAsync()
     const bookingsWithCodes = await Promise.all(
       lateBookings.map(async (booking: any) => {
-        const propertyKey = booking.propertyName.toLowerCase().includes('cottage') ? 'cottage' : 'main-house'
         const suite = booking.suiteOrUnit || booking.roomNumber || ''
-        
         try {
-          const codes = await resolveAccessCodes(db, tenantId, propertyKey, suite || undefined)
+          const resolved = await resolveAccessCodesForSuite(db, tenantId, suite)
+          if (!resolved.ok) {
+            return {
+              ...booking,
+              gateCode: undefined,
+              doorCode: undefined,
+              lockboxCode: undefined,
+              wifiNetwork: undefined,
+              wifiPassword: undefined,
+              needsAttentionReason: CODES_UNRESOLVED_REASON,
+            }
+          }
           return {
             ...booking,
-            gateCode: codes.gateCode,
-            doorCode: codes.doorCode,
-            lockboxCode: codes.lockboxCode,
-            wifiNetwork: codes.wifi.network,
-            wifiPassword: codes.wifi.password
+            gateCode: resolved.codes.gateCode,
+            doorCode: resolved.codes.doorCode,
+            lockboxCode: resolved.codes.lockboxCode,
+            wifiNetwork: resolved.codes.wifi.network,
+            wifiPassword: resolved.codes.wifi.password
           }
         } catch (error) {
-          console.error(`[late-checkin-export] Failed to resolve access codes for ${booking.guestName}:`, error)
-          return booking
+          console.error('[late-checkin-export] Failed to resolve access codes:', error)
+          return { ...booking, needsAttentionReason: CODES_UNRESOLVED_REASON }
         }
       })
     )

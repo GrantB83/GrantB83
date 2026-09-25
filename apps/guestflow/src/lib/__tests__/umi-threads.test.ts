@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
 import { ingestInboundMessage } from '@/lib/inbound-ingest'
-import { applyTempHygiene, linkTempToBooking, listInboxThreads, markThreadOutbound } from '@/lib/umi-threads'
+import {
+  applyTempHygiene,
+  ensureArrivingBookingThreads,
+  linkTempToBooking,
+  listInboxThreads,
+  listLinkCandidates,
+  markThreadOutbound,
+} from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import { ensurePhase0Schema } from '@/lib/phase0-schema'
 
@@ -243,5 +250,76 @@ describe('umi threads', () => {
     const inbox = await listInboxThreads(db, 1)
     expect(inbox[0].bookingId).toBe(10)
     expect(inbox[0].sortBucket).toBe(0)
+  })
+
+  it('does not create an arriving thread for a BLOCK booking', async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO bookings (id, tenant_id, guest_name, guest_phone, check_in, check_out, suite_or_unit, status)
+         VALUES (99, 1, 'BLOCK', NULL, '2026-09-25', '2026-09-27', 'Owner hold', 'confirmed')`
+      )
+      .run()
+    await ensureArrivingBookingThreads(db, 1, new Date('2026-09-25T08:00:00.000Z'))
+    const thread = sqlite.prepare(`SELECT * FROM inbound_threads WHERE booking_id = 99`).get()
+    expect(thread).toBeUndefined()
+    const candidates = await listLinkCandidates(db, 1, 'unknown')
+    expect(candidates.some((row) => row.guestName === 'BLOCK')).toBe(false)
+  })
+
+  it('never flags an empty thread as needsAttention', async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (tenant_id, source, from_number, status, thread_kind, booking_id, pending_reply)
+         VALUES (1, 'nb', 'booking:10', 'new', 'booking', 10, 1)`
+      )
+      .run()
+    const inbox = await listInboxThreads(db, 1)
+    const empty = inbox.find((thread) => thread.bookingId === 10)
+    expect(empty).toBeDefined()
+    expect(empty?.needsAttention).toBe(false)
+    expect(empty?.pendingReply).toBe(false)
+  })
+
+  it('flags a real unanswered inbound and not an answered thread', async () => {
+    const inbound = await ingestInboundMessage(db, 1, {
+      from: '+27821234567',
+      text: 'What time is check-in?',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'twilio_whatsapp',
+      externalMessageId: 'unanswered-1',
+    })
+    const inbox = await listInboxThreads(db, 1)
+    const flagged = inbox.find((thread) => Number(thread.id) === Number(inbound.threadId))
+    expect(flagged?.needsAttention).toBe(true)
+
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, direction, from_number, message_text, message_timestamp)
+         VALUES (?, 1, 'outbound', 'stay@thebrowns.co.za', 'From 14:00', '2026-09-24T12:10:00.000Z')`
+      )
+      .run(inbound.threadId)
+    const after = await listInboxThreads(db, 1)
+    const answered = after.find((thread) => Number(thread.id) === Number(inbound.threadId))
+    expect(answered?.needsAttention).toBe(false)
+  })
+
+  it('opening the inbox makes zero DB writes', async () => {
+    await ingestInboundMessage(db, 1, {
+      from: '+27821234567',
+      text: 'Hi',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'twilio_whatsapp',
+      externalMessageId: 'write-check-1',
+    })
+    let writes = 0
+    const original = db.prepare
+    db.prepare = ((sql: string) => {
+      if (/^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|REPLACE)\b/i.test(sql)) {
+        writes += 1
+      }
+      return original(sql)
+    }) as typeof db.prepare
+    await listInboxThreads(db, 1)
+    expect(writes).toBe(0)
   })
 })

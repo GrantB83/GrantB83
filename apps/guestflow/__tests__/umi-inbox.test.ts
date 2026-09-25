@@ -53,4 +53,16 @@ describe('GET /api/umi/inbox', () => {
     expect(data.threads[0].sortBucket).toBe(0)
     expect(listInboxThreads).toHaveBeenCalled()
   })
+
+  it('GET /api/umi/inbox is a read-only list (no ensureArriving write hook)', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const source = fs.readFileSync(
+      path.join(__dirname, '../src/app/api/umi/inbox/route.ts'),
+      'utf8'
+    )
+    expect(source).not.toContain('ensureArrivingBookingThreads')
+    expect(source).not.toContain('applyTempHygiene')
+    expect(source).not.toContain('ensureUmiSchema')
+  })
 })

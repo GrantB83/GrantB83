@@ -34,7 +34,7 @@ export interface GuestCheckinStatus {
   guestPhone?: string
   checkInDate: string
   expectedArrivalTime: string
-  checkinStatus: 'not_arrived' | 'arrived' | 'in_house' | 'late' | 'checked_out'
+  checkinStatus: 'unknown' | 'not_arrived' | 'arrived' | 'in_house' | 'late' | 'checked_out'
   lastEvent?: CheckinEvent
   needsLateCheckinInstructions: boolean
   confidence: number
@@ -83,13 +83,22 @@ function matchGuestToBooking(
  * - Status is 'not_arrived' or 'late'
  * - Current time > expected check-in time + 2 hours
  */
+function sastDateFrom(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Johannesburg',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
 export function inferCheckinStatuses(
   bookings: Booking[],
   events: CheckinEvent[],
   currentTime: Date = new Date()
 ): GuestCheckinStatus[] {
   const statuses: GuestCheckinStatus[] = []
-  const today = currentTime.toISOString().split('T')[0]
+  const today = sastDateFrom(currentTime)
 
   for (const booking of bookings) {
     const checkInDate = booking.check_in.split('T')[0]
@@ -111,8 +120,8 @@ export function inferCheckinStatuses(
 
     const lastEvent = bookingEvents[0]
 
-    let checkinStatus: GuestCheckinStatus['checkinStatus'] = 'not_arrived'
-    let confidence = 0.5
+    let checkinStatus: GuestCheckinStatus['checkinStatus'] = 'unknown'
+    let confidence = 0
 
     if (lastEvent) {
       switch (lastEvent.event_type) {
@@ -140,9 +149,10 @@ export function inferCheckinStatuses(
     const twoHoursAfterCheckIn = new Date(expectedCheckInTime)
     twoHoursAfterCheckIn.setHours(twoHoursAfterCheckIn.getHours() + 2)
 
-    const needsLateCheckinInstructions = 
+    const needsLateCheckinInstructions =
+      Boolean(lastEvent) &&
       isToday &&
-      (checkinStatus === 'not_arrived' || checkinStatus === 'late') &&
+      checkinStatus === 'late' &&
       currentTime > twoHoursAfterCheckIn
 
     statuses.push({
@@ -174,7 +184,7 @@ export function processCheckinEvent(
   arrivingTodayBookings: Booking[]
 ): {
   event: Partial<CheckinEvent>
-  matchedBooking?: Booking
+  matchedBooking?: Booking | null
   confidence: number
 } {
   // Try to match guest to booking
@@ -195,7 +205,7 @@ export function processCheckinEvent(
     confidence
   }
 
-  return { event, matchedBooking: matchedBooking ?? undefined, confidence }
+  return { event, matchedBooking, confidence }
 }
 
 /**

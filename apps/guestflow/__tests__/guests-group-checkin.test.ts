@@ -74,12 +74,13 @@ describe('Check-in Inference', () => {
     }
   ]
 
-  it('should infer not_arrived when no events', () => {
+  it('should infer unknown when no events', () => {
     const statuses = inferCheckinStatuses(mockBookings, [], today)
 
     expect(statuses.length).toBe(2)
-    expect(statuses[0].checkinStatus).toBe('not_arrived')
-    expect(statuses[1].checkinStatus).toBe('not_arrived')
+    expect(statuses[0].checkinStatus).toBe('unknown')
+    expect(statuses[1].checkinStatus).toBe('unknown')
+    expect(statuses[0].needsLateCheckinInstructions).toBe(false)
   })
 
   it('should infer arrived when arrived event exists', () => {
@@ -102,14 +103,12 @@ describe('Check-in Inference', () => {
     expect(johnStatus?.confidence).toBe(0.85)
   })
 
-  it('should flag needs_late_checkin for guests not arrived 2h after check-in time', () => {
-    // Current time: 17:00 (5pm), check-in was at 14:00 (2pm), so 3 hours late
+  it('does not flag late-check-in instructions when there are no events', () => {
     const lateTime = new Date(`${todayStr}T17:00:00Z`)
-
     const statuses = inferCheckinStatuses(mockBookings, [], lateTime)
-
-    expect(statuses[0].needsLateCheckinInstructions).toBe(true)
-    expect(statuses[1].needsLateCheckinInstructions).toBe(true)
+    expect(statuses[0].checkinStatus).toBe('unknown')
+    expect(statuses[0].needsLateCheckinInstructions).toBe(false)
+    expect(statuses[1].needsLateCheckinInstructions).toBe(false)
   })
 
   it('should not flag needs_late_checkin if already arrived', () => {

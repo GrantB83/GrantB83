@@ -11,6 +11,7 @@ import {
 } from '@/lib/nightsbridge-upsert'
 import { mapNbSectionRow, type ParsedBooking } from '@/lib/nightsbridge-section-parse'
 import { randomUUID } from 'crypto'
+import { isCancelledStatus, isOwnerBlock } from '@/lib/booking-filters'
 
 export const dynamic = 'force-dynamic'
 
@@ -351,9 +352,11 @@ export async function POST(request: NextRequest) {
     const tomorrow = format(new Date(now.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
 
     // P1: Auto-enqueue welcome drafts for arrivals in next 24-48h
-    const arrivingSoonBookings = parsedBookings.filter(b => 
-      b.checkInDate >= today && b.checkInDate <= tomorrow && 
-      b.status !== 'Cancelled' && b.status !== 'No Show'
+    // Owner BLOCKs and cancelled / no-show rows are never guests.
+    const arrivingSoonBookings = parsedBookings.filter(b =>
+      b.checkInDate >= today && b.checkInDate <= tomorrow &&
+      !isCancelledStatus(b.status) &&
+      !isOwnerBlock({ guestName: b.guestName })
     )
 
     let welcomeDraftsCreated = 0
@@ -411,11 +414,11 @@ The Browns Team`
     }
 
     // P1: Auto-enqueue late check-in drafts (check-in time + 2h, after 4pm)
-    const todayArrivals = parsedBookings.filter(b => 
-      b.checkInDate === today && 
-      b.status !== 'Cancelled' && 
-      b.status !== 'No Show' &&
-      b.status !== 'Checked In'
+    const todayArrivals = parsedBookings.filter(b =>
+      b.checkInDate === today &&
+      !isCancelledStatus(b.status) &&
+      String(b.status || '').trim().toLowerCase() !== 'checked in' &&
+      !isOwnerBlock({ guestName: b.guestName })
     )
 
     let lateDraftsCreated = 0

@@ -3,6 +3,9 @@
  * Mirrors tools/browns-daily-ops-brief patterns — draft only, no invented data.
  */
 
+import { isActiveGuestBooking, isOwnerBlock } from './booking-filters'
+import { UNKNOWN_PROPERTY_LABEL } from './property-resolve'
+
 export type DerivedStatus = 'arriving' | 'inhouse' | 'departing'
 
 export interface RawBookingRow {
@@ -20,6 +23,7 @@ export interface RawBookingRow {
   late_check_in?: number | boolean | null
   pets?: boolean | number | null
   special_requests?: string | null
+  status?: string | null
 }
 
 export interface DailyBriefBooking {
@@ -76,6 +80,7 @@ export interface DailyBriefSnapshot {
   tomorrow: DailyBriefDaySlice
   exceptions: DailyBriefExceptions
   generatedAt: string
+  ownerBlocksToday: number
 }
 
 const LATE_KEYWORDS = ['late', 'after-hours', 'after hours', 'delayed']
@@ -128,7 +133,7 @@ function enrichBooking(row: RawBookingRow, targetDate: string): DailyBriefBookin
   const missingFields = detectMissingFields(row)
   const lateCheckIn = inferLateCheckIn(row)
   const guestName = (row.guest_name || '').trim() || '[MISSING GUEST NAME]'
-  const propertyName = (row.property_name || 'Property TBD').trim()
+  const propertyName = (row.property_name || UNKNOWN_PROPERTY_LABEL).trim()
   const specialRequests = row.special_requests || row.notes || undefined
 
   return {
@@ -203,7 +208,7 @@ export function detectEmptySuites(
       const unit = (row.suite_or_unit || row.room_number || 'Unknown unit').trim()
       flags.push({
         unit,
-        propertyName: (row.property_name || 'Property TBD').trim(),
+        propertyName: (row.property_name || UNKNOWN_PROPERTY_LABEL).trim(),
         reason: `Departure ${targetDate} with no arrival scheduled today or tomorrow`,
       })
     }
@@ -215,7 +220,7 @@ export function detectEmptySuites(
     if (!row.suite_or_unit?.trim() && !row.room_number?.trim()) {
       flags.push({
         unit: 'TBD',
-        propertyName: (row.property_name || 'Property TBD').trim(),
+        propertyName: (row.property_name || UNKNOWN_PROPERTY_LABEL).trim(),
         reason: `Arrival ${checkIn} missing suite/room assignment`,
       })
     }
@@ -256,10 +261,14 @@ export function buildDailyBriefSnapshot(
   targetDate: string,
   rows: RawBookingRow[]
 ): DailyBriefSnapshot {
+  const guestRows = rows.filter(isActiveGuestBooking)
+  const ownerBlocksToday = rows.filter(
+    (row) => isOwnerBlock(row) && deriveBookingStatus(row.check_in, row.check_out, targetDate)
+  ).length
   const tomorrowDate = addDaysToDate(targetDate, 1)
-  const today = buildDaySlice(rows, targetDate)
-  const tomorrow = buildDaySlice(rows, tomorrowDate)
-  const exceptions = buildExceptions(today, tomorrow, rows, targetDate, tomorrowDate)
+  const today = buildDaySlice(guestRows, targetDate)
+  const tomorrow = buildDaySlice(guestRows, tomorrowDate)
+  const exceptions = buildExceptions(today, tomorrow, guestRows, targetDate, tomorrowDate)
 
   return {
     tenantId,
@@ -270,6 +279,7 @@ export function buildDailyBriefSnapshot(
     tomorrow,
     exceptions,
     generatedAt: new Date().toISOString(),
+    ownerBlocksToday,
   }
 }
 
@@ -278,6 +288,7 @@ export function flattenBookingsForDate(
   targetDate: string
 ): DailyBriefBooking[] {
   return rows
+    .filter(isActiveGuestBooking)
     .map((row) => enrichBooking(row, targetDate))
     .filter((b): b is DailyBriefBooking => b !== null)
 }
@@ -301,6 +312,7 @@ function formatDisplayDate(isoDate: string): string {
 function formatBookingLine(booking: DailyBriefBooking): string[] {
   const lines: string[] = []
   lines.push(`  Guest: ${booking.guestName}`)
+  lines.push(`  Property: ${booking.propertyName}`)
   lines.push(`  Suite: ${booking.suiteOrUnit}`)
   if (booking.adults || booking.children) {
     const parts: string[] = []
@@ -332,6 +344,9 @@ export function generateWhatsAppBrief(snapshot: DailyBriefSnapshot): string {
   lines.push(`In-house today: ${today.inHouse.length}`)
   lines.push(`Departures today: ${today.departures.length}`)
   lines.push(`Arrivals tomorrow: ${tomorrow.arrivals.length}`)
+  if (snapshot.ownerBlocksToday > 0) {
+    lines.push(`Owner blocks: ${snapshot.ownerBlocksToday}`)
+  }
   lines.push('')
 
   if (exceptions.lateCheckIns.length > 0) {

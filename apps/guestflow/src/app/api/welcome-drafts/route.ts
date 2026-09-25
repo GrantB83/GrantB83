@@ -3,7 +3,7 @@ import { getDbAsync } from '@/lib/db'
 import { format, parseISO, addDays, isWithinInterval } from 'date-fns'
 import { generateGuestToken, calculateTokenExpiry } from '@/lib/token'
 import { getGuestPortalUrl } from '@/lib/portal-url'
-import { resolveAccessCodes } from '@/lib/access-codes'
+import { CODES_UNRESOLVED_REASON, propertyFacingDetails, resolveAccessCodesForSuite } from '@/lib/property-resolve'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,54 +64,46 @@ async function generateWelcomeMessage(
   const checkInFormatted = format(checkInDate, 'EEEE, d MMM yyyy')
   const checkOutFormatted = format(checkOutDate, 'EEEE, d MMM yyyy')
   
-  // Determine property type from property name and suite (cottage vs main-house)
-  const propertyNameLower = property?.name?.toLowerCase() || ''
-  const suiteLower = (booking.room_number || booking.suite_or_unit || '').toLowerCase()
-  const isCottage = propertyNameLower.includes('cottage') || suiteLower.includes('cottage')
-  
-  // Property-specific values from environment
-  const propertyDisplayName = isCottage 
-    ? (process.env.PROPERTY_NAME_COTTAGE || "The Browns' Cottage Suites")
-    : (process.env.PROPERTY_NAME_MAIN || "The Browns' Luxury Suites")
-  
-  const propertyAddress = isCottage
-    ? (process.env.PROPERTY_ADDRESS_COTTAGE || '278 Blue Crane Drive, Dullstroom')
-    : (process.env.PROPERTY_ADDRESS_MAIN || '279 Blue Crane Drive, Dullstroom')
-  
-  const mapsUrl = isCottage
-    ? (process.env.PROPERTY_MAPS_URL_COTTAGE || 'https://maps.app.goo.gl/m8WeQe56Fd9AKqpa8')
-    : process.env.PROPERTY_MAPS_URL_MAIN
-  
-  const parkingInstructions = isCottage
-    ? (process.env.PROPERTY_PARKING_COTTAGE || 'Please ensure you do not obstruct access for other guests. You can park anywhere to the left of the entrance gate or further into the garden on the lawn.')
-    : process.env.PROPERTY_PARKING_MAIN
-
-  
-  // Resolve access codes from DB (fail-closed to [ASK STAFF])
+  const suite = booking.room_number || booking.suite_or_unit || ''
   let gateCode: string | undefined
   let doorCode: string | undefined
   let lockboxCode: string | undefined
   let wifiNetwork: string | undefined
   let wifiPassword: string | undefined
-  
+  let codesUnresolved = false
+  let facing = propertyFacingDetails(null)
+
   if (db && tenantId) {
     try {
-      const propertyKey = isCottage ? 'cottage' : 'main-house'
-      const suite = booking.room_number || booking.suite_or_unit || ''
-      const codes = await resolveAccessCodes(db, tenantId, propertyKey, suite || undefined)
-      gateCode = codes.gateCode
-      doorCode = codes.doorCode
-      lockboxCode = codes.lockboxCode
-      wifiNetwork = codes.wifi.network
-      wifiPassword = codes.wifi.password
+      const resolved = await resolveAccessCodesForSuite(db, tenantId, suite)
+      if (resolved.ok) {
+        facing = propertyFacingDetails(resolved.property)
+        gateCode = resolved.codes.gateCode
+        doorCode = resolved.codes.doorCode
+        lockboxCode = resolved.codes.lockboxCode
+        wifiNetwork = resolved.codes.wifi.network
+        wifiPassword = resolved.codes.wifi.password
+      } else {
+        codesUnresolved = true
+        missingFields.push(CODES_UNRESOLVED_REASON)
+      }
     } catch (error) {
       console.error('[welcome-drafts] Failed to resolve access codes:', error)
+      codesUnresolved = true
+      missingFields.push(CODES_UNRESOLVED_REASON)
     }
+  } else {
+    codesUnresolved = true
+    missingFields.push(CODES_UNRESOLVED_REASON)
   }
-  
-  // WiFi from SoR with fallback to env (fail to placeholder)
-  const wifiPasswordDisplay = wifiPassword || process.env.WIFI_PASSWORD || '[WIFI]'
-  if (!wifiPassword && (!process.env.WIFI_PASSWORD || process.env.WIFI_PASSWORD.trim() === '')) {
+
+  const propertyDisplayName = facing.displayName
+  const propertyAddress = facing.address
+  const mapsUrl = facing.mapsUrl
+  const parkingInstructions = facing.parkingInstructions
+
+  const wifiPasswordDisplay = codesUnresolved ? '' : (wifiPassword || '[WIFI]')
+  if (!codesUnresolved && !wifiPassword) {
     missingFields.push('wifi_password')
   }
   
@@ -137,9 +129,13 @@ Thank you for choosing ${propertyDisplayName}! ✨
 
   const contactEmail = process.env.PROPERTY_EMAIL || 'stay@thebrowns.co.za'
   
-  message += `
+  if (!codesUnresolved && wifiPasswordDisplay) {
+    message += `
 
-📶 WiFi Password: ${wifiPasswordDisplay}
+📶 WiFi Password: ${wifiPasswordDisplay}`
+  }
+
+  message += `
 
 🛏️ Suite you booked: ${suiteName}.
 
