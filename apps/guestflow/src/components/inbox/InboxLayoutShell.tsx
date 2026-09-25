@@ -47,7 +47,7 @@ export function InboxLayoutShell({
           aria-hidden={!showList}
           className={`bg-white border-r flex flex-col min-h-0 overflow-hidden ${
             phone
-              ? `absolute inset-0 z-10 ${showList ? '' : 'invisible pointer-events-none'}`
+              ? `absolute inset-0 z-10 w-full ${showList ? '' : 'invisible pointer-events-none'}`
               : tablet
                 ? `${listCollapsed ? 'w-0 overflow-hidden border-r-0' : 'w-72'} shrink-0`
                 : 'w-full max-w-md shrink-0'
@@ -76,7 +76,7 @@ export function InboxLayoutShell({
           aria-hidden={!showThread}
           className={`flex-1 flex flex-col min-w-0 min-h-0 bg-slate-100 ${
             phone
-              ? `absolute inset-0 z-20 ${showThread ? '' : 'invisible pointer-events-none'}`
+              ? `absolute inset-0 z-20 w-full ${showThread ? '' : 'invisible pointer-events-none'}`
               : ''
           }`}
         >

@@ -184,10 +184,18 @@ function InboxHomePageInner() {
   }
 
   useEffect(() => {
-    const previous = document.body.style.overflow
+    const html = document.documentElement
+    const previousHtmlOverflow = html.style.overflow
+    const previousBodyOverflow = document.body.style.overflow
+    html.classList.add('inbox-lock')
+    document.body.classList.add('inbox-lock')
+    html.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = previous
+      html.classList.remove('inbox-lock')
+      document.body.classList.remove('inbox-lock')
+      html.style.overflow = previousHtmlOverflow
+      document.body.style.overflow = previousBodyOverflow
     }
   }, [])
 
@@ -492,7 +500,7 @@ function InboxHomePageInner() {
 
   const listPane = (
     <>
-      <div className="p-4 border-b space-y-3 shrink-0">
+      <div className="inbox-list-header p-4 border-b space-y-3 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-600" />
@@ -543,7 +551,7 @@ function InboxHomePageInner() {
             key={thread.id}
             type="button"
             onClick={() => openThread(thread.id)}
-            className={`w-full text-left px-4 py-3 min-h-[44px] border-b hover:bg-slate-50 ${
+            className={`inbox-list-row w-full text-left px-4 py-3 min-h-[44px] border-b hover:bg-slate-50 ${
               selectedId === thread.id ? 'bg-blue-50' : ''
             }`}
           >
@@ -658,7 +666,7 @@ function InboxHomePageInner() {
       extraHeader={
         <>
           {detail.bookingId ? (
-            <div className="mt-3 text-base text-slate-600 space-y-2 inbox-wrap">
+            <div className="mt-2 sm:mt-3 text-base text-slate-600 space-y-1.5 sm:space-y-2 inbox-wrap">
               <p>
                 Phone {detail.guestPhone || '—'}
                 {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
@@ -672,13 +680,13 @@ function InboxHomePageInner() {
                   value={contactPhone}
                   onChange={(event) => setContactPhone(event.target.value)}
                   placeholder="Staff phone"
-                  className="inbox-field flex-1 min-w-[10rem]"
+                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
                 />
                 <input
                   value={contactEmail}
                   onChange={(event) => setContactEmail(event.target.value)}
                   placeholder="Staff email"
-                  className="inbox-field flex-1 min-w-[10rem]"
+                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
                 />
                 <button
                   type="button"
@@ -686,7 +694,8 @@ function InboxHomePageInner() {
                   disabled={busy}
                   className="inbox-tap px-3 bg-slate-800 text-white rounded-lg disabled:opacity-50"
                 >
-                  Save contact
+                  <span className="sm:hidden">Save</span>
+                  <span className="hidden sm:inline">Save contact</span>
                 </button>
               </div>
               {contactNote && <p className="text-emerald-700">{contactNote}</p>}
@@ -852,7 +861,7 @@ function InboxHomePageInner() {
           <textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            rows={keyboardInsetPx > 80 ? 2 : 4}
+            rows={keyboardInsetPx > 80 || breakpoint === 'phone' ? 2 : 4}
             placeholder="Draft reply — edit before Approve&Send"
             className="inbox-field w-full"
           />
@@ -879,8 +888,8 @@ function InboxHomePageInner() {
           </div>
         </>
       }
-      minMessageHeight={minMessageHeight}
-      maxComposerHeight={breakpoint === 'phone' ? undefined : maxComposerHeight}
+      minMessageHeight={breakpoint === 'phone' ? undefined : minMessageHeight}
+      maxComposerHeight={maxComposerHeight}
     />
   )
 

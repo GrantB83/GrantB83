@@ -62,8 +62,46 @@ body {
   position: fixed;
   left: 0;
   right: 0;
+  width: 100%;
   overflow: hidden;
   min-height: 0;
+}
+
+.ops-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+.staff-main {
+  padding-top: var(--ops-chrome-height, 5.5rem);
+  min-height: 100vh;
+}
+
+html.inbox-lock,
+html.inbox-lock body {
+  overflow: hidden;
+  height: 100%;
+}
+
+html.inbox-lock .staff-main {
+  padding-top: 0;
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .inbox-shell[data-inbox-breakpoint="phone"] .inbox-list-header,
+  .inbox-shell[data-inbox-breakpoint="phone"] .inbox-list-row,
+  .inbox-shell[data-inbox-breakpoint="phone"] .inbox-thread-header,
+  .inbox-shell[data-inbox-breakpoint="phone"] .inbox-thread-messages,
+  .inbox-shell[data-inbox-breakpoint="phone"] .inbox-composer {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 
 html {

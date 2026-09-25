@@ -3,6 +3,7 @@ import { Montserrat, Playfair_Display } from 'next/font/google'
 import { headers } from 'next/headers'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import { StaffChrome } from '@/components/StaffChrome'
 import { TenantProvider } from '@/components/TenantContext'
 import { OutboundRedirectBanner } from '@/components/outbound-redirect-banner'
 
@@ -45,12 +46,12 @@ export default function RootLayout({
       <body className={`${montserrat.variable} ${playfairDisplay.variable} font-sans`}>
         <TenantProvider>
           {showStaffChrome && (
-            <>
+            <StaffChrome>
               <OutboundRedirectBanner />
               <Navigation />
-            </>
+            </StaffChrome>
           )}
-          <main className="min-h-screen">
+          <main className={showStaffChrome ? 'staff-main' : 'min-h-screen'}>
             {children}
           </main>
         </TenantProvider>

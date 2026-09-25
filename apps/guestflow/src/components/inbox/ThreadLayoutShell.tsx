@@ -49,13 +49,13 @@ export function ThreadLayoutShell({
             </button>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 w-full">
                 <h2 className="text-lg font-semibold text-slate-900 inbox-wrap">{title}</h2>
                 <p className="text-base text-slate-600 inbox-wrap">{facts}</p>
                 <p className="text-base text-slate-500 mt-1 inbox-wrap">{channelLine}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                 <div data-inbox-slot="header-badge" className="inbox-slot">
                   {headerBadgeSlot}
                 </div>
@@ -70,7 +70,7 @@ export function ThreadLayoutShell({
       </header>
 
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0"
+        className="inbox-thread-messages flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0"
         style={minMessageHeight ? { minHeight: `${minMessageHeight}px` } : undefined}
       >
         {messages}
@@ -78,7 +78,7 @@ export function ThreadLayoutShell({
 
       <footer
         data-inbox-composer
-        className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3"
+        className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-0"
         style={maxComposerHeight ? { maxHeight: `${maxComposerHeight}px`, overflowY: 'auto' } : undefined}
       >
         {composer}
