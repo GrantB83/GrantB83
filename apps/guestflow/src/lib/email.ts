@@ -10,6 +10,8 @@ export interface SendEmailInput {
   to: string
   subject: string
   text: string
+  /** Internal staff mail. Not a guest send — do not apply outbound redirect. */
+  skipRedirect?: boolean
 }
 
 export interface SendEmailResult {
@@ -91,29 +93,25 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
   const subject = (input.subject || '').trim() || '(no subject)'
 
-  // OUTBOUND REDIRECT: Resolve recipient (may redirect to test sink or block if misconfigured)
-  let resolution
   let effectiveTo = to
-  try {
-    const { resolveOutboundRecipient } = await import('./outbound-redirect')
-    resolution = await resolveOutboundRecipient({
-      channel: 'email',
-      intendedTo: to
-    })
-    
-    // Override to with resolved recipient
-    effectiveTo = resolution.to
-    
-    // Log redirect metadata for audit
-    if (resolution.redirected) {
-      console.log(`[OUTBOUND REDIRECT] Email send redirected: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
-    }
-  } catch (resolverError) {
-    // Resolver threw (missing sink or live mode without CLEAR)
-    return {
-      success: false,
-      timestamp,
-      error: resolverError instanceof Error ? resolverError.message : 'Outbound redirect configuration error'
+  // Staff alerts are internal — reuse the shared Decision L resolver for guests only.
+  if (!input.skipRedirect) {
+    try {
+      const { resolveOutboundRecipient } = await import('./outbound-redirect')
+      const resolution = await resolveOutboundRecipient({
+        channel: 'email',
+        intendedTo: to
+      })
+      effectiveTo = resolution.to
+      if (resolution.redirected) {
+        console.log(`[OUTBOUND REDIRECT] Email send redirected: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
+      }
+    } catch (resolverError) {
+      return {
+        success: false,
+        timestamp,
+        error: resolverError instanceof Error ? resolverError.message : 'Outbound redirect configuration error'
+      }
     }
   }
 

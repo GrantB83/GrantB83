@@ -70,6 +70,8 @@ describe('sendEmail', () => {
   it('posts to Resend with existing From env', async () => {
     process.env.RESEND_API_KEY = 'test-key'
     process.env.RESEND_FROM_EMAIL = 'noreply@guestflow.thebrowns.co.za'
+    process.env.OUTBOUND_REDIRECT_TO_EMAIL = 'grant830318@gmail.com'
+    process.env.OUTBOUND_REDIRECT_TO_WA = '+15124064300'
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id: 're_123' }),
@@ -90,5 +92,29 @@ describe('sendEmail', () => {
     expect(posted.from).toBe('noreply@guestflow.thebrowns.co.za')
     expect(posted.to).toEqual(['grant830318@gmail.com'])
     expect(posted.subject).toBe('Stay')
+  })
+
+  it('bypasses guest redirect when skipRedirect is set (staff alerts)', async () => {
+    process.env.RESEND_API_KEY = 'test-key'
+    process.env.RESEND_FROM_EMAIL = 'noreply@guestflow.thebrowns.co.za'
+    delete process.env.OUTBOUND_REDIRECT_TO_EMAIL
+    delete process.env.OUTBOUND_REDIRECT_TO_WA
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 're_staff' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await sendEmail({
+      to: 'grant@example.com',
+      subject: 'Unanswered inbound',
+      text: 'Guest Lerato / GF-1',
+      skipRedirect: true,
+    })
+
+    expect(result.success).toBe(true)
+    const [, init] = fetchMock.mock.calls[0]
+    const posted = JSON.parse(init.body as string)
+    expect(posted.to).toEqual(['grant@example.com'])
   })
 })

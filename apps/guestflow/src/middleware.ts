@@ -27,6 +27,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/api/staff-auth') ||
     request.nextUrl.pathname.startsWith('/api/inbound/webhook') ||
     request.nextUrl.pathname.startsWith('/api/inbound/email') ||
+    request.nextUrl.pathname.startsWith('/api/inbound/nb-email') ||
     request.nextUrl.pathname.startsWith('/api/bridge') ||
     request.nextUrl.pathname.startsWith('/api/cron') ||
     request.nextUrl.pathname.startsWith('/api/drafts') ||

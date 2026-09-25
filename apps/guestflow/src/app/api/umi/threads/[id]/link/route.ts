@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { jsonSafeResponse } from '@/lib/json-safe'
 import { linkTempToBooking } from '@/lib/umi-threads'
+import { getStaffSessionFromRequest } from '@/lib/staff-session'
+import { stampLastHandler } from '@/lib/staff-alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +21,8 @@ export async function POST(
     const db = await getDbAsync()
     const tenantId = await getDefaultTenantIdAsync()
     const result = await linkTempToBooking(db, tenantId, threadId, bookingId)
+    const session = await getStaffSessionFromRequest(request).catch(() => null)
+    await stampLastHandler(db, result.threadId, session?.email)
     return jsonSafeResponse({ success: true, ...result })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to link thread'

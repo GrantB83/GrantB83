@@ -3,6 +3,7 @@ import { getDbAsync } from '@/lib/db'
 import { addStaffUser, assertNoSecretLeak, listStaffUsers } from '@/lib/staff-auth'
 import { getStaffSessionFromRequest } from '@/lib/staff-session'
 import { ensureStaffUsersSchema } from '@/lib/staff-users-schema'
+import { publishActiveAlertEmails } from '@/lib/publish-alert-emails'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,5 +44,6 @@ export async function POST(request: NextRequest) {
   }
   const payload = { success: true, user: result.user }
   assertNoSecretLeak(payload)
+  await publishActiveAlertEmails(db).catch(() => undefined)
   return NextResponse.json(payload, { status: 201 })
 }

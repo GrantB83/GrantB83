@@ -1,0 +1,26 @@
+# Twice-daily Nightsbridge A&D download (05:00 / 19:00 SAST = 03:00 / 17:00 UTC).
+# Included for Sprint 2 L4. Do not enable secrets or run against Production from this PR.
+# Required secret names (do not invent values): NB_USER, NB_PASS, CRON_SECRET, GF_INGEST_URL.
+name: GuestFlow NB batch reconcile
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Skip live NB login'
+        default: 'true'
+
+jobs:
+  download:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Documented no-op
+        run: |
+          echo "NB batch job is shipped but not run from this PR."
+          echo "Owner prerequisite: dedicated NB_USER / NB_PASS and CRON_SECRET."
+          echo "Script: apps/guestflow/scripts/nb-batch-reconcile.ts"
