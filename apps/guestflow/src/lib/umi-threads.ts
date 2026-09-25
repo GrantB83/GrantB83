@@ -698,18 +698,26 @@ async function latestMessagePreview(
   db: DbClient,
   threadId: number
 ): Promise<{ preview: string; hasOpenDraft: boolean }> {
-  const row = (await db
-    .prepare(
-      `SELECT message_text, draft_reply, status
-       FROM inbound_messages
-       WHERE thread_id = ?
-       ORDER BY message_timestamp DESC
-       LIMIT 1`
-    )
-    .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
-  return {
-    preview: String(row?.message_text || '').slice(0, 160),
-    hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
+  try {
+    const row = (await db
+      .prepare(
+        `SELECT message_text, draft_reply, status
+         FROM inbound_messages
+         WHERE thread_id = ?
+         ORDER BY message_timestamp DESC
+         LIMIT 1`
+      )
+      .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
+    return {
+      preview: String(row?.message_text || '').slice(0, 160),
+      hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
+    }
+  } catch (error) {
+    console.error(`[latestMessagePreview] Failed for thread ${threadId}:`, error)
+    return {
+      preview: '',
+      hasOpenDraft: false,
+    }
   }
 }
 
@@ -922,16 +930,24 @@ export async function listInboxThreads(
   const deliveryAttention = await deliveryAttentionThreadIds(db)
   const extraFor = (bookingId: number | null) =>
     bookingId ? extra.get(asNumber(bookingId)) : undefined
-  const rows = ((await db
+  const rawResult = await db
     .prepare(
-      `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
-              b.suite_or_unit, b.nightsbridge_booking_id
+      `SELECT DISTINCT
+         t.id, t.tenant_id, t.source, t.from_number, t.guest_name, t.status,
+         t.booking_id, t.thread_kind, t.guest_contact_id, t.last_channel,
+         t.last_inbound_channel, t.last_outbound_at, t.last_inbound_at,
+         t.pending_reply, t.expires_at, t.nudged_at, t.hygiene_status,
+         t.last_message_at, t.metadata,
+         b.guest_name as booking_guest_name, b.check_in, b.check_out,
+         b.suite_or_unit, b.nightsbridge_booking_id
        FROM inbound_threads t
        LEFT JOIN bookings b ON b.id = t.booking_id
        WHERE t.tenant_id = ?
          AND COALESCE(t.status, '') <> 'linked'`
     )
-    .all(tenantId)) || []) as Array<
+    .all(tenantId)
+  
+  const rows = (rawResult || []) as Array<
     UmiThreadRow & {
       booking_guest_name?: string
       check_in?: string
@@ -940,6 +956,24 @@ export async function listInboxThreads(
       nightsbridge_booking_id?: string
     }
   >
+
+  // Debug: Log SQL query result count and IDs
+  if (rows.length > 0) {
+    const rowIds = rows.map((r) => asNumber(r.id))
+    const uniqueIds = [...new Set(rowIds)]
+    const maxRowId = Math.max(...rowIds)
+    const maxUniqueId = Math.max(...uniqueIds)
+    console.log(`[listInboxThreads] SQL query returned ${rows.length} rows, ${uniqueIds.length} unique IDs, max ID: ${maxRowId}`)
+    if (rows.length !== uniqueIds.length) {
+      console.warn(`[listInboxThreads] WARNING: JOIN row multiplication detected! ${rows.length} rows but only ${uniqueIds.length} unique thread IDs`)
+      // Find duplicates
+      const duplicates = rowIds.filter((id, index) => rowIds.indexOf(id) !== index)
+      console.warn(`[listInboxThreads] Duplicate thread IDs:`, [...new Set(duplicates)])
+    }
+    if (!rowIds.includes(48) || !rowIds.includes(49) || !rowIds.includes(50)) {
+      console.log(`[listInboxThreads] Missing IDs in SQL result: 48=${rowIds.includes(48)}, 49=${rowIds.includes(49)}, 50=${rowIds.includes(50)}`)
+    }
+  }
 
   let lastWabaByThread = new Map<number, string>()
   try {
@@ -952,43 +986,70 @@ export async function listInboxThreads(
   }
 
   const threads: InboxThread[] = []
+  const processedIds = new Set<number>() // Deduplicate in case of JOIN row multiplication
+  
   for (const row of rows) {
-    const preview = await latestMessagePreview(db, asNumber(row.id))
-    const extraFlag = extraFor(row.booking_id ? asNumber(row.booking_id) : null)
-    const hasExtra = Boolean(extraFlag)
-    const unansweredInbound = await hasUnansweredInbound(db, asNumber(row.id))
-    const pendingReply = unansweredInbound
-    const thread: InboxThread = {
-      id: asNumber(row.id),
-      threadKind: row.thread_kind === 'booking' ? 'booking' : 'temp',
-      bookingId: row.booking_id ? asNumber(row.booking_id) : null,
-      bookerName: row.booking_guest_name || row.guest_name || row.from_number || 'Unknown',
-      suite: row.suite_or_unit || null,
-      checkIn: row.check_in ? String(row.check_in).slice(0, 10) : null,
-      checkOut: row.check_out ? String(row.check_out).slice(0, 10) : null,
-      nightsbridgeBookingId: row.nightsbridge_booking_id || null,
-      lastChannel: row.last_channel,
-      lastInboundChannel: row.last_inbound_channel,
-      lastMessageAt: row.last_message_at,
-      preview: preview.preview,
-      pendingReply,
-      hasOpenDraft:
-        preview.hasOpenDraft ||
-        Boolean(extraFlag?.hasDraft) ||
-        (hasExtra && extraFlag?.kind !== 'arrival'),
-      needsAttention:
-        unansweredInbound ||
-        hasExtra ||
-        deliveryAttention.has(asNumber(row.id)),
-      sortBucket: 2,
-      hygieneStatus: row.hygiene_status,
-      fromNumber: row.from_number,
-      careWindow: computeCareWindow(lastWabaByThread.get(asNumber(row.id)) || null),
-      arrivalStage: extraFlag?.stage || null,
-      attentionReason: extraFlag?.reason || null,
+    try {
+      const threadId = asNumber(row.id)
+      
+      // Skip if already processed (JOIN row multiplication)
+      if (processedIds.has(threadId)) {
+        console.warn(`[listInboxThreads] Skipping duplicate row for thread ${threadId}`)
+        continue
+      }
+      processedIds.add(threadId)
+      
+      const bookingId = row.booking_id ? asNumber(row.booking_id) : null
+      
+      const preview = await latestMessagePreview(db, threadId)
+      const extraFlag = extraFor(bookingId)
+      const hasExtra = Boolean(extraFlag)
+      const unansweredInbound = await hasUnansweredInbound(db, threadId)
+      const pendingReply = unansweredInbound
+      
+      const thread: InboxThread = {
+        id: threadId,
+        threadKind: row.thread_kind === 'booking' ? 'booking' : 'temp',
+        bookingId,
+        bookerName: row.booking_guest_name || row.guest_name || row.from_number || 'Unknown',
+        suite: row.suite_or_unit || null,
+        checkIn: row.check_in ? String(row.check_in).slice(0, 10) : null,
+        checkOut: row.check_out ? String(row.check_out).slice(0, 10) : null,
+        nightsbridgeBookingId: row.nightsbridge_booking_id || null,
+        lastChannel: row.last_channel,
+        lastInboundChannel: row.last_inbound_channel,
+        lastMessageAt: row.last_message_at,
+        preview: preview.preview,
+        pendingReply,
+        hasOpenDraft:
+          preview.hasOpenDraft ||
+          Boolean(extraFlag?.hasDraft) ||
+          (hasExtra && extraFlag?.kind !== 'arrival'),
+        needsAttention:
+          unansweredInbound ||
+          hasExtra ||
+          deliveryAttention.has(threadId),
+        sortBucket: 2,
+        hygieneStatus: row.hygiene_status,
+        fromNumber: row.from_number,
+        careWindow: computeCareWindow(lastWabaByThread.get(threadId) || null),
+        arrivalStage: extraFlag?.stage || null,
+        attentionReason: extraFlag?.reason || null,
+      }
+      thread.sortBucket = inboxSortBucket(thread)
+      threads.push(thread)
+    } catch (error) {
+      const threadId = asNumber(row.id)
+      console.error(`[listInboxThreads] Failed to process thread ${threadId}:`, error)
+      console.error(`[listInboxThreads] Thread ${threadId} row data:`, JSON.stringify({
+        id: row.id,
+        thread_kind: row.thread_kind,
+        status: row.status,
+        booking_id: row.booking_id,
+        from_number: row.from_number,
+      }))
+      continue
     }
-    thread.sortBucket = inboxSortBucket(thread)
-    threads.push(thread)
   }
 
   let result = sortInboxThreads(threads)
@@ -1047,16 +1108,25 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
   await ensureDeliverySchema(db)
   const thread = (await db
     .prepare(
-      `SELECT t.*, b.guest_name as booking_guest_name, b.check_in, b.check_out,
-              b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone,
-              b.guest_email as booking_email, b.guest_phone_source as booking_phone_source,
-              b.guest_email_source as booking_email_source, b.guest_email_kind as booking_email_kind
+      `SELECT 
+         t.id, t.tenant_id, t.source, t.from_number, t.guest_name, t.status,
+         t.booking_id, t.thread_kind, t.guest_contact_id, t.last_channel,
+         t.last_inbound_channel, t.last_outbound_at, t.last_inbound_at,
+         t.pending_reply, t.expires_at, t.nudged_at, t.hygiene_status,
+         t.last_message_at, t.metadata,
+         b.guest_name as booking_guest_name, b.check_in, b.check_out,
+         b.suite_or_unit, b.nightsbridge_booking_id, b.guest_phone as booking_phone,
+         b.guest_email as booking_email, b.guest_phone_source as booking_phone_source,
+         b.guest_email_source as booking_email_source, b.guest_email_kind as booking_email_kind
        FROM inbound_threads t
        LEFT JOIN bookings b ON b.id = t.booking_id
        WHERE t.id = ? AND t.tenant_id = ?`
     )
     .get(threadId, tenantId)) as any
-  if (!thread) return null
+  if (!thread) {
+    console.log(`[getThreadDetail] Thread ${threadId} not found for tenant ${tenantId}`)
+    return null
+  }
 
   const messages = ((await db
     .prepare(
