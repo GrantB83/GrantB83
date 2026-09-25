@@ -28,7 +28,7 @@ describe('Sprint 2 mobile inbox UI contract', () => {
     expect(thread).toContain('data-inbox-slot="header-badge"')
     expect(thread).toContain('data-inbox-slot="header-actions"')
     expect(thread).toContain('data-inbox-slot="bubble-status"')
-    expect(page).toContain('ThreadBubbleStatusSlot')
+    expect(page).toContain('OutboundDeliveryBubble')
   })
 
   it('implements phone / tablet / desktop panes', () => {

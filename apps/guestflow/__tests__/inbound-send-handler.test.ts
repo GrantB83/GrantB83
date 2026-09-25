@@ -52,6 +52,14 @@ vi.mock('@/lib/whatsapp-care-window', () => ({
   getCareWindowForThread,
 }))
 
+vi.mock('@/lib/delivery-schema', () => ({
+  ensureDeliverySchema: vi.fn(async () => {}),
+}))
+
+vi.mock('@/lib/send-failed-hook', () => ({
+  onSendFailed: vi.fn(),
+}))
+
 const { mockDb } = vi.hoisted(() => ({
   mockDb: {
     prepare: vi.fn((query: string) => ({

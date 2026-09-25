@@ -19,6 +19,7 @@ export interface SendEmailResult {
   messageId?: string
   timestamp: string
   error?: string
+  redirected?: boolean
 }
 
 export interface ReceivedEmailContent {
@@ -94,6 +95,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   const subject = (input.subject || '').trim() || '(no subject)'
 
   let effectiveTo = to
+  let redirected = false
   // Staff alerts are internal — reuse the shared Decision L resolver for guests only.
   if (!input.skipRedirect) {
     try {
@@ -103,6 +105,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         intendedTo: to
       })
       effectiveTo = resolution.to
+      redirected = Boolean(resolution.redirected)
       if (resolution.redirected) {
         console.log(`[OUTBOUND REDIRECT] Email send redirected: intended=${resolution.intendedTo} → actual=${resolution.to} mode=${resolution.mode}`)
       }
@@ -143,12 +146,14 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       success: true,
       timestamp,
       messageId: payload?.id || null,
+      redirected,
     }
   } catch (error) {
     return {
       success: false,
       timestamp,
       error: error instanceof Error ? error.message : 'Email send failed',
+      redirected,
     }
   }
 }

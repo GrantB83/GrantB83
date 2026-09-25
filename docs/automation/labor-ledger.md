@@ -4,6 +4,7 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 
 | Phase | Ritual removed | Est. hours/week before | Est. hours/week after | Actual before (Grant) | Actual after (Grant) | Live since | Evidence artefact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| GuestFlow delivery status + resend | Open Twilio/Resend consoles to guess delivery, then copy-paste the same reply | 1–2 (stay morning) | 0.2 in-thread Resend on Failed/stuck | | | 2026-09-25 coded | `apps/guestflow/docs/DELIVERY-STATUS.md` |
 | GuestFlow Sprint 2 mobile inbox | Pinch-zoom / sideways-scroll the stay-morning inbox on a phone | 0.5–1 (stay morning, phone) | 0 — list/thread/approve on phone | | | 2026-09-25 coded | `specs/022-sprint2-mobile-inbox/` |
 | GuestFlow staff users + Decision L | Share one staff password; redeploy to flip outbound redirect | 0.3–0.5 + lockout / redeploy | 0 (Users + header toggle) | | | 2026-09-25 coded | `apps/guestflow/docs/STAFF-USERS.md` |
 | GuestFlow Sprint 2 data-fixes | Eyeball cancelled/BLOCK rows, guess Cottage vs Main House from suite names, and triage empty Inbox threads | 1–2 (stay morning) | 0.2 scan brief + exceptions | | | 2026-09-25 on main (#221) | Preview `/ops/daily-brief` + `/api/exceptions` |

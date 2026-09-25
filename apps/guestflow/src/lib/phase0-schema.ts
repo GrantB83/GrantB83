@@ -82,8 +82,8 @@ export async function tableHasColumn(
   column: string
 ): Promise<boolean> {
   try {
-    const rows = (await db.prepare(`PRAGMA table_info(${table})`).all()) as Array<{ name: string }>
-    return rows.some((row) => row.name === column)
+    const rows = (await db.prepare(`PRAGMA table_info(${table})`).all()) as Array<{ name: string }> | undefined
+    return Boolean(rows?.some((row) => row.name === column))
   } catch {
     return false
   }

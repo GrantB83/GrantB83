@@ -10,9 +10,12 @@ import { mapSourceToChannel, sendApiChannel } from '@/lib/umi-channels'
 import { markThreadOutbound } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import { getCareWindowForThread } from '@/lib/whatsapp-care-window'
+import { ensureDeliverySchema } from '@/lib/delivery-schema'
+import { plainDeliveryError } from '@/lib/delivery-status'
+import { onSendFailed } from '@/lib/send-failed-hook'
 import type { SendMessageRequest, SendMessageResponse, SendChannel } from '@/types/inbound'
 import { actorStamp, getStaffSessionFromRequest } from '@/lib/staff-session'
-import { notifyFailedApproveSend, stampLastHandler } from '@/lib/staff-alerts'
+import { stampLastHandler } from '@/lib/staff-alerts'
 import { guestFirstName } from '@/lib/staff-alert-email'
 
 export const dynamic = 'force-dynamic'
@@ -96,6 +99,7 @@ export async function POST(request: NextRequest) {
     const db = await getDbAsync()
     await ensurePhase0Schema(db)
     await ensureUmiSchema(db)
+    await ensureDeliverySchema(db)
 
     const thread = (await db
       .prepare(
@@ -212,10 +216,22 @@ export async function POST(request: NextRequest) {
             sql: `
               INSERT INTO inbound_messages (
                 thread_id, message_text, message_timestamp, tenant_id,
-                direction, channel, from_number, whatsapp_message_id
-              ) VALUES (?, ?, ?, 1, 'outbound', 'email', ?, ?)
+                direction, channel, from_number, whatsapp_message_id,
+                provider_message_id, delivery_status, delivery_read, queued_at,
+                sent_to_test_sink, delivery_updated_at
+              ) VALUES (?, ?, ?, 1, 'outbound', 'email', ?, ?, ?, 'pending', 0, ?, ?, ?)
             `,
-            args: [threadId, outboundBody, sendResult.timestamp, to, sendResult.messageId || null],
+            args: [
+              threadId,
+              outboundBody,
+              sendResult.timestamp,
+              to,
+              sendResult.messageId || null,
+              sendResult.messageId || null,
+              sendResult.timestamp,
+              sendResult.redirected ? 1 : 0,
+              sendResult.timestamp,
+            ],
           },
           {
             sql: `
@@ -251,10 +267,21 @@ export async function POST(request: NextRequest) {
           sql: `
             INSERT INTO inbound_messages (
               thread_id, message_text, message_timestamp, tenant_id,
-              direction, send_error
-            ) VALUES (?, ?, ?, 1, 'outbound', ?)
+              direction, channel, from_number, send_error,
+              delivery_status, delivery_error_plain, queued_at, sent_to_test_sink, delivery_updated_at
+            ) VALUES (?, ?, ?, 1, 'outbound', 'email', ?, ?, 'failed', ?, ?, ?, ?)
           `,
-          args: [threadId, outboundBody, sendResult.timestamp, sendResult.error || 'Email send failed'],
+          args: [
+            threadId,
+            outboundBody,
+            sendResult.timestamp,
+            to,
+            sendResult.error || 'Email send failed',
+            plainDeliveryError(null, sendResult.error),
+            sendResult.timestamp,
+            sendResult.redirected ? 1 : 0,
+            sendResult.timestamp,
+          ],
         },
         {
           sql: `
@@ -266,15 +293,17 @@ export async function POST(request: NextRequest) {
         },
       ])
       await writeEmailAudit(db, threadId, 'failed', to, null, sendResult.timestamp, actingActor)
-      await notifyFailedApproveSend({
+      onSendFailed({
         db,
-        actorEmail: staffSession?.email,
+        actorEmail: staffSession?.email ?? null,
         threadId,
         guestFirstName: guestFirstName(thread.guest_name),
         bookingRef: `T-${threadId}`,
         channel: 'email',
+        errorPlain: plainDeliveryError(null, sendResult.error),
+        provider: 'resend',
         attemptId: sendResult.timestamp,
-      }).catch(() => undefined)
+      })
 
       return NextResponse.json(
         {
@@ -345,10 +374,22 @@ export async function POST(request: NextRequest) {
             sql: `
               INSERT INTO inbound_messages (
                 thread_id, message_text, message_timestamp, tenant_id,
-                direction, channel, from_number
-              ) VALUES (?, ?, ?, 1, 'outbound', 'sms', ?)
+                direction, channel, from_number, whatsapp_message_id,
+                provider_message_id, delivery_status, delivery_read, queued_at,
+                sent_to_test_sink, delivery_updated_at
+              ) VALUES (?, ?, ?, 1, 'outbound', 'sms', ?, ?, ?, 'pending', 0, ?, ?, ?)
             `,
-            args: [threadId, outboundBody, sendResult.timestamp, to],
+            args: [
+              threadId,
+              outboundBody,
+              sendResult.timestamp,
+              to,
+              sendResult.messageId || null,
+              sendResult.messageId || null,
+              sendResult.timestamp,
+              sendResult.redirected ? 1 : 0,
+              sendResult.timestamp,
+            ],
           },
           {
             sql: `
@@ -377,15 +418,17 @@ export async function POST(request: NextRequest) {
         } as SendMessageResponse)
       }
 
-      await notifyFailedApproveSend({
+      onSendFailed({
         db,
-        actorEmail: staffSession?.email,
+        actorEmail: staffSession?.email ?? null,
         threadId,
         guestFirstName: guestFirstName(thread.guest_name),
         bookingRef: `T-${threadId}`,
         channel: 'sms',
+        errorPlain: plainDeliveryError(null, sendResult.error),
+        provider: 'twilio',
         attemptId: sendResult.timestamp,
-      }).catch(() => undefined)
+      })
       return NextResponse.json(
         {
           success: false,
@@ -420,10 +463,23 @@ export async function POST(request: NextRequest) {
           sql: `
             INSERT INTO inbound_messages (
               thread_id, message_text, message_timestamp, tenant_id,
-              direction, channel, from_number, whatsapp_provider, whatsapp_message_id
-            ) VALUES (?, ?, ?, 1, 'outbound', 'whatsapp_cloud', ?, ?, ?)
+              direction, channel, from_number, whatsapp_provider, whatsapp_message_id,
+              provider_message_id, delivery_status, delivery_read, queued_at,
+              sent_to_test_sink, delivery_updated_at
+            ) VALUES (?, ?, ?, 1, 'outbound', 'whatsapp_cloud', ?, ?, ?, ?, 'pending', 0, ?, ?, ?)
           `,
-          args: [threadId, outboundBody, sendResult.timestamp, thread.from_number, sendResult.provider, sendResult.messageId],
+          args: [
+            threadId,
+            outboundBody,
+            sendResult.timestamp,
+            thread.from_number,
+            sendResult.provider,
+            sendResult.messageId,
+            sendResult.messageId || null,
+            sendResult.timestamp,
+            sendResult.redirected ? 1 : 0,
+            sendResult.timestamp,
+          ],
         },
         {
           sql: `
@@ -455,16 +511,39 @@ export async function POST(request: NextRequest) {
 
     const errorMessage = sendResult.error || 'Unknown error'
     console.error(`[Send Error] threadId=${threadId}, error=${errorMessage}, provider=${sendResult.provider}`)
+    onSendFailed({
+      db,
+      actorEmail: staffSession?.email ?? null,
+      threadId,
+      guestFirstName: guestFirstName(thread.guest_name),
+      bookingRef: `T-${threadId}`,
+      channel: 'whatsapp',
+      errorPlain: plainDeliveryError(null, errorMessage),
+      provider: sendResult.provider,
+      attemptId: sendResult.timestamp,
+    })
 
     await db.batch([
       {
         sql: `
           INSERT INTO inbound_messages (
             thread_id, message_text, message_timestamp, tenant_id,
-            direction, whatsapp_provider, send_error
-          ) VALUES (?, ?, ?, 1, 'outbound', ?, ?)
+            direction, channel, from_number, whatsapp_provider, send_error,
+            delivery_status, delivery_error_plain, queued_at, sent_to_test_sink, delivery_updated_at
+          ) VALUES (?, ?, ?, 1, 'outbound', 'whatsapp_cloud', ?, ?, ?, 'failed', ?, ?, ?, ?)
         `,
-        args: [threadId, outboundBody, sendResult.timestamp, sendResult.provider, errorMessage],
+        args: [
+          threadId,
+          outboundBody,
+          sendResult.timestamp,
+          thread.from_number,
+          sendResult.provider,
+          errorMessage,
+          plainDeliveryError(null, errorMessage),
+          sendResult.timestamp,
+          sendResult.redirected ? 1 : 0,
+          sendResult.timestamp,
+        ],
       },
       {
         sql: `
@@ -475,16 +554,6 @@ export async function POST(request: NextRequest) {
         args: [threadId],
       },
     ])
-    await notifyFailedApproveSend({
-      db,
-      actorEmail: staffSession?.email,
-      threadId,
-      guestFirstName: guestFirstName(thread.guest_name),
-      bookingRef: `T-${threadId}`,
-      channel: 'whatsapp',
-      attemptId: sendResult.timestamp,
-    }).catch(() => undefined)
-
     return NextResponse.json(
       {
         success: false,
