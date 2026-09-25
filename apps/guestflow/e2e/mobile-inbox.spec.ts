@@ -3,7 +3,7 @@ import path from 'path'
 
 const SCREEN_DIR = path.join(
   __dirname,
-  '../../specs/022-sprint2-mobile-inbox/screenshots'
+  '../../../specs/022-sprint2-mobile-inbox/screenshots'
 )
 
 const VIEWPORTS = [
@@ -42,7 +42,7 @@ test.describe('mobile inbox evidence', () => {
   for (const viewport of VIEWPORTS) {
     test(`list ${viewport.name}`, async ({ page }) => {
       await openList(page, viewport.width, viewport.height)
-      await expect(page.getByText('Alex Guest')).toBeVisible()
+      await expect(page.getByRole('button', { name: /Alex Guest/ })).toBeVisible()
       await assertNoHorizontalOverflow(page)
       await page.screenshot({
         path: path.join(SCREEN_DIR, `list-${viewport.name}.png`),
@@ -52,7 +52,7 @@ test.describe('mobile inbox evidence', () => {
 
     test(`thread ${viewport.name}`, async ({ page }) => {
       await openThread(page, viewport.width, viewport.height)
-      await expect(page.getByText('Cottage A')).toBeVisible()
+      await expect(page.getByText('Cottage A · 2026-10-01 → 2026-10-04')).toBeVisible()
       await assertNoHorizontalOverflow(page)
       await page.screenshot({
         path: path.join(SCREEN_DIR, `thread-${viewport.name}.png`),
@@ -63,7 +63,7 @@ test.describe('mobile inbox evidence', () => {
     test(`draft keyboard ${viewport.name}`, async ({ page }) => {
       await openThread(page, viewport.width, viewport.height, '&keyboard=1')
       await page.getByPlaceholder('Draft reply — edit before Approve&Send').click()
-      await expect(page.getByText('Approve')).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Approve Send' })).toBeVisible()
       await assertNoHorizontalOverflow(page)
       await page.screenshot({
         path: path.join(SCREEN_DIR, `draft-keyboard-${viewport.name}.png`),

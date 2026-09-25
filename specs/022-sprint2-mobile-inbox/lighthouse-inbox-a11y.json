@@ -1,0 +1,23 @@
+{
+  "lighthouseVersion": "12.6.0",
+  "requestedUrl": "http://localhost:3100/?fixture=1",
+  "finalUrl": "http://localhost:3100/?fixture=1",
+  "fetchTime": "2026-09-25T00:27:34.633Z",
+  "configSettings": {
+    "formFactor": "mobile"
+  },
+  "categories": {
+    "accessibility": {
+      "id": "accessibility",
+      "score": 0.95
+    }
+  },
+  "score": 95,
+  "failedAudits": [
+    {
+      "id": "color-contrast",
+      "title": "Background and foreground colors do not have a sufficient contrast ratio.",
+      "score": 0
+    }
+  ]
+}

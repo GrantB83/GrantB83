@@ -29,8 +29,8 @@ export function ThreadLayoutShell({
   composer,
 }: ThreadLayoutShellProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <header className="inbox-thread-header shrink-0 bg-white border-b px-3 py-3 sm:px-5 sm:py-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <header className="inbox-thread-header shrink-0 bg-white border-b px-3 py-2 sm:px-5 sm:py-4">
         <div className="flex items-start gap-2">
           {showBack && (
             <button
@@ -67,7 +67,7 @@ export function ThreadLayoutShell({
         {messages}
       </div>
 
-      <footer data-inbox-composer className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-3">
+      <footer data-inbox-composer className="inbox-composer shrink-0 bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3">
         {composer}
       </footer>
     </div>
