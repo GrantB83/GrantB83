@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Staff users / sessions / audit / login-attempt tables.
+ * Staff users / sessions / audit / login-attempt / app_settings tables.
  * Turso-safe CREATE IF NOT EXISTS. Do not run against Production
  * without APPROVE APPLY MIGRATION.
  *
@@ -63,7 +63,22 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_staff_login_attempts_pair_time
     ON staff_login_attempts(ip, email, attempted_at)`,
+  `CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT NOT NULL
+  )`,
 ]
+
+async function seedOutboundRedirect(exec) {
+  const seed = String(process.env.OUTBOUND_MODE || '').toLowerCase().trim() === 'live' ? 'off' : 'on'
+  await exec(
+    `INSERT OR IGNORE INTO app_settings (key, value, updated_at, updated_by) VALUES (?, ?, ?, 'seed')`,
+    ['outbound_redirect', seed, new Date().toISOString()]
+  )
+  console.log(`  outbound_redirect seed=${seed} (OUTBOUND_MODE is seed default only)`)
+}
 
 async function maybeBootstrap(exec, get) {
   const email = String(process.env.GUESTFLOW_BOOTSTRAP_EMAIL || '').trim().toLowerCase()
@@ -103,6 +118,7 @@ async function main() {
     for (const sql of STATEMENTS) {
       await exec(sql)
     }
+    await seedOutboundRedirect(exec)
     await maybeBootstrap(exec, get)
     return
   }
@@ -118,6 +134,7 @@ async function main() {
   for (const sql of STATEMENTS) {
     db.exec(sql)
   }
+  await seedOutboundRedirect(exec)
   await maybeBootstrap(exec, get)
   db.close()
 }

@@ -114,9 +114,10 @@ export async function createQueuedJob(
     // Map channel to resolver channel ('whatsapp_web' → 'whatsapp' for resolver)
     const resolverChannel = input.channel === 'whatsapp_web' ? 'whatsapp' : input.channel
     
-    const resolution = resolveOutboundRecipient({
+    const resolution = await resolveOutboundRecipient({
       channel: resolverChannel,
-      intendedTo: input.toAddress.trim()
+      intendedTo: input.toAddress.trim(),
+      db,
     })
     
     // Override to_address with resolved recipient

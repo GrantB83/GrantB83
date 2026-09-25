@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Calendar, Home, LogOut, Menu, MessageSquare, MoreHorizontal, X, ArrowLeftRight } from 'lucide-react'
 import { useState } from 'react'
+import { OutboundRedirectToggle } from '@/components/OutboundRedirectToggle'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -43,6 +44,7 @@ export default function Navigation() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <OutboundRedirectToggle />
             <button
               type="button"
               onClick={async () => {
@@ -82,6 +84,9 @@ export default function Navigation() {
               <MobileNavLink href="/ops" icon={<Home className="w-5 h-5" />} active={isActive('/ops')} onClick={closeMobileMenu}>
                 Ops / More Tools
               </MobileNavLink>
+              <div className="px-4 py-2">
+                <OutboundRedirectToggle />
+              </div>
               <button
                 type="button"
                 onClick={async () => {

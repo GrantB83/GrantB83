@@ -11,6 +11,7 @@ Named staff logins replace the shared `staff_auth` cookie. Login identifier is *
 | `GUESTFLOW_LEGACY_LOGIN` | Allow `legacy@guestflow.local` + `STAFF_PASSWORD` | **on** unless `0` / `false` / `off` |
 | `STAFF_PASSWORD` | Existing shared password for the legacy path | existing |
 | `STAFF_BCRYPT_ROUNDS` | bcryptjs cost (tests may use `4`) | `10` |
+| `OUTBOUND_MODE` | Seed default for `app_settings.outbound_redirect` only (`live` → OFF, else ON) | seed ON |
 
 Never commit these values.
 
@@ -41,7 +42,12 @@ Runtime `ensureStaffUsersSchema()` matches the Phase 0 / UMI ensure-schema patte
 
 - `/staff-login` (email + password)
 - `/ops/users`
+- Header **Redirect ON/OFF** toggle (Decision L)
+
+## Outbound redirect (Decision L)
+
+One shared `app_settings` row (`outbound_redirect`). Ships **ON** (sinks: WhatsApp `+15124064300`, email `grant830318@gmail.com`). `OUTBOUND_MODE` is seed default only. Any signed-in user can flip it. OFF needs a confirm dialog. Missing, garbage, or DB errors fail closed to ON. Banner and `/api/health` read the live row. Approve&Send + confirmToken unchanged; nothing auto-sends.
 
 ## Safety
 
-Outbound redirect, confirmToken, and Approve&Send behaviour are unchanged except the acting email (or `display_name <email>`) is stamped on access-code upsert and email-send audit when a session exists.
+ConfirmToken and Approve&Send stay required. The header toggle only changes **where** an already-approved send is delivered.

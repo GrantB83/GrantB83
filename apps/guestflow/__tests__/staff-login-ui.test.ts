@@ -43,6 +43,29 @@ describe('staff login and users UI', () => {
     expect(schema).not.toContain('username TEXT')
   })
 
+  it('header toggle always shows state and confirms before OFF', () => {
+    const toggle = readFileSync(path.join(__dirname, '../src/components/OutboundRedirectToggle.tsx'), 'utf8')
+    expect(toggle).toContain('Redirect ON')
+    expect(toggle).toContain('Redirect OFF')
+    expect(toggle).toContain('window.confirm')
+    expect(toggle).toContain('/api/staff/outbound-redirect')
+    const nav = readFileSync(path.join(__dirname, '../src/components/Navigation.tsx'), 'utf8')
+    expect(nav).toContain('OutboundRedirectToggle')
+  })
+
+  it('every outbound channel uses the one resolver', () => {
+    const files = [
+      '../src/lib/whatsapp.ts',
+      '../src/lib/sms.ts',
+      '../src/lib/email.ts',
+      '../src/lib/send-jobs.ts',
+    ]
+    for (const file of files) {
+      const src = readFileSync(path.join(__dirname, file), 'utf8')
+      expect(src, file).toContain('resolveOutboundRecipient')
+    }
+  })
+
   it('edge session lookup stays fetch-only', () => {
     const src = readFileSync(path.join(__dirname, '../src/lib/staff-session-edge.ts'), 'utf8')
     expect(src).toContain('/v2/pipeline')

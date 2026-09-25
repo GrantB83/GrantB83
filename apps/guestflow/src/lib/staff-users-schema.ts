@@ -1,5 +1,6 @@
 import type { DbClient } from '@/lib/db'
 import { hashPassword } from '@/lib/staff-auth-crypto'
+import { ensureOutboundSettingsSchema } from '@/lib/outbound-redirect'
 
 export const LEGACY_STAFF_EMAIL = 'legacy@guestflow.local'
 
@@ -76,6 +77,7 @@ export async function ensureStaffUsersSchema(db: DbClient): Promise<void> {
   for (const sql of STAFF_USERS_TABLE_STATEMENTS) {
     await db.exec(sql)
   }
+  await ensureOutboundSettingsSchema(db)
   await maybeBootstrapFirstUser(db)
 }
 

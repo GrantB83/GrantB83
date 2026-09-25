@@ -31,7 +31,7 @@ export async function sendSms(input: { to: string; body: string }): Promise<Send
 
   let resolution
   try {
-    resolution = resolveOutboundRecipient({
+    resolution = await resolveOutboundRecipient({
       channel: 'whatsapp',
       intendedTo: input.to,
     })

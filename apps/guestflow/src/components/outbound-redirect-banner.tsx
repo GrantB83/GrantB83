@@ -1,26 +1,25 @@
 /**
- * Outbound Redirect Banner Component
- * 
- * Displays an info-level banner when outbound redirect is active (mode=redirect)
- * or when live mode is disabled by OUTBOUND_LIVE_CLEAR.
- * Hidden when mode=live and OUTBOUND_LIVE_CLEAR=true (full live mode active).
- * Hidden on /guest/* paths via layout.tsx SSR check (middleware x-is-guest-route header).
+ * Outbound Redirect Banner
+ *
+ * Decision L: reads the live app_settings row (fail-closed ON).
+ * Hidden when redirect is OFF (live recipients). Hidden on /guest/*.
  */
 
+import { getDbAsync } from '@/lib/db'
 import { getOutboundStatus } from '@/lib/outbound-redirect'
 
-export function OutboundRedirectBanner() {
-  const status = getOutboundStatus()
+export async function OutboundRedirectBanner() {
+  let status
+  try {
+    const db = await getDbAsync()
+    status = await getOutboundStatus(db)
+  } catch {
+    status = { mode: 'redirect' as const, redirectStatus: 'on' as const }
+  }
 
-  // Hide banner when live mode is fully active (off)
   if (status.redirectStatus === 'off') {
     return null
   }
-
-  // Determine message based on status
-  const message = status.redirectStatus === 'on'
-    ? 'ℹ️ Outbound Redirect Active – All guest sends go to test sinks. Live mode disabled.'
-    : 'ℹ️ Live Mode Blocked – OUTBOUND_LIVE_CLEAR not set to true. Sends are blocked or redirected.'
 
   return (
     <div
@@ -36,7 +35,7 @@ export function OutboundRedirectBanner() {
       role="alert"
       aria-live="polite"
     >
-      {message}
+      ℹ️ Outbound Redirect ON – All guest sends go to test sinks. Flip the header switch to send to real recipients.
     </div>
   )
 }
