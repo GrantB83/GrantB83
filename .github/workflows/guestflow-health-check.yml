@@ -12,20 +12,15 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     permissions:
-      actions: write
       contents: read
-      variables: write
     steps:
       - name: Probe /api/health/deep
         env:
           GUESTFLOW_HEALTH_URL: ${{ vars.GUESTFLOW_HEALTH_URL }}
           GUESTFLOW_ALERT_EMAILS: ${{ vars.GUESTFLOW_ALERT_EMAILS }}
           ALERT_FALLBACK_EMAIL: ${{ vars.ALERT_FALLBACK_EMAIL }}
-          GUESTFLOW_HEALTH_FAIL_STREAK: ${{ vars.GUESTFLOW_HEALTH_FAIL_STREAK }}
-          GUESTFLOW_HEALTH_ALERTED: ${{ vars.GUESTFLOW_HEALTH_ALERTED }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "${GUESTFLOW_HEALTH_URL:-}" ]; then
@@ -37,47 +32,19 @@ jobs:
             "$GUESTFLOW_HEALTH_URL" || echo 000)
           echo "HTTP $code"
           cat /tmp/gf-health.json || true
-          streak="${GUESTFLOW_HEALTH_FAIL_STREAK:-0}"
-          alerted="${GUESTFLOW_HEALTH_ALERTED:-0}"
           if [ "$code" = "200" ]; then
-            if [ "$alerted" = "1" ] && [ -n "${RESEND_API_KEY:-}" ] && [ -n "${RESEND_FROM_EMAIL:-}" ]; then
-              to="${GUESTFLOW_ALERT_EMAILS:-$ALERT_FALLBACK_EMAIL}"
-              if [ -n "$to" ]; then
-                python3 - <<'PY' "$to"
-          import json, os, sys, urllib.request
-          to = [p.strip() for p in sys.argv[1].split(",") if p.strip()]
-          body = {
-            "from": os.environ["RESEND_FROM_EMAIL"],
-            "to": to,
-            "subject": "GuestFlow site recovered",
-            "text": "GuestFlow deep health recovered.\nGuest: GuestFlow\nBooking: site",
-          }
-          req = urllib.request.Request(
-            "https://api.resend.com/emails",
-            data=json.dumps(body).encode(),
-            headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}", "Content-Type": "application/json"},
-          )
-          urllib.request.urlopen(req, timeout=20)
-          PY
-              fi
-            fi
-            gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body 0 -R "${{ github.repository }}"
-            gh variable set GUESTFLOW_HEALTH_ALERTED --body 0 -R "${{ github.repository }}"
             exit 0
           fi
-          streak=$((streak + 1))
-          gh variable set GUESTFLOW_HEALTH_FAIL_STREAK --body "$streak" -R "${{ github.repository }}"
-          if [ "$streak" -ge 2 ] && [ "$alerted" != "1" ]; then
-            to="${GUESTFLOW_ALERT_EMAILS:-$ALERT_FALLBACK_EMAIL}"
-            if [ -n "${RESEND_API_KEY:-}" ] && [ -n "${RESEND_FROM_EMAIL:-}" ] && [ -n "$to" ]; then
-              python3 - <<'PY' "$to"
+          to="${GUESTFLOW_ALERT_EMAILS:-$ALERT_FALLBACK_EMAIL}"
+          if [ -n "${RESEND_API_KEY:-}" ] && [ -n "${RESEND_FROM_EMAIL:-}" ] && [ -n "$to" ]; then
+            python3 - <<'PY' "$to"
           import json, os, sys, urllib.request
           to = [p.strip() for p in sys.argv[1].split(",") if p.strip()]
           body = {
             "from": os.environ["RESEND_FROM_EMAIL"],
             "to": to,
             "subject": "GuestFlow site down",
-            "text": "GuestFlow deep health failed twice.\nGuest: GuestFlow\nBooking: site",
+            "text": "GuestFlow deep health failed.\nGuest: GuestFlow\nBooking: site",
           }
           req = urllib.request.Request(
             "https://api.resend.com/emails",
@@ -86,7 +53,5 @@ jobs:
           )
           urllib.request.urlopen(req, timeout=20)
           PY
-            fi
-            gh variable set GUESTFLOW_HEALTH_ALERTED --body 1 -R "${{ github.repository }}"
           fi
           exit 1
