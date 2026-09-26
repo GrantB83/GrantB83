@@ -206,8 +206,24 @@ Sequential execution:
 - [x] T032 [US1] Manual test thread 28: verify ZERO vertical band for unmatched when modal closed, icon/chip opens modal, dropdown + CTA in modal work (test on Preview)
 - [x] T033 [P] Run build check after convergence changes
 - [x] T034 [P] Run lint check after convergence changes
-- [ ] T035 Commit convergence changes with message: `fix(guestflow): replace unmatched strip with icon → modal pattern`
-- [ ] T036 Update PR #245 body to reflect icon → modal pattern in verification steps
+- [x] T035 Commit convergence changes with message: `fix(guestflow): replace unmatched strip with icon → modal pattern`
+- [x] T036 Update PR #245 body to reflect icon → modal pattern in verification steps
+
+---
+
+## Phase 8: Convergence (Scope Add - Composer UX Rewrite)
+
+**Purpose**: Improve composer daily usability per Grant 26 Sep - dropdown channel picker, taller textarea, remove draft notice
+
+- [x] T037 [US1] Replace channel pill buttons with single dropdown in `apps/guestflow/src/app/page.tsx` (lines ~765-777: replace CHANNELS.map pills with single select element, default = channel state)
+- [x] T038 [US1] Increase textarea default rows for multi-line editing in `apps/guestflow/src/app/page.tsx` (line ~844: change rows from 2/4 to 3/6 for better editing)
+- [x] T039 [US1] Remove "In-thread draft (heuristic)..." notice paragraph in `apps/guestflow/src/app/page.tsx` (delete lines ~760-764: orange draft notice)
+- [x] T040 [P] Run build check after composer UX changes
+- [x] T041 [P] Run lint check after composer UX changes
+- [x] T042 Manual test thread 28: verify dropdown channel picker works, textarea is multi-line usable, draft notice removed (test on Preview)
+- [x] T043 Manual test matched thread: verify no regression, composer UX improved (test on Preview)
+- [ ] T044 Commit composer UX changes with message: `feat(guestflow): composer UX rewrite - dropdown picker + taller textarea`
+- [ ] T045 Update PR #245 body to reflect composer UX improvements in verification steps
 
 ---
 

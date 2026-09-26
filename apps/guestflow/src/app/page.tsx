@@ -728,27 +728,20 @@ function InboxHomePageInner() {
       composer={
         <>
           {error && <p className="text-base text-red-600 inbox-wrap">{error}</p>}
-          {(selected?.hasOpenDraft || detail.openDraft) && keyboardInsetPx < 80 ? (
-            <p className="text-base text-amber-700 inbox-wrap">
-              In-thread draft ({detail.openDraft?.source || 'heuristic'}). Approve&Send required — never auto-sent.
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            {CHANNELS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setChannel(item.id)}
-                className={`inbox-tap px-3 rounded-full border text-base ${
-                  channel === item.id
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-white text-slate-600'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Send via</span>
+            <select
+              value={channel}
+              onChange={(event) => setChannel(event.target.value)}
+              className="inbox-field w-full mt-1"
+            >
+              {CHANNELS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {/* Template & Care disclosure - Sprint 4 US3 */}
           <button
             type="button"
@@ -815,7 +808,7 @@ function InboxHomePageInner() {
           <textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            rows={keyboardInsetPx > 80 || breakpoint === 'phone' ? 2 : 4}
+            rows={keyboardInsetPx > 80 || breakpoint === 'phone' ? 3 : 6}
             placeholder="Draft reply — edit before Approve&Send"
             className="inbox-field w-full"
           />

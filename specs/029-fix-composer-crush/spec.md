@@ -71,7 +71,7 @@ A staff member using a mobile device (~390px width) needs to triage threads and 
 - **FR-002**: Thread column MUST have exactly three zones: Chrome (flex: 0 0 auto), Transcript (flex: 1 1 auto), Composer (flex: 0 0 auto)
 - **FR-003**: Chrome zone MUST include thread header (≤1-2 lines) + ONE window-closed chip + unmatched strip (default collapsed to one line)
 - **FR-004**: Transcript zone MUST be the ONLY region with overflow-y: auto for scrolling messages
-- **FR-005**: Composer zone MUST reserve min-height for channel chips + textarea (~2-3 lines) + Approve&Send button
+- **FR-005**: Composer zone MUST reserve min-height for channel dropdown + textarea (~3-4 lines usable) + Approve&Send button
 - **FR-006**: Composer MUST remain fully visible in viewport at all times (never scroll off-screen)
 - **FR-007**: Unmatched state MUST show simple icon or compact chip in thread chrome that opens Link-to-booking modal (ZERO vertical band when modal closed)
 - **FR-008**: Booking link dropdown + CTA MUST live inside modal only (not inline in thread chrome)
@@ -79,6 +79,11 @@ A staff member using a mobile device (~390px width) needs to triage threads and 
 - **FR-010**: Scroll floors from PR #235 MUST be preserved where they do not conflict with this layout rule
 - **FR-011**: Redirect ON behavior MUST remain unchanged (no removal of redirect functionality)
 - **FR-012**: Gold Redirect banner strip MUST NOT be reintroduced (stay with current behavior post-#244)
+- **FR-013**: Channel picker MUST be single dropdown (WhatsApp Cloud / WhatsApp Web / Email / SMS), default = last inbound channel
+- **FR-014**: Channel picker MUST NOT use full-width pill buttons (remove to save vertical + horizontal space)
+- **FR-015**: Draft textarea MUST be tall enough to view/edit multi-line messages (not 1-line clipped box with scrollbar)
+- **FR-016**: Draft textarea MUST grow within reserved composer zone (never steal below Approve&Send viewport floor)
+- **FR-017**: "In-thread draft (heuristic)... never auto-sent." notice MUST be hidden/removed (Approve&Send already encodes human send)
 
 ### Key Entities *(include if feature involves data)*
 
