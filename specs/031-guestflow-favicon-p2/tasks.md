@@ -19,6 +19,7 @@
 - [x] T007 Local `curl -sI /favicon.ico` → 200 + image content-type
 - [x] T008 Tab screenshots: `/staff-login` + guest portal on Preview/local
 - [x] T009 PR body: curl evidence, Preview URL, **MERGE HOLD** for GFM after Design PASS
+- [x] T011 VERIFY PACK at `specs/verify/favicon-p2/VERIFY-PACK.md` (S1–S10, curls, Design job-script, locks)
 
 ## Phase 4: Convergence
 

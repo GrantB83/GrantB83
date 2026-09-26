@@ -2,7 +2,7 @@
 
 **Date**: 2026-09-26  
 **Branch**: `cursor/guestflow-favicon-p2-5165`  
-**Status**: **Converged**
+**Status**: **Converged** (VERIFY PACK: `specs/verify/favicon-p2/VERIFY-PACK.md` — Preview READY for Design)
 
 ## Spec / plan / tasks assessment
 
