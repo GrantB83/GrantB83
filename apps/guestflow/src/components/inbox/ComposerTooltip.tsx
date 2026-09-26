@@ -4,11 +4,9 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 export function ComposerTooltip({
   label,
-  describedBy,
   children,
 }: {
   label: string
-  describedBy?: string
   children: ReactNode
 }) {
   const id = useId()
@@ -55,7 +53,6 @@ export function ComposerTooltip({
           className="pointer-events-none absolute bottom-full left-1/2 z-[90] mb-1 max-w-[28ch] -translate-x-1/2 rounded-md bg-[#0A3775] px-2.5 py-1.5 text-center text-[11px] font-medium leading-tight text-white"
         >
           {label}
-          {describedBy ? ` — ${describedBy}` : ''}
         </span>
       )}
     </span>

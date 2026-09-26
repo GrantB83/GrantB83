@@ -7,6 +7,7 @@ const read = (...parts: string[]) => readFileSync(path.join(__dirname, ...parts)
 describe('Sprint 6 inbox UI contract', () => {
   const page = read('../src/app/page.tsx')
   const composer = read('../src/components/inbox/ThreadComposer.tsx')
+  const tooltip = read('../src/components/inbox/ComposerTooltip.tsx')
   const css = read('../src/app/globals.css')
 
   it('uses exact SoR toolbar tooltip copy and pop-out', () => {
@@ -15,7 +16,12 @@ describe('Sprint 6 inbox UI contract', () => {
     expect(composer).toContain("attach: 'Attach file'")
     expect(composer).toContain("popOut: 'Expand editor'")
     expect(composer).toContain('aria-label={TOOLTIPS.channel}')
+    expect(composer).toContain('title={TOOLTIPS.attach}')
     expect(composer).toContain('title={TOOLTIPS.popOut}')
+    expect(composer).toContain('<ComposerTooltip label={TOOLTIPS.attach}>')
+    expect(composer).not.toContain('describedBy={ATTACH_DISABLED_REASON}')
+    expect(tooltip).not.toContain('describedBy')
+    expect(tooltip).not.toContain('NeedsGrant')
     expect(composer).toContain('data-sprint6-popout="open"')
     expect(composer).toContain('minHeight: 280')
     expect(composer).toContain('Maximize2')

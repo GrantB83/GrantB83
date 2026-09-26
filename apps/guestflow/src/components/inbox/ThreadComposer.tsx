@@ -149,7 +149,7 @@ export function ThreadComposer({
           <FileText className="w-5 h-5" />
         </button>
       </ComposerTooltip>
-      <ComposerTooltip label={TOOLTIPS.attach} describedBy={ATTACH_DISABLED_REASON}>
+      <ComposerTooltip label={TOOLTIPS.attach}>
         <button
           type="button"
           aria-label={TOOLTIPS.attach}
