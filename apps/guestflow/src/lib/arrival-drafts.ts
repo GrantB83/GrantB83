@@ -231,6 +231,33 @@ async function scrubThreadSermonPreviews(db: DbClient, threadId: number): Promis
   }
 }
 
+/**
+ * Global one-shot DB scrub: clean sermon text from ALL arrival draft messages.
+ * Idempotent bulk UPDATE across all matching inbound_messages rows.
+ * Runs from cron entrypoint to immediately clean Preview DB rows without waiting for per-thread upsert.
+ */
+async function scrubAllSermonPreviews(db: DbClient): Promise<number> {
+  const existing = (await db
+    .prepare(
+      `SELECT id, message_text FROM inbound_messages 
+       WHERE (source_tag = 'arrival-scheduler' OR message_text LIKE '%Approve&Send required%')
+       AND message_text LIKE '%Approve&Send required%'`
+    )
+    .all()) as Array<{ id: number; message_text: string }>
+
+  let scrubbedCount = 0
+  for (const row of existing) {
+    const cleaned = scrubSermonFromPreview(row.message_text)
+    if (cleaned !== row.message_text) {
+      await db
+        .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
+        .run(cleaned, row.id)
+      scrubbedCount++
+    }
+  }
+  return scrubbedCount
+}
+
 async function writeThreadDraft(
   db: DbClient,
   input: {
@@ -648,6 +675,13 @@ export async function runArrivalDraftsJob(
   const now = options.now ?? new Date()
   await ensureUmiSchema(db)
   await ensureArrivalDraftsSchema(db)
+
+  // Global one-shot: scrub any existing sermon text from ALL arrival draft previews
+  // Ensures Preview DB rows (Ilonka #47, Anneri #46) show clean labels immediately
+  const scrubbedCount = await scrubAllSermonPreviews(db)
+  if (scrubbedCount > 0) {
+    console.log(`[runArrivalDraftsJob] Scrubbed ${scrubbedCount} sermon preview(s)`)
+  }
 
   const todaySast = sastDateString(now)
   const hour = sastHour(now)

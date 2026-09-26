@@ -694,6 +694,19 @@ export async function listLinkCandidates(
     .slice(0, 50)
 }
 
+/**
+ * Read-path sanitize: scrub sermon from message preview before returning to API.
+ * Ensures stale DB rows never surface sermon in inbox JSON preview.
+ * Pattern: "[Arrival draft T-1] Approve&Send required — never auto-sent." → "Arrival draft T-1"
+ */
+function scrubSermonFromPreview(text: string): string {
+  const match = text.match(/^\[?Arrival draft ([^\]]+)\]?\s*Approve&Send required/i)
+  if (match && match[1]) {
+    return `Arrival draft ${match[1].trim()}`
+  }
+  return text
+}
+
 async function latestMessagePreview(
   db: DbClient,
   threadId: number
@@ -708,8 +721,10 @@ async function latestMessagePreview(
          LIMIT 1`
       )
       .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
+    const rawPreview = String(row?.message_text || '')
+    const cleanedPreview = scrubSermonFromPreview(rawPreview)
     return {
-      preview: String(row?.message_text || '').slice(0, 160),
+      preview: cleanedPreview.slice(0, 160),
       hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
     }
   } catch (error) {
