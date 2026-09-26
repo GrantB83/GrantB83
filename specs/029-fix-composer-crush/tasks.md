@@ -222,8 +222,8 @@ Sequential execution:
 - [x] T041 [P] Run lint check after composer UX changes
 - [x] T042 Manual test thread 28: verify dropdown channel picker works, textarea is multi-line usable, draft notice removed (test on Preview)
 - [x] T043 Manual test matched thread: verify no regression, composer UX improved (test on Preview)
-- [ ] T044 Commit composer UX changes with message: `feat(guestflow): composer UX rewrite - dropdown picker + taller textarea`
-- [ ] T045 Update PR #245 body to reflect composer UX improvements in verification steps
+- [x] T044 Commit composer UX changes with message: `feat(guestflow): composer UX rewrite - dropdown picker + taller textarea`
+- [x] T045 Update PR #245 body to reflect composer UX improvements in verification steps
 
 ---
 
