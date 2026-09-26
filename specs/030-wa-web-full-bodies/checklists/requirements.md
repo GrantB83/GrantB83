@@ -39,8 +39,9 @@
 - [x] S6 locks named
 - [x] S7 no invent / no sermon
 - [x] S8 a11y N/A unless new unlabeled controls
-- [x] S9 Design N / QA Y
-- [x] S10 evidence named
+- [x] S9 Design N · QA job-script Y (open thread 28 + peers; read real text + names)
+- [x] S10 evidence named: Prod `?thread=28` before/after (or Preview same data) + `whatsapp_web` metadata-only inbox count
+- [x] MERGE HOLD until GFM ACCEPT after QA job-script
 
 ## Notes
 

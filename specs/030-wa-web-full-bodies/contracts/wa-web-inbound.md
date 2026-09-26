@@ -85,6 +85,8 @@ Response:
 
 Unchanged shape. `messages[].body` MUST be the stored `message_text`. After replace, thread 28 bodies are non-sentinel. `bookerName` uses `booking_guest_name || guest_name || from_number`.
 
+S10 evidence (not a new endpoint): Prod `?thread=28` before/after (or Preview of the same rows) plus a counted inbox scan of `whatsapp_web` rows whose body is exactly `[metadata-only]` or `[body unavailable]`. Pack: `../EVIDENCE.md`.
+
 ## Out of contract
 
 Composer, Link modal, Cloud conversion of `+27836458313`, Redirect flip, email `[body unavailable]` composition.

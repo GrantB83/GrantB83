@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: GuestFlow Sprint 4 #4 — staff must read actual WhatsApp Web guest text and a real contact/display name on unmatched threads. No `[metadata-only]` / `[body unavailable]` sentinels. Grant CLEAR 25 Sep. Separate draft PR from Ship A composer crush (`#245` / `31c0e8f`). MERGE HOLD until GFM ACCEPT.
+**Input**: GuestFlow Sprint 4 #4 — staff must read actual WhatsApp Web guest text and a real contact/display name on unmatched threads. No `[metadata-only]` / `[body unavailable]` sentinels. Grant CLEAR 25 Sep. GFM confirmed kick 26 Sep (evidence wording only). Separate draft PR from Ship A composer crush (`#245` / `31c0e8f`). **MERGE HOLD until GFM ACCEPT after QA job-script.**
 
 ## Operator Job *(mandatory)*
 
@@ -26,8 +26,8 @@ Staff open any WhatsApp Web soft-inbox thread (for example Production `?thread=2
 | **S6** | Standing locks | Redirect ON; Approve&Send human; no auto-send; WhatsApp From `+27600200825` |
 | **S7** | Copy bar | Staff list / transcript = state + next action only; **no sermon**; **no invent** of guest body or names — persist only text and names present in the WhatsApp Web source |
 | **S8** | A11y smoke | **N/A** unless this change adds unlabeled primary controls (none expected) |
-| **S9** | Peers named | Design **N** (no IA / chrome change) · QA **Y** (job-script: read real bodies on WhatsApp Web threads) |
-| **S10** | Job evidence | Authenticated Preview / API or UI — thread 28 (and peers) bodies non-sentinel; unmatched title from WhatsApp name when present |
+| **S9** | Peers named | Design **N** (no IA / chrome change) · QA **Y** (job-script: open thread 28 + peers; read real text + names) |
+| **S10** | Job evidence | **Must include** Prod `?thread=28` **before/after** (or Preview equivalent of the **same** data) **plus** an inbox scan **metadata-only count** for `whatsapp_web`. Unmatched title from WhatsApp name when present. READY refuse if either capture is missing. |
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -135,7 +135,8 @@ The same guest message may arrive on WhatsApp Cloud and on WhatsApp Web observe.
 
 ### Measurable Outcomes
 
-- **SC-001**: Staff opening thread 28 (or a peer WhatsApp Web temp) can read the actual guest wording for every line WhatsApp Web still has — zero sentinels in that recovered set
+- **SC-001**: Staff opening thread 28 (or a peer WhatsApp Web temp) can read the actual guest wording for every line WhatsApp Web still has — zero sentinels in that recovered set. Evidence is Prod `?thread=28` before/after (or Preview of the same rows) plus a counted `whatsapp_web` metadata-only inbox scan
+- **SC-006**: MERGE HOLD until GFM ACCEPT after the S9 QA job-script (open thread 28 + peers; read real text + names)
 - **SC-002**: After one backfill pass, a second pass of the same payload adds zero extra inbound rows
 - **SC-003**: Unmatched WhatsApp Web threads whose source has a name show that name as the title on first open, without a booking link
 - **SC-004**: Staff do not need to open WhatsApp Web on the phone to learn what the guest said for recovered threads (the ritual this phase removes)
@@ -147,12 +148,12 @@ The same guest message may arrive on WhatsApp Cloud and on WhatsApp Web observe.
 - Production evidence that thread 28 is all metadata-only is accepted; this package does not invent those bodies
 - Existing UMI thread list / transcript already renders `message_text` and `guest_name` — no new chrome is required
 - Email sentinel composition and Ship A composer layout stay as they are
-- Preview / authenticated API is the evidence surface; Production Turso writes stay behind existing Grant gates
+- Preview / authenticated API is the evidence surface; Production Turso writes stay behind existing Grant gates. S10 before = kick/Prod scan; S10 after = same thread 28 + inbox count after source-backed backfill (no invent)
 - Two-week window is measured in Africa/Johannesburg guest-ops dates; open metadata-only rows may be replaced even if slightly older when they are still open staff work
 
 ## Out of Scope
 
-- Composer crush / unmatched Link modal (Ship A / other packages)
+- Composer crush / unmatched Link modal (Ship A `#245`)
 - Converting personal `+27836458313` to Cloud API
 - Redirect flip or From change
 - `stay@` / `RESEND_FROM` changes

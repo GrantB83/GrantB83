@@ -22,8 +22,8 @@ Fix GuestFlow WhatsApp Web observe so staff can read real guest wording and a re
 | S6 | Y | Redirect ON; Approve&Send human; no auto-send; From `+27600200825` |
 | S7 | Y | Staff copy = state + next action; no sermon; no invent PII/bodies/names |
 | S8 | N/A | No new unlabeled primary controls |
-| S9 | Design N / QA Y | QA job-script: read real bodies on WA Web threads |
-| S10 | Y | Preview/API proof — thread 28 (and peers) non-sentinel; unmatched title from WA name |
+| S9 | Design N / QA Y | Job-script: open thread 28 + peers; read real text + names |
+| S10 | Y | **Must include** Prod `?thread=28` before/after (or Preview of the **same** data) **plus** inbox scan metadata-only count for `whatsapp_web` |
 
 ## Technical Context
 

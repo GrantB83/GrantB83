@@ -23,12 +23,24 @@ Expected:
 
 ## Staff / QA job-script (S9)
 
-1. Open staff inbox on Preview (or Prod after Grant-gated backfill).
-2. Open `/?thread=28` or a peer WhatsApp Web temp.
-3. Transcript: every recovered line is real guest wording — not `[metadata-only]` / `[body unavailable]`.
-4. Unmatched title: WhatsApp contact / push / chat name if the source has one; otherwise the number.
-5. Phone (~390): same bodies readable in the thread view (no new chrome).
-6. Confirm health / header: Redirect ON; do not Approve&Send unless testing sinks.
+MERGE HOLD until GFM ACCEPT **after** this script.
+
+1. Open staff inbox on Prod (or Preview that shares the **same** Turso / same thread-28 rows).
+2. Open `/?thread=28`. Read every inbound line. Record whether bodies are real guest wording or still sentinels (S10 **after**).
+3. Open at least one peer WhatsApp Web temp. Read real text. Confirm unmatched title is the WhatsApp contact / push / chat name when the source has one; otherwise the number.
+4. Inbox scan: count `whatsapp_web` inbound rows whose body is exactly `[metadata-only]` or `[body unavailable]` (S10 count). Record the number.
+5. Phone (~390): same thread-28 / peer bodies readable in the thread view (no new chrome).
+6. Confirm Redirect ON. Do not Approve&Send unless testing sinks.
+
+## S10 evidence pack (required)
+
+READY refuse if either capture is missing:
+
+| Capture | What to attach |
+| --- | --- |
+| Thread 28 **before** | Prod `?thread=28` (or Preview of the same rows) showing sentinel bodies — kick 25 Sep: all `[metadata-only]` |
+| Thread 28 **after** | Same URL after source-backed backfill / observe — real guest wording, or documented residual (no invent) |
+| Inbox scan | Count of `whatsapp_web` messages whose `message_text` is exactly `[metadata-only]` or `[body unavailable]` |
 
 ## Residual (S3)
 

@@ -136,4 +136,15 @@ US1 only already stops new sentinels. Operator job this week also needs US2 + US
 ## Notes
 
 - Do not invent thread-28 bodies in Production
-- MERGE HOLD until GFM ACCEPT
+- MERGE HOLD until GFM ACCEPT after QA job-script (open thread 28 + peers; read real text + names)
+
+---
+
+## Phase 8: Convergence (GFM evidence wording 26 Sep)
+
+GFM confirmed kick — no product-scope change. Tighten S9/S10 evidence only.
+
+- [x] T023 Align S9/S10 wording in `specs/030-wa-web-full-bodies/spec.md` and `specs/030-wa-web-full-bodies/plan.md` (S9: open thread 28 + peers read real text + names; S10: Prod `?thread=28` before/after or Preview same data + `whatsapp_web` metadata-only count) per GFM / S10 (`partial`)
+- [x] T024 Write S10 evidence pack `specs/030-wa-web-full-bodies/EVIDENCE.md` with thread-28 before (kick 25 Sep all metadata-only), after HOLD for QA, and inbox scan count method per S10 / US1 (`missing`)
+- [x] T025 Point artefact + STATUS + quickstart QA script at the evidence pack; MERGE HOLD until GFM ACCEPT after QA job-script in `apps/guestflow/docs/WA-WEB-FULL-BODIES.md` and `docs/automation/STATUS.md` per S9 / plan: MERGE HOLD (`partial`)
+

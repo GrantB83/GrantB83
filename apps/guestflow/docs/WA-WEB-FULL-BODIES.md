@@ -21,15 +21,23 @@
 
 ## How to verify thread 28 (S10)
 
-1. Staff session on Preview (or Prod after a Grant-gated source-backed backfill).
-2. Open `/?thread=28`.
-3. Transcript bodies are guest wording — not `[metadata-only]` / `[body unavailable]`.
-4. If the thread is unmatched and WhatsApp Web shows a name, the title is that name.
-5. Phone thread view: same bodies readable (no new chrome).
-6. `/api/health`: Redirect still ON.
+S10 **must** include all three. READY refuse if any is missing.
 
-**Residual (S3):** If a bubble has scrolled off WhatsApp Web history, GuestFlow leaves it unrestored and does not invent text. CoS Chrome may still be the observe reader; GuestFlow owns storage.
+| Capture | Required |
+| --- | --- |
+| **Before** | Prod `/?thread=28` (or Preview of the **same** rows). Kick 25 Sep: all `[metadata-only]` |
+| **After** | Same URL after source-backed backfill / observe — real guest wording, or documented residual (no invent) |
+| **Inbox scan** | Count of `whatsapp_web` inbound whose body is exactly `[metadata-only]` or `[body unavailable]` |
+
+Pack: `specs/030-wa-web-full-bodies/EVIDENCE.md`.
+
+**Residual (S3):** If a bubble has scrolled off WhatsApp Web history, GuestFlow leaves the row unrestored and does not invent text. CoS Chrome may still be the observe reader; GuestFlow owns storage.
 
 ## QA job-script (S9)
 
-Open WhatsApp Web temps → read real bodies → confirm unmatched titles when a source name exists → do not Approve&Send unless testing sinks.
+**MERGE HOLD until GFM ACCEPT after this script.**
+
+1. Open Prod (or Preview with the **same** data) `/?thread=28`. Read every inbound line.
+2. Open peer WhatsApp Web temps. Read real text. Confirm unmatched titles = WhatsApp name when the source has one.
+3. Record the `whatsapp_web` metadata-only inbox count into the evidence pack.
+4. Phone thread view: same bodies readable. Redirect ON. Do not Approve&Send unless testing sinks.
