@@ -20,6 +20,13 @@ export function isPortalClockFixtureCode(value: string | null | undefined): valu
   return PORTAL_CLOCK_FIXTURE_CODES.includes(value as PortalClockFixtureCode)
 }
 
+/** Preview + local/dev only. Production (`VERCEL_ENV === 'production'`) must refuse. */
+export function portalClockFixturesAllowed(
+  env: { VERCEL_ENV?: string | undefined } | NodeJS.ProcessEnv = process.env
+): boolean {
+  return env.VERCEL_ENV !== 'production'
+}
+
 export function buildPortalClockFixture(clock: PortalClockFixtureCode) {
   const room = roomDisplay('Cottage A')
   const securityOpen = clock === 'fixture-in'

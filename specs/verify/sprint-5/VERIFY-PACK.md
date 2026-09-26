@@ -42,7 +42,7 @@ npx tsc --noEmit
 ```
 
 Inbox: open Preview `/?fixture=1` then a live `/?thread=`.  
-Portal clock fixtures (no Turso token; no invented codes/password). Preview host `https://browns-guestflow-git-cursor-gue-2909b8-grants-projects-db46fb3a.vercel.app`:
+Portal clock fixtures are **Preview / local / dev only** (`VERCEL_ENV !== 'production'`). On Production they take the same Invalid access / 404 path as an unknown token. No Turso token. No invented codes/password. Preview host `https://browns-guestflow-git-cursor-gue-2909b8-grants-projects-db46fb3a.vercel.app`:
 
 | Clock | Path | Expect |
 |-------|------|--------|
@@ -50,7 +50,7 @@ Portal clock fixtures (no Turso token; no invented codes/password). Preview host
 | Step 8 in-window | `/guest/fixture-in` | SSID **The Browns Guests**; password row hidden (none stored); no invented gate/lockbox |
 | Step 9 post-departure | `/guest/fixture-post` | Security rescinded copy; no password |
 
-Same paths are listed under fixture Details → Guest portal clocks. Guest-facing draft may say wifi is in the portal; staff list/transcript must not say Approve&Send/Redirect.
+Same paths are listed under fixture Details → Guest portal clocks (Preview). Production `/guest/fixture-pre|in|post` must show Invalid access / 404, same as an unknown token. Guest-facing draft may say wifi is in the portal; staff list/transcript must not say Approve&Send/Redirect.
 
 ## Design GFM ACCEPT checklist (from SoR)
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPortalClockFixture,
   isPortalClockFixtureCode,
+  portalClockFixturesAllowed,
   PORTAL_CLOCK_FIXTURE_PATHS,
 } from '../portal-clock-fixture'
 import { PORTAL_POST_SECURITY_COPY, PORTAL_PRE_SECURITY_COPY, PORTAL_SSID } from '../portal-security'
@@ -13,6 +14,13 @@ describe('portal-clock-fixture', () => {
     expect(isPortalClockFixtureCode('fixture-in')).toBe(true)
     expect(isPortalClockFixtureCode('fixture-post')).toBe(true)
     expect(isPortalClockFixtureCode('abcdefghijklmnopqrstuvwxyz0123456789')).toBe(false)
+  })
+
+  it('refuses clock fixtures on Production and allows Preview/local', () => {
+    expect(portalClockFixturesAllowed({ VERCEL_ENV: 'production' })).toBe(false)
+    expect(portalClockFixturesAllowed({ VERCEL_ENV: 'preview' })).toBe(true)
+    expect(portalClockFixturesAllowed({ VERCEL_ENV: 'development' })).toBe(true)
+    expect(portalClockFixturesAllowed({})).toBe(true)
   })
 
   it('pre-window shows rooms and clock copy without secrets', () => {

@@ -8,7 +8,11 @@ import {
   portalSecurityCopy,
 } from '@/lib/portal-security'
 import { roomDisplay } from '@/lib/room-catalog'
-import { buildPortalClockFixture, isPortalClockFixtureCode } from '@/lib/portal-clock-fixture'
+import {
+  buildPortalClockFixture,
+  isPortalClockFixtureCode,
+  portalClockFixturesAllowed,
+} from '@/lib/portal-clock-fixture'
 
 /**
  * Guest portal access via magic token
@@ -28,7 +32,7 @@ export async function GET(
       )
     }
 
-    if (isPortalClockFixtureCode(token)) {
+    if (isPortalClockFixtureCode(token) && portalClockFixturesAllowed()) {
       return NextResponse.json(buildPortalClockFixture(token))
     }
 
