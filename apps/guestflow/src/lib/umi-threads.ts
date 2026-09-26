@@ -118,6 +118,7 @@ export interface WaWebSentinelTarget {
 }
 
 export function parseInboxLimit(raw?: string | null): number {
+  if (raw == null || String(raw).trim() === '') return DEFAULT_INBOX_LIMIT
   const n = Number(raw)
   if (!Number.isFinite(n)) return DEFAULT_INBOX_LIMIT
   return Math.min(MAX_INBOX_LIMIT, Math.max(1, Math.floor(n)))
@@ -1678,7 +1679,7 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       sourceTag: message.source_tag,
       senderAddress: message.sender_address,
       body: scrubArrivalDraftSermon(
-        message.status === 'drafted' && message.draft_reply
+        message.direction === 'outbound' && message.status === 'drafted' && message.draft_reply
           ? message.draft_reply
           : readMessageText(message)
       ),

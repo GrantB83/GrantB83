@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { sortInboxThreads } from '@/lib/umi-sort'
+import { sastDateString, sortInboxThreads } from '@/lib/umi-sort'
 
 const listInboxPage = vi.fn()
 
@@ -22,7 +22,7 @@ const sampleThread = {
   bookingId: 10,
   bookerName: 'Ada',
   suite: 'Trout',
-  checkIn: '2026-09-25',
+  checkIn: sastDateString(),
   checkOut: '2026-09-27',
   nightsbridgeBookingId: 'NB-10',
   lastChannel: 'whatsapp_cloud',
