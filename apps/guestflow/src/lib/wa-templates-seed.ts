@@ -101,3 +101,42 @@ export const WHATSAPP_APPROVED_STATUSES = new Set(['approved'])
 export function isWhatsAppApproved(status?: string | null): boolean {
   return WHATSAPP_APPROVED_STATUSES.has(String(status || '').toLowerCase())
 }
+
+/** Twilio Content friendly_name for a Turso catalogue `name`. */
+export const CATALOG_NAME_TO_TWILIO_FRIENDLY: Record<string, string> = {
+  browns_checkin_instructions: 'browns_checkin_instructions_v2',
+  browns_checkin_instructions_v1_rejected: 'browns_checkin_instructions',
+}
+
+/**
+ * Rows ensured on sync (not part of original 7-seed empty DB bootstrap).
+ * Bodies from live Twilio Content 2026-09-26 (Kick evidence).
+ */
+export const EXTRA_SYNC_CATALOG_SEEDS: GrantApprovedTemplateSeed[] = [
+  {
+    name: 'official_channel_notice',
+    category: 'utility',
+    language: 'en',
+    body: "Hi {{1}}, this is the official WhatsApp account for The Browns' Luxury Guest Suites (Dullstroom). All communications about your booking will come from this number going forward. Please save this contact and reply here if you need anything.",
+    variableMapping: { '1': 'guest_name' },
+  },
+  {
+    name: 'browns_ops_smoke',
+    category: 'marketing',
+    language: 'en',
+    body: "Hi {{1}}, this is The Browns' Dullstroom (GuestFlow). Reply OK if you received this.",
+    variableMapping: { '1': 'guest_name' },
+  },
+  {
+    name: 'browns_checkin_instructions_v1_rejected',
+    category: 'utility',
+    language: 'en',
+    body: 'Hi {{1}}, check-in at {{2}} is from 14:00. Address: {{3}}. Once the gate has opened please drive through. Do not wait in the gate. Housekeepers are at 279 Blue Crane Drive until 17:00 and will show you to your room. After 17:00 we send self check-in details. Parking: {{4}}.',
+    variableMapping: {
+      '1': 'guest_name',
+      '2': 'property_name',
+      '3': 'property_address',
+      '4': 'parking',
+    },
+  },
+]

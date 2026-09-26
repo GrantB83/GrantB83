@@ -32,7 +32,8 @@
     "db:export": "node scripts/export-data.js",
     "nightsbridge:upload": "tsx scripts/nightsbridge-upload.ts",
     "batch-worker": "tsx scripts/batch-worker.ts",
-    "wa:submit-templates": "tsx scripts/submit-wa-templates.ts"
+    "wa:submit-templates": "tsx scripts/submit-wa-templates.ts",
+    "wa:sync-templates": "tsx scripts/sync-wa-templates.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
