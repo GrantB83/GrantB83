@@ -44,6 +44,5 @@ describe('US3: Wider usable phone inbox panes', () => {
   it('does not hide Approve&Send while widening panes', () => {
     expect(page).toContain('Approve')
     expect(page).toContain('Send')
-    expect(page).toContain('Approve&Send required — never auto-sent')
   })
 })

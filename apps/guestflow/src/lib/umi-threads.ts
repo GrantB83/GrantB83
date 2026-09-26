@@ -22,6 +22,7 @@ import {
   loadLastWabaInboundAtByThread,
   type CareWindow,
 } from '@/lib/whatsapp-care-window'
+import { scrubArrivalDraftSermon } from '@/lib/scrub-arrival-sermon'
 
 export interface ResolveInboundInput {
   from: string
@@ -708,8 +709,10 @@ async function latestMessagePreview(
          LIMIT 1`
       )
       .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
+    const rawPreview = String(row?.message_text || '')
+    const cleanedPreview = scrubArrivalDraftSermon(rawPreview)
     return {
-      preview: String(row?.message_text || '').slice(0, 160),
+      preview: cleanedPreview.slice(0, 160),
       hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
     }
   } catch (error) {
@@ -1245,7 +1248,7 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       channel: message.channel || mapSourceToChannel(thread.source),
       sourceTag: message.source_tag,
       senderAddress: message.sender_address,
-      body: message.message_text,
+      body: scrubArrivalDraftSermon(message.message_text),
       timestamp: message.message_timestamp,
       isSpam: Boolean(message.is_spam),
       draftReply: message.draft_reply || null,

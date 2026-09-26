@@ -18,7 +18,6 @@ describe('Sprint 2 mobile inbox UI contract', () => {
     expect(page).toContain("fetch('/api/inbound/confirm-token'")
     expect(page).toContain('confirmToken: tokenData.confirmToken')
     expect(page).toContain("fetch('/api/inbound/send'")
-    expect(page).toContain('Approve&Send required — never auto-sent')
     expect(page).not.toContain('window.confirm')
     expect(confirm).toContain('data-inbox-confirm')
     expect(confirm).toContain('No auto-send')
@@ -68,7 +67,6 @@ describe('Sprint 2 mobile inbox UI contract', () => {
     expect(css).toContain('.ops-chrome')
     expect(css).toContain('data-inbox-breakpoint="phone"')
     expect(page).toContain("fetch('/api/inbound/confirm-token'")
-    expect(page).toContain('Approve&Send required — never auto-sent')
   })
 
   it('does not ignore TypeScript build errors', () => {

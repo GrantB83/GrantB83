@@ -28,6 +28,7 @@ import { resolveContactPresence } from './contact-presence'
 import { ACCESS_CODE_PLACEHOLDER } from './access-codes-schema'
 import { CODE_MISSING_PLACEHOLDER } from './arrival-drafts-config'
 import { generateGuestToken, calculateTokenExpiry } from './token'
+import { scrubArrivalDraftSermon } from './scrub-arrival-sermon'
 import { getGuestPortalUrl } from './portal-url'
 import { propertyFacingDetails, resolveAccessCodesForSuite } from './property-resolve'
 import { addDaysIsoDate, bookingDateOnly, sastDateString } from './umi-sort'
@@ -193,6 +194,58 @@ async function templateStatusForStage(
   return { pending, names }
 }
 
+
+/**
+ * Clean any existing sermon text in arrival draft messages for this thread.
+ * One-shot idempotent scrub that runs on each draft upsert.
+ */
+async function scrubThreadSermonPreviews(db: DbClient, threadId: number): Promise<void> {
+  const existing = (await db
+    .prepare(
+      `SELECT id, message_text FROM inbound_messages 
+       WHERE thread_id = ? 
+       AND source_tag = 'arrival-scheduler' 
+       AND message_text LIKE '%Approve&Send required%'`
+    )
+    .all(threadId)) as Array<{ id: number; message_text: string }>
+
+  for (const row of existing) {
+    const cleaned = scrubArrivalDraftSermon(row.message_text)
+    if (cleaned !== row.message_text) {
+      await db
+        .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
+        .run(cleaned, row.id)
+    }
+  }
+}
+
+/**
+ * Global one-shot DB scrub: clean sermon text from ALL arrival draft messages.
+ * Idempotent bulk UPDATE across all matching inbound_messages rows.
+ * Runs from cron entrypoint to immediately clean Preview DB rows without waiting for per-thread upsert.
+ */
+async function scrubAllSermonPreviews(db: DbClient): Promise<number> {
+  const existing = (await db
+    .prepare(
+      `SELECT id, message_text FROM inbound_messages 
+       WHERE (source_tag = 'arrival-scheduler' OR message_text LIKE '%Approve&Send required%')
+       AND message_text LIKE '%Approve&Send required%'`
+    )
+    .all()) as Array<{ id: number; message_text: string }>
+
+  let scrubbedCount = 0
+  for (const row of existing) {
+    const cleaned = scrubArrivalDraftSermon(row.message_text)
+    if (cleaned !== row.message_text) {
+      await db
+        .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
+        .run(cleaned, row.id)
+      scrubbedCount++
+    }
+  }
+  return scrubbedCount
+}
+
 async function writeThreadDraft(
   db: DbClient,
   input: {
@@ -221,6 +274,9 @@ async function writeThreadDraft(
     source: 'arrival-scheduler',
     from,
   })
+
+  // Idempotent one-shot: scrub any existing sermon text in this thread's arrival drafts
+  await scrubThreadSermonPreviews(db, thread.id)
 
   if (input.existingMessageId) {
     await db
@@ -568,7 +624,7 @@ async function createOrRefreshStage(
     }
   }
 
-  const preview = `[Arrival draft ${stage.label}] Approve&Send required — never auto-sent.`
+  const preview = `Arrival draft ${stage.label}`
   const written = await writeThreadDraft(db, {
     tenantId,
     booking,
@@ -607,6 +663,13 @@ export async function runArrivalDraftsJob(
   const now = options.now ?? new Date()
   await ensureUmiSchema(db)
   await ensureArrivalDraftsSchema(db)
+
+  // Global one-shot: scrub any existing sermon text from ALL arrival draft previews
+  // Ensures Preview DB rows (Ilonka #47, Anneri #46) show clean labels immediately
+  const scrubbedCount = await scrubAllSermonPreviews(db)
+  if (scrubbedCount > 0) {
+    console.log(`[runArrivalDraftsJob] Scrubbed ${scrubbedCount} sermon preview(s)`)
+  }
 
   const todaySast = sastDateString(now)
   const hour = sastHour(now)
