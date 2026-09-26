@@ -106,6 +106,13 @@ function asNumber(value: unknown): number {
   return Number(value)
 }
 
+function readMessageText(message: { message_text?: unknown; body?: unknown }): string {
+  if (typeof message.message_text === 'string') return message.message_text
+  if (message.message_text != null) return String(message.message_text)
+  if (typeof message.body === 'string') return message.body
+  return ''
+}
+
 function parseJson(raw: string | null | undefined): Record<string, unknown> {
   if (!raw) return {}
   try {
@@ -1421,7 +1428,7 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       channel: message.channel || mapSourceToChannel(thread.source),
       sourceTag: message.source_tag,
       senderAddress: message.sender_address,
-      body: scrubArrivalDraftSermon(message.message_text),
+      body: scrubArrivalDraftSermon(readMessageText(message)),
       timestamp: message.message_timestamp,
       isSpam: Boolean(message.is_spam),
       draftReply: message.draft_reply || null,

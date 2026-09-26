@@ -150,7 +150,7 @@ function InboxHomePageInner() {
       }
       const params = new URLSearchParams({ filter })
       if (q.trim()) params.set('q', q.trim())
-      const response = await fetch(`/api/umi/inbox?${params.toString()}`)
+      const response = await fetch(`/api/umi/inbox?${params.toString()}`, { cache: 'no-store' })
       const data = await response.json()
       if (data.success) {
         setThreads(data.threads)
@@ -184,7 +184,7 @@ function InboxHomePageInner() {
       if (fixture) applyDetail(fixture)
       return
     }
-    const response = await fetch(`/api/umi/threads/${id}`)
+    const response = await fetch(`/api/umi/threads/${id}`, { cache: 'no-store' })
     const data = await response.json()
     if (data.success) {
       applyDetail(data.thread)

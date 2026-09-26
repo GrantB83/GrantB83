@@ -362,18 +362,61 @@ function createSqliteClient(): DbClient {
   }
 }
 
+/**
+ * Next.js patches global fetch and can cache @libsql/client HTTP pipeline
+ * POSTs (same URL + SQL body). Staff GET then keeps serving sentinel
+ * message_text after Turso UPDATEs that a box-token client already sees.
+ */
+export function noStoreFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  return fetch(input, { ...init, cache: 'no-store' })
+}
+
+/** Call-site params win so a leftover bind() cannot pin a stale thread id. */
+export function resolveExecuteArgs(boundArgs: unknown[], params: unknown[]): unknown[] {
+  return params.length > 0 ? params : boundArgs
+}
+
+/** Flatten libsql Row (array-like + getters) to a plain column map. */
+export function libsqlRowToPlain(row: unknown, columns: string[] = []): Record<string, unknown> {
+  if (!row || typeof row !== 'object') return {}
+  const record = row as Record<string, unknown> & { length?: number }
+  const out: Record<string, unknown> = {}
+  if (columns.length > 0) {
+    for (let i = 0; i < columns.length; i++) {
+      const name = columns[i]
+      const named = record[name]
+      out[name] = named !== undefined ? named : (row as ArrayLike<unknown>)[i]
+    }
+    return out
+  }
+  if (Array.isArray(row)) return out
+  for (const key of Object.keys(record)) {
+    if (key === 'length' || /^\d+$/.test(key)) continue
+    out[key] = record[key]
+  }
+  return out
+}
+
+export function libsqlRowsToPlain(
+  result: { columns?: string[]; rows?: unknown[] }
+): Record<string, unknown>[] {
+  const columns = result.columns || []
+  return (result.rows || []).map((row) => libsqlRowToPlain(row, columns))
+}
+
 function createTursoClient(url: string, authToken: string): DbClient {
   const tursoClient = createClient({
     url,
     authToken,
-  })
+    fetch: noStoreFetch,
+  } as Parameters<typeof createClient>[0])
 
   return {
     prepare: (sql: string) => {
       let boundArgs: any[] = []
       const statement: DbStatement = {
         run: async (...params: any[]) => {
-          const args = boundArgs.length > 0 ? boundArgs : params
+          const args = resolveExecuteArgs(boundArgs, params)
           const result = await tursoClient.execute({ sql, args })
           return {
             changes: result.rowsAffected,
@@ -381,14 +424,15 @@ function createTursoClient(url: string, authToken: string): DbClient {
           }
         },
         get: async (...params: any[]) => {
-          const args = boundArgs.length > 0 ? boundArgs : params
+          const args = resolveExecuteArgs(boundArgs, params)
           const result = await tursoClient.execute({ sql, args })
-          return result.rows[0] as any
+          const rows = libsqlRowsToPlain(result)
+          return rows[0] as any
         },
         all: async (...params: any[]) => {
-          const args = boundArgs.length > 0 ? boundArgs : params
+          const args = resolveExecuteArgs(boundArgs, params)
           const result = await tursoClient.execute({ sql, args })
-          return result.rows as any[]
+          return libsqlRowsToPlain(result) as any[]
         },
         bind: (...params: any[]) => {
           boundArgs = params

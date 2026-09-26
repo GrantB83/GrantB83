@@ -61,6 +61,39 @@ export interface IngestResult {
   skipReason?: string
 }
 
+function parseMetadataObject(raw: unknown): Record<string, unknown> {
+  if (!raw) return {}
+  if (typeof raw === 'object' && !Array.isArray(raw)) return { ...(raw as Record<string, unknown>) }
+  try {
+    const parsed = JSON.parse(String(raw))
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {}
+  } catch {
+    return {}
+  }
+}
+
+/** Persist metadataOnly=false when a sentinel is replaced with a real body. */
+export async function clearMetadataOnlyFlag(
+  db: DbClient,
+  table: 'inbound_messages' | 'inbound_threads',
+  id: number
+): Promise<void> {
+  try {
+    const row = (await db.prepare(`SELECT metadata FROM ${table} WHERE id = ?`).get(id)) as
+      | { metadata?: unknown }
+      | undefined
+    if (!row || row.metadata === undefined) return
+    const metadata = parseMetadataObject(row.metadata)
+    if (metadata.metadataOnly === false) return
+    metadata.metadataOnly = false
+    await db.prepare(`UPDATE ${table} SET metadata = ? WHERE id = ?`).run(JSON.stringify(metadata), id)
+  } catch {
+    // metadata column may be missing on older fixtures
+  }
+}
+
 function emailTaggedBody(payload: IngestPayload): { text: string; sourceTag?: string; senderAddress?: string } {
   const channel = mapSourceToChannel(payload.source)
   if (channel !== 'email') {
@@ -155,6 +188,7 @@ export async function ingestInboundMessage(
            WHERE id = ?`
         )
         .run(storedText, realDedupKey, payload.externalMessageId || null, sentinel.id)
+      await clearMetadataOnlyFlag(db, 'inbound_messages', sentinel.id)
       await db
         .prepare(
           `UPDATE inbound_threads
@@ -167,6 +201,7 @@ export async function ingestInboundMessage(
            WHERE id = ?`
         )
         .run(payload.timestamp, payload.timestamp, channel, channel, sentinel.thread_id)
+      await clearMetadataOnlyFlag(db, 'inbound_threads', sentinel.thread_id)
       if (displayName) {
         await applySourceDisplayName(db, sentinel.thread_id, displayName, payload.from)
       }
