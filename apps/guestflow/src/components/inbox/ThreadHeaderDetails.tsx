@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import type { InboxBreakpoint } from './inbox-types'
+import { PORTAL_CLOCK_FIXTURE_PATHS } from '@/lib/portal-clock-fixture'
 
 interface ThreadHeaderDetailsProps {
   /** Whether the sheet is visible */
@@ -25,6 +26,9 @@ interface ThreadHeaderDetailsProps {
 
   /** Breakpoint for responsive layout */
   breakpoint: InboxBreakpoint
+
+  /** Fixture inbox: show documented portal clock paths for QA steps 7–9 */
+  showPortalClocks?: boolean
 }
 
 export function ThreadHeaderDetails({
@@ -35,6 +39,7 @@ export function ThreadHeaderDetails({
   initialEmail = '',
   onSaved,
   breakpoint,
+  showPortalClocks = false,
 }: ThreadHeaderDetailsProps) {
   const [phone, setPhone] = useState(initialPhone)
   const [email, setEmail] = useState(initialEmail)
@@ -189,6 +194,29 @@ export function ThreadHeaderDetails({
               <p className="text-sm text-red-600">
                 {error}
               </p>
+            )}
+
+            {showPortalClocks && (
+              <div className="pt-2 border-t border-slate-200 space-y-1">
+                <p className="text-sm font-medium text-slate-700">Guest portal clocks</p>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']}>
+                      Pre-window {PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']}
+                    </a>
+                  </li>
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-in']}>
+                      In-window {PORTAL_CLOCK_FIXTURE_PATHS['fixture-in']}
+                    </a>
+                  </li>
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-post']}>
+                      Post-departure {PORTAL_CLOCK_FIXTURE_PATHS['fixture-post']}
+                    </a>
+                  </li>
+                </ul>
+              </div>
             )}
           </div>
 

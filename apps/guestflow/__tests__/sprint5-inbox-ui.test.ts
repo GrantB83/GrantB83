@@ -46,6 +46,8 @@ describe('Sprint 5 inbox UI contract', () => {
 describe('Sprint 5 portal contract', () => {
   const route = read('../src/app/api/guest-portal/[code]/route.ts')
   const portal = read('../src/app/guest/[code]/page.tsx')
+  const fixture = read('../src/components/inbox/inbox-fixture.ts')
+  const details = read('../src/components/inbox/ThreadHeaderDetails.tsx')
 
   it('keeps mapping-gap language off the guest-facing security message', () => {
     expect(route).toContain('message: security.message')
@@ -54,5 +56,15 @@ describe('Sprint 5 portal contract', () => {
     expect(portal).toContain('stayPacket.wifi.password ? (')
     expect(portal).toContain('Local information')
     expect(portal).toContain('Access codes appear on check-in day from 14:00.')
+  })
+
+  it('keeps staff fixture copy sermon-free and exposes portal clock paths', () => {
+    expect(fixture).not.toContain('Approve&Send still required')
+    expect(fixture).not.toContain('Approve&Send required')
+    expect(fixture).not.toContain('very-long-example.invalid')
+    expect(fixture).toContain('wifi details are in the guest portal')
+    expect(route).toContain('isPortalClockFixtureCode')
+    expect(details).toContain('Guest portal clocks')
+    expect(details).toContain("PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']")
   })
 })

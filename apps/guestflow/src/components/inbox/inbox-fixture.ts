@@ -1,7 +1,7 @@
 import type { InboxThread, ThreadDetail } from './inbox-types'
+import { PORTAL_CLOCK_FIXTURE_PATHS } from '@/lib/portal-clock-fixture'
 
-const LONG_URL =
-  'https://very-long-example.invalid/guest-portal/access?token=abcdefghijklmnopqrstuvwxyz0123456789'
+const GUEST_WIFI_DRAFT = 'Hi Alex — wifi details are in the guest portal.'
 
 export const FIXTURE_THREADS: InboxThread[] = [
   {
@@ -16,7 +16,7 @@ export const FIXTURE_THREADS: InboxThread[] = [
     lastChannel: 'whatsapp_web',
     lastInboundChannel: 'whatsapp_web',
     lastMessageAt: '2026-09-24T16:10:00.000Z',
-    preview: `Please confirm wifi ${LONG_URL}`,
+    preview: GUEST_WIFI_DRAFT,
     pendingReply: true,
     hasOpenDraft: true,
     needsAttention: true,
@@ -83,7 +83,7 @@ export const FIXTURE_DETAILS: Record<number, ThreadDetail> = {
     status: 'open',
     hygieneStatus: null,
     openDraft: {
-      text: 'Hi Alex — wifi details are in the guest portal. Approve&Send still required.',
+      text: GUEST_WIFI_DRAFT,
       source: 'heuristic',
       kind: 'reply',
     },
@@ -93,7 +93,7 @@ export const FIXTURE_DETAILS: Record<number, ThreadDetail> = {
         id: 11,
         direction: 'inbound',
         channel: 'whatsapp_web',
-        body: `Hi, please confirm wifi for Cottage A: ${LONG_URL}`,
+        body: `Please confirm wifi for Cottage A. Portal: ${PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']}`,
         timestamp: '2026-09-24T16:10:00.000Z',
         isSpam: false,
       },
@@ -110,11 +110,11 @@ export const FIXTURE_DETAILS: Record<number, ThreadDetail> = {
         id: 13,
         direction: 'outbound',
         channel: 'whatsapp',
-        body: 'Hi Alex — wifi details are in the guest portal. Approve&Send still required.',
+        body: GUEST_WIFI_DRAFT,
         timestamp: '2026-09-24T16:12:00.000Z',
         isSpam: false,
         deliveryStatus: 'pending',
-        draftReply: 'Hi Alex — wifi details are in the guest portal. Approve&Send still required.',
+        draftReply: GUEST_WIFI_DRAFT,
         status: 'drafted',
       },
     ],

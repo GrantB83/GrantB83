@@ -37,12 +37,20 @@ Staff can triage a lean inbox and reply in a WhatsApp-style thread without clipp
 
 ```bash
 cd apps/guestflow
-npx vitest run src/lib/__tests__/portal-security.test.ts src/lib/__tests__/header-chips.test.ts src/lib/__tests__/room-catalog.test.ts src/lib/__tests__/journey-config.test.ts src/lib/__tests__/arrival-drafts.test.ts __tests__/sprint5-inbox-ui.test.ts
+npx vitest run src/lib/__tests__/portal-security.test.ts src/lib/__tests__/header-chips.test.ts src/lib/__tests__/room-catalog.test.ts src/lib/__tests__/journey-config.test.ts src/lib/__tests__/arrival-drafts.test.ts src/lib/__tests__/portal-clock-fixture.test.ts __tests__/sprint5-inbox-ui.test.ts
 npx tsc --noEmit
 ```
 
 Inbox: open Preview `/?fixture=1` then a live `/?thread=`.  
-Portal: open a guest token before 14:00 arrival, after 14:00, and after 12:00 departure.
+Portal clock fixtures (no Turso token; no invented codes/password). Preview host `https://browns-guestflow-git-cursor-gue-2909b8-grants-projects-db46fb3a.vercel.app`:
+
+| Clock | Path | Expect |
+|-------|------|--------|
+| Step 7 pre-window | `/guest/fixture-pre` | Rooms + thebrowns.co.za link + local info; “Access codes appear on check-in day from 14:00.”; no SSID password |
+| Step 8 in-window | `/guest/fixture-in` | SSID **The Browns Guests**; password row hidden (none stored); no invented gate/lockbox |
+| Step 9 post-departure | `/guest/fixture-post` | Security rescinded copy; no password |
+
+Same paths are listed under fixture Details → Guest portal clocks. Guest-facing draft may say wifi is in the portal; staff list/transcript must not say Approve&Send/Redirect.
 
 ## Design GFM ACCEPT checklist (from SoR)
 
@@ -78,9 +86,9 @@ Portal: open a guest token before 14:00 arrival, after 14:00, and after 12:00 de
 | 4 | Confirm Approve & Send + Cancel | Fully clickable, ≥12px above taskbar |
 | 5 | Open Details | Guest phone/email; Save persists; nothing sent |
 | 6 | Phone ~390 | List OR thread; composer usable |
-| 7 | Portal pre-window | Rooms + thebrowns link + local info; copy that codes appear check-in day; no password |
-| 8 | Portal in-window | SSID The Browns Guests; codes only if SoR has them |
-| 9 | Portal post 12:00 departure | Security gone |
+| 7 | Portal pre-window `/guest/fixture-pre` | Rooms + thebrowns link + local info; copy that codes appear check-in day; no password |
+| 8 | Portal in-window `/guest/fixture-in` | SSID The Browns Guests; codes only if SoR has them (fixture: none) |
+| 9 | Portal post 12:00 departure `/guest/fixture-post` | Security gone |
 | 10 | Window-closed / unmatched | Composer still usable; templates icon for WA |
 
 ## Staff-copy bar

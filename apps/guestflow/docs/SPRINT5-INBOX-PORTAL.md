@@ -2,7 +2,7 @@
 
 **Ritual removed**: Chip-rainbow triage, Template&Care split composer that hid Approve&Send under the Windows taskbar, Staff-mislabelled guest contacts, and sending guests to thebrowns.co.za/checkin + /info for codes that were never in those PDFs.
 
-**Artefact this week**: Preview `/?fixture=1` plus a live thread; Guest Portal link on a booking.
+**Artefact this week**: Preview `/?fixture=1` plus a live thread; Guest Portal clock fixtures `/guest/fixture-pre`, `/guest/fixture-in`, `/guest/fixture-post`.
 
 ## Staff inbox
 

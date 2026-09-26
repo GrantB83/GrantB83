@@ -767,6 +767,7 @@ function InboxHomePageInner() {
             if (selectedId) loadThread(selectedId)
           }}
           breakpoint={ready ? breakpoint : 'desktop'}
+          showPortalClocks={useFixture}
         />
       )}
     </>

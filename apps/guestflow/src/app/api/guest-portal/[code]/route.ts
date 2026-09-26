@@ -8,6 +8,7 @@ import {
   portalSecurityCopy,
 } from '@/lib/portal-security'
 import { roomDisplay } from '@/lib/room-catalog'
+import { buildPortalClockFixture, isPortalClockFixtureCode } from '@/lib/portal-clock-fixture'
 
 /**
  * Guest portal access via magic token
@@ -25,6 +26,10 @@ export async function GET(
         { error: 'Access token is required' },
         { status: 400 }
       )
+    }
+
+    if (isPortalClockFixtureCode(token)) {
+      return NextResponse.json(buildPortalClockFixture(token))
     }
 
     const db = await getDbAsync()
