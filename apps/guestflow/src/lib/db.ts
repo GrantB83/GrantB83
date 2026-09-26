@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3'
 import { createClient } from '@libsql/client'
-import type { Client } from '@libsql/client'
+import type { InArgs } from '@libsql/client'
 import path from 'path'
 import fs from 'fs'
 
@@ -372,8 +372,8 @@ export function noStoreFetch(input: RequestInfo | URL, init?: RequestInit): Prom
 }
 
 /** Call-site params win so a leftover bind() cannot pin a stale thread id. */
-export function resolveExecuteArgs(boundArgs: unknown[], params: unknown[]): unknown[] {
-  return params.length > 0 ? params : boundArgs
+export function resolveExecuteArgs(boundArgs: unknown[], params: unknown[]): InArgs {
+  return (params.length > 0 ? params : boundArgs) as InArgs
 }
 
 /** Flatten libsql Row (array-like + getters) to a plain column map. */
