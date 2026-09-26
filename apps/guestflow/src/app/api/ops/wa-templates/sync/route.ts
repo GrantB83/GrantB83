@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
-import { syncTemplateApprovalsReadonly } from '@/lib/wa-templates'
+import { syncTemplateApprovalsReadonly } from '@/lib/wa-templates-twilio-sync'
 
 export const dynamic = 'force-dynamic'
 
