@@ -52,8 +52,11 @@ Fail-closed on Preview tip:
 
 **#3 Tooltips**
 - [ ] Hover **and** focus show: Send channel / Templates / Attach file / Expand editor
+- [ ] Attach title/tooltip is exactly **Attach file** (NeedsGrant / no-upload stays on the disabled control, not in the tooltip)
 - [ ] No mystery icons on those four controls
 - [ ] Copy ≤ ~3 words each
+
+GFM remedia 26 Sep: attach hover had concatenated `Attach file — NeedsGrant — no upload source of record`. Tooltip/title/accessible name now stay **Attach file** only.
 
 **#4 List chrome**
 - [ ] Denser list header; more threads above fold vs evidence `03` (desktop ~1280×800)
@@ -76,7 +79,7 @@ Run after Preview tip READY. MERGE HOLD until GFM ACCEPT.
 | Q4 | `GET /api/umi/wa-web/sentinels` includes thread **46** (or documented residual). last4/bookerName only. | [ ] |
 | Q5 | Open `/?thread=46`. If sentinels remain, Refresh bodies → next action, **no invented text**. After CoS/Ship B one-shot, read real WA Web wording; Filtered cleared if booking-linked (msgs 248/252 class). | [ ] |
 | Q6 | Composer: type draft, Expand editor, edit, Esc — identical draft/channel/template. Approve&Send visible in overlay. Do not send on Prod unless sinks. | [ ] |
-| Q7 | Hover + keyboard focus: Send channel, Templates, Attach file, Expand editor. | [ ] |
+| Q7 | Hover + keyboard focus: Send channel, Templates, **Attach file** only (no NeedsGrant essay), Expand editor. | [ ] |
 | Q8 | List header two compact rows; type in search; **S** clear of glass; Needs attention works. | [ ] |
 | Q9 | Phone ~390: pop-out is a sheet; list denser; inbox usable. | [ ] |
 | Q10 | Redirect ON. No auto-send. From +27600200825. | [ ] |
@@ -100,4 +103,5 @@ Preview (tip READY):
 
 - Ship B persist path remains `POST /api/umi/backfill/wa-web` (secret) and staff `POST /api/umi/threads/:id/refresh-bodies`.
 - Residual scrolled-off WhatsApp Web history is acceptable when documented.
+- Attach stays disabled (no upload SoR). Hover/title/aria-label remain **Attach file** only — NeedsGrant is not in the tooltip.
 - Do **not** merge this PR until GFM Preview ACCEPT.
