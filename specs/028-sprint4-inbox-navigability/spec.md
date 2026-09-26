@@ -8,6 +8,38 @@
 
 **Input**: User description: "Sprint 4 items 1 + 2 for GuestFlow (`apps/guestflow`): Inbox navigability (compact thread header, compact composer, transcript as primary scroll) and remove yellow Redirect strip visual banner while keeping redirect behavior unchanged."
 
+## Operator Jobs & Acceptance Criteria *(mandatory)*
+
+### Item 1: Inbox Navigability
+
+**Operator Job**: Staff on desktop (~1280) and phone (~390) can triage from the list, open a thread, read the transcript as the primary surface, and reply via channel+draft+Approve&Send without the header/contact Save or composer eating the chat (compact header ~1–2 lines; contact edit in Details/modal; template/care disclosed; #235 floors kept).
+
+**Proxy ACs**:
+- Desktop ~1280×800: message transcript ≥50% of thread column height
+- Thread header height ≤120px collapsed
+- Composer ≤35% collapsed, ≤50% expanded (existing #235 floor maintained)
+- Phone ~390×844: single pane (list OR thread), Back restores list scroll
+- Contact editing accessible ≤2 clicks from thread view
+- TypeScript compilation clean (`tsc --noEmit`)
+- Existing layout tests pass with updated assertions
+
+**Operator-Job AC**: Staff can fluently triage → read → reply on desktop and phone. Transcript is primary scroll surface. Header/composer compact enough that reading messages doesn't require constant scrolling away from context. Contact editing reachable without blocking chat. Daily workflow feels fluid, not cramped.
+
+### Item 2: Remove Yellow Redirect Strip
+
+**Operator Job**: Staff see no gold/yellow Redirect ON banner above the navy sticky ops header on desktop and phone; redirect **behavior** remains ON (OUTBOUND_MODE/sinks unchanged); sticky navy header still works.
+
+**Proxy ACs**:
+- Gold/yellow Redirect banner not visible (0 banner elements in DOM)
+- Navy sticky ops header present and functional
+- OUTBOUND_MODE environment variable still "redirect"
+- Redirect sinks unchanged (test email/WhatsApp destinations)
+- `useInboxChromeOffset` correctly calculates offset without banner
+
+**Operator-Job AC**: Staff open inbox on desktop and phone, see clean navy header without gold banner above it. Ops nav (Inbox/Arrivals/Bookings/Ops/Logout) accessible. Redirect behavior confirmed ON via health check or actual Approve&Send (goes to test sink). No visual clutter from removed banner.
+
+---
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Staff reads guest message history without vertical scrolling wars (Priority: P1)

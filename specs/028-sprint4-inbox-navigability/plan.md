@@ -10,6 +10,35 @@
 
 Improve GuestFlow inbox navigability by compacting the thread header (moving contact editors to Details/Edit modal), collapsing the composer (template/care behind disclosure), and making the message transcript the primary scroll surface. Remove the gold/yellow "Redirect ON" visual banner above the navy ops header while preserving redirect behavior. Maintains existing phone navigation (Back + scroll restore), desktop two-pane layout, and all standing locks (redirect sinks, WhatsApp From, no auto-send).
 
+## Operator Jobs & Acceptance Criteria (CoS DoD)
+
+### Item 1: Inbox Navigability
+
+**Operator Job**: Staff on desktop (~1280) and phone (~390) can triage from the list, open a thread, read the transcript as the primary surface, and reply via channel+draft+Approve&Send without the header/contact Save or composer eating the chat (compact header ~1–2 lines; contact edit in Details/modal; template/care disclosed; #235 floors kept).
+
+**Proxy ACs**:
+- Desktop ~1280×800: message transcript ≥50% of thread column height
+- Thread header height ≤120px collapsed
+- Composer ≤35% collapsed, ≤50% expanded
+- Phone ~390×844: single pane, Back restores list scroll
+- Contact editing accessible ≤2 clicks
+- TypeScript clean, layout tests pass
+
+**Operator-Job AC**: Staff can fluently triage → read → reply on desktop and phone. Transcript is primary scroll. Header/composer compact enough for fluid daily workflow.
+
+### Item 2: Remove Yellow Redirect Strip
+
+**Operator Job**: Staff see no gold/yellow Redirect ON banner above the navy sticky ops header on desktop and phone; redirect behavior remains ON (OUTBOUND_MODE/sinks unchanged); sticky navy header still works.
+
+**Proxy ACs**:
+- Banner not visible (0 DOM elements)
+- Navy header present and functional
+- OUTBOUND_MODE="redirect"
+- Redirect sinks unchanged
+- useInboxChromeOffset correct
+
+**Operator-Job AC**: Staff see clean navy header without gold banner. Ops nav accessible. Redirect confirmed ON via health check or test send.
+
 ## Technical Context
 
 **Language/Version**: TypeScript 5.5 + React 18.3 + Next.js 14.2
