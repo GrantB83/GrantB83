@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
   Link2,
   MessageSquare,
   RefreshCw,
@@ -89,6 +91,7 @@ function InboxHomePageInner() {
   )
   const [listCollapsed, setListCollapsed] = useState(false)
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
+  const [composerDisclosureExpanded, setComposerDisclosureExpanded] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
 
@@ -774,7 +777,20 @@ function InboxHomePageInner() {
               </button>
             ))}
           </div>
-          {forceTemplateMode && (
+          {/* Template & Care disclosure - Sprint 4 US3 */}
+          <button
+            type="button"
+            onClick={() => setComposerDisclosureExpanded(!composerDisclosureExpanded)}
+            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1 rounded hover:bg-slate-50"
+          >
+            {composerDisclosureExpanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            Template & Care
+          </button>
+          {composerDisclosureExpanded && forceTemplateMode && (
             <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
               <p className="text-base font-medium text-slate-800">Template mode</p>
               <p className="text-base text-slate-600 inbox-wrap">
