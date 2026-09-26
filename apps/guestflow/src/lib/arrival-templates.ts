@@ -11,6 +11,8 @@ import {
   type ArrivalStageId,
 } from './arrival-drafts-config'
 import { CODES_UNRESOLVED_REASON } from './booking-filters'
+import { GRANT_REVIEW_URL } from './wa-templates-seed'
+import { REVIEW_URL_NEEDS_GRANT, type JourneyStageId } from './journey-config'
 
 const ARRIVAL_DRAFT_BODIES: Record<
   string,
@@ -47,8 +49,36 @@ Housekeepers at 279 Blue Crane Drive can show you in until 17:00. After 17:00 us
 Check-in: {{check_in_time}}
 Directions / portal: {{portal_url}}
 
-Please reply if you are running late.`,
+Codes appear on the guest portal from 14:00. Please reply if you are running late.`,
     variables: ['suite', 'check_in_time', 'portal_url'],
+  },
+  official_channel_notice: {
+    body: `Hi {{guest_first_name}}, this is the official WhatsApp for The Browns (+27600200825). Please save this number and reply here if you need anything about your stay.`,
+    variables: ['guest_first_name'],
+  },
+  browns_mid_stay_checkin: {
+    body: `Hi {{guest_first_name}}, we hope you are comfortable at {{suite}}. Reply here if you need anything — extra towels, local tips, or a housekeeping note.`,
+    variables: ['guest_first_name', 'suite'],
+  },
+  browns_checkout_reminder: {
+    body: `Hi {{guest_first_name}}, a reminder that check-out is by 10:00 on {{check_out}}. Thank you for staying — travel safely.`,
+    variables: ['guest_first_name', 'check_out'],
+  },
+  browns_review_request: {
+    body: `Hi {{guest_first_name}}, thank you for staying at The Browns. If you enjoyed your stay you can leave a review here: {{review_url}}`,
+    variables: ['guest_first_name', 'review_url'],
+  },
+  gate_email: {
+    body: `Hi {{guest_name}},
+
+Thank you for booking {{suite}} ({{check_in}} to {{check_out}}).
+
+This is The Browns stay desk. Our official WhatsApp is +27600200825 — please save it. Reply to this email or WhatsApp to confirm the best number and email for this stay, and tell us your preferred channel.
+
+Your guest portal (directions, room, local info) will open after you confirm contact details. Access codes appear on the portal from 14:00 on arrival day.
+
+The Browns`,
+    variables: ['guest_name', 'suite', 'check_in', 'check_out'],
   },
 }
 
@@ -126,9 +156,10 @@ export function replaceAccessCodesBlock(body: string, nextBlock: string): string
 }
 
 export function fillArrivalStageBody(
-  stage: ArrivalStageId,
+  stage: ArrivalStageId | JourneyStageId,
   fields: ArrivalFillFields
 ): { body: string; templateName: string } {
+  const reviewUrl = GRANT_REVIEW_URL || REVIEW_URL_NEEDS_GRANT
   const vars: Record<string, string> = {
     guest_first_name: guestFirstName(fields.guestName),
     guest_name: fields.guestName,
@@ -139,15 +170,27 @@ export function fillArrivalStageBody(
     directions: fields.directions || fields.portalUrl || 'see your guest portal',
     check_in_time: CHECK_IN_TIME_LINE,
     access_codes_block: fields.accessCodesBlock,
+    review_url: reviewUrl,
   }
 
-  if (stage === 't-3') {
+  if (stage === '4a_email') {
+    return {
+      templateName: 'gate_email',
+      body: fillNamedTemplate(templateBody('gate_email'), vars),
+    }
+  }
+  if (stage === '4a_wa') {
+    return {
+      templateName: 'official_channel_notice',
+      body: fillNamedTemplate(templateBody('official_channel_notice'), vars),
+    }
+  }
+  if (stage === '4b' || stage === 't-3') {
     return {
       templateName: 'browns_pre_arrival_welcome',
       body: fillNamedTemplate(templateBody('browns_pre_arrival_welcome'), vars),
     }
   }
-
   if (stage === 't-1') {
     const body = [
       fillNamedTemplate(templateBody('browns_checkin_instructions'), vars),
@@ -156,6 +199,24 @@ export function fillArrivalStageBody(
       .filter(Boolean)
       .join('\n\n')
     return { templateName: 'browns_checkin_instructions+browns_access_codes', body }
+  }
+  if (stage === '4d') {
+    return {
+      templateName: 'browns_mid_stay_checkin',
+      body: fillNamedTemplate(templateBody('browns_mid_stay_checkin'), vars),
+    }
+  }
+  if (stage === '4e') {
+    return {
+      templateName: 'browns_checkout_reminder',
+      body: fillNamedTemplate(templateBody('browns_checkout_reminder'), vars),
+    }
+  }
+  if (stage === '4g') {
+    return {
+      templateName: 'browns_review_request',
+      body: fillNamedTemplate(templateBody('browns_review_request'), vars),
+    }
   }
 
   return {

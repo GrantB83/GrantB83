@@ -14,10 +14,10 @@ interface ThreadHeaderDetailsProps {
   /** Thread ID for save operations */
   threadId: number
 
-  /** Current staff phone value */
+  /** Current guest phone value */
   initialPhone?: string
 
-  /** Current staff email value */
+  /** Current guest email value */
   initialEmail?: string
 
   /** Callback when contact saved successfully */
@@ -81,8 +81,8 @@ export function ThreadHeaderDetails({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          staffPhone: phone || null,
-          staffEmail: email || null,
+          phone: phone || null,
+          email: email || null,
         }),
       })
 
@@ -144,13 +144,13 @@ export function ThreadHeaderDetails({
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="staff-phone"
+                htmlFor="guest-phone"
                 className="block text-sm font-medium text-slate-700 mb-1"
               >
-                Staff phone
+                Guest phone
               </label>
               <input
-                id="staff-phone"
+                id="guest-phone"
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -161,13 +161,13 @@ export function ThreadHeaderDetails({
 
             <div>
               <label
-                htmlFor="staff-email"
+                htmlFor="guest-email"
                 className="block text-sm font-medium text-slate-700 mb-1"
               >
-                Staff email
+                Guest email
               </label>
               <input
-                id="staff-email"
+                id="guest-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

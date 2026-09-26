@@ -19,6 +19,7 @@ const T3_NOW = new Date('2026-09-24T04:00:00.000Z') // 06:00 SAST 24 Sep
 const BEFORE_HOUR = new Date('2026-09-23T22:00:00.000Z') // 00:00 SAST 24 Sep
 const T1_NOW = new Date('2026-09-26T04:00:00.000Z') // 06:00 SAST 26 Sep
 const DAY_OF_NOW = new Date('2026-09-27T04:00:00.000Z') // 06:00 SAST 27 Sep
+const DAY_OF_08 = new Date('2026-09-27T06:00:00.000Z') // 08:00 SAST 27 Sep
 
 function wrapDb(sqlite: Database.Database) {
   return {
@@ -173,12 +174,22 @@ function seedLockbox(sqlite: Database.Database, suite = 'Falcon', property = 'co
 }
 
 describe('arrival draft timing', () => {
-  it('maps T-3 / T-1 / day-of due dates from check-in', () => {
-    expect(stageDueDate('2026-09-27', -3)).toBe('2026-09-24')
-    expect(dueStagesForCheckIn('2026-09-27', '2026-09-24')).toEqual(['t-3'])
-    expect(dueStagesForCheckIn('2026-09-27', '2026-09-26')).toEqual(['t-1'])
-    expect(dueStagesForCheckIn('2026-09-27', '2026-09-27')).toEqual(['day-of'])
-    expect(dueStagesForCheckIn('2026-09-27', '2026-09-25')).toEqual([])
+  it('maps 4a gate plus calendar stages from stay dates', () => {
+    expect(stageDueDate('2026-09-27', -7)).toBe('2026-09-20')
+    expect(dueStagesForCheckIn('2026-09-27', '2026-09-24', '2026-09-29', 6)).toEqual([
+      '4a_email',
+      '4a_wa',
+    ])
+    expect(dueStagesForCheckIn('2026-09-27', '2026-09-27', '2026-09-29', 8)).toEqual([
+      '4a_email',
+      '4a_wa',
+      '4c',
+    ])
+    expect(dueStagesForCheckIn('2026-09-27', '2026-09-20', '2026-09-29', 8)).toEqual([
+      '4a_email',
+      '4a_wa',
+      '4b',
+    ])
   })
 
   it('uses Johannesburg midnight, not UTC date', () => {
@@ -215,36 +226,32 @@ describe('runArrivalDraftsJob', () => {
     })
   })
 
-  it('creates T-3 / T-1 / Day-of drafts and is idempotent', async () => {
+  it('creates 4a gate drafts and is idempotent; 4c waits for 08:00 SAST', async () => {
     insertBooking(sqlite, { id: 10, checkIn: '2026-09-27', suite: 'Falcon' })
     insertBooking(sqlite, { id: 11, checkIn: '2026-09-27', name: 'Bea', phone: '+27820000011' })
     seedLockbox(sqlite)
 
     const first = await runArrivalDraftsJob(db, { now: T3_NOW })
     expect(first.created).toBe(2)
-    expect(first.skipped).toBe(0)
     const second = await runArrivalDraftsJob(db, { now: T3_NOW })
     expect(second.created).toBe(0)
-    expect(second.skipped).toBe(2)
 
-    const t1 = await runArrivalDraftsJob(db, { now: T1_NOW })
-    expect(t1.created).toBe(2)
-    const day = await runArrivalDraftsJob(db, { now: DAY_OF_NOW })
+    const dayTooEarly = await runArrivalDraftsJob(db, { now: DAY_OF_NOW })
+    expect(dayTooEarly.created).toBe(0)
+    const day = await runArrivalDraftsJob(db, { now: DAY_OF_08 })
     expect(day.created).toBe(2)
 
     const stages = sqlite
       .prepare('SELECT booking_id, stage FROM arrival_drafts ORDER BY booking_id, stage')
       .all() as Array<{ booking_id: number; stage: string }>
-    expect(stages).toHaveLength(6)
-    expect(new Set(stages.map((row) => `${row.booking_id}:${row.stage}`)).size).toBe(6)
+    expect(new Set(stages.map((row) => `${row.booking_id}:${row.stage}`)).size).toBe(4)
 
-    const welcome = sqlite
-      .prepare(`SELECT draft_body, stage_label FROM arrival_drafts WHERE booking_id = 10 AND stage = 't-3'`)
+    const gate = sqlite
+      .prepare(`SELECT draft_body, stage_label FROM arrival_drafts WHERE booking_id = 10 AND stage = '4a_wa'`)
       .get() as { draft_body: string; stage_label: string }
-    expect(welcome.stage_label).toBe('T-3')
-    expect(welcome.draft_body).toMatch(/27 Sept? 2026/)
-    expect(welcome.draft_body).toMatch(/Falcon/)
-    expect(welcome.draft_body).toMatch(/estimated arrival/i)
+    expect(gate.stage_label).toBe('Gate WA')
+    expect(gate.draft_body).toMatch(/official WhatsApp/i)
+    expect(gate.draft_body).toMatch(/\+27600200825/)
   })
 
   it('skips cancelled and BLOCK; late bookings only get stages still due', async () => {
@@ -257,22 +264,19 @@ describe('runArrivalDraftsJob', () => {
     expect(rows.map((row) => row.booking_id)).toEqual([1])
 
     const late = await runArrivalDraftsJob(db, { now: T1_NOW })
-    expect(late.created).toBe(1)
+    expect(late.created).toBe(0)
     const stages = sqlite
       .prepare('SELECT stage FROM arrival_drafts WHERE booking_id = 1 ORDER BY stage')
       .all() as Array<{ stage: string }>
-    expect(stages.map((row) => row.stage)).toEqual(['t-1', 't-3'])
-    expect(
-      sqlite.prepare(`SELECT COUNT(*) as c FROM arrival_drafts WHERE booking_id = 1 AND stage = 't-3'`).get()
-    ).toEqual({ c: 1 })
+    expect(stages.map((row) => row.stage)).toEqual(['4a_wa'])
   })
 
-  it('does not backfill T-3 when the booking first appears on T-1 day', async () => {
+  it('still writes 4a when the booking first appears mid-horizon', async () => {
     insertBooking(sqlite, { id: 5, checkIn: '2026-09-27' })
     const result = await runArrivalDraftsJob(db, { now: T1_NOW })
     expect(result.created).toBe(1)
     const stages = sqlite.prepare('SELECT stage FROM arrival_drafts').all() as Array<{ stage: string }>
-    expect(stages).toEqual([{ stage: 't-1' }])
+    expect(stages).toEqual([{ stage: '4a_wa' }])
   })
 
   it('discards unsent drafts when the booking is cancelled', async () => {
@@ -322,30 +326,40 @@ describe('runArrivalDraftsJob', () => {
     expect(inbox[0].hasOpenDraft).toBe(false)
   })
 
-  it('fail-closes T-1 when lockbox property is unresolved', async () => {
+  it('does not invent codes in 4c drafts when lockbox property is unresolved', async () => {
     insertBooking(sqlite, { id: 13, checkIn: '2026-09-27', suite: 'Unknown Suite' })
-    const result = await runArrivalDraftsJob(db, { now: T1_NOW })
-    expect(result.unresolvedCodes).toBe(1)
-    const row = sqlite.prepare(`SELECT draft_body, attention_reason FROM arrival_drafts WHERE stage = 't-1'`).get() as {
+    const result = await runArrivalDraftsJob(db, { now: DAY_OF_08 })
+    expect(result.unresolvedCodes).toBe(0)
+    const row = sqlite.prepare(`SELECT draft_body, attention_reason FROM arrival_drafts WHERE stage = '4c'`).get() as {
       draft_body: string
-      attention_reason: string
+      attention_reason: string | null
     }
-    expect(row.attention_reason).toBe(CODES_UNRESOLVED_REASON)
-    expect(row.draft_body).toContain(CODES_UNRESOLVED_REASON)
-    expect(row.draft_body).toContain(CODE_MISSING_PLACEHOLDER)
-    expect(row.draft_body).toContain(ACCESS_CODES_BLOCK_START)
+    expect(row.draft_body).toMatch(/portal/)
+    expect(row.draft_body).not.toContain(ACCESS_CODES_BLOCK_START)
+    expect(row.draft_body).not.toMatch(/\b\d{4,6}\b/)
   })
 
-  it('re-reads lockbox codes at Approve&Send and never sends the stale snapshot', async () => {
+  it('re-reads leftover T-1 lockbox snapshots at Approve&Send', async () => {
     insertBooking(sqlite, { id: 14, checkIn: '2026-09-27', suite: 'Falcon' })
     seedLockbox(sqlite, 'Falcon', 'cottage', 'TEST_LOCK_A')
-    await runArrivalDraftsJob(db, { now: T1_NOW })
+    await runArrivalDraftsJob(db, { now: T3_NOW })
+    const thread = sqlite.prepare(`SELECT thread_id FROM arrival_drafts WHERE booking_id = 14`).get() as {
+      thread_id: number
+    }
+    sqlite
+      .prepare(
+        `INSERT INTO arrival_drafts (
+           tenant_id, booking_id, stage, stage_label, status, thread_id, draft_body
+         ) VALUES (1, 14, 't-1', 'T-1', 'drafted', ?, '--- access-codes:start ---
+Gate: x
+Lockbox: TEST_LOCK_A
+--- access-codes:end ---')`
+      )
+      .run(thread.thread_id)
     const drafted = sqlite.prepare(`SELECT thread_id, draft_body FROM arrival_drafts WHERE stage = 't-1'`).get() as {
       thread_id: number
       draft_body: string
     }
-    expect(drafted.draft_body).toContain('TEST_LOCK_A')
-
     sqlite.prepare(`UPDATE property_access_codes SET code_value = 'TEST_LOCK_B' WHERE suite = 'Falcon'`).run()
     const refreshed = await refreshArrivalDraftCodesAtSend(db, {
       threadId: drafted.thread_id,
@@ -371,10 +385,10 @@ describe('runArrivalDraftsJob', () => {
   })
 
   it('stays drafted when wa_templates marks the stage template WhatsApp-approved (#218)', async () => {
-    insertApprovedWaTemplate(sqlite, 'browns_pre_arrival_welcome')
+    insertApprovedWaTemplate(sqlite, 'official_channel_notice')
     insertBooking(sqlite, { id: 16, checkIn: '2026-09-27', suite: 'Falcon' })
     await runArrivalDraftsJob(db, { now: T3_NOW })
-    const row = sqlite.prepare('SELECT status, draft_body FROM arrival_drafts').get() as {
+    const row = sqlite.prepare(`SELECT status, draft_body FROM arrival_drafts WHERE stage = '4a_wa'`).get() as {
       status: string
       draft_body: string
     }
@@ -385,7 +399,9 @@ describe('runArrivalDraftsJob', () => {
   it('uses email when there is no phone', async () => {
     insertBooking(sqlite, { id: 17, phone: null, email: 'ada@thebrowns.co.za', checkIn: '2026-09-27' })
     await runArrivalDraftsJob(db, { now: T3_NOW })
-    const row = sqlite.prepare('SELECT channel FROM arrival_drafts').get() as { channel: string }
+    const row = sqlite.prepare(`SELECT channel FROM arrival_drafts WHERE stage = '4a_email'`).get() as {
+      channel: string
+    }
     expect(row.channel).toBe('email')
   })
 
@@ -394,7 +410,7 @@ describe('runArrivalDraftsJob', () => {
     await runArrivalDraftsJob(db, { now: T3_NOW })
     const inbox = await listInboxThreads(db, 1)
     expect(inbox[0].needsAttention).toBe(true)
-    expect(inbox[0].arrivalStage).toBe('T-3')
+    expect(inbox[0].arrivalStage).toBe('Gate WA')
     expect(inbox[0].hasOpenDraft).toBe(true)
   })
 })

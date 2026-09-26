@@ -4,15 +4,16 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
   Link2,
   MessageSquare,
   RefreshCw,
   Search,
-  Send,
 } from 'lucide-react'
+import { buildHeaderChips, stayStateLabel } from '@/lib/header-chips'
+import { journeyTimingChip } from '@/lib/journey-config'
+import { displaySuiteName } from '@/lib/room-catalog'
+import { HeaderStatusChips } from '@/components/inbox/HeaderStatusChips'
+import { ThreadComposer } from '@/components/inbox/ThreadComposer'
 import { CHANNEL_BADGES, type UmiChannel } from '@/lib/umi-channels'
 import { InboxConfirmDialog } from '@/components/inbox/InboxConfirmDialog'
 import { InboxLayoutShell } from '@/components/inbox/InboxLayoutShell'
@@ -91,7 +92,7 @@ function InboxHomePageInner() {
   )
   const [listCollapsed, setListCollapsed] = useState(false)
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
-  const [composerDisclosureExpanded, setComposerDisclosureExpanded] = useState(false)
+  const [composerExpanded, setComposerExpanded] = useState(false)
   const [linkBookingModalOpen, setLinkBookingModalOpen] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
@@ -163,6 +164,7 @@ function InboxHomePageInner() {
   const applyDetail = (thread: ThreadDetail) => {
     setDetail(thread)
     setDraft(thread.openDraft?.text || '')
+    setComposerExpanded(Boolean(thread.openDraft?.text))
     setChannel(sendChannel(thread.defaultOutboundChannel))
     setEmailTo(
       thread.guestEmail || (thread.fromNumber?.includes('@') ? thread.fromNumber : '')
@@ -262,7 +264,7 @@ function InboxHomePageInner() {
     (careWindow?.state === 'closed' || careWindow?.state === 'closing_soon')
 
   useEffect(() => {
-    if (!forceTemplateMode) return
+    if (!selectedId) return
     fetch('/api/ops/wa-templates?picker=1')
       .then((response) => response.json())
       .then((data) => {
@@ -271,7 +273,7 @@ function InboxHomePageInner() {
         setTemplateEmptyReason(data.emptyReason || '')
       })
       .catch(() => {})
-  }, [forceTemplateMode, selectedId])
+  }, [selectedId])
 
   useEffect(() => {
     if (!selectedTemplate || !selectedId) return
@@ -448,7 +450,7 @@ function InboxHomePageInner() {
       }
       setContactNote(
         data.phoneApplied || data.emailApplied
-          ? 'Saved staff contact (not sent)'
+          ? 'Saved guest contact (not sent)'
           : 'No change — a higher-rank source already holds this field'
       )
       await loadThread(selectedId)
@@ -566,61 +568,31 @@ function InboxHomePageInner() {
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-base text-slate-900 inbox-wrap">{thread.bookerName}</span>
               <span className="text-xs uppercase tracking-wide text-slate-500 shrink-0">
-                {thread.sortBucket === 0
-                  ? 'Arriving'
-                  : thread.sortBucket === 1
-                    ? 'Pending'
-                    : 'Recent'}
+                {stayStateLabel(
+                  thread.checkIn,
+                  thread.checkOut,
+                  new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Africa/Johannesburg',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                  }).format(new Date())
+                )}
               </span>
             </div>
             <div className="text-base text-slate-500 mt-0.5 inbox-wrap">
               {thread.threadKind === 'temp' ? 'Temp · ' : ''}
-              {thread.suite || 'No suite'}
+              {displaySuiteName(thread.suite) || 'No suite'}
               {thread.checkIn ? ` · ${thread.checkIn}` : ''}
+              {thread.checkOut ? ` → ${thread.checkOut}` : ''}
             </div>
-            <div className="text-base text-slate-700 mt-1 line-clamp-2 inbox-wrap">{thread.preview || '—'}</div>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {thread.lastChannel && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                  {badge(thread.lastChannel)}
-                </span>
-              )}
-              {thread.hasOpenDraft && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                  Draft
-                </span>
-              )}
-              {thread.arrivalStage && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
-                  {thread.arrivalStage}
-                </span>
-              )}
-              {thread.needsAttention && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
-                  Needs attention
-                </span>
-              )}
-              {thread.attentionReason && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-rose-50 text-rose-700">
-                  {thread.attentionReason}
-                </span>
-              )}
-              {thread.hygieneStatus === 'nudged' && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                  Stale temp
-                </span>
-              )}
-              {thread.careWindow?.state === 'closed' && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                  WA closed
-                </span>
-              )}
-              {thread.careWindow?.state === 'closing_soon' && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">
-                  WA closing
-                </span>
-              )}
+            <div className="text-base text-slate-700 mt-1 line-clamp-2 inbox-wrap">
+              {thread.hasOpenDraft ? 'Draft · ' : ''}
+              {thread.preview || '—'}
             </div>
+            {thread.needsAttention && (
+              <span className="sr-only">Needs attention</span>
+            )}
           </button>
         ))}
       </div>
@@ -640,36 +612,27 @@ function InboxHomePageInner() {
           <>
             <ThreadHeader
               guestName={detail.bookerName}
-              suiteName={detail.suite}
+              suiteName={displaySuiteName(detail.suite) || detail.suite}
               checkIn={detail.checkIn}
               checkOut={detail.checkOut}
               nbRef={detail.nightsbridgeBookingId}
               lastChannel={detail.lastChannel}
               badge={
                 <>
-                  {detail.arrivalStage && (
-                    <span className="text-xs inline-flex px-2 py-1 rounded bg-blue-100 text-blue-800 inbox-wrap">
-                      {detail.arrivalStage}
-                    </span>
-                  )}
-                  {detail.careWindow && (
-                    <span
-                      className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
-                        detail.careWindow.state === 'closed'
-                          ? 'bg-slate-200 text-slate-800'
-                          : detail.careWindow.state === 'closing_soon'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-emerald-50 text-emerald-800'
-                      }`}
-                    >
-                      {detail.careWindow.label}
-                    </span>
-                  )}
+                  <HeaderStatusChips
+                    {...buildHeaderChips({
+                      windowState: detail.careWindow?.state,
+                      timingLabel: journeyTimingChip(detail.arrivalStage),
+                      attentionLabel:
+                        detail.attentionReason ||
+                        (selected?.needsAttention ? 'Needs attention' : null),
+                    })}
+                  />
                   {detail.threadKind === 'temp' && (
                     <button
                       type="button"
                       onClick={() => setLinkBookingModalOpen(true)}
-                      className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 inbox-wrap"
+                      className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded border border-[#E0E5EB] text-[#5B6B7C] hover:bg-slate-50 inbox-wrap"
                       title="Link to booking"
                     >
                       <Link2 className="w-3 h-3" /> Link
@@ -690,6 +653,40 @@ function InboxHomePageInner() {
           className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
         >
           <div
+            role={
+              message.direction === 'outbound' &&
+              (message.status === 'drafted' || message.deliveryStatus === 'pending' || message.draftReply)
+                ? 'button'
+                : undefined
+            }
+            data-pending-draft={
+              message.direction === 'outbound' &&
+              (message.status === 'drafted' || Boolean(message.draftReply))
+                ? 'true'
+                : undefined
+            }
+            tabIndex={
+              message.direction === 'outbound' &&
+              (message.status === 'drafted' || Boolean(message.draftReply))
+                ? 0
+                : undefined
+            }
+            onClick={() => {
+              if (message.direction !== 'outbound') return
+              if (message.status !== 'drafted' && !message.draftReply) return
+              setDraft(message.draftReply || message.body)
+              setChannel(sendChannel(message.channel))
+              setComposerExpanded(true)
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return
+              if (message.direction !== 'outbound') return
+              if (message.status !== 'drafted' && !message.draftReply) return
+              event.preventDefault()
+              setDraft(message.draftReply || message.body)
+              setChannel(sendChannel(message.channel))
+              setComposerExpanded(true)
+            }}
             className={`max-w-full sm:max-w-xl rounded-2xl px-4 py-3 text-base inbox-wrap ${
               message.direction === 'outbound'
                 ? 'bg-blue-600 text-white'
@@ -698,10 +695,8 @@ function InboxHomePageInner() {
           >
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span
-                className={`text-xs uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                  message.direction === 'outbound'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-slate-200 text-slate-700'
+                className={`text-xs tracking-wide ${
+                  message.direction === 'outbound' ? 'text-blue-100' : 'text-slate-500'
                 }`}
               >
                 {badge(message.channel)}
@@ -728,111 +723,33 @@ function InboxHomePageInner() {
       composer={
         <>
           {error && <p className="text-base text-red-600 inbox-wrap">{error}</p>}
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700">Send via</span>
-            <select
-              value={channel}
-              onChange={(event) => setChannel(event.target.value)}
-              className="inbox-field w-full mt-1"
-            >
-              {CHANNELS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {/* Template & Care disclosure - Sprint 4 US3 */}
-          <button
-            type="button"
-            onClick={() => setComposerDisclosureExpanded(!composerDisclosureExpanded)}
-            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1 rounded hover:bg-slate-50"
-          >
-            {composerDisclosureExpanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-            Template & Care
-          </button>
-          {composerDisclosureExpanded && forceTemplateMode && (
-            <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
-              <p className="text-base font-medium text-slate-800">Template mode</p>
-              <p className="text-base text-slate-600 inbox-wrap">
-                {approvedTemplates.length === 0
-                  ? templateEmptyReason ||
-                    'Picker shows only templates APPROVED by WhatsApp. Grant-approved copy is stored but unsubmitted — none appear until Grant’s submit go-ahead.'
-                  : 'Choose a WhatsApp-approved template. Variables are pre-filled; you can edit them.'}
-              </p>
-              <select
-                value={selectedTemplate}
-                onChange={(event) => setSelectedTemplate(event.target.value)}
-                className="inbox-field w-full"
-              >
-                <option value="">Select template…</option>
-                {approvedTemplates.map((item) => (
-                  <option key={item.name} value={item.name}>
-                    {item.name} ({item.category})
-                  </option>
-                ))}
-              </select>
-              {Object.keys(templateVars).length > 0 && (
-                <div className="space-y-2">
-                  {Object.entries(templateVars).map(([key, value]) => (
-                    <label key={key} className="block text-base text-slate-600">
-                      {`{{${key}}}`}
-                      <input
-                        value={value}
-                        onChange={(event) =>
-                          setTemplateVars((current) => ({
-                            ...current,
-                            [key]: event.target.value,
-                          }))
-                        }
-                        className="inbox-field mt-1 w-full"
-                      />
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          {channel === 'email' && (
-            <input
-              value={emailTo}
-              onChange={(event) => setEmailTo(event.target.value)}
-              placeholder="Guest email"
-              className="inbox-field w-full"
-            />
-          )}
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            rows={keyboardInsetPx > 80 || breakpoint === 'phone' ? 3 : 6}
-            placeholder="Draft reply — edit before Approve&Send"
-            className="inbox-field w-full"
+          <ThreadComposer
+            channel={channel}
+            onChannelChange={setChannel}
+            draft={draft}
+            onDraftChange={setDraft}
+            onSaveDraft={saveDraft}
+            onCancel={() => {
+              setDraft('')
+              setComposerExpanded(false)
+              setSelectedTemplate('')
+            }}
+            onApprove={requestApproveAndSend}
+            busy={busy}
+            forceTemplateMode={forceTemplateMode}
+            approvedTemplates={approvedTemplates}
+            templateEmptyReason={templateEmptyReason}
+            selectedTemplate={selectedTemplate}
+            onSelectedTemplate={setSelectedTemplate}
+            templateVars={templateVars}
+            onTemplateVar={(key, value) =>
+              setTemplateVars((current) => ({ ...current, [key]: value }))
+            }
+            emailTo={emailTo}
+            onEmailTo={setEmailTo}
+            expanded={composerExpanded || Boolean(draft.trim()) || keyboardInsetPx > 80}
+            onExpandedChange={setComposerExpanded}
           />
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={saveDraft}
-              disabled={busy || !draft.trim()}
-              className="inbox-tap px-3 border rounded-lg text-base disabled:opacity-50"
-            >
-              Save draft
-            </button>
-            <button
-              type="button"
-              onClick={requestApproveAndSend}
-              disabled={busy || (!draft.trim() && !selectedTemplate)}
-              className="inbox-tap px-3 bg-primary text-white rounded-lg flex items-center justify-center gap-1 text-base disabled:opacity-50"
-            >
-              <CheckCircle className="w-4 h-4" />
-              Approve
-              <Send className="w-4 h-4" />
-              Send
-            </button>
-          </div>
         </>
       }
         minMessageHeight={breakpoint === 'phone' ? undefined : minMessageHeight}

@@ -1333,7 +1333,11 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
          FROM arrival_drafts
          WHERE tenant_id = ? AND booking_id = ?
            AND status IN ('drafted', 'needs_attention', 'template_pending_approval')
-         ORDER BY CASE stage WHEN 'day-of' THEN 0 WHEN 't-1' THEN 1 ELSE 2 END
+         ORDER BY CASE stage
+           WHEN '4c' THEN 0 WHEN '4d' THEN 1 WHEN '4b' THEN 2
+           WHEN '4a_wa' THEN 3 WHEN '4a_email' THEN 4
+           WHEN '4e' THEN 5 WHEN '4g' THEN 6
+           WHEN 'day-of' THEN 7 WHEN 't-1' THEN 8 ELSE 9 END
          LIMIT 1`
       )
       .get(tenantId, thread.booking_id)) as
@@ -1428,9 +1432,14 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       channel: message.channel || mapSourceToChannel(thread.source),
       sourceTag: message.source_tag,
       senderAddress: message.sender_address,
-      body: scrubArrivalDraftSermon(readMessageText(message)),
+      body: scrubArrivalDraftSermon(
+        message.status === 'drafted' && message.draft_reply
+          ? message.draft_reply
+          : readMessageText(message)
+      ),
       timestamp: message.message_timestamp,
       isSpam: Boolean(message.is_spam),
+      status: message.status || null,
       draftReply: message.draft_reply || null,
       draftSource: message.draft_source || null,
       deliveryStatus,

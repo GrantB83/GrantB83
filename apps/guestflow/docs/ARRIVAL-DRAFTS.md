@@ -1,14 +1,18 @@
-# Scheduled arrival drafts (Sprint 2 item G)
+# Scheduled guest-journey drafts (Sprint 5 4a–4g)
 
-Ritual removed: writing the same T-3 welcome, T-1 check-in/codes, and day-of reminder by hand.
+Ritual removed: writing T-3 / T-1 / Day-of (and now gate / comfort / departure / review) by hand.
 
 ## How scheduling works
 
-1. **Johannesburg date** (`Africa/Johannesburg`) decides which stage is due:
-   - T-3 when `check_in` is today + 3 calendar days
-   - T-1 when `check_in` is tomorrow
-   - Day-of when `check_in` is today
-2. **Run hour** (default 06:00 SAST) lives with those offsets in one file: `src/lib/arrival-drafts-config.ts`. Triggers before that hour are a no-op.
+1. **Johannesburg clocks** (`Africa/Johannesburg`) in `src/lib/journey-config.ts`:
+   - **4a** immediately after a booking exists (job floor 06:00): email **and** WhatsApp Cloud drafts (`official_channel_notice` + gate email). From `+27600200825`.
+   - **4b** T−7 at 08:00 — `browns_pre_arrival_welcome` + portal link
+   - **4c** arrival day 08:00 — `browns_day_of_reminder` + portal; codes live on the portal from 14:00
+   - **4d** 08:00 the morning after the first night if nights > 1 — `browns_mid_stay_checkin`
+   - **4e** departure day 08:00 — `browns_checkout_reminder` (checkout 10:00)
+   - **4f** departure day 12:00 — **system** portal security rescind (no guest send)
+   - **4g** departure day 17:00 — `browns_review_request` + in-repo Google review URL
+2. **Run hour** floor remains 06:00 SAST; stages with a later `hourSast` wait. Config: `src/lib/journey-config.ts`.
 3. **Triggers** (same idempotent route, never sends):
    - Vercel **daily** cron `0 4 * * *` (04:00 UTC = 06:00 SAST) in `vercel.json`
    - GitHub Actions **hourly** fallback `.github/workflows/guestflow-arrival-drafts-hourly.yml` (Hobby cannot register hourly Vercel cron — that expression fails Preview deploy)

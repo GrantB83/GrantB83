@@ -106,6 +106,17 @@ export const FIXTURE_DETAILS: Record<number, ThreadDetail> = {
         timestamp: '2026-09-23T08:00:00.000Z',
         isSpam: false,
       },
+      {
+        id: 13,
+        direction: 'outbound',
+        channel: 'whatsapp',
+        body: 'Hi Alex — wifi details are in the guest portal. Approve&Send still required.',
+        timestamp: '2026-09-24T16:12:00.000Z',
+        isSpam: false,
+        deliveryStatus: 'pending',
+        draftReply: 'Hi Alex — wifi details are in the guest portal. Approve&Send still required.',
+        status: 'drafted',
+      },
     ],
   },
   2: {

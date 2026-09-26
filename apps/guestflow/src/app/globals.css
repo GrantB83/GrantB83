@@ -67,6 +67,10 @@ body {
   min-height: 0;
 }
 
+.inbox-composer-overlay {
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+
 .ops-chrome {
   position: fixed;
   top: 0;
@@ -84,6 +88,9 @@ html.inbox-lock,
 html.inbox-lock body {
   overflow: hidden;
   height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  height: 100svh;
 }
 
 html.inbox-lock .staff-main {

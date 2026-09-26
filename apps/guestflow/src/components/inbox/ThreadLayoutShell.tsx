@@ -82,6 +82,7 @@ export function ThreadLayoutShell({
 
       <div
         className="inbox-thread-messages flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-5 space-y-3 min-h-0"
+        data-sprint5-zone="B"
         style={minMessageHeight ? { minHeight: `${minMessageHeight}px` } : undefined}
       >
         {messages}
@@ -89,7 +90,8 @@ export function ThreadLayoutShell({
 
       <footer
         data-inbox-composer
-        className="inbox-composer shrink-0 min-h-[120px] bg-white border-t p-3 sm:p-4 space-y-2 sm:space-y-3 min-h-0"
+        data-sprint5-zone="C"
+        className="inbox-composer inbox-composer-overlay shrink-0 bg-white border-t px-3 pt-3 sm:px-4 sm:pt-4 space-y-2 min-h-0"
         style={maxComposerHeight ? { maxHeight: `${maxComposerHeight}px`, overflowY: 'auto' } : undefined}
       >
         {composer}

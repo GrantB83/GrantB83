@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'crypto'
+import { isPortalSecurityOpen } from './portal-security'
 
 /**
  * Generate a cryptographically secure random token
@@ -52,18 +53,13 @@ export function getStayPhase(checkInDate: string, checkOutDate: string): string 
 }
 
 /**
- * Check if we should show access codes (time-gated)
- * Show codes from 24 hours before check-in through checkout
+ * Check if we should show access codes (time-gated).
+ * Sprint 5: check-in day 14:00 SAST through departure 12:00 SAST.
  */
-export function shouldShowAccessCodes(checkInDate: string, checkOutDate: string): boolean {
-  const now = new Date()
-  
-  const checkIn = new Date(checkInDate)
-  const showCodesFrom = new Date(checkIn)
-  showCodesFrom.setHours(checkIn.getHours() - 24) // 24 hours before check-in
-  
-  const checkOut = new Date(checkOutDate)
-  checkOut.setHours(23, 59, 59, 999) // End of checkout day
-  
-  return now >= showCodesFrom && now <= checkOut
+export function shouldShowAccessCodes(
+  checkInDate: string,
+  checkOutDate: string,
+  now: Date = new Date()
+): boolean {
+  return isPortalSecurityOpen(checkInDate, checkOutDate, now)
 }

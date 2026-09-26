@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ensureContactSchema } from '@/lib/contact-schema'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
-import { hashToken, getStayPhase, shouldShowAccessCodes } from '@/lib/token'
+import { hashToken, getStayPhase } from '@/lib/token'
 import { CODES_UNRESOLVED_REASON, propertyFacingDetails, resolveAccessCodesForSuite } from '@/lib/property-resolve'
+import {
+  PORTAL_SSID,
+  portalSecurityCopy,
+} from '@/lib/portal-security'
+import { roomDisplay } from '@/lib/room-catalog'
 
 /**
  * Guest portal access via magic token
@@ -97,7 +102,8 @@ export async function GET(
 
     // Determine stay phase for time-gating and WEBDIRECT visibility
     const stayPhase = getStayPhase(booking.checkInDate, booking.checkOutDate)
-    const showAccessCodes = shouldShowAccessCodes(booking.checkInDate, booking.checkOutDate)
+    const security = portalSecurityCopy(booking.checkInDate, booking.checkOutDate)
+    const showAccessCodes = security.open
 
     // Resolve access codes from DB-first with env fallback
     // Extract property and suite from booking data
@@ -123,7 +129,7 @@ export async function GET(
         guestName: booking.guestName || '[GUEST NAME MISSING]',
         checkInDate: booking.checkInDate || '',
         checkOutDate: booking.checkOutDate || '',
-        suiteOrUnit: booking.suiteOrUnit || '',
+        suiteOrUnit: roomDisplay(booking.suiteOrUnit, { mappingGap: codesUnresolved }).displayName,
         propertyName: propertyDisplayName,
         adults: booking.adults || 2,
         children: booking.children || 0,
@@ -145,10 +151,14 @@ export async function GET(
           whatsapp: process.env.PROPERTY_OPS_WHATSAPP || process.env.PROPERTY_WHATSAPP || ''
         }
       },
+      rooms: [
+        roomDisplay(booking.suiteOrUnit, { mappingGap: codesUnresolved }),
+      ],
       stayPacket: {
+        securityOpen: showAccessCodes,
         wifi: {
-          network: accessCodes?.wifi.network || '',
-          password: accessCodes?.wifi.password || '',
+          network: showAccessCodes ? PORTAL_SSID : '',
+          password: showAccessCodes ? (accessCodes?.wifi.password || '') : '',
         },
         accessCodes: {
           available: showAccessCodes && !codesUnresolved,
@@ -157,7 +167,7 @@ export async function GET(
           lockboxCode: showAccessCodes && accessCodes?.lockboxCode ? accessCodes.lockboxCode : '',
           message: codesUnresolved
             ? CODES_UNRESOLVED_REASON
-            : (showAccessCodes ? '' : 'Access codes will be available 24 hours before your check-in date')
+            : security.message
         },
         needsAttentionReason: codesUnresolved ? CODES_UNRESOLVED_REASON : undefined,
         checkIn: {

@@ -19,8 +19,16 @@ interface Booking {
   guestEmail?: string
 }
 
+interface RoomCard {
+  bookedName: string
+  displayName: string
+  publicUrl: string
+  mappingGap: boolean
+}
+
 interface PortalData {
   booking: Booking
+  rooms?: RoomCard[]
   property: {
     name: string
     displayName: string
@@ -34,6 +42,7 @@ interface PortalData {
     }
   }
   stayPacket: {
+    securityOpen?: boolean
     wifi: {
       network: string
       password: string
@@ -237,10 +246,23 @@ export default function GuestPortalPage() {
             <div className="flex items-start gap-4 pt-4 border-t border-gray-200">
               <Home className="w-5 h-5 text-primary-600 flex-shrink-0 mt-1" />
               <div>
-                <p className="text-sm text-gray-600 mb-1">Accommodation</p>
+                <p className="text-sm text-gray-600 mb-1">Your room</p>
                 <p className="font-semibold text-gray-900">
                   {booking.suiteOrUnit || '[SUITE NOT ASSIGNED]'}
                 </p>
+                {(portalData.rooms || []).map((room) => (
+                  <p key={room.displayName} className="text-sm mt-2">
+                    <a
+                      href={room.publicUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary-700 font-medium inline-flex items-center gap-1"
+                    >
+                      View {room.displayName} on thebrowns.co.za
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                ))}
                 <p className="text-sm text-gray-600 mt-1">
                   {booking.adults || 0} Adult{booking.adults !== 1 ? 's' : ''}
                   {booking.children > 0 && ` · ${booking.children} Child${booking.children !== 1 ? 'ren' : ''}`}
@@ -307,7 +329,7 @@ export default function GuestPortalPage() {
             </div>
           </div>
           <div className="p-6">
-            {stayPacket.wifi.network && stayPacket.wifi.password ? (
+            {stayPacket.securityOpen && stayPacket.wifi.network ? (
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Network Name</p>
@@ -323,10 +345,12 @@ export default function GuestPortalPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-900 font-medium">Wi-Fi details pending</p>
-                <p className="text-sm text-amber-700 mt-1">
-                  Please contact reception for Wi-Fi access
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-gray-900 font-medium">
+                  {stayPacket.accessCodes.message || 'Access codes appear on check-in day from 14:00.'}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  The Wi-Fi password is shown only from 14:00 on arrival day until 12:00 on departure day.
                 </p>
               </div>
             )}
@@ -402,6 +426,20 @@ export default function GuestPortalPage() {
           </div>
           <div className="p-6">
             <p className="text-gray-900">{stayPacket.parking.instructions}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-primary border-b border-primary-700 px-6 py-4">
+            <h2 className="text-xl font-bold text-white">Local information</h2>
+          </div>
+          <div className="p-6 space-y-2 text-gray-900">
+            <p>Self check-in after 17:00 uses this portal — not thebrowns.co.za/checkin.</p>
+            <p>Do not wait in the gate opening with your vehicle. Drive through once the gate opens.</p>
+            <p>Housekeepers are at 279 Blue Crane Drive until 17:00.</p>
+            <p className="text-sm text-gray-600">
+              Restaurants, spas, shuttles, and current load-shedding notes change often — reply on WhatsApp +27600200825 or email stay@thebrowns.co.za rather than using invented lists.
+            </p>
           </div>
         </div>
 
