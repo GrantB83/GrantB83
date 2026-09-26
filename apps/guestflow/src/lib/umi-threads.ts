@@ -22,6 +22,7 @@ import {
   loadLastWabaInboundAtByThread,
   type CareWindow,
 } from '@/lib/whatsapp-care-window'
+import { scrubArrivalDraftSermon } from '@/lib/scrub-arrival-sermon'
 
 export interface ResolveInboundInput {
   from: string
@@ -694,19 +695,6 @@ export async function listLinkCandidates(
     .slice(0, 50)
 }
 
-/**
- * Read-path sanitize: scrub sermon from message preview before returning to API.
- * Ensures stale DB rows never surface sermon in inbox JSON preview.
- * Pattern: "[Arrival draft T-1] Approve&Send required — never auto-sent." → "Arrival draft T-1"
- */
-function scrubSermonFromPreview(text: string): string {
-  const match = text.match(/^\[?Arrival draft ([^\]]+)\]?\s*Approve&Send required/i)
-  if (match && match[1]) {
-    return `Arrival draft ${match[1].trim()}`
-  }
-  return text
-}
-
 async function latestMessagePreview(
   db: DbClient,
   threadId: number
@@ -722,7 +710,7 @@ async function latestMessagePreview(
       )
       .get(threadId)) as { message_text?: string; draft_reply?: string; status?: string } | undefined
     const rawPreview = String(row?.message_text || '')
-    const cleanedPreview = scrubSermonFromPreview(rawPreview)
+    const cleanedPreview = scrubArrivalDraftSermon(rawPreview)
     return {
       preview: cleanedPreview.slice(0, 160),
       hasOpenDraft: Boolean(row?.draft_reply && row.status !== 'sent'),
@@ -1260,7 +1248,7 @@ export async function getThreadDetail(db: DbClient, tenantId: number, threadId: 
       channel: message.channel || mapSourceToChannel(thread.source),
       sourceTag: message.source_tag,
       senderAddress: message.sender_address,
-      body: message.message_text,
+      body: scrubArrivalDraftSermon(message.message_text),
       timestamp: message.message_timestamp,
       isSpam: Boolean(message.is_spam),
       draftReply: message.draft_reply || null,

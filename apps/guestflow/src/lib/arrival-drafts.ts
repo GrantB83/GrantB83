@@ -28,6 +28,7 @@ import { resolveContactPresence } from './contact-presence'
 import { ACCESS_CODE_PLACEHOLDER } from './access-codes-schema'
 import { CODE_MISSING_PLACEHOLDER } from './arrival-drafts-config'
 import { generateGuestToken, calculateTokenExpiry } from './token'
+import { scrubArrivalDraftSermon } from './scrub-arrival-sermon'
 import { getGuestPortalUrl } from './portal-url'
 import { propertyFacingDetails, resolveAccessCodesForSuite } from './property-resolve'
 import { addDaysIsoDate, bookingDateOnly, sastDateString } from './umi-sort'
@@ -193,19 +194,6 @@ async function templateStatusForStage(
   return { pending, names }
 }
 
-/**
- * Scrub sermon text from arrival draft message_text rows.
- * Idempotent: extracts stage label from old sermon format and replaces with clean label.
- * Pattern: "[Arrival draft T-1] Approve&Send required — never auto-sent." → "Arrival draft T-1"
- */
-function scrubSermonFromPreview(oldText: string): string {
-  const match = oldText.match(/^\[?Arrival draft ([^\]]+)\]?\s*Approve&Send required/i)
-  if (match && match[1]) {
-    return `Arrival draft ${match[1].trim()}`
-  }
-  // If no sermon pattern found, return unchanged
-  return oldText
-}
 
 /**
  * Clean any existing sermon text in arrival draft messages for this thread.
@@ -222,7 +210,7 @@ async function scrubThreadSermonPreviews(db: DbClient, threadId: number): Promis
     .all(threadId)) as Array<{ id: number; message_text: string }>
 
   for (const row of existing) {
-    const cleaned = scrubSermonFromPreview(row.message_text)
+    const cleaned = scrubArrivalDraftSermon(row.message_text)
     if (cleaned !== row.message_text) {
       await db
         .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
@@ -247,7 +235,7 @@ async function scrubAllSermonPreviews(db: DbClient): Promise<number> {
 
   let scrubbedCount = 0
   for (const row of existing) {
-    const cleaned = scrubSermonFromPreview(row.message_text)
+    const cleaned = scrubArrivalDraftSermon(row.message_text)
     if (cleaned !== row.message_text) {
       await db
         .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
