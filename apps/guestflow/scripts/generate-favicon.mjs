@@ -2,13 +2,18 @@
 /**
  * Regenerate GuestFlow favicon assets from approved brand raster.
  * Source: public/logos/the-browns-logo.png (emblem crop; same mark as thebrowns-logo-live SVG pack).
- * Requires one-off: npm install --no-save sharp to-ico
+ *
+ * Requires one-off dev deps (not committed):
+ *   npm install --no-save sharp png-to-ico
+ *
+ * ICO: built from the PNG emblem files via png-to-ico (valid 32bpp multi-size ICO).
+ * Do not use to-ico on raw PNG buffers — that produced corrupted /favicon.ico (Design FAIL).
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
-import toIco from 'to-ico'
+import pngToIco from 'png-to-ico'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = path.join(root, 'public/logos/the-browns-logo.png')
@@ -22,18 +27,24 @@ function emblemPipeline() {
   return sharp(src).extract({ left, top, width: cropSize, height: cropSize })
 }
 
-const sizes = [16, 32, 48]
-const pngBuffers = []
-for (const s of sizes) {
-  pngBuffers.push(await emblemPipeline().resize(s, s, { fit: 'cover' }).png().toBuffer())
-}
-
-fs.writeFileSync(path.join(pub, 'favicon.ico'), await toIco(pngBuffers))
-await emblemPipeline().resize(32, 32, { fit: 'cover' }).png().toFile(path.join(pub, 'icon-32.png'))
 await emblemPipeline().resize(16, 16, { fit: 'cover' }).png().toFile(path.join(pub, 'icon-16.png'))
+await emblemPipeline().resize(32, 32, { fit: 'cover' }).png().toFile(path.join(pub, 'icon-32.png'))
 await emblemPipeline()
   .resize(180, 180, { fit: 'cover' })
   .png()
   .toFile(path.join(pub, 'apple-touch-icon.png'))
 
-console.log('Wrote favicon.ico, icon-16.png, icon-32.png, apple-touch-icon.png')
+const icon48Path = path.join(pub, '.icon-48-build.png')
+await emblemPipeline().resize(48, 48, { fit: 'cover' }).png().toFile(icon48Path)
+
+const icoBuffer = await pngToIco([
+  path.join(pub, 'icon-16.png'),
+  path.join(pub, 'icon-32.png'),
+  icon48Path,
+])
+fs.writeFileSync(path.join(pub, 'favicon.ico'), icoBuffer)
+fs.unlinkSync(icon48Path)
+
+console.log(
+  `Wrote favicon.ico (${icoBuffer.length} bytes, 16+32+48), icon-16.png, icon-32.png, apple-touch-icon.png`,
+)

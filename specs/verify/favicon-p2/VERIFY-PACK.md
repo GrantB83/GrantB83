@@ -3,8 +3,20 @@
 **Ship**: Favicon P2 (MF-6)  
 **Branch / PR**: `cursor/guestflow-favicon-p2-5165` · https://github.com/GrantB83/GrantB83/pull/247  
 **Preview (tip)**: https://browns-guestflow-git-cursor-gue-18a997-grants-projects-db46fb3a.vercel.app  
-**Coding agent status**: **Preview READY** (CI green; VERIFY PACK complete)  
+**Coding agent status**: **Preview READY (remedia tip)** — ICO rebuilt; Design re-check required  
 **Merge**: **MERGE HOLD** until Design PASS → GFM Preview ACCEPT (once)
+
+---
+
+## Remedia — Design FAIL `1b04b3f` (same PR #247)
+
+| Item | Detail |
+| --- | --- |
+| **Verdict** | FAIL — `/favicon.ico` decoded as noisy pixel grid in browser; PNG `icon-32` / apple-touch **PASS** |
+| **Root cause** | Invalid ICO encode via `to-ico` on PNG buffers (24bpp mis-decode) |
+| **Fix** | Regenerate `favicon.ico` with `png-to-ico` from same emblem PNGs (16, 32, 48) — see `scripts/generate-favicon.mjs` |
+| **Coding self-check** | Pillow decode of remedia ICO → Browns circular **B** at 32×32 (matches `icon-32.png`); `file` reports 3 icons 16/32/48 @ 32bpp |
+| **Design** | **RE-PENDING** — re-run D1–D4 on new Preview tip after deploy |
 
 ---
 
@@ -19,14 +31,14 @@ Staff and guests opening GuestFlow in a browser tab see the Browns emblem favico
 | ID | Required | Verification | Result |
 | --- | --- | --- | --- |
 | **S1** | Operator job | This pack + PR scope | **PASS** |
-| **S2** | Happy path | Preview `GET /favicon.ico` → 200 image; tab mark on staff login + guest portal | **PASS** (curl below; tab job-script for Design) |
+| **S2** | Happy path | Preview `GET /favicon.ico` → 200 image; tab mark on staff login + guest portal | **Coding PASS** (curl + ICO decode); **Design RE-PENDING** after remedia |
 | **S3** | Empty/error | Static asset — must not 404 | **PASS** (was 404; now 200) |
 | **S4** | Desktop layout | N/A icon only | **N/A** |
 | **S5** | Mobile layout | N/A icon only | **N/A** |
 | **S6** | Standing locks | No code changes to redirect/send/approve paths | **PASS** (see locks section) |
 | **S7** | Copy bar | N/A | **N/A** |
 | **S8** | Icons / a11y | `rel=icon` + apple-touch sizes; no new primary controls | **PASS** (HTML links on `/staff-login`) |
-| **S9** | Peers | Design **Y** (brand mark on Preview tabs) · QA coding self-check | **Design PENDING** · Coding **PASS** |
+| **S9** | Peers | Design **Y** (brand mark on Preview tabs) · QA coding self-check | **Design RE-PENDING** (post-remedia) · Coding **PASS** |
 | **S10** | Evidence | `curl -sI` + tab screenshots | **PASS** (artifacts linked below) |
 
 ---
@@ -63,7 +75,14 @@ curl -sI http://127.0.0.1:3100/favicon.ico | head -8
 ```http
 HTTP/1.1 200 OK
 Content-Type: image/x-icon
-Content-Length: 14510
+Content-Length: 15086
+```
+
+**ICO decode (remedia — must show Browns B, not noise)**:
+
+```bash
+python3 -c "from PIL import Image; Image.open('apps/guestflow/public/favicon.ico').convert('RGBA').save('/tmp/ico-32.png')"
+# expect circular B emblem; sizes in ICO: 16, 32, 48
 ```
 
 ### Preview tip (Vercel SSO)
@@ -135,7 +154,7 @@ curl -s "$PREVIEW/staff-login" | grep -E 'rel="(icon|apple-touch-icon)"'
 | Vercel Preview deploy | **SUCCESS** (PR #247 checks) |
 | Spec Kit `specs/031-guestflow-favicon-p2/` | **Converged** |
 | VERIFY PACK (this file) | **Present** |
-| Design PASS | **PENDING** |
+| Design PASS | **RE-PENDING** (remedia ICO; was FAIL on `1b04b3f`) |
 | GFM Preview ACCEPT | **PENDING** — **MERGE HOLD** |
 
 ---
