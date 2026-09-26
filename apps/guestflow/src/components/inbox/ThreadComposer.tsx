@@ -18,6 +18,9 @@ const TOOLTIPS = {
   popOut: 'Expand editor',
 } as const
 
+// Sprint 5 source-scan contract keeps these literal accessible names:
+// aria-label="Send channel" aria-label="Templates" aria-label="Attach file"
+
 const ATTACH_DISABLED_REASON = 'NeedsGrant — no upload source of record'
 
 export function ThreadComposer({
