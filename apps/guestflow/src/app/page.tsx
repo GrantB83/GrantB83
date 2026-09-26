@@ -92,6 +92,7 @@ function InboxHomePageInner() {
   const [listCollapsed, setListCollapsed] = useState(false)
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
   const [composerDisclosureExpanded, setComposerDisclosureExpanded] = useState(false)
+  const [unmatchedExpanded, setUnmatchedExpanded] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
 
@@ -174,6 +175,7 @@ function InboxHomePageInner() {
     setTemplateVars({})
     setTemplateSid('')
     setTemplateRendered('')
+    setUnmatchedExpanded(false)
   }
 
   const loadThread = async (id: number) => {
@@ -670,8 +672,20 @@ function InboxHomePageInner() {
               showBack={breakpoint === 'phone'}
               onBack={closeThread}
             />
-            {detail.threadKind === 'temp' && (
-              <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3">
+            {detail.threadKind === 'temp' && !unmatchedExpanded && (
+              <button
+                type="button"
+                onClick={() => setUnmatchedExpanded(true)}
+                className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3 w-full flex items-center justify-between hover:bg-amber-100"
+              >
+                <span className="flex items-center gap-1">
+                  <Link2 className="w-4 h-4" /> Unmatched — Link to booking
+                </span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            )}
+            {detail.threadKind === 'temp' && unmatchedExpanded && (
+              <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3 max-h-24 overflow-y-auto">
                 <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
                   <Link2 className="w-4 h-4" /> Unmatched temp
                 </div>
@@ -742,19 +756,6 @@ function InboxHomePageInner() {
       ))}
       composer={
         <>
-          {careWindow && keyboardInsetPx < 100 && shellHeight >= 500 && (
-            <p
-              className={`text-base px-2 py-1 rounded inbox-wrap ${
-                careWindow.state === 'closed'
-                  ? 'bg-slate-200 text-slate-800'
-                  : careWindow.state === 'closing_soon'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-emerald-50 text-emerald-800'
-              }`}
-            >
-              {careWindow.label}
-            </p>
-          )}
           {error && <p className="text-base text-red-600 inbox-wrap">{error}</p>}
           {(selected?.hasOpenDraft || detail.openDraft) && keyboardInsetPx < 80 ? (
             <p className="text-base text-amber-700 inbox-wrap">
