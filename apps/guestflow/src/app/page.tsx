@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import {
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
   Link2,
   MessageSquare,
   RefreshCw,
@@ -15,6 +17,8 @@ import { CHANNEL_BADGES, type UmiChannel } from '@/lib/umi-channels'
 import { InboxConfirmDialog } from '@/components/inbox/InboxConfirmDialog'
 import { InboxLayoutShell } from '@/components/inbox/InboxLayoutShell'
 import { OutboundDeliveryBubble } from '@/components/inbox/OutboundDeliveryBubble'
+import { ThreadHeader } from '@/components/inbox/ThreadHeader'
+import { ThreadHeaderDetails } from '@/components/inbox/ThreadHeaderDetails'
 import { ThreadLayoutShell } from '@/components/inbox/ThreadLayoutShell'
 import { FIXTURE_DETAILS, FIXTURE_THREADS } from '@/components/inbox/inbox-fixture'
 import type { InboxThread, ThreadDetail } from '@/components/inbox/inbox-types'
@@ -86,6 +90,8 @@ function InboxHomePageInner() {
     null
   )
   const [listCollapsed, setListCollapsed] = useState(false)
+  const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
+  const [composerDisclosureExpanded, setComposerDisclosureExpanded] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
 
@@ -624,112 +630,75 @@ function InboxHomePageInner() {
       Select a conversation
     </div>
   ) : (
-    <ThreadLayoutShell
-      showBack={breakpoint === 'phone'}
-      onBack={closeThread}
-      title={detail.bookerName}
-      facts={
-        <>
-          {detail.suite || 'Suite unknown'} · {detail.checkIn || '—'} → {detail.checkOut || '—'}
-          {detail.nightsbridgeBookingId ? ` · ${detail.nightsbridgeBookingId}` : ''}
-          {detail.bookingId ? ` · booking ${detail.bookingId}` : ''}
-        </>
-      }
-      channelLine={
-        <>
-          Last channel: {badge(detail.lastChannel)} · Default reply:{' '}
-          {badge(detail.defaultOutboundChannel)}
-        </>
-      }
-      headerBadgeSlot={
-        <>
-          {detail.arrivalStage ? (
-            <span className="text-xs inline-flex px-2 py-1 rounded bg-blue-100 text-blue-800 inbox-wrap">
-              {detail.arrivalStage}
-            </span>
-          ) : null}
-          {detail.careWindow ? (
-            <span
-              className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
-                detail.careWindow.state === 'closed'
-                  ? 'bg-slate-200 text-slate-800'
-                  : detail.careWindow.state === 'closing_soon'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-emerald-50 text-emerald-800'
-              }`}
-            >
-              {detail.careWindow.label}
-            </span>
-          ) : null}
-        </>
-      }
-      extraHeader={
-        <>
-          {detail.bookingId ? (
-            <div className="mt-2 sm:mt-3 text-base text-slate-600 space-y-1.5 sm:space-y-2 inbox-wrap">
-              <p>
-                Phone {detail.guestPhone || '—'}
-                {detail.guestPhoneSource ? ` · ${detail.guestPhoneSource}` : ''}
-                {' · '}
-                Email {detail.guestEmail || '—'}
-                {detail.guestEmailKind === 'relay' ? ' (relay)' : ''}
-                {detail.guestEmailSource ? ` · ${detail.guestEmailSource}` : ''}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <input
-                  value={contactPhone}
-                  onChange={(event) => setContactPhone(event.target.value)}
-                  placeholder="Staff phone"
-                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
-                />
-                <input
-                  value={contactEmail}
-                  onChange={(event) => setContactEmail(event.target.value)}
-                  placeholder="Staff email"
-                  className="inbox-field flex-1 min-w-[7rem] sm:min-w-[10rem]"
-                />
+    <>
+      <ThreadLayoutShell
+        showBack={breakpoint === 'phone'}
+        onBack={closeThread}
+        compactHeader={
+          <>
+            <ThreadHeader
+              guestName={detail.bookerName}
+              suiteName={detail.suite}
+              checkIn={detail.checkIn}
+              checkOut={detail.checkOut}
+              nbRef={detail.nightsbridgeBookingId}
+              lastChannel={detail.lastChannel}
+              badge={
+                <>
+                  {detail.arrivalStage && (
+                    <span className="text-xs inline-flex px-2 py-1 rounded bg-blue-100 text-blue-800 inbox-wrap">
+                      {detail.arrivalStage}
+                    </span>
+                  )}
+                  {detail.careWindow && (
+                    <span
+                      className={`text-xs inline-flex px-2 py-1 rounded inbox-wrap ${
+                        detail.careWindow.state === 'closed'
+                          ? 'bg-slate-200 text-slate-800'
+                          : detail.careWindow.state === 'closing_soon'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-emerald-50 text-emerald-800'
+                      }`}
+                    >
+                      {detail.careWindow.label}
+                    </span>
+                  )}
+                </>
+              }
+              showDetailsButton={Boolean(detail.bookingId)}
+              onDetailsClick={() => setDetailsSheetOpen(true)}
+              showBack={breakpoint === 'phone'}
+              onBack={closeThread}
+            />
+            {detail.threadKind === 'temp' && (
+              <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3">
+                <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
+                  <Link2 className="w-4 h-4" /> Unmatched temp
+                </div>
+                <select
+                  value={linkBookingId}
+                  onChange={(event) => setLinkBookingId(event.target.value)}
+                  className="inbox-field w-full mb-2"
+                >
+                  <option value="">Link to booking…</option>
+                  {detail.linkCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
-                  onClick={saveContacts}
-                  disabled={busy}
-                  className="inbox-tap px-3 bg-slate-800 text-white rounded-lg disabled:opacity-50"
+                  onClick={linkBooking}
+                  disabled={!linkBookingId || busy}
+                  className="inbox-tap w-full bg-amber-700 text-white rounded-lg disabled:opacity-50"
                 >
-                  <span className="sm:hidden">Save</span>
-                  <span className="hidden sm:inline">Save contact</span>
+                  Link to booking
                 </button>
               </div>
-              {contactNote && <p className="text-emerald-700">{contactNote}</p>}
-            </div>
-          ) : null}
-          {detail.threadKind === 'temp' ? (
-            <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
-              <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
-                <Link2 className="w-4 h-4" /> Unmatched temp
-              </div>
-              <select
-                value={linkBookingId}
-                onChange={(event) => setLinkBookingId(event.target.value)}
-                className="inbox-field w-full mb-2"
-              >
-                <option value="">Link to booking…</option>
-                {detail.linkCandidates.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={linkBooking}
-                disabled={!linkBookingId || busy}
-                className="inbox-tap w-full bg-amber-700 text-white rounded-lg disabled:opacity-50"
-              >
-                Link to booking
-              </button>
-            </div>
-          ) : null}
-        </>
-      }
+            )}
+          </>
+        }
       messages={detail.messages.map((message) => (
         <div
           key={message.id}
@@ -808,7 +777,20 @@ function InboxHomePageInner() {
               </button>
             ))}
           </div>
-          {forceTemplateMode && (
+          {/* Template & Care disclosure - Sprint 4 US3 */}
+          <button
+            type="button"
+            onClick={() => setComposerDisclosureExpanded(!composerDisclosureExpanded)}
+            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-2 py-1 rounded hover:bg-slate-50"
+          >
+            {composerDisclosureExpanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            Template & Care
+          </button>
+          {composerDisclosureExpanded && forceTemplateMode && (
             <div className="border rounded-lg p-3 bg-slate-50 space-y-2">
               <p className="text-base font-medium text-slate-800">Template mode</p>
               <p className="text-base text-slate-600 inbox-wrap">
@@ -888,9 +870,24 @@ function InboxHomePageInner() {
           </div>
         </>
       }
-      minMessageHeight={breakpoint === 'phone' ? undefined : minMessageHeight}
-      maxComposerHeight={maxComposerHeight}
-    />
+        minMessageHeight={breakpoint === 'phone' ? undefined : minMessageHeight}
+        maxComposerHeight={maxComposerHeight}
+      />
+      {detail && (
+        <ThreadHeaderDetails
+          isOpen={detailsSheetOpen}
+          onClose={() => setDetailsSheetOpen(false)}
+          threadId={detail.id}
+          initialPhone={detail.guestPhone || ''}
+          initialEmail={detail.guestEmail || ''}
+          onSaved={() => {
+            setDetailsSheetOpen(false)
+            if (selectedId) loadThread(selectedId)
+          }}
+          breakpoint={ready ? breakpoint : 'desktop'}
+        />
+      )}
+    </>
   )
 
   return (
