@@ -42,8 +42,8 @@ export function ComposerTooltip({
       className="relative inline-flex"
       onMouseEnter={showSoon}
       onMouseLeave={hide}
-      onFocus={showNow}
-      onBlur={hide}
+      onFocusCapture={showNow}
+      onBlurCapture={hide}
     >
       {children}
       {open && (

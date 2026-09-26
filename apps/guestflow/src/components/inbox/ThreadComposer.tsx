@@ -158,8 +158,12 @@ export function ThreadComposer({
           aria-label={TOOLTIPS.attach}
           title={TOOLTIPS.attach}
           aria-describedby="composer-attach-disabled"
-          disabled
-          className="inbox-tap min-w-[40px] min-h-[40px] inline-flex items-center justify-center border border-[#E0E5EB] rounded-lg text-[#5B6B7C] opacity-50"
+          aria-disabled="true"
+          onClick={(event) => event.preventDefault()}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') event.preventDefault()
+          }}
+          className="inbox-tap min-w-[40px] min-h-[40px] inline-flex items-center justify-center border border-[#E0E5EB] rounded-lg text-[#5B6B7C] opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A3775]/40"
         >
           <Paperclip className="w-5 h-5" />
         </button>
