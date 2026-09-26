@@ -64,6 +64,7 @@ describe('Sprint 5 portal contract', () => {
     expect(fixture).not.toContain('very-long-example.invalid')
     expect(fixture).toContain('wifi details are in the guest portal')
     expect(route).toContain('isPortalClockFixtureCode')
+    expect(route).toContain('portalClockFixturesAllowed()')
     expect(details).toContain('Guest portal clocks')
     expect(details).toContain("PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']")
   })
