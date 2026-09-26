@@ -6,7 +6,7 @@
 
 ## Summary
 
-Fix GuestFlow WhatsApp Web observe so staff can read real guest wording and a real source display name on unmatched threads. Stop writing sentinel bodies. Replace existing `[metadata-only]` / `[body unavailable]` WhatsApp Web rows in place from a one-shot backfill. Dedup against WhatsApp Cloud when both copies exist. Persist contact / push / chat title onto temp threads. Reuse Ship A inbox chrome. Locks unchanged.
+Fix GuestFlow WhatsApp Web observe so staff can read real guest wording and a real source display name on unmatched threads. Stop writing sentinel bodies. Replace existing `[metadata-only]` / `[body unavailable]` WhatsApp Web rows in place from a one-shot backfill. Dedup against WhatsApp Cloud when both copies exist. Persist contact / push / chat title onto temp threads. Reuse Ship A inbox chrome. Locks unchanged. **MERGE HOLD until GFM ACCEPT after QA job-script.** S10 evidence: Prod `?thread=28` before/after (or Preview of the same data) plus `whatsapp_web` metadata-only inbox count.
 
 ## Operator Job & Saleable DoD (must not be thinned)
 
