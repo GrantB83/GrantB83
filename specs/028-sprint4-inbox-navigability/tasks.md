@@ -24,9 +24,9 @@
 
 **Purpose**: No new infrastructure needed - using existing GuestFlow structure
 
-- [ ] T001 Verify existing inbox components structure in apps/guestflow/src/components/inbox/
-- [ ] T002 Verify existing layout tests from specs/022/025 and Sprint 3 T+U
-- [ ] T003 Document current header/composer heights as baseline for comparison
+- [x] T001 Verify existing inbox components structure in apps/guestflow/src/components/inbox/
+- [x] T002 Verify existing layout tests from specs/022/025 and Sprint 3 T+U
+- [x] T003 Document current header/composer heights as baseline for comparison
 
 ---
 
@@ -36,9 +36,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Update inbox-types.ts to add DetailsSheetState and ComposerDisclosureState client types
-- [ ] T005 Review ThreadLayoutShell.tsx current implementation and props for compatibility
-- [ ] T006 Review InboxLayoutShell.tsx current implementation for Redirect banner location
+- [x] T004 Update inbox-types.ts to add DetailsSheetState and ComposerDisclosureState client types
+- [x] T005 Review ThreadLayoutShell.tsx current implementation and props for compatibility
+- [x] T006 Review InboxLayoutShell.tsx current implementation for Redirect banner location
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -52,8 +52,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Create ThreadHeader.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header.md (compact display: guest name, suite, dates, NB ref, channel line; height target ≤96-120px; Back button slot; Details button slot)
-- [ ] T008 [P] [US1] Create ThreadHeaderDetails.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header-details.md (Details sheet/modal for contact editing; responsive: desktop overlay vs phone bottom sheet; staff phone/email inputs with Save; POST to /api/umi/threads/[id]/contacts)
+- [x] T007 [P] [US1] Create ThreadHeader.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header.md (compact display: guest name, suite, dates, NB ref, channel line; height target ≤96-120px; Back button slot; Details button slot)
+- [x] T008 [P] [US1] Create ThreadHeaderDetails.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header-details.md (Details sheet/modal for contact editing; responsive: desktop overlay vs phone bottom sheet; staff phone/email inputs with Save; POST to /api/umi/threads/[id]/contacts)
 - [ ] T009 [US1] Update ThreadLayoutShell.tsx in apps/guestflow/src/components/inbox/ to integrate new ThreadHeader component (replace current tall header with compact ThreadHeader; wire showBack, onBack, Details button; maintain existing minMessageHeight/maxComposerHeight props and flex layout)
 - [ ] T010 [US1] Update thread page in apps/guestflow/src/app/(ops)/inbox/page.tsx to use updated ThreadLayoutShell with ThreadHeader and ThreadHeaderDetails (pass thread data to compact header; manage Details sheet open/close state; preserve existing phone Back and URL ?thread= behavior)
 - [ ] T011 [US1] Update layout test in apps/guestflow/src/lib/__tests__/inbox-layout.test.ts to assert compact header height ≤120px and message transcript occupies ≥50% of thread column (or create new test file if needed)
@@ -125,12 +125,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T028 [US5] Locate Redirect banner JSX in ops chrome component (likely OpsHeader.tsx or similar in apps/guestflow/src/components/ops/; search for "Redirect ON" or "OUTBOUND" text or gold/yellow background class)
-- [ ] T029 [US5] Remove Redirect banner JSX element from ops header component (delete banner div/element; preserve navy sticky ops header from Sprint 3 T)
-- [ ] T030 [US5] Update useInboxChromeOffset hook in apps/guestflow/src/components/inbox/ to remove banner height from offset calculation (if banner height was tracked; ensure sticky header offset still correct without banner)
-- [ ] T031 [US5] Verify navy sticky ops header still present and functional (header sticks to top on scroll; ops nav links work; logout button accessible)
-- [ ] T032 [US5] Verify OUTBOUND_MODE and redirect sinks unchanged (check env var OUTBOUND_MODE=redirect; test sinks still configured; no accidental changes to redirect behavior code)
-- [ ] T033 [US5] Test on desktop and phone (banner not visible; DOM search for banner element returns 0; navy header present; page layout correct without banner)
+- [x] T028 [US5] Locate Redirect banner JSX in ops chrome component (likely OpsHeader.tsx or similar in apps/guestflow/src/components/ops/; search for "Redirect ON" or "OUTBOUND" text or gold/yellow background class)
+- [x] T029 [US5] Remove Redirect banner JSX element from ops header component (delete banner div/element; preserve navy sticky ops header from Sprint 3 T)
+- [x] T030 [US5] Update useInboxChromeOffset hook in apps/guestflow/src/components/inbox/ to remove banner height from offset calculation (if banner height was tracked; ensure sticky header offset still correct without banner)
+- [x] T031 [US5] Verify navy sticky ops header still present and functional (header sticks to top on scroll; ops nav links work; logout button accessible)
+- [x] T032 [US5] Verify OUTBOUND_MODE and redirect sinks unchanged (check env var OUTBOUND_MODE=redirect; test sinks still configured; no accidental changes to redirect behavior code)
+- [x] T033 [US5] Test on desktop and phone (banner not visible; DOM search for banner element returns 0; navy header present; page layout correct without banner)
 
 **Checkpoint**: User Story 5 complete - yellow Redirect banner removed; navy ops header functional; redirect behavior unchanged
 
