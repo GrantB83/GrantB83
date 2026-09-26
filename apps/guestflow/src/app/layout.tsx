@@ -5,7 +5,6 @@ import './globals.css'
 import Navigation from '@/components/Navigation'
 import { StaffChrome } from '@/components/StaffChrome'
 import { TenantProvider } from '@/components/TenantContext'
-import { OutboundRedirectBanner } from '@/components/outbound-redirect-banner'
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
@@ -47,7 +46,6 @@ export default function RootLayout({
         <TenantProvider>
           {showStaffChrome && (
             <StaffChrome>
-              <OutboundRedirectBanner />
               <Navigation />
             </StaffChrome>
           )}
