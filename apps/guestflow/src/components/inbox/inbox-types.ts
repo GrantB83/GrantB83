@@ -73,6 +73,8 @@ export interface ThreadDetail {
     canResend?: boolean
     resendOf?: number | null
     resentBy?: string | null
+    draftReply?: string | null
+    status?: string | null
   }>
   careWindow?: {
     state: 'open' | 'closing_soon' | 'closed'

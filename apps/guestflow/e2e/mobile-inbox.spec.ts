@@ -62,7 +62,7 @@ test.describe('mobile inbox evidence', () => {
 
     test(`draft keyboard ${viewport.name}`, async ({ page }) => {
       await openThread(page, viewport.width, viewport.height, '&keyboard=1')
-      await page.getByPlaceholder('Draft reply — edit before Approve&Send').click()
+      await page.getByPlaceholder('Write a reply…').click()
       await expect(page.getByRole('button', { name: 'Approve Send' })).toBeVisible()
       await assertNoHorizontalOverflow(page)
       await page.screenshot({

@@ -5,12 +5,17 @@
 import type { DbClient } from './db'
 import {
   ARRIVAL_DRAFTS_CONFIG,
-  ARRIVAL_STAGE_LIST,
   ARRIVAL_TIME_ZONE,
   NO_CONTACT_REASON,
   TEMPLATE_PENDING_REASON,
   type ArrivalStageId,
 } from './arrival-drafts-config'
+import {
+  dueJourneyStages,
+  journeyDueDate,
+  JOURNEY_STAGES,
+  type JourneyStageId,
+} from './journey-config'
 import { ensureArrivalDraftsSchema } from './arrival-drafts-schema'
 import {
   fillArrivalStageBody,
@@ -124,14 +129,16 @@ export function stageDueDate(checkIn: string, offsetDays: number): string | null
 
 export function dueStagesForCheckIn(
   checkIn: string,
-  todaySast: string
+  todaySast: string,
+  checkOut = addDaysIsoDate(bookingDateOnly(checkIn) || todaySast, 2),
+  hourSast = 23
 ): ArrivalStageId[] {
-  const due: ArrivalStageId[] = []
-  for (const stage of ARRIVAL_STAGE_LIST) {
-    const dueDate = stageDueDate(checkIn, stage.offsetDays)
-    if (dueDate === todaySast) due.push(stage.id)
-  }
-  return due
+  return dueJourneyStages({
+    checkIn,
+    checkOut,
+    todaySast,
+    hourSast,
+  })
 }
 
 export function isStageStillAhead(checkIn: string, offsetDays: number, todaySast: string): boolean {
@@ -182,7 +189,8 @@ async function templateStatusForStage(
   pending: boolean
   names: string[]
 }> {
-  const names = [...ARRIVAL_DRAFTS_CONFIG.stages[stageId].templateNames]
+  const stage = ARRIVAL_DRAFTS_CONFIG.stages[stageId as JourneyStageId]
+  const names = stage ? [...stage.templateNames] : []
   let pending = false
   for (const name of names) {
     const row = await getWaTemplateByName(db, tenantId, name)
@@ -521,7 +529,11 @@ async function createOrRefreshStage(
   counts: ArrivalJobResult
 ): Promise<void> {
   const stage = ARRIVAL_DRAFTS_CONFIG.stages[stageId]
-  const dueDate = stageDueDate(booking.check_in, stage.offsetDays) || todaySast
+  const journey = JOURNEY_STAGES[stageId as JourneyStageId]
+  const dueDate =
+    (journey
+      ? journeyDueDate(journey, booking.check_in, booking.check_out)
+      : stageDueDate(booking.check_in, stage.offsetDays)) || todaySast
   const suite = suiteOf(booking)
   const fingerprint = bookingFingerprint(booking.check_in, booking.check_out, suite)
   const existing = await loadDraft(db, tenantId, booking.id, stageId)
@@ -544,6 +556,24 @@ async function createOrRefreshStage(
     email: booking.guest_email,
   })
   const timestamp = now.toISOString()
+
+  if (journey?.channel === 'email' && !contact.email) {
+    if (contact.hasContact) {
+      counts.skipped = typeof counts.skipped === 'number' ? counts.skipped + 1 : 1
+      return
+    }
+  }
+  if (journey?.channel === 'whatsapp_cloud' && !contact.phone) {
+    if (contact.hasContact) {
+      counts.skipped = typeof counts.skipped === 'number' ? counts.skipped + 1 : 1
+      return
+    }
+  }
+
+  if (!contact.hasContact && stageId === '4a_email') {
+    counts.skipped = typeof counts.skipped === 'number' ? counts.skipped + 1 : 1
+    return
+  }
 
   if (!contact.hasContact) {
     const written = await writeThreadDraft(db, {
@@ -578,10 +608,17 @@ async function createOrRefreshStage(
     return
   }
 
-  const channel: UmiChannel = contact.channel === 'email' ? 'email' : 'whatsapp_cloud'
+  const channel: UmiChannel =
+    journey?.channel === 'email'
+      ? 'email'
+      : journey?.channel === 'whatsapp_cloud'
+        ? 'whatsapp_cloud'
+        : contact.channel === 'email'
+          ? 'email'
+          : 'whatsapp_cloud'
   const existingThreadId = existing?.thread_id || null
   let windowOpen = true
-  if (contact.channel === 'whatsapp') {
+  if (channel === 'whatsapp_cloud') {
     if (existingThreadId) {
       const window = await getWindowState(db, existingThreadId)
       windowOpen = window.open
@@ -601,6 +638,13 @@ async function createOrRefreshStage(
     attention = live.attention
     directions = live.directions
     if (attention) counts.unresolvedCodes += 1
+  } else if (stageId === '4c') {
+    const live = await resolveT1Codes(db, tenantId, suite)
+    directions = live.directions
+    if (live.attention) {
+      attention = live.attention
+      counts.unresolvedCodes += 1
+    }
   }
 
   const portalUrl = await mintPortalUrl(db, booking)
@@ -615,8 +659,8 @@ async function createOrRefreshStage(
   })
 
   let status: ArrivalDraftStatus = attention ? 'needs_attention' : 'drafted'
-  let windowState = contact.channel === 'email' ? 'n/a' : windowOpen ? 'open' : 'closed'
-  if (contact.channel === 'whatsapp' && !windowOpen) {
+  let windowState = channel === 'email' ? 'n/a' : windowOpen ? 'open' : 'closed'
+  if (channel === 'whatsapp_cloud' && !windowOpen) {
     const templates = await templateStatusForStage(db, tenantId, stageId)
     if (templates.pending) {
       status = 'template_pending_approval'
@@ -640,7 +684,7 @@ async function createOrRefreshStage(
     stage: stageId,
     stageLabel: stage.label,
     status,
-    channel: contact.channel,
+    channel,
     threadId: written.threadId,
     messageId: written.messageId,
     draftBody: filled.body,
@@ -691,15 +735,13 @@ export async function runArrivalDraftsJob(
     return counts
   }
 
-  const horizon = addDaysIsoDate(todaySast, 3)
   const bookings = ((await db
     .prepare(
       `SELECT * FROM bookings
        WHERE tenant_id = ?
-         AND date(check_in) >= date(?)
-         AND date(check_in) <= date(?)`
+         AND date(check_out) >= date(?)`
     )
-    .all(tenantId, todaySast, horizon)) || []) as ArrivalBookingRow[]
+    .all(tenantId, todaySast)) || []) as ArrivalBookingRow[]
 
   const byId = new Map<number, ArrivalBookingRow>()
   for (const booking of bookings) byId.set(asNumber(booking.id), { ...booking, id: asNumber(booking.id) })
@@ -728,7 +770,12 @@ export async function runArrivalDraftsJob(
     const suite = suiteOf(booking)
     const fingerprint = bookingFingerprint(booking.check_in, booking.check_out, suite)
     if (draft.fingerprint && draft.fingerprint !== fingerprint) {
-      const stillDue = dueStagesForCheckIn(booking.check_in, todaySast).includes(draft.stage)
+      const stillDue = dueJourneyStages({
+        checkIn: booking.check_in,
+        checkOut: booking.check_out,
+        todaySast,
+        hourSast: hour,
+      }).includes(draft.stage as JourneyStageId)
       if (!stillDue) {
         await discardDraft(db, draft)
         counts.discarded += 1
@@ -738,7 +785,12 @@ export async function runArrivalDraftsJob(
 
   for (const booking of byId.values()) {
     if (!isActiveGuestBooking(booking)) continue
-    const due = dueStagesForCheckIn(booking.check_in, todaySast)
+    const due = dueJourneyStages({
+      checkIn: booking.check_in,
+      checkOut: booking.check_out,
+      todaySast,
+      hourSast: hour,
+    })
     for (const stageId of due) {
       await createOrRefreshStage(db, tenantId, booking, stageId, todaySast, now, counts)
     }

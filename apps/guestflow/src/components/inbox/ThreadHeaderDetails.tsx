@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import type { InboxBreakpoint } from './inbox-types'
+import { PORTAL_CLOCK_FIXTURE_PATHS } from '@/lib/portal-clock-fixture'
 
 interface ThreadHeaderDetailsProps {
   /** Whether the sheet is visible */
@@ -14,10 +15,10 @@ interface ThreadHeaderDetailsProps {
   /** Thread ID for save operations */
   threadId: number
 
-  /** Current staff phone value */
+  /** Current guest phone value */
   initialPhone?: string
 
-  /** Current staff email value */
+  /** Current guest email value */
   initialEmail?: string
 
   /** Callback when contact saved successfully */
@@ -25,6 +26,9 @@ interface ThreadHeaderDetailsProps {
 
   /** Breakpoint for responsive layout */
   breakpoint: InboxBreakpoint
+
+  /** Fixture inbox: show documented portal clock paths for QA steps 7–9 */
+  showPortalClocks?: boolean
 }
 
 export function ThreadHeaderDetails({
@@ -35,6 +39,7 @@ export function ThreadHeaderDetails({
   initialEmail = '',
   onSaved,
   breakpoint,
+  showPortalClocks = false,
 }: ThreadHeaderDetailsProps) {
   const [phone, setPhone] = useState(initialPhone)
   const [email, setEmail] = useState(initialEmail)
@@ -81,8 +86,8 @@ export function ThreadHeaderDetails({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          staffPhone: phone || null,
-          staffEmail: email || null,
+          phone: phone || null,
+          email: email || null,
         }),
       })
 
@@ -144,13 +149,13 @@ export function ThreadHeaderDetails({
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="staff-phone"
+                htmlFor="guest-phone"
                 className="block text-sm font-medium text-slate-700 mb-1"
               >
-                Staff phone
+                Guest phone
               </label>
               <input
-                id="staff-phone"
+                id="guest-phone"
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -161,13 +166,13 @@ export function ThreadHeaderDetails({
 
             <div>
               <label
-                htmlFor="staff-email"
+                htmlFor="guest-email"
                 className="block text-sm font-medium text-slate-700 mb-1"
               >
-                Staff email
+                Guest email
               </label>
               <input
-                id="staff-email"
+                id="guest-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -189,6 +194,29 @@ export function ThreadHeaderDetails({
               <p className="text-sm text-red-600">
                 {error}
               </p>
+            )}
+
+            {showPortalClocks && (
+              <div className="pt-2 border-t border-slate-200 space-y-1">
+                <p className="text-sm font-medium text-slate-700">Guest portal clocks</p>
+                <ul className="text-sm text-slate-600 space-y-1">
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']}>
+                      Pre-window {PORTAL_CLOCK_FIXTURE_PATHS['fixture-pre']}
+                    </a>
+                  </li>
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-in']}>
+                      In-window {PORTAL_CLOCK_FIXTURE_PATHS['fixture-in']}
+                    </a>
+                  </li>
+                  <li>
+                    <a className="text-[#0A3775] underline" href={PORTAL_CLOCK_FIXTURE_PATHS['fixture-post']}>
+                      Post-departure {PORTAL_CLOCK_FIXTURE_PATHS['fixture-post']}
+                    </a>
+                  </li>
+                </ul>
+              </div>
             )}
           </div>
 
