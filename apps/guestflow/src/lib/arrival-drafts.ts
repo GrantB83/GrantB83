@@ -638,6 +638,13 @@ async function createOrRefreshStage(
     attention = live.attention
     directions = live.directions
     if (attention) counts.unresolvedCodes += 1
+  } else if (stageId === '4c') {
+    const live = await resolveT1Codes(db, tenantId, suite)
+    directions = live.directions
+    if (live.attention) {
+      attention = live.attention
+      counts.unresolvedCodes += 1
+    }
   }
 
   const portalUrl = await mintPortalUrl(db, booking)

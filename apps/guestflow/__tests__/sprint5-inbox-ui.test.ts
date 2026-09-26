@@ -42,3 +42,17 @@ describe('Sprint 5 inbox UI contract', () => {
     expect(page).toContain("fetch('/api/inbound/confirm-token'")
   })
 })
+
+describe('Sprint 5 portal contract', () => {
+  const route = read('../src/app/api/guest-portal/[code]/route.ts')
+  const portal = read('../src/app/guest/[code]/page.tsx')
+
+  it('keeps mapping-gap language off the guest-facing security message', () => {
+    expect(route).toContain('message: security.message')
+    expect(route).toContain('needsAttentionReason: codesUnresolved ? CODES_UNRESOLVED_REASON')
+    expect(route).not.toContain('message: codesUnresolved')
+    expect(portal).toContain('stayPacket.wifi.password ? (')
+    expect(portal).toContain('Local information')
+    expect(portal).toContain('Access codes appear on check-in day from 14:00.')
+  })
+})

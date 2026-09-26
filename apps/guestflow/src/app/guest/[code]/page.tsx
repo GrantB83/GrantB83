@@ -337,12 +337,14 @@ export default function GuestPortalPage() {
                     {stayPacket.wifi.network}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Password</p>
-                  <p className="font-mono font-semibold text-lg text-gray-900 bg-gray-50 px-4 py-2 rounded border border-gray-200">
-                    {stayPacket.wifi.password}
-                  </p>
-                </div>
+                {stayPacket.wifi.password ? (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Password</p>
+                    <p className="font-mono font-semibold text-lg text-gray-900 bg-gray-50 px-4 py-2 rounded border border-gray-200">
+                      {stayPacket.wifi.password}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">

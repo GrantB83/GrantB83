@@ -303,7 +303,7 @@ describe('runArrivalDraftsJob', () => {
       draft_body: string
       fingerprint: string
     }
-    expect(row.draft_body).toMatch(/Trout/)
+    expect(row.draft_body).toMatch(/official WhatsApp/)
     expect(row.fingerprint).toContain('Trout')
   })
 
@@ -329,13 +329,17 @@ describe('runArrivalDraftsJob', () => {
   it('does not invent codes in 4c drafts when lockbox property is unresolved', async () => {
     insertBooking(sqlite, { id: 13, checkIn: '2026-09-27', suite: 'Unknown Suite' })
     const result = await runArrivalDraftsJob(db, { now: DAY_OF_08 })
-    expect(result.unresolvedCodes).toBe(0)
-    const row = sqlite.prepare(`SELECT draft_body, attention_reason FROM arrival_drafts WHERE stage = '4c'`).get() as {
+    expect(result.unresolvedCodes).toBeGreaterThan(0)
+    const row = sqlite.prepare(`SELECT draft_body, attention_reason, status FROM arrival_drafts WHERE stage = '4c'`).get() as {
       draft_body: string
       attention_reason: string | null
+      status: string
     }
+    expect(['needs_attention', 'template_pending_approval']).toContain(row.status)
+    expect(row.attention_reason).toBe(CODES_UNRESOLVED_REASON)
     expect(row.draft_body).toMatch(/portal/)
     expect(row.draft_body).not.toContain(ACCESS_CODES_BLOCK_START)
+    expect(row.draft_body).not.toContain(CODE_MISSING_PLACEHOLDER)
     expect(row.draft_body).not.toMatch(/\b\d{4,6}\b/)
   })
 

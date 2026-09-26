@@ -165,9 +165,7 @@ export async function GET(
           gateCode: showAccessCodes && accessCodes ? accessCodes.gateCode : '',
           doorCode: showAccessCodes && accessCodes ? accessCodes.doorCode : '',
           lockboxCode: showAccessCodes && accessCodes?.lockboxCode ? accessCodes.lockboxCode : '',
-          message: codesUnresolved
-            ? CODES_UNRESOLVED_REASON
-            : security.message
+          message: security.message,
         },
         needsAttentionReason: codesUnresolved ? CODES_UNRESOLVED_REASON : undefined,
         checkIn: {

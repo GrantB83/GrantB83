@@ -15,7 +15,7 @@ Staff can triage a lean inbox and reply in a WhatsApp-style thread without clipp
 |----|--------|----------|
 | S1 | Y — operator job named | This pack + spec.md |
 | S2 | (1) Guest phone/email + Save. (2) One history scroll + overlay composer; pending tap; no Template&Care. (3) No list chip row; header Day-of / Window closed / Details. (4) 4a–4g named + SAST + portal links; draft→Approve&Send. (5) Portal rooms + thebrowns links + local info; security 14:00–12:00; Wolery→Heritage Cottage; SSID The Browns Guests | Preview inbox + portal; `journey-config.ts`; `portal-security.ts` |
-| S3 | Unmatched/window-closed composer usable; pre-security copy; missing mapping = staff gap | Fixture unmatched thread; portal pre-window |
+| S3 | Unmatched/window-closed composer usable; pre-security copy; missing mapping = staff gap | Fixture unmatched thread; portal pre-window copy; 4c `needs_attention` / `codes: property unresolved` on inbox only — guest `accessCodes.message` stays clock copy |
 | S4 | Desktop list\|thread; history primary; CTAs above taskbar | ~1280×800 job-script |
 | S5 | Phone ~390 list OR thread; composer usable; portal readable | ~390 job-script |
 | S6 | Redirect ON; human Approve&Send; no auto-send; From +27600200825; no invent PII/codes; no +2783 convert | Locks below |

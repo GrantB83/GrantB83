@@ -107,3 +107,9 @@ US1 + US2 + US3 (inbox staff job). US4 + US5 complete the saleable stay journey.
 ## Implementation strategy
 
 Foundational helpers and tests first, then labels, composer, chips, journey job, portal, VERIFY PACK.
+
+## Phase 9: Convergence
+
+- [x] T035 [US5] Keep guest-facing portal `accessCodes.message` on the security clock copy; staff mapping gap stays on `needsAttentionReason` / inbox chips only in `apps/guestflow/src/app/api/guest-portal/[code]/route.ts` (FR-013, US5/AC5) (contradicts)
+- [x] T036 [US5] Hide the Wi-Fi password row unless an SoR password is present in `apps/guestflow/src/app/guest/[code]/page.tsx` (FR-011, US5/AC2) (partial)
+- [x] T037 [US4] Flag unresolved lockbox mapping on 4c as staff `needs_attention` without embedding codes, and assert it in `apps/guestflow/src/lib/__tests__/arrival-drafts.test.ts` (FR-013, S3) (partial)
