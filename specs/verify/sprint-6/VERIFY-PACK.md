@@ -52,11 +52,13 @@ Fail-closed on Preview tip:
 
 **#3 Tooltips**
 - [ ] Hover **and** focus show: Send channel / Templates / Attach file / Expand editor
-- [ ] Attach title/tooltip is exactly **Attach file** (NeedsGrant / no-upload stays on the disabled control, not in the tooltip)
+- [ ] Attach title/tooltip is exactly **Attach file**
+- [ ] NeedsGrant / no-upload is `aria-describedby` (or equivalent), **not** title/tooltip
+- [ ] Attach remains focusable (`aria-disabled`, not native `disabled`) so keyboard focus shows **Attach file**
 - [ ] No mystery icons on those four controls
 - [ ] Copy ≤ ~3 words each
 
-GFM remedia 26 Sep: attach hover had concatenated `Attach file — NeedsGrant — no upload source of record`. Tooltip/title/accessible name now stay **Attach file** only.
+GFM + Design remedia 26 Sep: attach hover had concatenated NeedsGrant into the tooltip. Title/tooltip/aria-label stay **Attach file**. No-upload stays on `aria-describedby`. Focus uses the same four short strings.
 
 **#4 List chrome**
 - [ ] Denser list header; more threads above fold vs evidence `03` (desktop ~1280×800)
@@ -103,5 +105,5 @@ Preview (tip READY):
 
 - Ship B persist path remains `POST /api/umi/backfill/wa-web` (secret) and staff `POST /api/umi/threads/:id/refresh-bodies`.
 - Residual scrolled-off WhatsApp Web history is acceptable when documented.
-- Attach stays disabled (no upload SoR). Hover/title/aria-label remain **Attach file** only — NeedsGrant is not in the tooltip.
+- Attach is `aria-disabled` (no upload SoR) and stays keyboard-focusable. Hover/focus/title/aria-label remain **Attach file** only. NeedsGrant lives on `aria-describedby`, not the tooltip.
 - Do **not** merge this PR until GFM Preview ACCEPT.
