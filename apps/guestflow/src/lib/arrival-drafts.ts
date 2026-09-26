@@ -212,14 +212,14 @@ function scrubSermonFromPreview(oldText: string): string {
  * One-shot idempotent scrub that runs on each draft upsert.
  */
 async function scrubThreadSermonPreviews(db: DbClient, threadId: number): Promise<void> {
-  const existing = await db
-    .prepare<{ id: number; message_text: string }>(
+  const existing = (await db
+    .prepare(
       `SELECT id, message_text FROM inbound_messages 
        WHERE thread_id = ? 
        AND source_tag = 'arrival-scheduler' 
        AND message_text LIKE '%Approve&Send required%'`
     )
-    .all(threadId)
+    .all(threadId)) as Array<{ id: number; message_text: string }>
 
   for (const row of existing) {
     const cleaned = scrubSermonFromPreview(row.message_text)
