@@ -568,7 +568,7 @@ async function createOrRefreshStage(
     }
   }
 
-  const preview = `[Arrival draft ${stage.label}] Approve&Send required — never auto-sent.`
+  const preview = `Arrival draft ${stage.label}`
   const written = await writeThreadDraft(db, {
     tenantId,
     booking,
