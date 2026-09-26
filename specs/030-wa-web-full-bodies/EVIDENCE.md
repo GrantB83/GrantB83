@@ -15,6 +15,21 @@ No invent. Same data on Prod or Preview (do not mix different databases).
 
 Do not invent replacement text here.
 
+## Read-path remedia (26 Sep 2026, tip — MERGE HOLD)
+
+QA AFTER on tip `7be2916` scored thread 28 as **0 real / 14 metadata-only / 18 body unavailable** while the shared Turso rows for ids **51 / 61 / 70 / 75** already had real `message_text` and `body_unavailable=0`.
+
+**Root cause:** the Turso wrapper in `apps/guestflow/src/lib/db.ts` (1) let Next.js cache `@libsql/client` HTTP pipeline fetches, (2) preferred leftover `boundArgs` over call-site params, and (3) returned libsql Row objects instead of a plain column map. Staff GET could keep serving the first-seen sentinel `message_text` after a box-token UPDATE. Writes (PUT draft, health `MAX(id)`) still hit the same host DB.
+
+**Id 51 tip API `body`**
+
+| When | `GET /api/umi/threads/28` message id 51 `body` |
+| --- | --- |
+| Before (QA AFTER `7be2916`) | `[metadata-only]` |
+| After this remedia | live `message_text` from Turso (source-backed Peri check-in line — do not invent here). QA re-scores after READY. |
+
+Replace now persists `metadata.metadataOnly=false` on the message and thread. Source payload file was not in this workspace; no invented backfill.
+
 ## Thread 28 after (QA fills)
 
 | Field | Value |

@@ -18,6 +18,7 @@
 2. One-shot backfill (`POST /api/umi/backfill/wa-web`) updates existing WhatsApp Web sentinels **in place** when the source supplies real text. Replay does not duplicate.
 3. Unmatched / temp title uses WhatsApp contact, push, or chat title when the source has one. Phone is the fallback only when the source has no name.
 4. Cloud and Web copies of the same guest line stay one row.
+5. Staff read (`GET /api/umi/threads/:id`) uses a no-store Turso fetch and flattens libsql rows so updated `message_text` is what Preview/Prod return — not a cached sentinel. Replace clears `metadata.metadataOnly`.
 
 ## How to verify thread 28 (S10)
 
