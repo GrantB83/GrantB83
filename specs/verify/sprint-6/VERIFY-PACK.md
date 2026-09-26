@@ -4,7 +4,8 @@
 **Repo path**: `apps/guestflow`  
 **Spec**: `specs/034-sprint6-inbox-composer/spec.md`  
 **Grant CLEAR**: 26 Sep 2026 (GFM kick Execute Sprint 6)  
-**PR**: MERGE HOLD until GFM Preview ACCEPT
+**PR**: [#251](https://github.com/GrantB83/GrantB83/pull/251) — MERGE HOLD until GFM Preview ACCEPT  
+**Preview tip**: READY `https://browns-guestflow-git-cursor-spr-3c5329-grants-projects-db46fb3a.vercel.app` (SHA `4ffaacd`, `dpl_3tYRD2zCEhbbPMC7HeG2UrhHJK5e`)
 
 ## Operator job
 
@@ -87,9 +88,9 @@ cd apps/guestflow
 npx vitest run __tests__/umi-inbox.test.ts __tests__/umi-wa-web-sentinels.test.ts __tests__/sprint6-inbox-ui.test.ts src/lib/__tests__/umi-threads.test.ts src/lib/__tests__/wa-web-body.test.ts
 ```
 
-Preview (after tip READY):
+Preview (tip READY):
 
-1. Open staff Inbox. Confirm skeleton → first page in seconds.
+1. Open staff Inbox on `https://browns-guestflow-git-cursor-spr-3c5329-grants-projects-db46fb3a.vercel.app`. Confirm skeleton → first page in seconds.
 2. `GET /api/umi/inbox?limit=10` vs `?limit=25` — counts change.
 3. `GET /api/umi/wa-web/sentinels` — thread 46 class listed.
 4. `/?thread=46` + Refresh bodies. Read real text only after source-backed pull.
