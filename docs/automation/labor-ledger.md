@@ -4,6 +4,7 @@ Grant corrects the `actual_hours_before` column after a week of living with a ph
 
 | Phase | Ritual removed | Est. hours/week before | Est. hours/week after | Actual before (Grant) | Actual after (Grant) | Live since | Evidence artefact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| GuestFlow Sprint 4 #4 WA Web full bodies | Open WhatsApp Web to read guest wording because the soft inbox showed `[metadata-only]` | 0.4–0.8 (stay morning, unmatched temps) | 0.1 confirm residual if history scrolled off | | | 2026-09-26 coded | `apps/guestflow/docs/WA-WEB-FULL-BODIES.md` + `/?thread=28` |
 | GuestFlow Sprint 3 S Ultra-only | Provision/pay a third-party chat-completion key so Phase 1 drafts can exist | 0.5–1 (key + wrong-meter risk) | 0 (Cursor Ultra CA is the model) | | | 2026-09-25 coded | `apps/guestflow/docs/CURSOR-ULTRA-BATCH-LAUNCH.md` |
 | GuestFlow Sprint 3 T+U sticky header + phone width | Scroll inbox back to top to see Redirect / ops chrome; pinch-zoom a cramped phone preview | 0.3–0.6 (stay morning, phone + laptop) | 0 — chrome stays; preview readable at ~390px | | | 2026-09-25 coded | `specs/027-sprint3-sticky-header-mobile/` + `/?fixture=1` |
 | GuestFlow Sprint 2 arrival drafts | Hand-write T-3 welcome, T-1 check-in/codes, and day-of reminder | 1–2 (stay morning) | 0.3 review + Approve&Send | | | 2026-09-25 coded | `apps/guestflow/docs/ARRIVAL-DRAFTS.md` |
