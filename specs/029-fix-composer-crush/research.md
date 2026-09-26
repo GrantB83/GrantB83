@@ -58,41 +58,48 @@
 - `flex-initial` (flex: 0 1 auto): Rejected — allows shrinking, which could clip header text
 - `flex-none` (flex: none): Equivalent to `shrink-0 grow-0` — acceptable but verbose
 
-### Decision 2: Unmatched Panel Default Collapsed
+### Decision 2: Unmatched Icon → Modal Pattern (REVISED per Grant 26 Sep)
 
-**Decision**: Render unmatched panel as collapsed disclosure by default, expandable on click
+**Decision**: Show simple icon or compact chip in thread chrome that opens Link-to-booking modal. Dropdown + CTA live inside modal only. ZERO vertical band when modal closed.
 
-**Rationale**:
-- Design rule specifies one-line strip default to minimize chrome height
-- Current implementation (page.tsx lines 674-699) renders full panel (~140px height) immediately
+**Rationale**: 
+- Eliminates ALL vertical space consumption for unmatched state in thread chrome (not even one-line strip)
+- Modal contains booking link UI only when staff explicitly opens it
 - Staff use cases: most threads are matched; unmatched linking is <5% of interactions
+- Maximizes transcript + composer vertical space on 100% of threads
 
 **Implementation**:
 ```tsx
-// page.tsx: Add disclosure state
-const [unmatchedExpanded, setUnmatchedExpanded] = useState(false)
+// page.tsx: Add modal state
+const [linkBookingModalOpen, setLinkBookingModalOpen] = useState(false)
 
-// Render one-line strip by default
-{detail.threadKind === 'temp' && !unmatchedExpanded && (
-  <button onClick={() => setUnmatchedExpanded(true)} 
-    className="text-base bg-amber-50 border-amber-200 rounded-lg p-3 m-3 flex items-center justify-between">
-    <span>Unmatched — Link to booking</span>
-    <ChevronDown className="w-4 h-4" />
+// Compact icon/chip in header (ZERO vertical band)
+{detail.threadKind === 'temp' && (
+  <button 
+    onClick={() => setLinkBookingModalOpen(true)}
+    className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200"
+    title="Link to booking"
+  >
+    <Link2 className="w-3 h-3" /> Link
   </button>
 )}
 
-// Expanded panel with max-height cap
-{detail.threadKind === 'temp' && unmatchedExpanded && (
-  <div className="bg-amber-50 border-amber-200 rounded-lg p-3 m-3 max-h-24 overflow-y-auto">
-    {/* Existing select + button */}
+// Modal dialog (only when open)
+{linkBookingModalOpen && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
+      <h3>Link to Booking</h3>
+      {/* Existing select + button */}
+      <button onClick={() => setLinkBookingModalOpen(false)}>Close</button>
+    </div>
   </div>
 )}
 ```
 
 **Alternatives Considered**:
-- Always expanded: Rejected — violates design rule (default collapsed)
+- One-line strip disclosure: Rejected by Grant — still consumes ~48px vertical band
+- Always expanded panel: Rejected — consumes ~140px
 - Remove unmatched panel entirely: Rejected — staff need booking-link UX
-- Modal dialog for linking: Rejected — adds navigation friction for <5% use case
 
 ### Decision 3: Deduplicate Care Window Notice
 

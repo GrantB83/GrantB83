@@ -73,8 +73,8 @@ A staff member using a mobile device (~390px width) needs to triage threads and 
 - **FR-004**: Transcript zone MUST be the ONLY region with overflow-y: auto for scrolling messages
 - **FR-005**: Composer zone MUST reserve min-height for channel chips + textarea (~2-3 lines) + Approve&Send button
 - **FR-006**: Composer MUST remain fully visible in viewport at all times (never scroll off-screen)
-- **FR-007**: Unmatched panel default state MUST be one-line strip "Link to booking ▾" (not expanded card)
-- **FR-008**: When unmatched panel is expanded, height MUST be capped at ≤~96px with internal scroll if needed
+- **FR-007**: Unmatched state MUST show simple icon or compact chip in thread chrome that opens Link-to-booking modal (ZERO vertical band when modal closed)
+- **FR-008**: Booking link dropdown + CTA MUST live inside modal only (not inline in thread chrome)
 - **FR-009**: Window-closed status MUST appear ONCE (in header chip OR as tip bar, not both)
 - **FR-010**: Scroll floors from PR #235 MUST be preserved where they do not conflict with this layout rule
 - **FR-011**: Redirect ON behavior MUST remain unchanged (no removal of redirect functionality)

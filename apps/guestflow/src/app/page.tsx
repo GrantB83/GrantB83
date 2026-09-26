@@ -92,7 +92,7 @@ function InboxHomePageInner() {
   const [listCollapsed, setListCollapsed] = useState(false)
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
   const [composerDisclosureExpanded, setComposerDisclosureExpanded] = useState(false)
-  const [unmatchedExpanded, setUnmatchedExpanded] = useState(false)
+  const [linkBookingModalOpen, setLinkBookingModalOpen] = useState(false)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
 
@@ -175,7 +175,7 @@ function InboxHomePageInner() {
     setTemplateVars({})
     setTemplateSid('')
     setTemplateRendered('')
-    setUnmatchedExpanded(false)
+    setLinkBookingModalOpen(false)
   }
 
   const loadThread = async (id: number) => {
@@ -665,6 +665,16 @@ function InboxHomePageInner() {
                       {detail.careWindow.label}
                     </span>
                   )}
+                  {detail.threadKind === 'temp' && (
+                    <button
+                      type="button"
+                      onClick={() => setLinkBookingModalOpen(true)}
+                      className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 inbox-wrap"
+                      title="Link to booking"
+                    >
+                      <Link2 className="w-3 h-3" /> Link
+                    </button>
+                  )}
                 </>
               }
               showDetailsButton={Boolean(detail.bookingId)}
@@ -672,45 +682,6 @@ function InboxHomePageInner() {
               showBack={breakpoint === 'phone'}
               onBack={closeThread}
             />
-            {detail.threadKind === 'temp' && !unmatchedExpanded && (
-              <button
-                type="button"
-                onClick={() => setUnmatchedExpanded(true)}
-                className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3 w-full flex items-center justify-between hover:bg-amber-100"
-              >
-                <span className="flex items-center gap-1">
-                  <Link2 className="w-4 h-4" /> Unmatched — Link to booking
-                </span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
-            )}
-            {detail.threadKind === 'temp' && unmatchedExpanded && (
-              <div className="text-base bg-amber-50 border border-amber-200 rounded-lg p-3 m-3 max-h-24 overflow-y-auto">
-                <div className="font-semibold text-amber-900 flex items-center gap-1 mb-2">
-                  <Link2 className="w-4 h-4" /> Unmatched temp
-                </div>
-                <select
-                  value={linkBookingId}
-                  onChange={(event) => setLinkBookingId(event.target.value)}
-                  className="inbox-field w-full mb-2"
-                >
-                  <option value="">Link to booking…</option>
-                  {detail.linkCandidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={linkBooking}
-                  disabled={!linkBookingId || busy}
-                  className="inbox-tap w-full bg-amber-700 text-white rounded-lg disabled:opacity-50"
-                >
-                  Link to booking
-                </button>
-              </div>
-            )}
           </>
         }
       messages={detail.messages.map((message) => (
@@ -945,6 +916,70 @@ function InboxHomePageInner() {
               >
                 Confirm resend
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {linkBookingModalOpen && detail && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 bg-slate-900/50">
+          <div
+            data-inbox-link-booking-modal
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md bg-white rounded-xl shadow-xl p-6 space-y-4 max-h-96 overflow-y-auto"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Link2 className="w-5 h-5" /> Link to Booking
+              </h3>
+              <button
+                type="button"
+                onClick={() => setLinkBookingModalOpen(false)}
+                className="text-slate-500 hover:text-slate-700"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-base text-slate-600">
+              Match this conversation to an existing booking.
+            </p>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-base font-medium text-slate-700">Select booking</span>
+                <select
+                  value={linkBookingId}
+                  onChange={(event) => setLinkBookingId(event.target.value)}
+                  className="inbox-field w-full mt-1"
+                >
+                  <option value="">Choose booking…</option>
+                  {detail.linkCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.guestName} · {candidate.checkIn} · {candidate.suite || 'suite?'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLinkBookingModalOpen(false)}
+                  className="inbox-tap flex-1 border rounded-lg text-base"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    linkBooking()
+                    setLinkBookingModalOpen(false)
+                  }}
+                  disabled={!linkBookingId || busy}
+                  className="inbox-tap flex-1 bg-amber-700 text-white rounded-lg text-base disabled:opacity-50"
+                >
+                  Link to booking
+                </button>
+              </div>
             </div>
           </div>
         </div>

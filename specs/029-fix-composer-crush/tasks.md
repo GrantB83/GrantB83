@@ -194,6 +194,23 @@ Sequential execution:
 
 ---
 
+## Phase 7: Convergence (Scope Add - Icon → Modal Pattern)
+
+**Purpose**: Replace collapsed strip disclosure with icon/chip → modal pattern per Grant 26 Sep
+
+- [x] T027 [US1] Replace `unmatchedExpanded` state with `linkBookingModalOpen` in `apps/guestflow/src/app/page.tsx` (line ~95)
+- [x] T028 [US1] Update `applyDetail` to reset `linkBookingModalOpen` to false in `apps/guestflow/src/app/page.tsx` (line ~178)
+- [x] T029 [US1] Replace collapsed strip button with compact icon/chip in ThreadHeader badge slot in `apps/guestflow/src/app/page.tsx` (lines 675-686: remove button, add chip in header badge area with `onClick={() => setLinkBookingModalOpen(true)}`)
+- [x] T030 [US1] Remove expanded unmatched panel from compactHeader in `apps/guestflow/src/app/page.tsx` (delete lines 687-707)
+- [x] T031 [US1] Add Link-to-booking modal after ThreadLayoutShell in `apps/guestflow/src/app/page.tsx` (after line ~890: add modal dialog with backdrop, dropdown, link button, close button)
+- [x] T032 [US1] Manual test thread 28: verify ZERO vertical band for unmatched when modal closed, icon/chip opens modal, dropdown + CTA in modal work (test on Preview)
+- [x] T033 [P] Run build check after convergence changes
+- [x] T034 [P] Run lint check after convergence changes
+- [ ] T035 Commit convergence changes with message: `fix(guestflow): replace unmatched strip with icon → modal pattern`
+- [ ] T036 Update PR #245 body to reflect icon → modal pattern in verification steps
+
+---
+
 ## Notes
 
 - [P] tasks = different files or independent operations, can run in parallel

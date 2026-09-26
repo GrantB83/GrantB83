@@ -46,15 +46,15 @@ interface ThreadLayoutShellProps {
 
 **New State** (add):
 ```typescript
-const [unmatchedExpanded, setUnmatchedExpanded] = useState(false)
+const [linkBookingModalOpen, setLinkBookingModalOpen] = useState(false)
 ```
 
-**Purpose**: Controls unmatched panel disclosure (collapsed by default, expand on user click)
+**Purpose**: Controls Link-to-booking modal visibility (closed by default, opens on icon/chip click)
 
 **Lifecycle**:
-- **Initialize**: `false` (collapsed) on thread load
-- **Expand**: User clicks one-line strip → `setUnmatchedExpanded(true)`
-- **Collapse**: User clicks collapse button (optional) → `setUnmatchedExpanded(false)`
+- **Initialize**: `false` (closed) on thread load
+- **Open**: User clicks unmatched icon/chip → `setLinkBookingModalOpen(true)`
+- **Close**: User clicks Close button or backdrop → `setLinkBookingModalOpen(false)`
 - **Reset**: On thread change (`selectedId` changes), reset to `false`
 
 **Validation Rules**: None (boolean flag)
@@ -135,7 +135,7 @@ interface ThreadDetail {
 
 ## State Transitions
 
-### Unmatched Panel Disclosure
+### Link-to-Booking Modal
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -143,26 +143,26 @@ interface ThreadDetail {
 └─────────────────┬───────────────────────────────┘
                   │
                   v
-         ┌────────────────┐
-         │ unmatchedExpanded │
-         │ = false          │  (Initial: collapsed one-line strip)
-         └────────┬─────────┘
+         ┌────────────────────┐
+         │ linkBookingModalOpen │
+         │ = false              │  (Initial: modal closed, icon/chip visible)
+         └────────┬─────────────┘
                   │
-         User clicks strip
-                  │
-                  v
-         ┌────────────────┐
-         │ unmatchedExpanded │
-         │ = true           │  (Expanded: dropdown + button, max-h-24)
-         └────────┬─────────┘
-                  │
-      Optional: User clicks collapse
+     User clicks icon/chip
                   │
                   v
-         ┌────────────────┐
-         │ unmatchedExpanded │
-         │ = false          │  (Back to collapsed)
-         └──────────────────┘
+         ┌────────────────────┐
+         │ linkBookingModalOpen │
+         │ = true               │  (Modal open: dropdown + button + close)
+         └────────┬─────────────┘
+                  │
+User clicks Close or backdrop
+                  │
+                  v
+         ┌────────────────────┐
+         │ linkBookingModalOpen │
+         │ = false              │  (Back to closed)
+         └──────────────────────┘
 ```
 
 ### Thread Selection
