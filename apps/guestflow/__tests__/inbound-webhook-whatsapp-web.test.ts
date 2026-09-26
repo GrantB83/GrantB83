@@ -89,9 +89,18 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
     )
   })
 
-  it('maps empty WA Web bodies to [body unavailable], not [metadata-only]', async () => {
+  it('does not rewrite empty WA Web bodies to a sentinel', async () => {
+    ingestInboundMessage.mockResolvedValue({
+      success: true,
+      skipped: true,
+      skipReason: 'empty_or_sentinel_body',
+      messageId: 0,
+      threadId: 0,
+      queuedForApproval: false,
+      status: 'skipped',
+    })
     const { POST } = await import('@/app/api/inbound/webhook/route')
-    await POST(
+    const response = await POST(
       new Request('http://localhost:3100/api/inbound/webhook', {
         method: 'POST',
         headers: {
@@ -106,11 +115,17 @@ describe('POST /api/inbound/webhook source=whatsapp_web', () => {
         }),
       }) as any
     )
+    const data = await response.json()
+    expect(data.skipped).toBe(true)
+    expect(data.reason).toBe('empty_or_sentinel_body')
     expect(ingestInboundMessage).toHaveBeenCalledWith(
       expect.anything(),
       1,
-      expect.objectContaining({ text: '[body unavailable]' })
+      expect.objectContaining({ text: '' })
     )
+    const passed = ingestInboundMessage.mock.calls[0][2] as { text: string }
+    expect(passed.text).not.toBe('[body unavailable]')
+    expect(passed.text).not.toBe('[metadata-only]')
   })
 
   it('returns 200 JSON when ids are numeric', async () => {

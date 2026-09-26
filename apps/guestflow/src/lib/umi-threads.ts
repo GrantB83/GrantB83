@@ -23,6 +23,7 @@ import {
   type CareWindow,
 } from '@/lib/whatsapp-care-window'
 import { scrubArrivalDraftSermon } from '@/lib/scrub-arrival-sermon'
+import { isPhoneLikeDisplayName, isWaWebSentinelBody } from '@/lib/wa-web-body'
 
 export interface ResolveInboundInput {
   from: string
@@ -31,6 +32,15 @@ export interface ResolveInboundInput {
   text: string
   externalMessageId?: string
   preferredThreadId?: number
+  displayName?: string | null
+}
+
+export interface DuplicateMessageRow {
+  id: number
+  thread_id: number
+  message_text?: string | null
+  channel?: string | null
+  body_unavailable?: number | null
 }
 
 export interface UmiThreadRow {
@@ -120,29 +130,182 @@ async function loadThread(db: DbClient, id: unknown): Promise<UmiThreadRow | nul
   return { ...row, id: asNumber(row.id) }
 }
 
+function asDuplicateRow(row: DuplicateMessageRow | undefined | null): DuplicateMessageRow | null {
+  if (!row) return null
+  return {
+    id: asNumber(row.id),
+    thread_id: asNumber(row.thread_id),
+    message_text: row.message_text ?? null,
+    channel: row.channel ?? null,
+    body_unavailable: row.body_unavailable ?? null,
+  }
+}
+
+function isSentinelMessageRow(row: DuplicateMessageRow | null): boolean {
+  if (!row) return false
+  return isWaWebSentinelBody(row.message_text) || Number(row.body_unavailable) === 1
+}
+
 export async function findDuplicateMessage(
   db: DbClient,
   input: { externalMessageId?: string; dedupKey?: string }
-): Promise<{ id: number; thread_id: number } | null> {
+): Promise<DuplicateMessageRow | null> {
   if (input.externalMessageId) {
-    const byExternal = (await db
-      .prepare(
-        `SELECT id, thread_id FROM inbound_messages WHERE external_message_id = ? LIMIT 1`
-      )
-      .get(input.externalMessageId)) as { id: number; thread_id: number } | undefined
-    if (byExternal) {
-      return { id: asNumber(byExternal.id), thread_id: asNumber(byExternal.thread_id) }
+    try {
+      const byExternal = (await db
+        .prepare(
+          `SELECT id, thread_id, message_text, channel, body_unavailable
+           FROM inbound_messages WHERE external_message_id = ? LIMIT 1`
+        )
+        .get(input.externalMessageId)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(byExternal)
+      if (found) return found
+    } catch {
+      const byExternal = (await db
+        .prepare(`SELECT id, thread_id, message_text FROM inbound_messages WHERE external_message_id = ? LIMIT 1`)
+        .get(input.externalMessageId)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(byExternal)
+      if (found) return found
     }
   }
   if (input.dedupKey) {
-    const byDedup = (await db
-      .prepare(`SELECT id, thread_id FROM inbound_messages WHERE dedup_key = ? LIMIT 1`)
-      .get(input.dedupKey)) as { id: number; thread_id: number } | undefined
-    if (byDedup) {
-      return { id: asNumber(byDedup.id), thread_id: asNumber(byDedup.thread_id) }
+    try {
+      const byDedup = (await db
+        .prepare(
+          `SELECT id, thread_id, message_text, channel, body_unavailable
+           FROM inbound_messages WHERE dedup_key = ? LIMIT 1`
+        )
+        .get(input.dedupKey)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(byDedup)
+      if (found) return found
+    } catch {
+      const byDedup = (await db
+        .prepare(`SELECT id, thread_id FROM inbound_messages WHERE dedup_key = ? LIMIT 1`)
+        .get(input.dedupKey)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(byDedup)
+      if (found) return found
     }
   }
   return null
+}
+
+export async function findRealDuplicateMessage(
+  db: DbClient,
+  input: { externalMessageId?: string; dedupKey?: string }
+): Promise<DuplicateMessageRow | null> {
+  if (input.externalMessageId) {
+    const byExternal = await findDuplicateMessage(db, {
+      externalMessageId: input.externalMessageId,
+    })
+    if (byExternal && !isSentinelMessageRow(byExternal)) return byExternal
+  }
+  if (input.dedupKey) {
+    const byDedup = await findDuplicateMessage(db, { dedupKey: input.dedupKey })
+    if (byDedup && !isSentinelMessageRow(byDedup)) return byDedup
+  }
+  return null
+}
+
+export async function findWaWebSentinelForReplace(
+  db: DbClient,
+  input: { externalMessageId?: string; from: string; timestamp: string }
+): Promise<DuplicateMessageRow | null> {
+  if (input.externalMessageId) {
+    const byExternal = await findDuplicateMessage(db, { externalMessageId: input.externalMessageId })
+    if (byExternal && isSentinelMessageRow(byExternal)) return byExternal
+  }
+
+  const senders = Array.from(
+    new Set([input.from, normalizeZaE164(input.from)].filter((value): value is string => Boolean(value)))
+  )
+  for (const from of senders) {
+    try {
+      const row = (await db
+        .prepare(
+          `SELECT id, thread_id, message_text, channel, body_unavailable
+           FROM inbound_messages
+           WHERE from_number = ?
+             AND message_timestamp = ?
+             AND COALESCE(channel, 'whatsapp_web') = 'whatsapp_web'
+             AND (
+               message_text IN ('[metadata-only]', '[body unavailable]', '[observe-probe]')
+               OR COALESCE(body_unavailable, 0) = 1
+             )
+           LIMIT 1`
+        )
+        .get(from, input.timestamp)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(row)
+      if (found) return found
+    } catch {
+      const row = (await db
+        .prepare(
+          `SELECT id, thread_id, message_text
+           FROM inbound_messages
+           WHERE from_number = ?
+             AND message_timestamp = ?
+             AND message_text IN ('[metadata-only]', '[body unavailable]', '[observe-probe]')
+           LIMIT 1`
+        )
+        .get(from, input.timestamp)) as DuplicateMessageRow | undefined
+      const found = asDuplicateRow(row)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+export async function deleteSentinelMessage(db: DbClient, id: number): Promise<void> {
+  try {
+    await db
+      .prepare(
+        `DELETE FROM inbound_messages
+         WHERE id = ?
+           AND (
+             message_text IN ('[metadata-only]', '[body unavailable]', '[observe-probe]')
+             OR COALESCE(body_unavailable, 0) = 1
+           )`
+      )
+      .run(id)
+  } catch {
+    await db
+      .prepare(
+        `DELETE FROM inbound_messages
+         WHERE id = ?
+           AND message_text IN ('[metadata-only]', '[body unavailable]', '[observe-probe]')`
+      )
+      .run(id)
+  }
+}
+
+export async function findThreadForSourceName(
+  db: DbClient,
+  tenantId: number,
+  from: string,
+  preferredThreadId?: number
+): Promise<UmiThreadRow | null> {
+  if (preferredThreadId) {
+    const preferred = await loadThread(db, preferredThreadId)
+    if (preferred) return preferred
+  }
+  return findTempThread(db, tenantId, from)
+}
+
+export async function applySourceDisplayName(
+  db: DbClient,
+  threadId: number,
+  displayName: string | null | undefined,
+  from: string
+): Promise<boolean> {
+  const name = String(displayName || '').trim()
+  if (!name || isPhoneLikeDisplayName(name, from)) return false
+  const thread = await loadThread(db, threadId)
+  if (!thread) return false
+  const current = thread.guest_name
+  if (current && !isPhoneLikeDisplayName(current, from)) return false
+  await db
+    .prepare(`UPDATE inbound_threads SET guest_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
+    .run(name, threadId)
+  return true
 }
 
 function rejectInactiveBookings<T extends BookingMatch>(rows: T[]): T[] {
@@ -368,12 +531,16 @@ export async function resolveUmiThread(
 }> {
   await ensureUmiSchema(db)
   const channel = mapSourceToChannel(input.source)
+  const sourceName =
+    input.displayName && !isPhoneLikeDisplayName(input.displayName, input.from)
+      ? String(input.displayName).trim()
+      : null
   const dedupKey = computeDedupKey(input.from, input.text, input.timestamp)
   const duplicate = await findDuplicateMessage(db, {
     externalMessageId: input.externalMessageId,
     dedupKey,
   })
-  if (duplicate) {
+  if (duplicate && !(channel === 'whatsapp_web' && isSentinelMessageRow(duplicate))) {
     const thread = (await loadThread(db, duplicate.thread_id)) || {
       id: duplicate.thread_id,
       tenant_id: tenantId,
@@ -414,6 +581,7 @@ export async function resolveUmiThread(
     tenantId,
     phone: normalizeZaE164(input.from),
     email: normalizeEmail(input.from),
+    displayName: sourceName,
     source: 'inbound',
   })
 
@@ -449,7 +617,11 @@ export async function resolveUmiThread(
       timestamp: input.timestamp,
       channel,
       source: input.source,
+      guestName: sourceName,
     })
+    if (sourceName) {
+      await applySourceDisplayName(db, temp.id, sourceName, input.from)
+    }
     return { thread: (await loadThread(db, temp.id))!, channel, dedupKey, created: false }
   }
 
@@ -459,6 +631,7 @@ export async function resolveUmiThread(
     from: input.from,
     timestamp: input.timestamp,
     kind: 'temp',
+    guestName: sourceName,
     channel,
     contactId: contact?.id ?? null,
   })

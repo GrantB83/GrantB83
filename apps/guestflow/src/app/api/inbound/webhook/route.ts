@@ -36,6 +36,12 @@ interface InboundMessagePayload {
   source?: string
   mediaRefs?: string[]
   externalMessageId?: string
+  displayName?: string
+  contactName?: string
+  pushName?: string
+  notifyName?: string
+  chatTitle?: string
+  name?: string
   metadata?: Record<string, any>
   _twilioThreadId?: number  // Internal: for deduplication
 }
@@ -177,7 +183,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const source = payload.source || 'legacy_wa'
     
-    // WhatsApp Web source: full bodies (UMI v2.1). Empty → [body unavailable].
+    // WhatsApp Web: persist real bodies only. Empty/sentinel → skip fake row.
     if (source === 'whatsapp_web') {
       if (!payload.from || !payload.timestamp || !payload.externalMessageId) {
         return jsonSafeResponse(
@@ -188,11 +194,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      const body = String(payload.text || '').trim()
-      payload.text =
-        !body || body === '[metadata-only]' || body === '[observe-probe]'
-          ? '[body unavailable]'
-          : payload.text
+      payload.text = String(payload.text || '').trim()
     } else {
       if (!payload.from || !payload.text || !payload.timestamp) {
         return jsonSafeResponse(
@@ -224,9 +226,28 @@ export async function POST(request: NextRequest) {
       mediaRefs: payload.mediaRefs,
       externalMessageId: payload.externalMessageId,
       preferredThreadId: payload._twilioThreadId,
+      displayName: payload.displayName,
+      contactName: payload.contactName,
+      pushName: payload.pushName,
+      notifyName: payload.notifyName,
+      chatTitle: payload.chatTitle,
+      name: payload.name,
+      metadata: payload.metadata,
     })
 
-    const thread = (await db.prepare('SELECT * FROM inbound_threads WHERE id = ?').get(ingest.threadId)) as any
+    if (ingest.skipped) {
+      return jsonSafeResponse({
+        success: true,
+        skipped: true,
+        reason: ingest.skipReason || 'empty_or_sentinel_body',
+        threadId: ingest.threadId || null,
+        metadataOnly: false,
+      })
+    }
+
+    const thread = ingest.threadId
+      ? ((await db.prepare('SELECT * FROM inbound_threads WHERE id = ?').get(ingest.threadId)) as any)
+      : null
     const messageId = Number(ingest.messageId)
 
     if (ingest.duplicate) {
@@ -242,11 +263,12 @@ export async function POST(request: NextRequest) {
       return jsonSafeResponse({
         success: true,
         messageId,
-        threadId: thread.id,
+        threadId: thread?.id ?? ingest.threadId,
         allowlisted: true,
         deduped: !!payload._twilioThreadId,
         metadataOnly: false,
-        temp: thread.thread_kind === 'temp',
+        replaced: Boolean(ingest.replaced),
+        temp: thread?.thread_kind === 'temp',
         spam: Boolean(ingest.spam),
         queuedForApproval: ingest.queuedForApproval,
       })

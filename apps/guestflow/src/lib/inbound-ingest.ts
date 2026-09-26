@@ -3,8 +3,18 @@ import { classifyMessage, generateDraftReply } from '@/lib/inbound-classifier'
 import { enqueueDraftJob } from '@/lib/draft-jobs'
 import { isSpamOrMarketing } from '@/lib/umi-spam'
 import { ensureUmiSchema } from '@/lib/umi-schema'
-import { markThreadPendingDraft, resolveUmiThread } from '@/lib/umi-threads'
+import {
+  applySourceDisplayName,
+  deleteSentinelMessage,
+  findRealDuplicateMessage,
+  findThreadForSourceName,
+  findWaWebSentinelForReplace,
+  markThreadPendingDraft,
+  resolveUmiThread,
+} from '@/lib/umi-threads'
 import { mapSourceToChannel } from '@/lib/umi-channels'
+import { computeDedupKey } from '@/lib/umi-dedup'
+import { extractWaWebDisplayName, isWaWebSentinelBody } from '@/lib/wa-web-body'
 
 export interface IngestPayload {
   from: string
@@ -17,6 +27,13 @@ export interface IngestPayload {
   senderAddress?: string
   sourceTag?: string
   preferredThreadId?: number
+  displayName?: string | null
+  contactName?: string | null
+  pushName?: string | null
+  notifyName?: string | null
+  chatTitle?: string | null
+  name?: string | null
+  metadata?: Record<string, unknown> | null
 }
 
 export interface IngestResult {
@@ -39,6 +56,9 @@ export interface IngestResult {
   status: string
   spam?: boolean
   channel?: string
+  skipped?: boolean
+  replaced?: boolean
+  skipReason?: string
 }
 
 function emailTaggedBody(payload: IngestPayload): { text: string; sourceTag?: string; senderAddress?: string } {
@@ -61,10 +81,104 @@ export async function ingestInboundMessage(
 ): Promise<IngestResult> {
   await ensureUmiSchema(db)
   const tagged = emailTaggedBody(payload)
-  const bodyUnavailable = !payload.text || payload.text === '[body unavailable]' || payload.text === '[metadata-only]'
-  const storedText = payload.text?.trim()
-    ? payload.text
-    : '[body unavailable]'
+  const channel = mapSourceToChannel(payload.source)
+  const isWaWeb = channel === 'whatsapp_web' || payload.source === 'whatsapp_web'
+  const displayName = extractWaWebDisplayName(payload)
+  const rawText = String(payload.text || '')
+  const sentinelIncoming = isWaWeb && isWaWebSentinelBody(rawText)
+
+  if (isWaWeb && sentinelIncoming) {
+    const existing = await findThreadForSourceName(db, tenantId, payload.from, payload.preferredThreadId)
+    if (existing && displayName) {
+      await applySourceDisplayName(db, existing.id, displayName, payload.from)
+    }
+    return {
+      success: true,
+      skipped: true,
+      skipReason: 'empty_or_sentinel_body',
+      messageId: 0,
+      threadId: existing?.id || 0,
+      queuedForApproval: false,
+      status: 'skipped',
+      channel,
+    }
+  }
+
+  const storedText = isWaWeb
+    ? rawText.trim()
+    : payload.text?.trim()
+      ? payload.text
+      : '[body unavailable]'
+  const bodyUnavailable = isWaWeb
+    ? false
+    : !payload.text || payload.text === '[body unavailable]' || payload.text === '[metadata-only]'
+  const realDedupKey = computeDedupKey(payload.from, storedText, payload.timestamp)
+
+  if (isWaWeb) {
+    const realDup = await findRealDuplicateMessage(db, {
+      externalMessageId: payload.externalMessageId,
+      dedupKey: realDedupKey,
+    })
+    const sentinel = await findWaWebSentinelForReplace(db, {
+      externalMessageId: payload.externalMessageId,
+      from: payload.from,
+      timestamp: payload.timestamp,
+    })
+
+    if (realDup) {
+      if (sentinel && sentinel.id !== realDup.id) {
+        await deleteSentinelMessage(db, sentinel.id)
+      }
+      if (displayName) {
+        await applySourceDisplayName(db, realDup.thread_id, displayName, payload.from)
+      }
+      return {
+        success: true,
+        duplicate: true,
+        messageId: realDup.id,
+        threadId: realDup.thread_id,
+        queuedForApproval: false,
+        status: 'duplicate',
+        channel,
+      }
+    }
+
+    if (sentinel) {
+      await db
+        .prepare(
+          `UPDATE inbound_messages
+           SET message_text = ?,
+               dedup_key = ?,
+               body_unavailable = 0,
+               external_message_id = COALESCE(external_message_id, ?),
+               is_spam = 0
+           WHERE id = ?`
+        )
+        .run(storedText, realDedupKey, payload.externalMessageId || null, sentinel.id)
+      await db
+        .prepare(
+          `UPDATE inbound_threads
+           SET last_message_at = ?,
+               last_inbound_at = ?,
+               last_channel = ?,
+               last_inbound_channel = ?,
+               pending_reply = 1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`
+        )
+        .run(payload.timestamp, payload.timestamp, channel, channel, sentinel.thread_id)
+      if (displayName) {
+        await applySourceDisplayName(db, sentinel.thread_id, displayName, payload.from)
+      }
+      return finishInboundAfterPersist(db, tenantId, payload, {
+        messageId: sentinel.id,
+        threadId: sentinel.thread_id,
+        storedText,
+        channel,
+        replaced: true,
+      })
+    }
+  }
 
   const resolved = await resolveUmiThread(db, tenantId, {
     from: payload.from,
@@ -73,9 +187,13 @@ export async function ingestInboundMessage(
     text: storedText,
     externalMessageId: payload.externalMessageId,
     preferredThreadId: payload.preferredThreadId,
+    displayName,
   })
 
   if (resolved.duplicate) {
+    if (displayName) {
+      await applySourceDisplayName(db, resolved.duplicate.thread_id, displayName, payload.from)
+    }
     return {
       success: true,
       duplicate: true,
@@ -134,12 +252,39 @@ export async function ingestInboundMessage(
       bodyUnavailable ? 1 : 0
     )
 
-  const messageId = messageInsert.lastInsertRowid
+  if (displayName) {
+    await applySourceDisplayName(db, thread.id, displayName, payload.from)
+  }
+
+  return finishInboundAfterPersist(db, tenantId, payload, {
+    messageId: messageInsert.lastInsertRowid,
+    threadId: thread.id,
+    storedText,
+    channel: resolved.channel,
+    threadStatus: thread.status,
+  })
+}
+
+async function finishInboundAfterPersist(
+  db: DbClient,
+  tenantId: number,
+  payload: IngestPayload,
+  persisted: {
+    messageId: number | bigint
+    threadId: number
+    storedText: string
+    channel: string
+    replaced?: boolean
+    threadStatus?: string
+  }
+): Promise<IngestResult> {
+  const messageId = persisted.messageId
   const classification = classifyMessage({
-    messageText: storedText,
+    messageText: persisted.storedText,
     fromNumber: payload.from,
     threadHistory: [],
   })
+  const spam = isSpamOrMarketing(persisted.storedText)
 
   try {
     await db
@@ -151,7 +296,7 @@ export async function ingestInboundMessage(
       )
       .run(
         messageId,
-        thread.id,
+        persisted.threadId,
         classification.intent,
         classification.confidence,
         JSON.stringify(classification.extractedData),
@@ -180,15 +325,16 @@ export async function ingestInboundMessage(
       try {
         await db
           .prepare(`UPDATE inbound_threads SET intent = 'spam', status = 'classified' WHERE id = ?`)
-          .run(thread.id)
+          .run(persisted.threadId)
       } catch {
-        await db.prepare(`UPDATE inbound_threads SET status = 'classified' WHERE id = ?`).run(thread.id)
+        await db.prepare(`UPDATE inbound_threads SET status = 'classified' WHERE id = ?`).run(persisted.threadId)
       }
     }
     return {
       success: true,
+      replaced: persisted.replaced,
       messageId,
-      threadId: thread.id,
+      threadId: persisted.threadId,
       classification: {
         intent: classification.intent,
         confidence: classification.confidence,
@@ -199,7 +345,7 @@ export async function ingestInboundMessage(
       queuedForApproval: false,
       status: 'spam',
       spam: true,
-      channel: resolved.channel,
+      channel: persisted.channel,
     }
   }
 
@@ -216,12 +362,12 @@ export async function ingestInboundMessage(
           classification.confidence,
           'classified',
           classification.extractedData.guestName || null,
-          thread.id
+          persisted.threadId
         )
     } catch {
       await db
         .prepare(`UPDATE inbound_threads SET status = ?, guest_name = COALESCE(?, guest_name) WHERE id = ?`)
-        .run('classified', classification.extractedData.guestName || null, thread.id)
+        .run('classified', classification.extractedData.guestName || null, persisted.threadId)
     }
   }
 
@@ -238,12 +384,12 @@ export async function ingestInboundMessage(
     )
     .run(draft, messageId)
 
-  await markThreadPendingDraft(db, thread.id)
+  await markThreadPendingDraft(db, persisted.threadId)
 
   try {
     await enqueueDraftJob(db, {
       tenantId,
-      threadId: thread.id,
+      threadId: persisted.threadId,
       messageId: Number(messageId),
       intent: classification.intent,
     })
@@ -253,12 +399,13 @@ export async function ingestInboundMessage(
 
   const refreshed = (await db
     .prepare('SELECT status FROM inbound_threads WHERE id = ?')
-    .get(thread.id)) as { status: string } | undefined
+    .get(persisted.threadId)) as { status: string } | undefined
 
   return {
     success: true,
+    replaced: persisted.replaced,
     messageId,
-    threadId: thread.id,
+    threadId: persisted.threadId,
     classification: {
       intent: classification.intent,
       confidence: classification.confidence,
@@ -267,9 +414,9 @@ export async function ingestInboundMessage(
     },
     draftReply: { text: draft, requiresApproval, missingInfo },
     queuedForApproval: refreshed?.status === 'drafted',
-    status: refreshed?.status || thread.status,
+    status: refreshed?.status || persisted.threadStatus || 'drafted',
     spam: false,
-    channel: resolved.channel,
+    channel: persisted.channel,
   }
 }
 
