@@ -54,8 +54,8 @@
 
 - [x] T007 [P] [US1] Create ThreadHeader.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header.md (compact display: guest name, suite, dates, NB ref, channel line; height target ≤96-120px; Back button slot; Details button slot)
 - [x] T008 [P] [US1] Create ThreadHeaderDetails.tsx component in apps/guestflow/src/components/inbox/ implementing contract from contracts/thread-header-details.md (Details sheet/modal for contact editing; responsive: desktop overlay vs phone bottom sheet; staff phone/email inputs with Save; POST to /api/umi/threads/[id]/contacts)
-- [ ] T009 [US1] Update ThreadLayoutShell.tsx in apps/guestflow/src/components/inbox/ to integrate new ThreadHeader component (replace current tall header with compact ThreadHeader; wire showBack, onBack, Details button; maintain existing minMessageHeight/maxComposerHeight props and flex layout)
-- [ ] T010 [US1] Update thread page in apps/guestflow/src/app/(ops)/inbox/page.tsx to use updated ThreadLayoutShell with ThreadHeader and ThreadHeaderDetails (pass thread data to compact header; manage Details sheet open/close state; preserve existing phone Back and URL ?thread= behavior)
+- [x] T009 [US1] Update ThreadLayoutShell.tsx in apps/guestflow/src/components/inbox/ to integrate new ThreadHeader component (replace current tall header with compact ThreadHeader; wire showBack, onBack, Details button; maintain existing minMessageHeight/maxComposerHeight props and flex layout)
+- [x] T010 [US1] Update thread page in apps/guestflow/src/app/(ops)/inbox/page.tsx to use updated ThreadLayoutShell with ThreadHeader and ThreadHeaderDetails (pass thread data to compact header; manage Details sheet open/close state; preserve existing phone Back and URL ?thread= behavior)
 - [ ] T011 [US1] Update layout test in apps/guestflow/src/lib/__tests__/inbox-layout.test.ts to assert compact header height ≤120px and message transcript occupies ≥50% of thread column (or create new test file if needed)
 - [ ] T012 [US1] Verify message transcript scroll performance with existing useShellDimensions hook and floor constraints from #235 (messages ≥240px/≥35%, no nested scroll conflicts)
 
@@ -71,11 +71,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Implement Details button in ThreadHeader.tsx (icon or "Details" label; positioned in header actions slot; aria-label for accessibility)
-- [ ] T014 [US2] Wire Details button click to open ThreadHeaderDetails sheet (update thread page state management; pass isOpen, onClose, onSaved callbacks)
-- [ ] T015 [US2] Test Details sheet on desktop breakpoint (fixed overlay with centered card max-w-md; backdrop closes sheet; Save POSTs to API and closes on success)
-- [ ] T016 [US2] Test Details sheet on phone breakpoint (bottom sheet slides up from bottom max-h-[90vh]; rounded top corners; Escape and backdrop close behavior)
-- [ ] T017 [US2] Verify contact editing flow end-to-end (edit Staff phone/email → Save → reopen Details to confirm persistence; existing API route unchanged)
+- [x] T013 [US2] Implement Details button in ThreadHeader.tsx (icon or "Details" label; positioned in header actions slot; aria-label for accessibility)
+- [x] T014 [US2] Wire Details button click to open ThreadHeaderDetails sheet (update thread page state management; pass isOpen, onClose, onSaved callbacks)
+- [x] T015 [US2] Test Details sheet on desktop breakpoint (fixed overlay with centered card max-w-md; backdrop closes sheet; Save POSTs to API and closes on success)
+- [x] T016 [US2] Test Details sheet on phone breakpoint (bottom sheet slides up from bottom max-h-[90vh]; rounded top corners; Escape and backdrop close behavior)
+- [x] T017 [US2] Verify contact editing flow end-to-end (edit Staff phone/email → Save → reopen Details to confirm persistence; existing API route unchanged)
 
 **Checkpoint**: User Story 2 complete - compact header with accessible contact editing via Details sheet working on all breakpoints
 
@@ -89,12 +89,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Update ThreadComposer component (or create if not existing) in apps/guestflow/src/components/inbox/ to add Template & Care disclosure toggle (button with chevron icon; aria-expanded; controls template selector and care notes visibility per contract from contracts/thread-composer.md)
-- [ ] T019 [US3] Implement disclosure state management in ThreadComposer (useState for isExpanded; optional localStorage persistence for user preference; default collapsed)
-- [ ] T020 [US3] Move template selector and care notes behind disclosure (conditionally render template dropdown and care textarea when isExpanded; maintain existing template selection and care notes functionality)
-- [ ] T021 [US3] Update composer height constraints (default collapsed target ≤35% of thread column; expanded max ≤50% per existing #235 floor; add CSS max-height and overflow-y-auto if needed)
-- [ ] T022 [US3] Test composer disclosure on desktop and phone (toggle button expands/collapses; template selection works when expanded; care notes editable; height constraints respected)
-- [ ] T023 [US3] Verify existing Approve&Send dialog and channel selection still work (no regressions to existing composer functionality)
+- [x] T018 [US3] Update ThreadComposer component (or create if not existing) in apps/guestflow/src/components/inbox/ to add Template & Care disclosure toggle (button with chevron icon; aria-expanded; controls template selector and care notes visibility per contract from contracts/thread-composer.md)
+- [x] T019 [US3] Implement disclosure state management in ThreadComposer (useState for isExpanded; optional localStorage persistence for user preference; default collapsed)
+- [x] T020 [US3] Move template selector and care notes behind disclosure (conditionally render template dropdown and care textarea when isExpanded; maintain existing template selection and care notes functionality)
+- [x] T021 [US3] Update composer height constraints (default collapsed target ≤35% of thread column; expanded max ≤50% per existing #235 floor; add CSS max-height and overflow-y-auto if needed)
+- [x] T022 [US3] Test composer disclosure on desktop and phone (toggle button expands/collapses; template selection works when expanded; care notes editable; height constraints respected)
+- [x] T023 [US3] Verify existing Approve&Send dialog and channel selection still work (no regressions to existing composer functionality)
 
 **Checkpoint**: User Story 3 complete - composer with Template & Care disclosure working; default collapsed state saves vertical space for messages
 
