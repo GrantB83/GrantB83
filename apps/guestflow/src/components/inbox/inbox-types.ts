@@ -86,3 +86,14 @@ export interface ThreadDetail {
 
 export type InboxBreakpoint = 'phone' | 'tablet' | 'desktop'
 export type InboxPane = 'list' | 'thread'
+
+// Sprint 4: Client-side UI state types for navigability improvements
+export interface DetailsSheetState {
+  isOpen: boolean
+  editedPhone: string
+  editedEmail: string
+}
+
+export interface ComposerDisclosureState {
+  isExpanded: boolean
+}
