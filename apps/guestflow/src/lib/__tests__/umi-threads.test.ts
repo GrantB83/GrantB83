@@ -4,6 +4,7 @@ import { ingestInboundMessage } from '@/lib/inbound-ingest'
 import {
   applyTempHygiene,
   ensureArrivingBookingThreads,
+  getThreadDetail,
   linkTempToBooking,
   listInboxThreads,
   listLinkCandidates,
@@ -91,7 +92,7 @@ describe('umi threads', () => {
     sqlite
       .prepare(
         `INSERT INTO bookings (id, tenant_id, guest_name, guest_phone, check_in, check_out, suite_or_unit, nightsbridge_booking_id)
-         VALUES (10, 1, 'Ada Booker', '+27821234567', '2026-09-25', '2026-09-27', 'Trout', 'NB-10')`
+         VALUES (10, 1, 'Ada Booker', '+27821234567', '2026-09-26', '2026-09-28', 'Trout', 'NB-10')`
       )
       .run()
     sqlite
@@ -388,5 +389,111 @@ describe('umi threads', () => {
     expect(thread50).toBeDefined()
     expect(thread50?.threadKind).toBe('booking')
     expect(thread50?.bookingId).toBe(10)
+  })
+
+  it('does not insert a WhatsApp Web row when the body is a sentinel', async () => {
+    const result = await ingestInboundMessage(db, 1, {
+      from: '+27829990001',
+      text: '[metadata-only]',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'whatsapp_web',
+      externalMessageId: 'waweb-sentinel-skip',
+    })
+    expect(result.skipped).toBe(true)
+    const count = sqlite.prepare('SELECT COUNT(*) as n FROM inbound_messages').get() as { n: number }
+    expect(count.n).toBe(0)
+  })
+
+  it('replaces a metadata-only WhatsApp Web row in place and persists the source name', async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (id, tenant_id, source, from_number, guest_name, status, thread_kind, first_message_at, last_message_at, metadata)
+         VALUES (28, 1, 'whatsapp_web', '+27829990002', '+27829990002', 'new', 'temp', '2026-09-24T12:00:00.000Z', '2026-09-24T12:00:00.000Z', '{"metadataOnly":true}')`
+      )
+      .run()
+    try {
+      sqlite.exec(`ALTER TABLE inbound_messages ADD COLUMN metadata TEXT`)
+    } catch {
+      // column may already exist
+    }
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (id, thread_id, tenant_id, from_number, message_text, message_timestamp, external_message_id, channel, body_unavailable, metadata)
+         VALUES (280, 28, 1, '+27829990002', '[metadata-only]', '2026-09-24T12:00:00.000Z', 'waweb-28-1', 'whatsapp_web', 1, '{"metadataOnly":true}')`
+      )
+      .run()
+
+    const result = await ingestInboundMessage(db, 1, {
+      from: '+27829990002',
+      text: 'We land at 16:00 — is late check-in OK?',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'whatsapp_web',
+      externalMessageId: 'waweb-28-1',
+      chatTitle: 'Sam Guest',
+    })
+    expect(result.replaced).toBe(true)
+    expect(Number(result.messageId)).toBe(280)
+    const count = sqlite.prepare('SELECT COUNT(*) as n FROM inbound_messages').get() as { n: number }
+    expect(count.n).toBe(1)
+    const message = sqlite.prepare('SELECT * FROM inbound_messages WHERE id = 280').get() as any
+    expect(message.message_text).toBe('We land at 16:00 — is late check-in OK?')
+    expect(Number(message.body_unavailable || 0)).toBe(0)
+    expect(JSON.parse(String(message.metadata || '{}')).metadataOnly).toBe(false)
+    const threadMeta = sqlite.prepare('SELECT metadata FROM inbound_threads WHERE id = 28').get() as { metadata: string }
+    expect(JSON.parse(threadMeta.metadata).metadataOnly).toBe(false)
+    const detail = await getThreadDetail(db, 1, 28)
+    expect(detail?.messages.find((row) => row.id === 280)?.body).toBe('We land at 16:00 — is late check-in OK?')
+    const inbox = await listInboxThreads(db, 1)
+    const thread = inbox.find((row) => row.id === 28)
+    expect(thread?.bookerName).toBe('Sam Guest')
+    expect(thread?.preview).toContain('We land at 16:00')
+  })
+
+  it('does not invent a name when WhatsApp Web only has the raw number', async () => {
+    const result = await ingestInboundMessage(db, 1, {
+      from: '+27829990003',
+      text: 'Do you have a cottage this weekend?',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'whatsapp_web',
+      externalMessageId: 'waweb-phone-only',
+      displayName: '+27829990003',
+      chatTitle: '27829990003',
+    })
+    const thread = sqlite.prepare('SELECT * FROM inbound_threads WHERE id = ?').get(result.threadId) as any
+    expect(thread.thread_kind).toBe('temp')
+    expect(thread.guest_name == null || thread.guest_name === '+27829990003').toBe(true)
+    const inbox = await listInboxThreads(db, 1)
+    const row = inbox.find((item) => Number(item.id) === Number(result.threadId))
+    expect(row?.bookerName).toBe('+27829990003')
+  })
+
+  it('drops a leftover WhatsApp Web sentinel when Cloud already has the real body', async () => {
+    const first = await ingestInboundMessage(db, 1, {
+      from: '+27821234567',
+      text: 'ETA 15 minutes',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'twilio_whatsapp',
+      externalMessageId: 'wamid-cloud-eta',
+    })
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (thread_id, tenant_id, from_number, message_text, message_timestamp, external_message_id, channel, body_unavailable)
+         VALUES (?, 1, '+27821234567', '[body unavailable]', '2026-09-24T12:00:00.000Z', 'waweb-eta', 'whatsapp_web', 1)`
+      )
+      .run(first.threadId)
+
+    const second = await ingestInboundMessage(db, 1, {
+      from: '+27821234567',
+      text: 'ETA 15 minutes',
+      timestamp: '2026-09-24T12:00:00.000Z',
+      source: 'whatsapp_web',
+      externalMessageId: 'waweb-eta',
+    })
+    expect(second.duplicate).toBe(true)
+    const rows = sqlite.prepare('SELECT message_text FROM inbound_messages WHERE thread_id = ?').all(first.threadId) as Array<{
+      message_text: string
+    }>
+    expect(rows).toHaveLength(1)
+    expect(rows[0].message_text).toBe('ETA 15 minutes')
   })
 })

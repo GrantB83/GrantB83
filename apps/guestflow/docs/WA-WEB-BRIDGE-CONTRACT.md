@@ -85,11 +85,27 @@ Guest lines observed on WhatsApp Web → existing inbound shape:
   "text": "Thanks, see you Friday",
   "timestamp": "2026-09-20T12:00:00.000Z",
   "source": "whatsapp_web",
-  "externalMessageId": "optional-dedupe-key"
+  "externalMessageId": "waweb-durable-id",
+  "contactName": "Sam Guest",
+  "pushName": "Sam",
+  "chatTitle": "Sam Guest",
+  "metadata": {
+    "observedOn": "+27836458313",
+    "contactName": "Sam Guest"
+  }
 }
 ```
 
 Header: `Authorization: Bearer $INBOUND_WEBHOOK_SECRET`.
+
+Rules (Ship B):
+
+- `text` must be the actual guest bubble. Empty / `[metadata-only]` / `[body unavailable]` / `[observe-probe]` → **do not insert** a fake row (`skipped: true`). Prefer capture; never invent.
+- Persist contact / push / chat title onto unmatched `guest_name` when it is not just the raw number.
+- Same `externalMessageId` (or sender + timestamp) over a sentinel row → update in place.
+- Same guest line already on WhatsApp Cloud → duplicate; leftover Web sentinel removed.
+
+One-shot backfill: `POST /api/umi/backfill/wa-web` with `{ "messages": [ ...same shape ] }`. Counts `accepted`, `replaced`, `duplicates`, `skippedEmpty`, `ignoredTooOld`. 14 SAST days, or replace an already-open sentinel.
 
 ## Schema
 

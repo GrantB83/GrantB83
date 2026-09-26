@@ -3,7 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const ingestInboundMessage = vi.fn()
 
 vi.mock('@/lib/db', () => ({
-  getDbAsync: vi.fn(async () => ({ prepare: vi.fn(), exec: vi.fn(), batch: vi.fn() })),
+  getDbAsync: vi.fn(async () => ({
+    prepare: vi.fn(() => ({
+      get: vi.fn(() => undefined),
+      run: vi.fn(),
+      all: vi.fn(() => []),
+    })),
+    exec: vi.fn(),
+    batch: vi.fn(),
+  })),
   getDefaultTenantIdAsync: vi.fn(async () => 1),
 }))
 
@@ -31,6 +39,23 @@ describe('POST /api/umi/backfill/wa-web', () => {
         threadId: 4,
         queuedForApproval: false,
         status: 'duplicate',
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        replaced: true,
+        messageId: 9,
+        threadId: 28,
+        queuedForApproval: true,
+        status: 'drafted',
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        skipped: true,
+        skipReason: 'empty_or_sentinel_body',
+        messageId: 0,
+        threadId: 0,
+        queuedForApproval: false,
+        status: 'skipped',
       })
   })
 
@@ -71,5 +96,57 @@ describe('POST /api/umi/backfill/wa-web', () => {
     expect(data.duplicates).toBe(1)
     expect(data.ignoredTooOld).toBe(1)
     expect(data.windowDays).toBe(14)
+  })
+
+  it('counts in-place replace and skipped empty without inventing a body', async () => {
+    ingestInboundMessage.mockReset()
+    ingestInboundMessage
+      .mockResolvedValueOnce({
+        success: true,
+        replaced: true,
+        messageId: 9,
+        threadId: 28,
+        queuedForApproval: true,
+        status: 'drafted',
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        skipped: true,
+        skipReason: 'empty_or_sentinel_body',
+        messageId: 0,
+        threadId: 0,
+        queuedForApproval: false,
+        status: 'skipped',
+      })
+    const { POST } = await import('@/app/api/umi/backfill/wa-web/route')
+    const now = new Date().toISOString()
+    const response = await POST(
+      new Request('http://localhost:3100/api/umi/backfill/wa-web', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer whsec' },
+        body: JSON.stringify({
+          messages: [
+            {
+              from: '+27821234567',
+              text: 'Gate is on the left',
+              timestamp: now,
+              externalMessageId: 'waweb-28-1',
+              chatTitle: 'Sam Guest',
+            },
+            {
+              from: '+27821234567',
+              text: '[metadata-only]',
+              timestamp: now,
+              externalMessageId: 'waweb-empty',
+            },
+          ],
+        }),
+      }) as any
+    )
+    const data = await response.json()
+    expect(data.success).toBe(true)
+    expect(data.replaced).toBe(1)
+    expect(data.skippedEmpty).toBe(1)
+    expect(data.accepted).toBe(0)
   })
 })
