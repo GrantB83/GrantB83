@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   extractWaWebDisplayName,
   isPhoneLikeDisplayName,
+  isStaffWaWebSentinelBody,
   isWaWebSentinelBody,
+  last4Identity,
 } from '@/lib/wa-web-body'
 
 describe('wa-web-body', () => {
@@ -13,6 +15,10 @@ describe('wa-web-body', () => {
     expect(isWaWebSentinelBody('[body unavailable]')).toBe(true)
     expect(isWaWebSentinelBody('[observe-probe]')).toBe(true)
     expect(isWaWebSentinelBody('What time is check-in?')).toBe(false)
+    expect(isStaffWaWebSentinelBody('[body unavailable]')).toBe(true)
+    expect(isStaffWaWebSentinelBody('[metadata-only]')).toBe(true)
+    expect(isStaffWaWebSentinelBody('[observe-probe]')).toBe(false)
+    expect(last4Identity('+27821234567')).toBe('4567')
   })
 
   it('rejects phone-like labels so we do not invent a name', () => {

@@ -43,6 +43,16 @@ function normalize(text: string): string {
  * Fail-closed: when the message looks like junk, skip auto-draft.
  * Unsure → treat as spam for draft purposes only (message still stored).
  */
+export function shouldClearFilteredForRecoveredStay(input: {
+  recoveredBody: string
+  bookingLinked: boolean
+}): boolean {
+  if (!input.bookingLinked) return false
+  const text = String(input.recoveredBody || '').trim()
+  if (!text || text === '[body unavailable]' || text === '[metadata-only]') return false
+  return !isSpamOrMarketing(text).spam
+}
+
 export function isSpamOrMarketing(text: string | null | undefined): SpamFilterResult {
   const raw = String(text || '').trim()
   if (!raw || raw === '[body unavailable]' || raw === '[metadata-only]') {

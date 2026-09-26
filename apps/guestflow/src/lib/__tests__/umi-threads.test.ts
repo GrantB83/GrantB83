@@ -6,8 +6,10 @@ import {
   ensureArrivingBookingThreads,
   getThreadDetail,
   linkTempToBooking,
+  listInboxPage,
   listInboxThreads,
   listLinkCandidates,
+  listWaWebSentinelTargets,
   markThreadOutbound,
 } from '@/lib/umi-threads'
 import { ensureUmiSchema } from '@/lib/umi-schema'
@@ -495,5 +497,55 @@ describe('umi threads', () => {
     }>
     expect(rows).toHaveLength(1)
     expect(rows[0].message_text).toBe('ETA 15 minutes')
+  })
+
+  it('honors inbox limit and keyset cursor after sort', async () => {
+    for (let i = 0; i < 4; i += 1) {
+      await ingestInboundMessage(db, 1, {
+        from: `+2782999001${i}`,
+        text: `Ping ${i}`,
+        timestamp: `2026-09-24T12:0${i}:00.000Z`,
+        source: 'twilio_sms',
+        externalMessageId: `limit-${i}`,
+      })
+    }
+    const first = await listInboxPage(db, 1, { limit: 2 })
+    expect(first.threads).toHaveLength(2)
+    expect(first.limit).toBe(2)
+    expect(first.hasMore).toBe(true)
+    expect(first.nextCursor).toBeTruthy()
+    const second = await listInboxPage(db, 1, { limit: 2, cursor: first.nextCursor })
+    expect(second.threads).toHaveLength(2)
+    expect(second.threads[0].id).not.toBe(first.threads[0].id)
+    const all = await listInboxThreads(db, 1)
+    expect(all.length).toBeGreaterThan(2)
+  })
+
+  it('lists exact WA Web staff sentinels without inventing bodies', async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_threads (id, tenant_id, source, from_number, guest_name, status, thread_kind, booking_id, last_message_at)
+         VALUES (46, 1, 'whatsapp_web', '+27821235665', 'Ada Booker', 'new', 'booking', 10, '2026-09-26T00:23:00.000Z')`
+      )
+      .run()
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (id, thread_id, tenant_id, from_number, message_text, message_timestamp, channel)
+         VALUES (248, 46, 1, '+27821235665', '[body unavailable]', '2026-09-26T00:23:00.000Z', 'whatsapp_web')`
+      )
+      .run()
+    sqlite
+      .prepare(
+        `INSERT INTO inbound_messages (id, thread_id, tenant_id, from_number, message_text, message_timestamp, channel)
+         VALUES (249, 46, 1, '+27821235665', '[observe-probe]', '2026-09-26T00:24:00.000Z', 'whatsapp_web')`
+      )
+      .run()
+    const targets = await listWaWebSentinelTargets(db, 1, { days: 14, threadId: 46 })
+    expect(targets).toHaveLength(1)
+    expect(targets[0].messageId).toBe(248)
+    expect(targets[0].sentinel).toBe('[body unavailable]')
+    expect(targets[0].last4).toBe('5665')
+    expect(targets[0].bookingLinked).toBe(true)
+    expect(targets.every((row) => row.sentinel !== '[observe-probe]')).toBe(true)
   })
 })
