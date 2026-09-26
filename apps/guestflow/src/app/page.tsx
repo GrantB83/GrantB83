@@ -94,6 +94,7 @@ function InboxHomePageInner() {
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false)
   const [composerExpanded, setComposerExpanded] = useState(false)
   const [linkBookingModalOpen, setLinkBookingModalOpen] = useState(false)
+  const [bodyRefreshNote, setBodyRefreshNote] = useState<string | null>(null)
   const listScrollRef = useRef<HTMLDivElement>(null)
   const pushedThreadRef = useRef(false)
 
@@ -149,7 +150,7 @@ function InboxHomePageInner() {
         )
         return
       }
-      const params = new URLSearchParams({ filter })
+      const params = new URLSearchParams({ filter, limit: '25' })
       if (q.trim()) params.set('q', q.trim())
       const response = await fetch(`/api/umi/inbox?${params.toString()}`, { cache: 'no-store' })
       const data = await response.json()
@@ -173,6 +174,7 @@ function InboxHomePageInner() {
     setContactEmail(thread.guestEmail || '')
     setContactNote(null)
     setLinkBookingId('')
+    setBodyRefreshNote(null)
     setSelectedTemplate('')
     setTemplateVars({})
     setTemplateSid('')
@@ -482,6 +484,31 @@ function InboxHomePageInner() {
     }
   }
 
+  const refreshBodies = async () => {
+    if (!selectedId || useFixture) return
+    setBusy(true)
+    setBodyRefreshNote(null)
+    setError(null)
+    try {
+      const response = await fetch(`/api/umi/threads/${selectedId}/refresh-bodies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await response.json()
+      const next = String(data.nextAction || data.error || '')
+      if (!data.success) {
+        setError(data.error || 'Bodies still unavailable')
+        setBodyRefreshNote(next || 'Ask CoS for a one-shot observe on this chat. Do not invent text.')
+      } else {
+        setBodyRefreshNote(next)
+      }
+      await loadThread(selectedId)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const openThread = (id: number) => {
     rememberListScroll()
     setSelectedId(id)
@@ -510,45 +537,55 @@ function InboxHomePageInner() {
 
   const listPane = (
     <>
-      <div className="inbox-list-header p-4 border-b space-y-3 shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-600" />
+      <div className="inbox-list-header px-3 py-2 border-b space-y-2 shrink-0">
+        <div className="flex items-center justify-between gap-2 py-2">
+          <h1 className="text-[16px] font-semibold text-[#0A3775] flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-[#0A3775]" />
             Inbox
           </h1>
           <button
             type="button"
             onClick={() => loadInbox()}
             className="inbox-tap"
-            title="Refresh"
+            title="Refresh inbox"
             aria-label="Refresh inbox"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && loadInbox()}
-            placeholder="Search booker, suite, booking…"
-            className="inbox-field w-full pl-9 pr-3"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="w-4 h-4 text-[#5B6B7C] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              value={q}
+              onChange={(event) => setQ(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && loadInbox()}
+              placeholder="Search booker, suite, booking…"
+              aria-label="Search booker, suite, booking"
+              className="inbox-search inbox-field w-full h-10 pl-10 pr-3"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-[#5B6B7C] shrink-0 min-h-[40px] py-1.5">
+            <input
+              type="checkbox"
+              checked={filter === 'needs-attention'}
+              onChange={(event) =>
+                setFilter(event.target.checked ? 'needs-attention' : 'all')
+              }
+              className="h-4 w-4"
+            />
+            Needs attention
+          </label>
         </div>
-        <label className="flex items-center gap-2 text-base text-slate-700 min-h-[44px]">
-          <input
-            type="checkbox"
-            checked={filter === 'needs-attention'}
-            onChange={(event) =>
-              setFilter(event.target.checked ? 'needs-attention' : 'all')
-            }
-            className="h-5 w-5"
-          />
-          Needs attention
-        </label>
       </div>
       <div ref={listScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+        {loading && (
+          <div className="p-3 space-y-2" data-inbox-skeleton>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-16 rounded-lg bg-[#F6F5F3] animate-pulse" />
+            ))}
+          </div>
+        )}
         {threads.length === 0 && !loading && (
           <p className="p-6 text-base text-slate-500 inbox-wrap">
             {filter === 'needs-attention'
@@ -723,7 +760,24 @@ function InboxHomePageInner() {
       composer={
         <>
           {error && <p className="text-base text-red-600 inbox-wrap">{error}</p>}
+          {bodyRefreshNote && (
+            <p className="text-sm text-[#5B6B7C] inbox-wrap">{bodyRefreshNote}</p>
+          )}
+          {detail.messages.some(
+            (message) =>
+              message.body === '[body unavailable]' || message.body === '[metadata-only]'
+          ) && (
+            <button
+              type="button"
+              onClick={refreshBodies}
+              disabled={busy}
+              className="inbox-tap px-3 text-sm border border-[#E0E5EB] rounded-lg text-[#0A3775] disabled:opacity-50"
+            >
+              Refresh bodies
+            </button>
+          )}
           <ThreadComposer
+            guestName={detail.bookerName}
             channel={channel}
             onChannelChange={setChannel}
             draft={draft}

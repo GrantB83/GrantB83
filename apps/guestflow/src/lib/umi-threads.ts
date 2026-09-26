@@ -7,6 +7,7 @@ import { mapSourceToChannel, type UmiChannel } from '@/lib/umi-channels'
 import { computeDedupKey } from '@/lib/umi-dedup'
 import { ensureUmiSchema } from '@/lib/umi-schema'
 import {
+  addDaysIsoDate,
   inboxSortBucket,
   sastDateString,
   sortInboxThreads,
@@ -19,11 +20,18 @@ import { isStuckPending } from '@/lib/delivery-status'
 import {
   computeCareWindow,
   loadLastWabaInboundAt,
-  loadLastWabaInboundAtByThread,
+  loadLastWabaInboundAtByThreadSlim,
   type CareWindow,
 } from '@/lib/whatsapp-care-window'
 import { scrubArrivalDraftSermon } from '@/lib/scrub-arrival-sermon'
-import { isPhoneLikeDisplayName, isWaWebSentinelBody } from '@/lib/wa-web-body'
+import { shouldClearFilteredForRecoveredStay } from '@/lib/umi-spam'
+import {
+  isPhoneLikeDisplayName,
+  isStaffWaWebSentinelBody,
+  isWaWebSentinelBody,
+  last4Identity,
+  WA_WEB_STAFF_SENTINEL_BODIES,
+} from '@/lib/wa-web-body'
 
 export interface ResolveInboundInput {
   from: string
@@ -84,9 +92,48 @@ export interface InboxThread {
   sortBucket: 0 | 1 | 2
   hygieneStatus: string | null
   fromNumber: string
-  careWindow?: CareWindow
+  careWindow?: Pick<CareWindow, 'state' | 'label'> | CareWindow
   arrivalStage?: string | null
   attentionReason?: string | null
+}
+
+export const DEFAULT_INBOX_LIMIT = 25
+export const MAX_INBOX_LIMIT = 50
+
+export interface InboxListPage {
+  threads: InboxThread[]
+  limit: number
+  cursor: string | null
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+export interface WaWebSentinelTarget {
+  threadId: number
+  messageId: number
+  sentinel: string
+  bookerName: string
+  last4: string | null
+  bookingLinked: boolean
+}
+
+export function parseInboxLimit(raw?: string | null): number {
+  const n = Number(raw)
+  if (!Number.isFinite(n)) return DEFAULT_INBOX_LIMIT
+  return Math.min(MAX_INBOX_LIMIT, Math.max(1, Math.floor(n)))
+}
+
+export function encodeInboxCursor(thread: Pick<InboxThread, 'id' | 'lastMessageAt'>): string {
+  return `${thread.lastMessageAt || ''}:${thread.id}`
+}
+
+export function decodeInboxCursor(cursor?: string | null): { lastMessageAt: string; id: number } | null {
+  if (!cursor) return null
+  const sep = cursor.lastIndexOf(':')
+  if (sep < 0) return null
+  const id = Number(cursor.slice(sep + 1))
+  if (!Number.isFinite(id)) return null
+  return { lastMessageAt: cursor.slice(0, sep), id }
 }
 
 interface BookingMatch {
@@ -875,6 +922,70 @@ export async function listLinkCandidates(
     .slice(0, 50)
 }
 
+async function batchLatestPreviews(
+  db: DbClient,
+  threadIds: number[]
+): Promise<Map<number, { preview: string; hasOpenDraft: boolean }>> {
+  const map = new Map<number, { preview: string; hasOpenDraft: boolean }>()
+  if (threadIds.length === 0) return map
+  const rows = ((await db
+    .prepare(
+      `SELECT thread_id, message_text, draft_reply, status, message_timestamp, id
+       FROM inbound_messages
+       WHERE thread_id IN (${threadIds.map(() => '?').join(',')})
+       ORDER BY message_timestamp DESC, id DESC`
+    )
+    .all(...threadIds)) || []) as Array<{
+    thread_id: number
+    message_text?: string
+    draft_reply?: string
+    status?: string
+    message_timestamp?: string
+    id?: number
+  }>
+  for (const row of rows) {
+    const id = asNumber(row.thread_id)
+    if (map.has(id)) continue
+    const rawPreview = String(row.message_text || '')
+    map.set(id, {
+      preview: scrubArrivalDraftSermon(rawPreview).slice(0, 160),
+      hasOpenDraft: Boolean(row.draft_reply && row.status !== 'sent'),
+    })
+  }
+  return map
+}
+
+async function batchUnansweredInbound(
+  db: DbClient,
+  threadIds: number[]
+): Promise<Set<number>> {
+  const unanswered = new Set<number>()
+  if (threadIds.length === 0) return unanswered
+  const rows = ((await db
+    .prepare(
+      `SELECT thread_id,
+              MAX(CASE WHEN COALESCE(direction, 'inbound') = 'inbound' THEN message_timestamp END) AS last_in,
+              MAX(CASE WHEN direction = 'outbound' THEN message_timestamp END) AS last_out,
+              SUM(CASE WHEN COALESCE(direction, 'inbound') = 'inbound' THEN 1 ELSE 0 END) AS inbound_c
+       FROM inbound_messages
+       WHERE thread_id IN (${threadIds.map(() => '?').join(',')})
+       GROUP BY thread_id`
+    )
+    .all(...threadIds)) || []) as Array<{
+    thread_id: number
+    last_in?: string | null
+    last_out?: string | null
+    inbound_c?: number | null
+  }>
+  for (const row of rows) {
+    if (!row.inbound_c || Number(row.inbound_c) === 0) continue
+    if (!row.last_out || String(row.last_in || '') > String(row.last_out)) {
+      unanswered.add(asNumber(row.thread_id))
+    }
+  }
+  return unanswered
+}
+
 async function latestMessagePreview(
   db: DbClient,
   threadId: number
@@ -1104,10 +1215,43 @@ async function searchThreadsByContentExt(
   return false
 }
 
+export async function listInboxPage(
+  db: DbClient,
+  tenantId: number,
+  options: {
+    filter?: 'all' | 'needs-attention'
+    q?: string
+    limit?: number
+    cursor?: string | null
+  } = {}
+): Promise<InboxListPage> {
+  const limit = parseInboxLimit(options.limit == null ? String(DEFAULT_INBOX_LIMIT) : String(options.limit))
+  const cursor = options.cursor || null
+  const threads = await listInboxThreads(db, tenantId, options)
+  const decoded = decodeInboxCursor(cursor)
+  let start = 0
+  if (decoded) {
+    const idx = threads.findIndex(
+      (thread) => thread.id === decoded.id && String(thread.lastMessageAt || '') === decoded.lastMessageAt
+    )
+    start = idx >= 0 ? idx + 1 : 0
+  }
+  const page = threads.slice(start, start + limit)
+  const hasMore = start + page.length < threads.length
+  const last = page[page.length - 1]
+  return {
+    threads: page,
+    limit,
+    cursor,
+    nextCursor: hasMore && last ? encodeInboxCursor(last) : null,
+    hasMore,
+  }
+}
+
 export async function listInboxThreads(
   db: DbClient,
   tenantId: number,
-  options: { filter?: 'all' | 'needs-attention'; q?: string } = {}
+  options: { filter?: 'all' | 'needs-attention'; q?: string; limit?: number; cursor?: string | null } = {}
 ): Promise<InboxThread[]> {
   const extra = await extraAttentionByBooking(db, tenantId)
   const deliveryAttention = await deliveryAttentionThreadIds(db)
@@ -1158,15 +1302,20 @@ export async function listInboxThreads(
     }
   }
 
-  let lastWabaByThread = new Map<number, string>()
-  try {
-    lastWabaByThread = await loadLastWabaInboundAtByThread(
-      db,
-      rows.map((row) => asNumber(row.id))
-    )
-  } catch {
-    lastWabaByThread = new Map()
+  const uniqueIds: number[] = []
+  const seenIds = new Set<number>()
+  for (const row of rows) {
+    const id = asNumber(row.id)
+    if (seenIds.has(id)) continue
+    seenIds.add(id)
+    uniqueIds.push(id)
   }
+
+  const [previews, unansweredIds, lastWabaByThread] = await Promise.all([
+    batchLatestPreviews(db, uniqueIds),
+    batchUnansweredInbound(db, uniqueIds),
+    loadLastWabaInboundAtByThreadSlim(db, uniqueIds).catch(() => new Map<number, string>()),
+  ])
 
   const threads: InboxThread[] = []
   const processedIds = new Set<number>() // Deduplicate in case of JOIN row multiplication
@@ -1184,11 +1333,12 @@ export async function listInboxThreads(
       
       const bookingId = row.booking_id ? asNumber(row.booking_id) : null
       
-      const preview = await latestMessagePreview(db, threadId)
+      const preview = previews.get(threadId) || { preview: '', hasOpenDraft: false }
       const extraFlag = extraFor(bookingId)
       const hasExtra = Boolean(extraFlag)
-      const unansweredInbound = await hasUnansweredInbound(db, threadId)
+      const unansweredInbound = unansweredIds.has(threadId)
       const pendingReply = unansweredInbound
+      const window = computeCareWindow(lastWabaByThread.get(threadId) || null)
       
       const thread: InboxThread = {
         id: threadId,
@@ -1215,7 +1365,7 @@ export async function listInboxThreads(
         sortBucket: 2,
         hygieneStatus: row.hygiene_status,
         fromNumber: row.from_number,
-        careWindow: computeCareWindow(lastWabaByThread.get(threadId) || null),
+        careWindow: { state: window.state, label: window.label, closingSoon: window.closingSoon },
         arrivalStage: extraFlag?.stage || null,
         attentionReason: extraFlag?.reason || null,
       }
@@ -1283,6 +1433,101 @@ export async function listInboxThreads(
     result = matchedThreads
   }
   return result
+}
+
+export async function listWaWebSentinelTargets(
+  db: DbClient,
+  tenantId: number,
+  options: { days?: number; threadId?: number } = {}
+): Promise<WaWebSentinelTarget[]> {
+  const days = Math.min(30, Math.max(1, Number(options.days) || 14))
+  const cutoff = addDaysIsoDate(sastDateString(), -days)
+  const today = sastDateString()
+  const placeholders = WA_WEB_STAFF_SENTINEL_BODIES.map(() => '?').join(',')
+  const params: Array<string | number> = [tenantId, ...WA_WEB_STAFF_SENTINEL_BODIES]
+  let threadClause = ''
+  if (options.threadId && Number.isFinite(options.threadId)) {
+    threadClause = ' AND t.id = ?'
+    params.push(Number(options.threadId))
+  }
+  const rows = ((await db
+    .prepare(
+      `SELECT m.id AS message_id, m.thread_id, m.message_text, m.message_timestamp,
+              t.guest_name, t.from_number, t.booking_id,
+              b.guest_name AS booking_guest_name, b.check_in, b.check_out
+       FROM inbound_messages m
+       JOIN inbound_threads t ON t.id = m.thread_id
+       LEFT JOIN bookings b ON b.id = t.booking_id
+       WHERE t.tenant_id = ?
+         AND COALESCE(t.status, '') <> 'linked'
+         AND COALESCE(m.direction, 'inbound') = 'inbound'
+         AND COALESCE(m.channel, 'whatsapp_web') = 'whatsapp_web'
+         AND m.message_text IN (${placeholders})
+         ${threadClause}`
+    )
+    .all(...params)) || []) as Array<{
+    message_id: number
+    thread_id: number
+    message_text?: string
+    message_timestamp?: string
+    guest_name?: string | null
+    from_number?: string | null
+    booking_id?: number | null
+    booking_guest_name?: string | null
+    check_in?: string | null
+    check_out?: string | null
+  }>
+
+  return rows
+    .filter((row) => {
+      const day = String(row.message_timestamp || '').slice(0, 10)
+      const openStay = Boolean(row.check_out && String(row.check_out).slice(0, 10) >= today)
+      return openStay || (day && day >= cutoff)
+    })
+    .filter((row) => isStaffWaWebSentinelBody(row.message_text))
+    .map((row) => ({
+      threadId: asNumber(row.thread_id),
+      messageId: asNumber(row.message_id),
+      sentinel: String(row.message_text || '').trim(),
+      bookerName: row.booking_guest_name || row.guest_name || row.from_number || 'Unknown',
+      last4: last4Identity(row.from_number),
+      bookingLinked: Boolean(row.booking_id),
+    }))
+}
+
+export async function applyRecoveredStayHygiene(
+  db: DbClient,
+  threadId: number
+): Promise<number> {
+  const thread = (await db
+    .prepare(`SELECT booking_id FROM inbound_threads WHERE id = ?`)
+    .get(threadId)) as { booking_id?: number | null } | undefined
+  const bookingLinked = Boolean(thread?.booking_id)
+  const rows = ((await db
+    .prepare(
+      `SELECT id, message_text, is_spam
+       FROM inbound_messages
+       WHERE thread_id = ?
+         AND COALESCE(channel, 'whatsapp_web') = 'whatsapp_web'
+         AND COALESCE(direction, 'inbound') = 'inbound'`
+    )
+    .all(threadId)) || []) as Array<{ id: number; message_text?: string; is_spam?: number }>
+
+  let cleared = 0
+  for (const row of rows) {
+    const text = String(row.message_text || '')
+    if (!shouldClearFilteredForRecoveredStay({ recoveredBody: text, bookingLinked })) continue
+    if (!row.is_spam) continue
+    await db
+      .prepare(
+        `UPDATE inbound_messages
+         SET is_spam = 0, status = CASE WHEN status = 'spam' THEN 'classified' ELSE status END
+         WHERE id = ?`
+      )
+      .run(row.id)
+    cleared += 1
+  }
+  return cleared
 }
 
 export async function getThreadDetail(db: DbClient, tenantId: number, threadId: number) {

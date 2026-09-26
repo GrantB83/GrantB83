@@ -106,6 +106,31 @@ export async function loadLastWabaInboundAt(
   return null
 }
 
+export async function loadLastWabaInboundAtByThreadSlim(
+  db: DbClient,
+  threadIds: number[]
+): Promise<Map<number, string>> {
+  const map = new Map<number, string>()
+  if (threadIds.length === 0) return map
+  const rows = ((await db
+    .prepare(
+      `SELECT thread_id, MAX(message_timestamp) AS last_waba
+       FROM inbound_messages
+       WHERE direction = 'inbound'
+         AND thread_id IN (${threadIds.map(() => '?').join(',')})
+         AND (
+           channel = 'whatsapp_cloud'
+           OR source_tag = 'twilio_whatsapp'
+         )
+       GROUP BY thread_id`
+    )
+    .all(...threadIds)) || []) as Array<{ thread_id: number; last_waba?: string | null }>
+  for (const row of rows) {
+    if (row.last_waba) map.set(Number(row.thread_id), row.last_waba)
+  }
+  return map
+}
+
 export async function loadLastWabaInboundAtByThread(
   db: DbClient,
   threadIds: number[]

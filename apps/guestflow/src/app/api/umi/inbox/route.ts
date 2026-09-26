@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { getDbAsync, getDefaultTenantIdAsync } from '@/lib/db'
 import { jsonSafeResponse } from '@/lib/json-safe'
-import { listInboxThreads } from '@/lib/umi-threads'
+import { listInboxPage, parseInboxLimit } from '@/lib/umi-threads'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
       : 'all'
     const q = url.searchParams.get('q') || undefined
     const debug = url.searchParams.get('debug') === '1'
+    const limit = parseInboxLimit(url.searchParams.get('limit'))
+    const cursor = url.searchParams.get('cursor') || undefined
     
     const db = await getDbAsync()
     const tenantId = await getDefaultTenantIdAsync()
@@ -25,6 +27,8 @@ export async function GET(request: NextRequest) {
     const response: Record<string, unknown> = {
       success: true,
       filter,
+      limit,
+      cursor: cursor || null,
       timestamp,
     }
     
@@ -79,9 +83,11 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Fetch threads using existing listInboxThreads logic
-    const threads = await listInboxThreads(db, tenantId, { filter, q })
+    const page = await listInboxPage(db, tenantId, { filter, q, limit, cursor })
+    const threads = page.threads
     response.threads = threads
+    response.nextCursor = page.nextCursor
+    response.hasMore = page.hasMore
     
     // If debug, add list-level stats and validate thread IDs
     if (debug && response.debug && typeof response.debug === 'object') {

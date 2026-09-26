@@ -53,6 +53,12 @@ body {
     padding: 0.5rem 0.75rem;
   }
 
+  .inbox-search {
+    height: 40px;
+    min-height: 36px;
+    padding-left: 40px;
+  }
+
   .inbox-slot:empty {
     display: none;
   }

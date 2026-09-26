@@ -6,6 +6,20 @@ export const WA_WEB_SENTINEL_BODIES = [
   '[observe-probe]',
 ] as const
 
+/** Sprint 6 staff/API target list — exact bodies only (not observe-probe). */
+export const WA_WEB_STAFF_SENTINEL_BODIES = ['[body unavailable]', '[metadata-only]'] as const
+
+export function isStaffWaWebSentinelBody(text?: string | null): boolean {
+  const value = String(text || '').trim()
+  return (WA_WEB_STAFF_SENTINEL_BODIES as readonly string[]).includes(value)
+}
+
+export function last4Identity(from?: string | null): string | null {
+  const digits = String(from || '').replace(/\D/g, '')
+  if (digits.length < 4) return null
+  return digits.slice(-4)
+}
+
 export type WaWebNameSource = {
   from?: string | null
   text?: string | null

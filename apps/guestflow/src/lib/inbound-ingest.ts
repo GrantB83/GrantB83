@@ -349,7 +349,22 @@ async function finishInboundAfterPersist(
     )
     .run(JSON.stringify(classification), messageId)
 
-  const treatAsSpam = spam.spam || classification.intent === 'spam'
+  let treatAsSpam = spam.spam || classification.intent === 'spam'
+  if (persisted.replaced && !spam.spam) {
+    const linked = (await db
+      .prepare(`SELECT booking_id FROM inbound_threads WHERE id = ?`)
+      .get(persisted.threadId)) as { booking_id?: number | null } | undefined
+    if (linked?.booking_id) {
+      treatAsSpam = false
+      await db
+        .prepare(
+          `UPDATE inbound_messages
+           SET is_spam = 0, status = CASE WHEN status = 'spam' THEN 'classified' ELSE COALESCE(status, 'classified') END
+           WHERE id = ?`
+        )
+        .run(messageId)
+    }
+  }
   if (treatAsSpam) {
     await db
       .prepare(
