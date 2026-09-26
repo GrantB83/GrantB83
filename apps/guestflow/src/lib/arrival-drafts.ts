@@ -193,6 +193,44 @@ async function templateStatusForStage(
   return { pending, names }
 }
 
+/**
+ * Scrub sermon text from arrival draft message_text rows.
+ * Idempotent: extracts stage label from old sermon format and replaces with clean label.
+ * Pattern: "[Arrival draft T-1] Approve&Send required — never auto-sent." → "Arrival draft T-1"
+ */
+function scrubSermonFromPreview(oldText: string): string {
+  const match = oldText.match(/^\[?Arrival draft ([^\]]+)\]?\s*Approve&Send required/i)
+  if (match && match[1]) {
+    return `Arrival draft ${match[1].trim()}`
+  }
+  // If no sermon pattern found, return unchanged
+  return oldText
+}
+
+/**
+ * Clean any existing sermon text in arrival draft messages for this thread.
+ * One-shot idempotent scrub that runs on each draft upsert.
+ */
+async function scrubThreadSermonPreviews(db: DbClient, threadId: number): Promise<void> {
+  const existing = await db
+    .prepare<{ id: number; message_text: string }>(
+      `SELECT id, message_text FROM inbound_messages 
+       WHERE thread_id = ? 
+       AND source_tag = 'arrival-scheduler' 
+       AND message_text LIKE '%Approve&Send required%'`
+    )
+    .all(threadId)
+
+  for (const row of existing) {
+    const cleaned = scrubSermonFromPreview(row.message_text)
+    if (cleaned !== row.message_text) {
+      await db
+        .prepare(`UPDATE inbound_messages SET message_text = ? WHERE id = ?`)
+        .run(cleaned, row.id)
+    }
+  }
+}
+
 async function writeThreadDraft(
   db: DbClient,
   input: {
@@ -221,6 +259,9 @@ async function writeThreadDraft(
     source: 'arrival-scheduler',
     from,
   })
+
+  // Idempotent one-shot: scrub any existing sermon text in this thread's arrival drafts
+  await scrubThreadSermonPreviews(db, thread.id)
 
   if (input.existingMessageId) {
     await db
